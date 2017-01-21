@@ -1,0 +1,184 @@
+cpp_library(
+    name = 'libbeamer',
+    headers = AutoHeaders.RECURSIVE_GLOB,  # https://fburl.com/424819295
+    srcs= [
+        'beamer/lib/BMRArray.c',
+        'beamer/lib/BMRBuffer.c',
+        'beamer/lib/BMRTrie.c',
+        'beamer/lib/BMRLM.cc',
+        'beamer/lib/BMRDecoder.c',
+    ],
+    external_deps = [
+        'kenlm',
+    ],
+    preprocessor_flags = [
+        "-DBMR_USE_QUICKSELECT", # quickselect instead of qsort
+    ]
+)
+
+lua_library(
+    name='beamer',
+    srcs=util.files('beamer/**/*.lua'),
+    deps=[
+        ':libbeamer',
+    ],
+    external_deps=[
+        ('torch7', None, 'TH'),
+    ],
+    base_module='',
+)
+
+cpp_library(
+    name = 'libwav2letter',
+    srcs = [
+        'wav2letter/utils/utils.c',
+        'wav2letter/utils/autosegcriterion.c',
+        'wav2letter/utils/viterbi.c',
+    ],
+    headers = glob(['wav2letter/utils/*.gen.c']),
+    external_deps = [
+        ('torch7', None, 'TH'),
+        ('IntelComposerXE', None, 'mkl_lp64_gomp'),
+    ],
+    preprocessor_flags = [
+        "-Ideeplearning/projects/wav2letter/wav2letter/utils",
+        "-fopenmp",
+    ],
+    compiler_specific_flags = {
+        "clang": ["-fopenmp=libgomp"],
+    },
+)
+
+lua_library(
+    name='wav2letter',
+    srcs=glob(['wav2letter/**/*.lua'], excludes=['wav2letter/test/test.lua']),
+    deps=[
+        '@/torch/oss:nn',
+        '@/torch/oss:ProFi',
+        '@/torch/fb/fbnn:fbnn',
+        '@/torch/fb/fbcunn:fbcunn',
+        '@/torch/oss:speech',
+        '@/torch/fb/torchnet:torchnet',
+        '@/torch/fb/torchnet:torchnet-optim',
+        '@/torch/fb/fbtorch:fbtorch',
+        '@/torch/fb:gtn',
+         ':libwav2letter',
+    ],
+    external_deps=[
+        ('torch-argcheck', None),
+        ('torch-class', None),
+    ],
+    base_module='',
+)
+
+lua_unittest(
+    name = 'wav2letter_test',
+    srcs = [
+        "wav2letter/test/test.lua",
+    ]
+    + util.files('config/**/*.lua'),
+    deps = [
+        '@/torch/fb/fbtorch:fbtorch',
+        ':wav2letter',
+    ],
+    external_deps = [
+        ('torch7', None),
+        ('torch-sndfile', None),
+    ],
+    base_module= '',
+    main_module = 'wav2letter.test.test',
+)
+
+lua_binary(
+    name = 'wav2letter_prof',
+    srcs = [
+        "wav2letter/test/prof.lua",
+        'netutils.lua',
+    ],
+    deps = [
+        '@/torch/fb/fbtorch:fbtorch',
+        '@/torch/oss:warpctc',
+        ':wav2letter',
+    ],
+    external_deps = [
+        ('torch7', None),
+        ('torch-sndfile', None),
+    ],
+    base_module= '',
+    main_module = 'wav2letter.test.prof',
+)
+
+lua_binary(
+    name='train',
+    srcs=[
+        'train.lua',
+        'netutils.lua',
+        'transforms.lua',
+    ]
+    + util.files('config/**/*.lua'),
+    deps=[
+        ':wav2letter',
+    ],
+    external_deps=[
+        ('torch-sndfile', None),
+    ],
+    main_module='train',
+)
+
+lua_binary(
+    name='test',
+    srcs=[
+        'test.lua',
+        'transforms.lua',
+    ]
+    + util.files('config/**/*.lua'),
+    deps=[
+        ':wav2letter',
+    ],
+    external_deps=[
+        ('torch-sndfile', None),
+    ],
+    main_module='test',
+)
+
+lua_binary(
+    name='decode',
+    srcs=[
+        'decode.lua',
+        'decoder.lua',
+    ],
+    deps=[
+        ':wav2letter',
+        ':beamer',
+    ],
+    main_module='decode',
+)
+
+lua_binary(
+    name='test-one-file',
+    srcs=[
+        'test-one-file.lua',
+        'transforms.lua',
+    ]
+    + util.files('config/**/*.lua'),
+    deps=[
+        ':wav2letter',
+    ],
+    external_deps=[
+        ('torch-sndfile', None),
+    ],
+    main_module='test-one-file',
+)
+
+lua_binary(
+    name='plot',
+    srcs=[
+        'plot.lua',
+    ],
+    external_deps=[
+        ('torch7', None),
+        ('torch-paths', None),
+        ('torch-gnuplot', None),
+    ],
+    main_module='plot',
+)

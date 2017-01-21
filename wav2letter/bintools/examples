@@ -1,0 +1,8 @@
+#List name of all failed experiments
+ mlcli jobs --no-header -f pretty failed | tr -s ' '  | cut -f 14  -d ' ' | xargs -P 20 -I {} sed -n 's/path[\ \t]*//p' {}/stdout.log | cut -f 2 > _failed
+
+#List command to continue all failed experiments
+cat _failed  | sed 's/$/\/model-last.bin/' | buck-out/gen/deeplearning/projects/wav2letter/bintools/model2continue.lex
+
+#List all failed experiments of an observed subset 
+comm -12 <(sort _failed) <(sort /home/cpuhrsch/hypotheses/20160626_more_data_helps/running) > _failed_subset

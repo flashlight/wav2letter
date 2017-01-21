@@ -152,7 +152,7 @@ end
 
 if opt.reload ~= '' and opt.reloadarg then
    print(string.format('| Reloading options <%s>', opt.reload))
-   local f = DiskFile(opt.reload):binary()
+   local f = torch.DiskFile(opt.reload):binary()
    local setup = f:readObject()
    if setup.opt.gpu > 0 then
       require 'cunn'
@@ -323,7 +323,7 @@ evlcriterion = evlcriterion:clone():share(asgcriterion, 'transitions')
 
 if opt.reload ~= '' then
    print(string.format('| reloading model <%s>', opt.reload))
-   local f = DiskFile(opt.reload):binary()
+   local f = torch.DiskFile(opt.reload):binary()
    f:readObject() -- setup
    local arch = f:readObject()
    network = arch.network
@@ -648,7 +648,7 @@ end
 meters.stats = tnt.SpeechStatMeter()
 meters.bdev = tnt.AverageValueMeter{}
 
-local logfile = DiskFile(
+local logfile = torch.DiskFile(
    string.format('%s/perf', opt.path),
    (opt.continue == '') and "w" or "rw"
 )
@@ -722,7 +722,7 @@ end
 
 local function save(name, network, best)
    cutorch.synchronizeAll()
-   local f = DiskFile(string.format('%s/model-%s.bin', opt.path, name), 'w')
+   local f = torch.DiskFile(string.format('%s/model-%s.bin', opt.path, name), 'w')
    f:binary()
    f:writeObject{
       best = best,

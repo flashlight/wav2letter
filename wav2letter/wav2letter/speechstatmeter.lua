@@ -1,4 +1,4 @@
-local tnt = require 'fbtorchnet'
+local tnt = require 'torchnet'
 local argcheck = require 'argcheck'
 
 local SpeechStatMeter = torch.class('tnt.SpeechStatMeter', 'tnt.Meter', tnt)

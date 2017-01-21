@@ -1,5 +1,7 @@
 cmake_minimum_required (VERSION 2.8)
 
+SET(CMAKE_C_FLAGS "-std=c99")
+
 ADD_DEFINITIONS(-DBMR_USE_QUICKSELECT)
 ADD_DEFINITIONS(-DKENLM_MAX_ORDER=6)
 
@@ -30,6 +32,7 @@ set(CMAKE_MODULE_PATH
 find_package(Torch REQUIRED)
 
 set(src
+  lib/BMRArray.c
   lib/BMRBuffer.c
   lib/BMRTrie.c
   lib/BMRLM.cc

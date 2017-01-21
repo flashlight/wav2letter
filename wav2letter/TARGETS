@@ -16,9 +16,19 @@ cpp_library(
     ]
 )
 
+custom_rule(
+    name = "beamer-env",
+    strict = False,
+    output_gen_files = [
+        "beamer/env.lua",
+    ],
+    build_script = "beamer/env.sh",
+    build_args = "deeplearning/projects/wav2letter/beamer/env.lua",
+)
+
 lua_library(
     name='beamer',
-    srcs=util.files('beamer/**/*.lua'),
+    srcs=glob(['beamer/*.lua'], excludes=['beamer/env.lua']) + [ ":beamer-env" ],
     deps=[
         ':libbeamer',
     ],
@@ -49,9 +59,19 @@ cpp_library(
     },
 )
 
+custom_rule(
+    name = "wav2letter-utils-init",
+    strict = False,
+    output_gen_files = [
+        "wav2letter/utils/init.lua",
+    ],
+    build_script = "wav2letter/utils/init.sh",
+    build_args = "deeplearning/projects/wav2letter/wav2letter/utils/init.lua",
+)
+
 lua_library(
     name='wav2letter',
-    srcs=glob(['wav2letter/**/*.lua'], excludes=['wav2letter/test/test.lua']),
+    srcs=glob(['wav2letter/**/*.lua'], excludes=['wav2letter/test/test.lua', 'wav2letter/utils/init.lua']) + [ ":wav2letter-utils-init" ],
     deps=[
         '@/torch/oss:nn',
         '@/torch/oss:ProFi',

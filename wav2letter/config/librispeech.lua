@@ -1,4 +1,4 @@
-local tnt = require 'fbtorchnet'
+local tnt = require 'torchnet'
 local sndfile = require 'sndfile'
 local utils = require 'wav2letter.utils'
 
@@ -31,10 +31,10 @@ local function config(opt)
    local l8khz        = as(opt, "l8khz"       , "boolean" )
    local config = {datasets = {}}
    local roots = {}
-   roots.fisher      = string.format('%s/fisher-idx',      datadir)
+--   roots.fisher      = string.format('%s/fisher-idx',      datadir)
    roots.librispeech = string.format('%s/librispeech-idx', datadir)
-   roots.messenger   = string.format('%s/messenger-idx',   datadir)
-   roots.swb         = string.format('%s/swb-idx',         datadir)
+--   roots.messenger   = string.format('%s/messenger-idx',   datadir)
+--   roots.swb         = string.format('%s/swb-idx',         datadir)
 --   roots.wsj         = string.format('%s/wsj-idx',         datadir)
 
    local words = {}

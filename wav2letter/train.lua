@@ -1,9 +1,9 @@
 require 'torch'
 require 'nn'
-require 'fbnn'
-require 'fb.debugger'
+--require 'fbnn'
+--require 'fb.debugger'
 
-local tnt = require 'fbtorchnet'
+local tnt = require 'torchnet'
 local xlua = require 'xlua'
 local threads = require 'threads'
 local logtext = require 'torchnet.log.view.text'
@@ -514,7 +514,7 @@ else
          local config = paths.dofile(string.format('config/%s.lua', opt.config))
          config = config(opt)
          local transformsTrain = paths.dofile('transforms.lua')(opt, config, opt.aug, idx)
-         local tnt = require 'fbtorchnet'
+         local tnt = require 'torchnet'
          require 'wav2letter' -- ShiftDataset
          local traindataset = tnt.TransformDataset{
             dataset = config.traindataset(),

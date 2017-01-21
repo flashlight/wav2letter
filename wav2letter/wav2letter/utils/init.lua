@@ -5,10 +5,7 @@ require 'torch'
 
 local utils = {}
 
--- OSS:
--- utils.C = ffi.load(package.searchpath('libwav2letter', package.cpath))
--- FBCODE:
-utils.C = ffi.load('libdeeplearning_projects_wav2letter_libwav2letter.so')
+utils.C = ffi.load(package.searchpath('libwav2letter', package.cpath))
 
 local C = utils.C
 

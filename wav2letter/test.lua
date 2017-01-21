@@ -3,7 +3,7 @@ require 'nn'
 require 'cunn'
 require 'cudnn'
 
-local tnt = require 'fbtorchnet'
+local tnt = require 'torchnet'
 local xlua = require 'xlua'
 require 'wav2letter'
 

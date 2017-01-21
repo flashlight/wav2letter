@@ -1,5 +1,5 @@
 require 'nn'
-require 'fbcunn'
+--require 'fbcunn'
 local argcheck = require 'argcheck'
 local optim = require 'torchnet.optim'
 
@@ -43,7 +43,7 @@ netutils.create = argcheck{
          local Dropout
          if gpu > 0 then
             require 'cunn'
-            require 'fbcunn'
+--            require 'fbcunn'
             require 'cudnn'
             cudnn.fastest = true --Much better performance!
             net:add( nn.Copy('torch.FloatTensor', 'torch.CudaTensor', true, true) )

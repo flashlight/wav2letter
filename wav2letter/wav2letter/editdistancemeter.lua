@@ -1,4 +1,4 @@
-local tnt = require 'fbtorchnet'
+local tnt = require 'torchnet'
 local argcheck = require 'argcheck'
 local utils = require 'wav2letter.utils'
 

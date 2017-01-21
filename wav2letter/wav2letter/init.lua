@@ -1,4 +1,4 @@
-local tnt = require 'fbtorchnet'
+local tnt = require 'torchnet'
 
 require 'torch'
 require 'nn'

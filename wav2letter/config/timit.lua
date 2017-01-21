@@ -1,4 +1,4 @@
-local tnt = require 'fbtorchnet'
+local tnt = require 'torchnet'
 local sndfile = require 'sndfile'
 
 -- should i really discard q?

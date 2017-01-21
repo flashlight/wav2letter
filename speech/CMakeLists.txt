@@ -18,6 +18,8 @@ set(luasrc
   fftw.lua
   init.lua
   mfcc.lua
+  mfsc.lua
+  pow.lua
   preemphasis.lua
   proc.lua
   trifiltering.lua

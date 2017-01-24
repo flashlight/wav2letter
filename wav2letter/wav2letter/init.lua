@@ -3,6 +3,8 @@ local tnt = require 'torchnet'
 require 'torch'
 require 'nn'
 
+require 'wav2letter.timer'
+
 require 'wav2letter.viterbi'
 require 'wav2letter.fullconnectcriterion'
 require 'wav2letter.fullconnectcriterionc'

@@ -896,11 +896,6 @@ local function train(network, criterion, iterator, params, opid)
    function engine.hooks.onUpdate(state)
       map(function(out) if out then meters.loss:add(out) end end, state.criterion.output)
       map2(function(i, t) if i then meters.stats:add(i, t) end end, opt.shift > 0 and state.sample.input[1] or state.sample.input, state.sample.target)
-      meters.timer:incUnit()
-      meters.sampletimer:incUnit()
-      meters.networktimer:incUnit()
-      meters.criteriontimer:incUnit()
-      meters.sampletimer:resume()
       if state.t % opt.psr == 0 and state.t % trainsize ~= 0 then
          if progress then
             print()
@@ -917,10 +912,17 @@ local function train(network, criterion, iterator, params, opid)
          meters.loss:reset()
          meters.trainedit:reset()
       end
+      meters.timer:incUnit()
+      meters.sampletimer:incUnit()
+      meters.networktimer:incUnit()
+      meters.criteriontimer:incUnit()
+      meters.sampletimer:resume()
    end
 
    function engine.hooks.onEndEpoch(state)
       meters.timer:stop()
+      meters.sampletimer:stop()
+      meters.networktimer:stop()
       if progress then
          print()
       end

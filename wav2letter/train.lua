@@ -1,4 +1,4 @@
-require 'torch'
+ require 'torch'
 require 'nn'
 --require 'fbnn'
 --require 'fb.debugger'
@@ -6,7 +6,7 @@ require 'nn'
 local tnt = require 'torchnet'
 local xlua = require 'xlua'
 local threads = require 'threads'
-local logtext = require 'torchnet.log.view.text'
+local data = paths.dofile('data.lua')
 
 require 'wav2letter'
 
@@ -30,7 +30,6 @@ cmd:option('-progress', false, 'display training progress per epoch')
 cmd:option('-arch', 'default', 'network architecture')
 cmd:option('-archgen', '', 'network architecture generator string')
 cmd:option('-batchsize', 1, 'batchsize')
-cmd:option('-config', 'timit', 'config setup (timit, switchboard)')
 cmd:option('-linseg', 0, 'number of linear segmentation iter, if not using -seg')
 cmd:option('-linsegznet', false, 'use fake zero-network with linseg')
 cmd:option('-linlr', -1, 'linear segmentation learning rate (if < 0, use lr)')
@@ -79,6 +78,17 @@ cmd:option('-psr', 0, 'perf (statistics) print sample rate (default: only at the
 cmd:option('-replabel', -1, 'replace up to replabel reptitions by additional classes')
 cmd:option('-lsm', false, 'add LogSoftMax layer')
 cmd:option('-tag', '', 'tag this experiment with a particular name (e.g. "hypothesis1")')
+
+cmd:text()
+cmd:text('Data Options:')
+cmd:option('-train', '', 'space-separated list of training data')
+cmd:option('-valid', '', 'space-separated list of valid data')
+cmd:option('-test', '', 'space-separated list of test data')
+cmd:option('-samplerate', 16000, 'sample rate (Hz)')
+cmd:option('-channels', 1, 'number of input channels')
+cmd:option('-dict', 'letters.lst', 'dictionary to use')
+cmd:option('-input', 'flac', 'input feature')
+cmd:option('-target', 'ltr', 'target feature')
 
 cmd:text()
 cmd:text('MFCC Options:')
@@ -188,7 +198,8 @@ dbg.name = cmd:string(
       force=true, gfsai=true,
       datadir=true, rundir=true, archdir=true,
       iter=true, gpu=true, reload=true, progress=true,
-      continue=true
+      continue=true,
+      train=true, valid=true, test=true -- DEBUG: FIXME
    }
 )
 print("| ExpName: " .. dbg.name)
@@ -232,23 +243,34 @@ if opt.gpu > 0 then
    cutorch.manualSeedAll(opt.seed)
 end
 
-local config = paths.dofile(string.format('config/%s.lua', opt.config))
-config = config(opt)
+local dict = data.newdict{
+   path = paths.concat(opt.datadir, opt.dict)
+}
 
-opt.dataspecs = config.specs
-opt.nchannel = opt.dataspecs.nchannel
-opt.samplerate = opt.dataspecs.samplerate
-opt.nclass = config.specs.nclass
+if opt.dict39 then
+   dict = data.dictcollapsephones{dictionary=dict}
+end
+
+if opt.ctc or opt.garbage then
+   data.dictadd{dictionary=dict, name="#"} -- blank
+end
+
 if opt.replabel > 0 then
-   opt.nclass = opt.nclass + opt.replabel
+   for i=1,opt.replabel do
+      data.dictadd{dictionary=dict, name=string.format("%d", opt.replabel-i+1)} -- DEBUG: reverse for now
+   end
 end
 
-if opt.garbage then
-   assert(opt.nstate == 1, 'cannot have garbage and nstate set together')
-   opt.nclass = opt.nclass + 1
-else
-   opt.nclass = opt.nclass*opt.nstate
-end
+opt.nclass = #dict
+
+opt.nchannel = opt.channels
+
+-- if opt.garbage then
+--    assert(opt.nstate == 1, 'cannot have garbage and nstate set together')
+--    opt.nclass = opt.nclass + 1
+-- else
+--    opt.nclass = opt.nclass*opt.nstate
+-- end
 
 print(string.format('| number of classes (network) = %d', opt.nclass))
 
@@ -263,7 +285,7 @@ if opt.archgen ~= '' then
    opt.arch = opt.archgen
 end
 opt.netspecs = netutils.readspecs(paths.concat(opt.archdir, opt.arch))
-local network, kw, dw = netutils.create(opt.netspecs, opt.gpu, opt.dataspecs.nchannel, opt.nclass, opt.lsm)
+local network, kw, dw = netutils.create(opt.netspecs, opt.gpu, opt.channels, opt.nclass, opt.lsm)
 local zeronet = nn.ZeroNet(kw, dw, opt.nclass)
 local netcopy = network:clone() -- pristine stateless copy
 opt.kw = kw
@@ -375,10 +397,6 @@ end
 
 assert(not(opt.batchsize > 1 and opt.shift > 0), 'Cannot allow both shifting and batching')
 
-if opt.batchsize > 1 then
-   network = makeParallel(network, opt.batchsize)
-end
-
 if opt.shift > 0 then
    if opt.gpushift then
       network = makeParallel(network, opt.shift)
@@ -389,235 +407,79 @@ if opt.shift > 0 then
    network = nn.ShiftNet(network, opt.shift, opt.gpushift)
 end
 
-local transformsTrain = paths.dofile('transforms.lua')(opt, config, opt.aug)
-local transformsTest = paths.dofile('transforms.lua')(opt, config, false)
-
-local function filterbysize(sample)
-   -- with opt.shift last one is smaller
-   local input = opt.shift > 0 and sample.input[#sample.input] or sample.input
-   local target = sample.target
-   local isz = opt.batchsize > 1 and input[1]:size(1) or input:size(1)
-   local tsz = opt.batchsize > 1 and target[1]:size(1) or target:size(1)
-   if isz < kw+tsz*dw then
-      return false
-   end
-   if opt.batchsize > 1 then
-      for i = 2, #target do
-         local iszI = input[i]:size(1)
-         local tszI = target[i]:size(1)
-         if iszI < kw+tszI*dw then
-            return false
-         end
-         tsz = math.max(tsz, tszI)
-         isz = math.max(isz, iszI)
-      end
-   end
-   if opt.maxisz > 0 and isz > opt.maxisz then
-      return false
-   end
-   if tsz < opt.mintsz then
-      print("warning ca va peter -- filtered out")
-      return false
-   end
-   if opt.maxtsz > 0 and tsz > opt.maxtsz then
-      return false
-   end
-   return true
-end
-
-local resampleperm = torch.LongTensor()
-local resample =
-   threads.safe(
-      function(size)
-         if size then
-            if resampleperm:nDimension() == 0 then
-               print('# resampling: init with', size)
-               resampleperm:randperm(size)
-            else
-               assert(
-                  resampleperm:nDimension() == 1 and
-                     resampleperm:size(1) == size
-               )
-               print('# resampling: skip init')
-            end
-         else
-            print('# resampling with', resampleperm:size(1))
-            resampleperm:randperm(resampleperm:size(1))
-         end
-      end
-   )
-
-local trainsort = torch.LongTensor()
-local setTrainSort = threads.safe(
-   function(dataset)
-      if trainsort:dim() == 0 then
-         trainsort:resize(dataset:size()):zero()
-      end
-   end
-)
-
-local function buildPerm(dataset)
-   setTrainSort(dataset)
-   return function(idx, size)
-      if trainsort[idx] == 0 then
-         trainsort[idx] = dataset:get(idx).input:size(1)
-         return idx
-      else
-         return trainsort[idx]
-      end
-   end
-end
+local transformsTrain = paths.dofile('transforms.lua')(opt, opt.aug)
+local transformsTest = paths.dofile('transforms.lua')(opt, false)
 
 local trainiterator
 
-if opt.nthread == 0 then
-   local traindataset = tnt.TransformDataset{
-      dataset = config.traindataset(),
-      transforms = {
-         input = transformsTrain.input,
-         target = transformsTrain.target
-      }
-   }
-   assert(opt.itersz <= traindataset:size()) -- DEBUG: fixit
-   resample(traindataset:size())
-   traindataset = tnt.ResampleDataset{
-      dataset = traindataset,
-      sampler =
-         function(self, idx)
-            return resampleperm[idx]
-         end,
-      size = opt.itersz
-   }
-   if opt.shift > 0 then
-      traindataset = tnt.ShiftDataset{
-         dataset = traindataset,
-         shift = opt.shift,
-         dshift = opt.dshift,
-         setshift = transformsTrain.shift
+local sampler, resample = data.newsampler()
+
+local function newiterator(names, concat, sampler, aug, maxload, nthread)
+   local function subdataset(names)
+      local data = paths.dofile('data.lua')
+      local readers = require 'wav2letter.readers'
+      local transforms = paths.dofile('transforms.lua')(opt, aug)
+      return data.newdataset{
+         path = opt.datadir,
+         names = data.namelist(names),
+         features = {
+            {
+               name = opt.input,
+               alias = "input",
+               reader = readers.audio{
+                  samplerate = opt.samplerate,
+                  channels = opt.channels
+               },
+            },
+            {
+               name = opt.target,
+               alias = "target",
+               reader = readers.tokens{
+                  dictionary = dict
+               }
+            },
+         },
+         transforms = {
+            input = transforms.input,
+            target = transforms.target
+         },
+         sampler = sampler,
+         maxload = maxload
       }
    end
-   if opt.batchsize > 1 then
-      traindataset = tnt.BatchDataset{
-         dataset = traindataset,
-         batchsize = opt.batchsize,
-         merge = function(sample) return sample end,
-         perm = buildPerm(traindataset),
-      }
-   end
-   trainiterator = tnt.DatasetIterator{
-      dataset = traindataset,
-      filter = filterbysize
-   }
-else
-   trainiterator = tnt.ParallelDatasetIterator{
-      closure = function(idx)
-         local config = paths.dofile(string.format('config/%s.lua', opt.config))
-         config = config(opt)
-         local transformsTrain = paths.dofile('transforms.lua')(opt, config, opt.aug, idx)
-         local tnt = require 'torchnet'
-         require 'wav2letter' -- ShiftDataset
-         local traindataset = tnt.TransformDataset{
-            dataset = config.traindataset(),
-            transforms = {
-               input = transformsTrain.input,
-               target = transformsTrain.target
-            }
+   local function subiterator(names, nthread)
+      if nthread == 0 then
+         return tnt.DatasetIterator{
+            dataset = subdataset(names),
+            filter = filterbysize
          }
-         assert(opt.itersz <= traindataset:size()) -- DEBUG: fixit
-         resample(traindataset:size())
-         traindataset = tnt.ResampleDataset{
-            dataset = traindataset,
-            sampler =
-               function(self, idx)
-                  return resampleperm[idx]
+      else
+         return tnt.ParallelDatasetIterator{
+            closure =
+               function()
+                  return subdataset(names)
                end,
-            size = opt.itersz
+            nthread = nthread
          }
-         if opt.shift > 0 then
-            traindataset = tnt.ShiftDataset{
-               dataset = traindataset,
-               shift = opt.shift,
-               dshift = opt.dshift,
-               setshift = transformsTrain.shift
-            }
-         end
-         if opt.batchsize > 1 then
-            traindataset = tnt.BatchDataset{
-               dataset = traindataset,
-               batchsize = opt.batchsize,
-               merge = function(sample) return sample end,
-               perm = buildPerm(traindataset),
-            }
-         end
-         return traindataset
-      end,
-      nthread=opt.nthread,
-      filter = filterbysize
-   }
+      end
+   end
+   if concat then
+      return subiterator(names, nthread)
+   else
+      local iterators = {}
+      for name in names:gmatch('(%S+)') do
+         iterators[name] = subiterator(name, nthread)
+      end
+      return iterators
+   end
+   
 end
+
+local trainiterator = newiterator(opt.train, true, sampler, opt.aug, opt.maxload, opt.nthread)
 local trainsize = trainiterator.execSingle and trainiterator:execSingle('size') or trainiterator:exec('size')
 
-local validiterators = {}
-for name, valid in pairs(config.validdatasets) do
-   local dataset = tnt.TransformDataset{
-            dataset = valid(),
-            transforms = {
-               input = transformsTest.input,
-               target = transformsTest.target
-            }
-         }
-   if opt.shift > 0 then
-      dataset = tnt.ShiftDataset{
-         dataset = dataset,
-         shift = opt.shift,
-         dshift = opt.dshift,
-         setshift = transformsTest.shift
-      }
-   end
-   if opt.batchsize > 1 then
-      dataset = tnt.BatchDataset{
-         dataset = dataset,
-         batchsize = opt.batchsize,
-         merge = function(sample) return sample end,
-      }
-   end
-   validiterators[name] =
-      tnt.DatasetIterator{
-         dataset = dataset,
-         filter = filterbysize
-      }
-end
-
-local testiterators = {}
-for name, test in pairs(config.testdatasets) do
-   local dataset = tnt.TransformDataset{
-            dataset = test(),
-            transforms = {
-               input = transformsTest.input,
-               target = transformsTest.target
-            }
-         }
-   if opt.shift > 0 then
-      dataset = tnt.ShiftDataset{
-         dataset = dataset,
-         shift = opt.shift,
-         dshift = opt.dshift,
-         setshift = transformsTest.shift
-      }
-   end
-   if opt.batchsize > 1 then
-      dataset = tnt.BatchDataset{
-         dataset = dataset,
-         batchsize = opt.batchsize,
-         merge = function(sample) return sample end,
-      }
-   end
-   testiterators[name] =
-      tnt.DatasetIterator{
-         dataset = dataset,
-         filter = filterbysize
-      }
-end
+local validiterators = newiterator(opt.valid, false, nil, false, opt.maxloadvalid, 0)
+local testiterators = newiterator(opt.test, false, nil, false, opt.maxloadtest, 0)
 
 ----------------------------------------------------------------------
 -- Performance meters
@@ -636,12 +498,12 @@ end
 meters.trainedit = tnt.EditDistanceMeter()
 
 meters.validedit = {}
-for name, valid in pairs(config.validdatasets) do
+for name, valid in pairs(validiterators) do
    meters.validedit[name] = tnt.EditDistanceMeter()
 end
 
 meters.testedit = {}
-for name, test in pairs(config.testdatasets) do
+for name, test in pairs(testiterators) do
    meters.testedit[name] = tnt.EditDistanceMeter()
 end
 
@@ -696,7 +558,7 @@ local function status(state)
          stats['isz']/stats['n'],
          stats['tsz']/stats['n'],
          stats['maxtsz'],
-         stats['isz']/opt.dataspecs.samplerate/3600)
+         stats['isz']/opt.samplerate/3600)
    )
    if opt.batchsize > 1 then
       table.insert(
@@ -716,11 +578,12 @@ end
 
 -- best perf so far on valid datasets
 local minerrs = {}
-for name, valid in pairs(config.validdatasets) do
+for name, valid in pairs(validiterators) do
    minerrs[name] = math.huge
 end
 
 local function save(name, network, best)
+   name = name:gsub('/', '#') -- DEBUG: FIXME
    cutorch.synchronizeAll()
    local f = torch.DiskFile(string.format('%s/model-%s.bin', opt.path, name), 'w')
    f:binary()
@@ -947,12 +810,6 @@ local function train(network, criterion, iterator, params, opid)
       meters.bdev:reset()
       meters.loss:reset()
       meters.trainedit:reset()
-
-      -- sort indices (builds batches of similar length)
-      if opt.batchsize > 1 and state.epoch == 1 then
-         local _,itrainsort = torch.sort(trainsort)
-         trainsort:copy(itrainsort)
-      end
    end
 
    engine:train{

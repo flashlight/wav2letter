@@ -10,9 +10,9 @@ local function as(opt, field, typename)
    return opt[field]
 end
 
-local function transforms(opt, config, aug, threadno)
+local function transforms(opt, aug, threadno)
    local transforms = {__shift=0}
-   local usertransforms = config.transforms or {}
+   local usertransforms = {} -- DEBUG: remove!
    threadno = threadno or 0
 
    local samplerate     = as(opt, "samplerate", "number")

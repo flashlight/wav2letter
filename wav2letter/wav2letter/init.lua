@@ -26,6 +26,7 @@ require 'wav2letter.zeronet'
 require 'wav2letter.shiftnet'
 require 'wav2letter.dataparalleltabletable'
 
+require 'wav2letter.numberedfilesdataset'
 require 'wav2letter.shiftdataset'
 require 'wav2letter.batchcriterion'
 require 'wav2letter.batchautosegcriterionc'

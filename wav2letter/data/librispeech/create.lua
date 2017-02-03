@@ -2,8 +2,35 @@
 -- targets are the transcription strings viewed as ByteTensors
 
 local tnt = require 'torchnet'
-
+local sndfile = require 'sndfile'
 require 'lfs'
+
+local function copytoflac(src, dst, check)
+   local f = sndfile.SndFile(src)
+   local i = f:info()
+   assert(i.subformat == 'PCM16')
+   local d = f:readShort(i.frames)
+   f:close()
+   local f = sndfile.SndFile(
+      dst,
+      "w",
+      {
+         samplerate=i.samplerate,
+         format='FLAC',
+         subformat='PCM16',
+         channels=1
+      }
+   )
+   f:writeShort(d)
+   f:close()
+   if check then
+      local g = sndfile.SndFile(dst)
+      local gd = g:readShort(g:info().frames)
+      g:close()
+      gd:add(-1, d)
+      assert(gd:min() == 0 and gd:max() == 0)
+   end
+end
 
 local function parse_speakers_gender(lines)
    local ret = {}
@@ -50,52 +77,47 @@ local function createidx(src, dst)
    )
    print(string.format('| writing %s...', dst))
 
-   local inputidx = tnt.IndexedDatasetWriter{
-      indexfilename = string.format("%s/input.idx", dst),
-      datafilename = string.format("%s/input.bin", dst),
-      type = "byte"
-   }
-
-   local targetidx = tnt.IndexedDatasetWriter{
-      indexfilename = string.format("%s/target.idx", dst),
-      datafilename = string.format("%s/target.bin", dst),
-      type = "byte"
-   }
-
-   local speakeridx = tnt.IndexedDatasetWriter{
-      indexfilename = string.format("%s/speaker.idx", dst),
-      datafilename = string.format("%s/speaker.bin", dst),
-      type = "int"
-   }
-
-   local filenameidx = tnt.IndexedDatasetWriter{
-      indexfilename = string.format("%s/filename.idx", dst),
-      datafilename = string.format("%s/filename.bin", dst),
-      type = "byte"
-   }
-
+   local idx = 0
    for _, filename in pairs(trans) do
       for line in io.lines(filename) do
          local input, lbl = line:match('^(%S+)%s+(.*)$')
          assert(input and lbl)
+         idx = idx + 1
 
-         inputidx:add(string.format('%s%s.flac', filename:gsub('[^/]+$', ''), input))
+         -- wav
+         copytoflac(
+            string.format('%s%s.flac', filename:gsub('[^/]+$', ''), input),
+            string.format('%s/%09d.flac', dst, idx),
+            true
+         )
 
+         -- words
          lbl = lbl:gsub('^%s+', '')
          lbl = lbl:gsub('%s+$', '')
          lbl = lbl:lower()
-         targetidx:add(torch.ByteTensor(torch.ByteStorage():string(lbl)))
+         local f = io.open(string.format('%s/%09d.wrd', dst, idx), 'w')
+         f:write(lbl)
+         f:close()
+
+         -- letters
+         lbl = lbl:gsub(' ', '|'):gsub('(.)', '%1 '):gsub(' $', '')
+         local f = io.open(string.format('%s/%09d.ltr', dst, idx), 'w')
+         f:write(lbl)
+         f:close()
+
+         -- speaker
          local spkr = filename:match('/(%d+)[^/]+$')
-         spkr = tonumber(spkr)
-         speakeridx:add(torch.IntTensor({spkr, gender[spkr]}))
-         filenameidx:add(torch.ByteTensor(torch.ByteStorage():string(input)))
+         spkr = assert(tonumber(spkr)) 
+         local f = io.open(string.format('%s/%09d.spk', dst, idx), 'w')
+         f:write(string.format("%s %s", spkr, gender[spkr]))
+         f:close()
+
+         -- filename
+         local f = io.open(string.format('%s/%09d.fid', dst, idx), 'w')
+         f:write(input)
+         f:close()
       end
    end
-
-   inputidx:close()
-   targetidx:close()
-   filenameidx:close()
-   speakeridx:close()
 end
 
 assert(#arg == 2, string.format('usage: %s <src dir> <dst dir>', arg[0]))

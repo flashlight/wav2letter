@@ -1,3 +1,5 @@
+-- DEBUG: SHOULD BE A TRANSFORM ON INPUT
+
 local tnt = require 'torchnet.env'
 local argcheck = require 'argcheck'
 

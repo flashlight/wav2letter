@@ -97,7 +97,7 @@ data.newsampler =
       local resampleperm = torch.LongTensor()
       local function resample()
          resampleperm:resize(0)
-      end      
+      end
       local sampler =
          threads.safe(
             function(dataset, idx)
@@ -122,7 +122,7 @@ data.namelist = argcheck{
          return list
       end
 }
-   
+
 data.newdataset = argcheck{
    noordered = true,
    {name='path', type='string'},
@@ -197,37 +197,48 @@ data.newdataset = argcheck{
       end
 }
 
-local function filterbysize(sample)
-   -- with opt.shift last one is smaller
-   local input = opt.shift > 0 and sample.input[#sample.input] or sample.input
-   local target = sample.target
-   local isz = opt.batchsize > 1 and input[1]:size(1) or input:size(1)
-   local tsz = opt.batchsize > 1 and target[1]:size(1) or target:size(1)
-   if isz < kw+tsz*dw then
-      return false
-   end
-   if opt.batchsize > 1 then
-      for i = 2, #target do
-         local iszI = input[i]:size(1)
-         local tszI = target[i]:size(1)
-         if iszI < kw+tszI*dw then
-            return false
+data.newfilterbysize = argcheck{
+   noordered = true,
+   {name='kw', type='number'},
+   {name='dw', type='number'},
+   {name='minisz', type='number', default=0},
+   {name='maxisz', type='number', default=math.huge},
+   {name='mintsz', type='number', default=0},
+   {name='maxtsz', type='number', default=math.huge},
+   {name='batchsize', type='number', default=0},
+   {name='shift', type='number', default=0},
+   call =
+      function(kw, dw, minisz, maxisz, mintsz, maxtsz, batchsize, shift)
+         local function check(input, target)
+            local isz = input:size(1)
+            local tsz = target:size(1)
+            if isz < math.max(kw+tsz*dw, minisz) or isz > maxisz then
+               print("I")
+               return false
+            end
+            if tsz < mintsz or tsz > maxtsz then
+               print("T")
+               return false
+            end
+            return true
          end
-         tsz = math.max(tsz, tszI)
-         isz = math.max(isz, iszI)
+
+         return function(sample)
+            -- with opt.shift last one is smaller
+            local input = shift > 0 and sample.input[#sample.input] or sample.input
+            local target = sample.target
+            if batchsize > 0 then
+               for i=1,input:size(1) do
+                  if not check(input[i], target[i]) then
+                     return false
+                  end
+               end
+               return true
+            else
+               return check(input, target)
+            end
+         end
       end
-   end
-   if opt.maxisz > 0 and isz > opt.maxisz then
-      return false
-   end
-   if tsz < opt.mintsz then
-      print("warning ca va peter -- filtered out")
-      return false
-   end
-   if opt.maxtsz > 0 and tsz > opt.maxtsz then
-      return false
-   end
-   return true
-end
+}
 
 return data

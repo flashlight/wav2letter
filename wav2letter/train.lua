@@ -29,7 +29,7 @@ cmd:option('-seed', 1111, 'Manually set RNG seed')
 cmd:option('-progress', false, 'display training progress per epoch')
 cmd:option('-arch', 'default', 'network architecture')
 cmd:option('-archgen', '', 'network architecture generator string')
-cmd:option('-batchsize', 1, 'batchsize')
+cmd:option('-batchsize', 0, 'batchsize')
 cmd:option('-linseg', 0, 'number of linear segmentation iter, if not using -seg')
 cmd:option('-linsegznet', false, 'use fake zero-network with linseg')
 cmd:option('-linlr', -1, 'linear segmentation learning rate (if < 0, use lr)')
@@ -65,9 +65,9 @@ cmd:option('-nstate', 1, 'number of states per label (autoseg only)')
 cmd:option('-msc', false, 'use multi state criterion instead of fcc')
 cmd:option('-ctc', false, 'use ctc criterion for training')
 cmd:option('-garbage', false, 'add a garbage between each target label')
-cmd:option('-maxisz', -1, 'max input size allowed during training')
-cmd:option('-maxtsz', -1, 'max target size allowed during training')
-cmd:option('-mintsz', -1, 'min target size allowed during training')
+cmd:option('-maxisz', math.huge, 'max input size allowed during training')
+cmd:option('-maxtsz', math.huge, 'max target size allowed during training')
+cmd:option('-mintsz', 0, 'min target size allowed during training')
 cmd:option('-reload', '', 'reload a particular model')
 cmd:option('-reloadarg', false, 'reload argument string')
 cmd:option('-continue', '', 'continue a particular model')
@@ -305,11 +305,11 @@ end
 print(string.format('| neural network number of parameters: %d', netutils.size(network)))
 
 local function initCriterion(class, ...)
-   if opt.batchsize > 1 and class == 'AutoSegCriterion' then
+   if opt.batchsize > 0 and class == 'AutoSegCriterion' then
       return nn.BatchAutoSegCriterionC(opt.batchsize, ...)
-   elseif opt.batchsize > 1 and opt.mtcrit then
+   elseif opt.batchsize > 0 and opt.mtcrit then
       return nn.MultiThreadedBatchCriterion(opt.batchsize, {'transitions'}, class, ...)
-   elseif opt.batchsize > 1 then
+   elseif opt.batchsize > 0 then
       return nn.BatchCriterion(opt.batchsize, {'transitions'}, class, ...)
    else
       return nn[class](...)
@@ -395,7 +395,7 @@ local function makeParallel(network, size)
    return _network
 end
 
-assert(not(opt.batchsize > 1 and opt.shift > 0), 'Cannot allow both shifting and batching')
+assert(not(opt.batchsize > 0 and opt.shift > 0), 'Cannot allow both shifting and batching')
 
 if opt.shift > 0 then
    if opt.gpushift then
@@ -448,10 +448,19 @@ local function newiterator(names, concat, sampler, aug, maxload, nthread)
       }
    end
    local function subiterator(names, nthread)
+      local filter = data.newfilterbysize{
+         kw = kw,
+         dw = dw,
+         minisz = opt.minisz,
+         maxisz = opt.maxisz,
+         maxtsz = opt.maxtsz,
+         batchsize = opt.batchsize,
+         shift = opt.shift
+      }
       if nthread == 0 then
          return tnt.DatasetIterator{
             dataset = subdataset(names),
-            filter = filterbysize
+            filter = filter
          }
       else
          return tnt.ParallelDatasetIterator{
@@ -459,6 +468,7 @@ local function newiterator(names, concat, sampler, aug, maxload, nthread)
                function()
                   return subdataset(names)
                end,
+            filter = filter,
             nthread = nthread
          }
       end
@@ -560,7 +570,7 @@ local function status(state)
          stats['maxtsz'],
          stats['isz']/opt.samplerate/3600)
    )
-   if opt.batchsize > 1 then
+   if opt.batchsize > 0 then
       table.insert(
          status,
          string.format("bdev %7.2f", meters.bdev:value()*100)
@@ -735,7 +745,7 @@ local function train(network, criterion, iterator, params, opid)
    end
 
    function engine.hooks.onForward(state)
-      if opt.batchsize > 1 then meters.bdev:add(collectBdev(state.sample)) end
+      if opt.batchsize > 0 then meters.bdev:add(collectBdev(state.sample)) end
       meters.networktimer:stop()
       meters.criteriontimer:resume()
       if state.t % opt.terrsr == 0 then

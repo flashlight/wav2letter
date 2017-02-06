@@ -594,7 +594,9 @@ end
 
 local function save(name, network, best)
    name = name:gsub('/', '#') -- DEBUG: FIXME
-   cutorch.synchronizeAll()
+   if opt.gpu > 0 then
+      cutorch.synchronizeAll()
+   end
    local f = torch.DiskFile(string.format('%s/model-%s.bin', opt.path, name), 'w')
    f:binary()
    f:writeObject{

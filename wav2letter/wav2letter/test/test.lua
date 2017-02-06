@@ -2,7 +2,7 @@ local torch = require 'torch'
 local gtn   = require 'gtn'
 local nn    = require 'nn'
 local utils = require 'wav2letter.utils'
-local tnt = require 'fbtorchnet'
+local tnt = require 'torchnet'
 require 'wav2letter'
 --jac5 fails for 1111, 2222, 3333 with required precision of 1e-2
 torch.manualSeed(80)

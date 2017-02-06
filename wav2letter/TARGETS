@@ -132,6 +132,7 @@ lua_binary(
     name='train',
     srcs=[
         'train.lua',
+        'data.lua',
         'netutils.lua',
         'transforms.lua',
     ]

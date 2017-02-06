@@ -1,11 +1,10 @@
 #include "TH.h"
-#include <omp.h>
 #include <stdint.h>
 #include <float.h>
 
-float asgfwfal(const float *inp_p, const int64_t *target_p,
+float asgfwfal(const float *inp_p, const long *target_p,
                const float *trans_p, double *falacc_p,
-               int64_t *macc_p, int64_t T, int64_t TN, int64_t N)
+               long *macc_p, long T, long TN, long N)
 {
   //fal fw
   falacc_p[0] = inp_p[target_p[0] - 1];
@@ -15,25 +14,25 @@ float asgfwfal(const float *inp_p, const int64_t *target_p,
   double m_p[TN];
   double max[TN];
 
-  for (int64_t i = 0; i < TN; i++)
+  for (long i = 0; i < TN; i++)
   {
     s1i[i] = trans_p[N*(target_p[i]-1) + target_p[i]-1];
-    s2i[i] = trans_p[N*(target_p[i]-1) + target_p[i-1]-1];
+    s2i[i] = (i > 0 ? trans_p[N*(target_p[i]-1) + target_p[i-1]-1] : 0);
   }
 
-  for (int64_t t = 1; t < T; t++)
+  for (long t = 1; t < T; t++)
   {
     double *falacc_tp = falacc_p + (t-1)*TN;
     double *falacc_t  = falacc_p + (t)*TN;
     const float *inp_t  = inp_p + (t)*N;
-    int64_t high = t < TN ? t : TN;
-    int64_t low = T - t < TN ? TN - (T - t) : 1;
+    long high = t < TN ? t : TN;
+    long low = T - t < TN ? TN - (T - t) : 1;
     if (T - t >= TN)
     {
       falacc_t[0] = s1i[0] + falacc_tp[0] + inp_t[target_p[0]-1];
       falacc_t[0] = (float) falacc_t[0];
     }
-    for (int64_t i = low; i < high; i++)
+    for (long i = low; i < high; i++)
     {
       double s1 = s1i[i] + falacc_tp[i];
       double s2 = s2i[i] + falacc_tp[i-1];
@@ -48,9 +47,9 @@ float asgfwfal(const float *inp_p, const int64_t *target_p,
         m_p[i] = s1 - s2;
       }
     }
-    for (int64_t i = low; i < high; i++)
+    for (long i = low; i < high; i++)
       m_p[i] = log(1 + exp(m_p[i]));
-    for (int64_t i = low; i < high; i++)
+    for (long i = low; i < high; i++)
     {
       falacc_t[i] = max[i] + m_p[i] + inp_t[target_p[i]-1];
       falacc_t[i] = (float) falacc_t[i];
@@ -68,10 +67,10 @@ float asgfwfal(const float *inp_p, const int64_t *target_p,
 
 #define expm(x)  exp(-(x))
 
-void asgbwfal(float *gem_p, const int64_t *target_p,
+void asgbwfal(float *gem_p, const long *target_p,
               const double *falacc_p, double *falgacc_p,
               const float *trans_p, float *gtrans_p,
-              int64_t T, int64_t TN, int64_t N,
+              long T, long TN, long N,
               float falscale)
 {
   float s1i[TN];
@@ -79,30 +78,30 @@ void asgbwfal(float *gem_p, const int64_t *target_p,
   float *gtrans1_p[TN];
   float *gtrans2_p[TN];
   float subtrans[TN][2];
-  for (int64_t i = 0; i < TN; i++)
+  for (long i = 0; i < TN; i++)
   {
     subtrans[i][0] = 0;
     subtrans[i][1] = 0;
   }
 
-  for (int64_t i = 0; i < TN; i++)
+  for (long i = 0; i < TN; i++)
   {
     s1i[i] = trans_p[N*(target_p[i]-1) + target_p[i]-1];
-    s2i[i] = trans_p[N*(target_p[i]-1) + target_p[i-1]-1];
+    s2i[i] = (i > 0 ? trans_p[N*(target_p[i]-1) + target_p[i-1]-1] : 0);
     gtrans1_p[i] = gtrans_p + ((target_p[i]-1)*N + (target_p[i]-1));
-    gtrans2_p[i] = gtrans_p + ((target_p[i]-1)*N + (target_p[i-1]-1));
+    gtrans2_p[i] = (i > 0 ? gtrans_p + ((target_p[i]-1)*N + (target_p[i-1]-1)) : 0);
   }
   //bw
   falgacc_p[T*TN-1] = 1;
-  for (int64_t t = T-1; t > 0; t--)
+  for (long t = T-1; t > 0; t--)
   {
     float *gem_t   = gem_p + (t)*N;
     const double *falacc_tp  = falacc_p + (t-1)*TN;
     double *falgacc_t  = falgacc_p + (t)*TN;
     double *falgacc_tp = falgacc_p + (t-1)*TN;
-    int64_t high = t < TN ? t + 1 : TN;
-    int64_t low = T - t < TN ? TN - (T - t) : 0;
-    for (int64_t i = low; i < high; i++)
+    long high = t < TN ? t + 1 : TN;
+    long low = T - t < TN ? TN - (T - t) : 0;
+    for (long i = low; i < high; i++)
     {
       gem_t[target_p[i]-1] += (float) (falscale * falgacc_t[i]);
 
@@ -146,7 +145,7 @@ void asgbwfal(float *gem_p, const int64_t *target_p,
     }
   }
   gem_p[target_p[0]-1] += (float) (falscale * falgacc_p[0]);
-  for (int64_t i = 0; i < TN; i++)
+  for (long i = 0; i < TN; i++)
   {
     gtrans_p[((target_p[i]-1)*N + (target_p[i]-1))] += subtrans[i][0];
     if (i > 0)
@@ -157,25 +156,25 @@ void asgbwfal(float *gem_p, const int64_t *target_p,
 }
 
 
-double asgfwfcc(const float *inp_p, const float *trans_p, int64_t *fccmacc_p, double *fccacc_p, int64_t T, int64_t N)
+double asgfwfcc(const float *inp_p, const float *trans_p, long *fccmacc_p, double *fccacc_p, long T, long N)
 {
   //fcc fw
-  for (int64_t i = 0; i < N; i++)
+  for (long i = 0; i < N; i++)
     fccacc_p[i] = inp_p[i];
 
   double *fccacc_tp;
   double *fccacc_t = fccacc_p;
-  int64_t *fccmacc_t;
-  for (int64_t t = 1; t < T; t++)
+  long *fccmacc_t;
+  for (long t = 1; t < T; t++)
   {
     fccacc_tp = fccacc_p + (t-1)*N;
     fccacc_t  = fccacc_p + (t)*N;
     fccmacc_t = fccmacc_p + (t)*N;
     const float *inp_t  = inp_p + (t)*N;
-    for (int64_t i = 0; i < N; i++)
+    for (long i = 0; i < N; i++)
     {
       double max = -DBL_MAX;
-      for (int64_t j = 0; j < N; j++)
+      for (long j = 0; j < N; j++)
       {
         double z = trans_p[i*N + j] + fccacc_tp[j];
         if (max < z)
@@ -186,7 +185,7 @@ double asgfwfcc(const float *inp_p, const float *trans_p, int64_t *fccmacc_p, do
       }
 
       double sum = 0;
-      for (int64_t j = 0; j < N; j++)
+      for (long j = 0; j < N; j++)
       {
         sum += expm(max - trans_p[i*N + j] - fccacc_tp[j]);
       }
@@ -197,16 +196,16 @@ double asgfwfcc(const float *inp_p, const float *trans_p, int64_t *fccmacc_p, do
   }
 
   double max = -DBL_MAX;
-  for (int64_t i = 0; i < N; i++)
+  for (long i = 0; i < N; i++)
     if (max < fccacc_t[i]) max = fccacc_t[i];
   double sum = 0;
-  for (int64_t i = 0; i < N; i++)
+  for (long i = 0; i < N; i++)
     sum += expm(max - fccacc_t[i]);
   sum = log(sum) + max;
   return (float) sum;
 }
 
-void asgbwfcc(float *gem_p, const int64_t *fccmacc_p, const double *fccacc_p, double *fccgacc_p, const float *trans_p, float *gtrans_p, int64_t T, int64_t N, float fccscale)
+void asgbwfcc(float *gem_p, const long *fccmacc_p, const double *fccacc_p, double *fccgacc_p, const float *trans_p, float *gtrans_p, long T, long N, float fccscale)
 {
   //bw step 1
   const double *fccacc_t   = fccacc_p  + (T-1)*N;
@@ -215,61 +214,61 @@ void asgbwfcc(float *gem_p, const int64_t *fccmacc_p, const double *fccacc_p, do
 
   float *gem_t  = gem_p + (T-1)*N;
   double max = -DBL_MAX;
-  for (int64_t j = 0; j < N; j++)
+  for (long j = 0; j < N; j++)
     if (max < fccacc_t[j]) max = fccacc_t[j];
 
   double sum = 0;
-  for (int64_t j = 0; j < N; j++)
+  for (long j = 0; j < N; j++)
     sum += expm(max - fccacc_t[j]);
 
-  for (int64_t j = 0; j < N; j++)
+  for (long j = 0; j < N; j++)
     fccgacc_t[j] = expm(max - fccacc_t[j]) / sum;
 
-  for (int64_t i = 0; i < N; i++)
+  for (long i = 0; i < N; i++)
   {
     gem_t[i] += (float) (fccgacc_t[i] * fccscale);
   }
 
   //bw
-  for (int64_t t = T-2; t >= 0; t--)
+  for (long t = T-2; t >= 0; t--)
   {
     const double *fccacc_t   = fccacc_p + (t)*N;
     double *fccgacc_t  = fccgacc_p + (t)*N;
     double *fccgacc_tp = fccgacc_p + (t+1)*N;
-    const int64_t *fccmacc_t   = fccmacc_p  + (t+1)*N;
+    const long *fccmacc_t   = fccmacc_p  + (t+1)*N;
     float *gem_t  = gem_p + (t)*N;
 
     double m_m[N*N];
-    for (int64_t i = 0; i < N; i++)
+    for (long i = 0; i < N; i++)
     {
       double max = trans_p[i*N + fccmacc_t[i]] + fccacc_t[fccmacc_t[i]];
       double sum = 0;
-      for (int64_t j = 0; j < N; j++)
+      for (long j = 0; j < N; j++)
       {
         m_m[i*N + j] = expm(max - trans_p[i*N + j] - fccacc_t[j]);
         sum = sum + m_m[i*N + j];
       }
-      for (int64_t j = 0; j < N; j++)
+      for (long j = 0; j < N; j++)
       {
         m_m[i*N + j] = m_m[i*N + j] / sum;
       }
     }
 
-    for (int64_t i = 0; i < N; i++)
+    for (long i = 0; i < N; i++)
     {
-      for (int64_t j = 0; j < N; j++)
+      for (long j = 0; j < N; j++)
         fccgacc_t[i] += m_m[j*N + i] * fccgacc_tp[j];
     }
 
-    for (int64_t i = 0; i < N; i++)
+    for (long i = 0; i < N; i++)
     {
-      for (int64_t j = 0; j < N; j++)
+      for (long j = 0; j < N; j++)
       {
         gtrans_p[j*N + i] += (float) m_m[j*N + i] * fccgacc_tp[j] * fccscale;
       }
     }
 
-    for (int64_t i = 0; i < N; i++)
+    for (long i = 0; i < N; i++)
     {
       gem_t[i] += fccgacc_t[i] * fccscale;
     }
@@ -281,16 +280,16 @@ double falfw(THFloatTensor *input,
               THFloatTensor *trans,
               THDoubleTensor *acc,
               THLongTensor *macc,
-              int64_t T,
-              int64_t N,
-              int64_t TN)
+              long T,
+              long N,
+              long TN)
 {
 
   float *inp_p      = THFloatTensor_data(input);
-  int64_t *target_p = THLongTensor_data(target);
+  long *target_p = THLongTensor_data(target);
   float *trans_p    = THFloatTensor_data(trans);
   double *acc_p  = THDoubleTensor_data(acc);
-  int64_t *macc_p  = THLongTensor_data(macc);
+  long *macc_p  = THLongTensor_data(macc);
 
   return asgfwfal(inp_p, target_p, trans_p, acc_p, macc_p, T, TN, N);
 }
@@ -303,12 +302,12 @@ void falbw(THFloatTensor *input,
               THDoubleTensor *acc,
               THDoubleTensor *gacc,
               float scale,
-              int64_t T,
-              int64_t N,
-              int64_t TN)
+              long T,
+              long N,
+              long TN)
 {
   float *inp_p      = THFloatTensor_data(input);
-  int64_t *target_p = THLongTensor_data(target);
+  long *target_p = THLongTensor_data(target);
   float *trans_p    = THFloatTensor_data(trans);
   float *gem_p      = THFloatTensor_data(gem);
   float *gtrans_p   = THFloatTensor_data(gtrans);
@@ -322,13 +321,13 @@ double fccfw(THFloatTensor *input,
               THFloatTensor *trans,
               THLongTensor *macc,
               THDoubleTensor *acc,
-              int64_t T,
-              int64_t N)
+              long T,
+              long N)
 {
 
   float *inp_p      = THFloatTensor_data(input);
   float *trans_p    = THFloatTensor_data(trans);
-  int64_t *macc_p  = THLongTensor_data(macc);
+  long *macc_p  = THLongTensor_data(macc);
   double *acc_p  = THDoubleTensor_data(acc);
 
   return asgfwfcc(inp_p, trans_p, macc_p, acc_p, T, N);
@@ -342,14 +341,14 @@ void fccbw(THFloatTensor *input,
               THDoubleTensor *acc,
               THDoubleTensor *gacc,
               float scale,
-              int64_t T,
-              int64_t N)
+              long T,
+              long N)
 {
   float *inp_p      = THFloatTensor_data(input);
   float *trans_p    = THFloatTensor_data(trans);
   float *gem_p      = THFloatTensor_data(gem);
   float *gtrans_p   = THFloatTensor_data(gtrans);
-  int64_t *macc_p   = THLongTensor_data(macc);
+  long *macc_p   = THLongTensor_data(macc);
   double *acc_p  = THDoubleTensor_data(acc);
   double *gacc_p = THDoubleTensor_data(gacc);
 
@@ -368,26 +367,26 @@ void asgbatchfw(THFloatTensor **input,
               THFloatTensor  *falscale,
               THFloatTensor  *fccscale,
               THLongTensor  *T,
-              int64_t N,
+              long N,
               THLongTensor  *TN,
               THFloatTensor  *loss,
-              int64_t B)
+              long B)
 {
 
   float *trans_p    = THFloatTensor_data(trans);
   double *falacc_p  = THDoubleTensor_data(falacc);
-  int64_t *falmacc_p = THLongTensor_data(falmacc);
+  long *falmacc_p = THLongTensor_data(falmacc);
   double *falgacc_p = THDoubleTensor_data(falgacc);
   double *fccacc_p  = THDoubleTensor_data(fccacc);
-  int64_t *fccmacc_p = THLongTensor_data(fccmacc);
+  long *fccmacc_p = THLongTensor_data(fccmacc);
   double *fccgacc_p = THDoubleTensor_data(fccgacc);
   float *loss_p     = THFloatTensor_data(loss);
 
   float *falscale_p = THFloatTensor_data(falscale);
   float *fccscale_p = THFloatTensor_data(fccscale);
 
-  int64_t *T_p  = THLongTensor_data(T);
-  int64_t *TN_p = THLongTensor_data(TN);
+  long *T_p  = THLongTensor_data(T);
+  long *TN_p = THLongTensor_data(TN);
 
   int32_t fccacc_offset = THDoubleTensor_size(fccacc, 1) * THDoubleTensor_size(fccacc, 2);
   int32_t fccmacc_offset = THLongTensor_size(fccmacc, 1) * THLongTensor_size(fccmacc, 2);
@@ -403,7 +402,7 @@ void asgbatchfw(THFloatTensor **input,
     int i = ii/2;
     double loss;
     float *inp_p      = THFloatTensor_data(input[i]);
-    int64_t *target_p = THLongTensor_data(target[i]);
+    long *target_p = THLongTensor_data(target[i]);
     if (ii % 2 == 0)
     {
       losss[ii] = asgfwfcc(inp_p,
@@ -443,24 +442,24 @@ void asgbatchbw(THFloatTensor **input,
               THFloatTensor  *falscale,
               THFloatTensor  *fccscale,
               THLongTensor  *T,
-              int64_t N,
+              long N,
               THLongTensor  *TN,
-              int64_t B)
+              long B)
 {
   float *trans_p    = THFloatTensor_data(trans);
   float *falgtrans_p   = THFloatTensor_data(falgtrans);
   float *fccgtrans_p   = THFloatTensor_data(fccgtrans);
   double *falacc_p  = THDoubleTensor_data(falacc);
-  int64_t *falmacc_p = THLongTensor_data(falmacc);
+  long *falmacc_p = THLongTensor_data(falmacc);
   double *falgacc_p = THDoubleTensor_data(falgacc);
   double *fccacc_p  = THDoubleTensor_data(fccacc);
-  int64_t *fccmacc_p = THLongTensor_data(fccmacc);
+  long *fccmacc_p = THLongTensor_data(fccmacc);
   double *fccgacc_p = THDoubleTensor_data(fccgacc);
   float *falgem_p      = THFloatTensor_data(falgem);
   float *fccgem_p      = THFloatTensor_data(fccgem);
 
-  int64_t *T_p  = THLongTensor_data(T);
-  int64_t *TN_p = THLongTensor_data(TN);
+  long *T_p  = THLongTensor_data(T);
+  long *TN_p = THLongTensor_data(TN);
 
   float *falscale_p = THFloatTensor_data(falscale);
   float *fccscale_p = THFloatTensor_data(fccscale);
@@ -479,7 +478,7 @@ void asgbatchbw(THFloatTensor **input,
   {
     int i = ii / 2;
     float *inp_p      = THFloatTensor_data(input[i]);
-    int64_t *target_p = THLongTensor_data(target[i]);
+    long *target_p = THLongTensor_data(target[i]);
     if (ii % 2 == 0)
     {
       asgbwfcc(fccgem_p + i*gem_offset,

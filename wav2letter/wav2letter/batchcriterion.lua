@@ -3,6 +3,7 @@ local BatchCriterion = torch.class('nn.BatchCriterion', 'nn.Criterion')
 --Share elements of table shares with each member of modules
 --by default.
 function BatchCriterion:__init(batchsize, shares, class, ...)
+   self.gradInput = torch.Tensor()
    self.batchsize = batchsize
    local args = {...}
    local crit = nn[class](unpack(args))
@@ -21,11 +22,8 @@ end
 
 function BatchCriterion:updateOutput(input, target)
    self.output = {}
-   for i = 1, #input do
-      if input[i]:numel() > 0 then
-         --print('bc self.modules[' .. i .. '].transitions.:sum() ' .. self.modules[i].transitions:sum())
-         self.output[i] = self.modules[i]:updateOutput(input[i], target[i])
-      end
+   for i = 1, input:size(1) do
+      self.output[i] = self.modules[i]:updateOutput(input[i], target[i])
    end
    return self.output
 end
@@ -33,12 +31,10 @@ end
 function BatchCriterion:viterbi(input)
    self.paths = {}
    self.scores = {}
-   for i = 1, #input do
-      if input[i]:numel() > 0 then
-         local path, score = self.modules[i]:viterbi(input[i])
-         self.paths[i] = path
-         self.scores[i] = score
-      end
+   for i = 1, input:size(1) do
+      local path, score = self.modules[i]:viterbi(input[i])
+      self.paths[i] = path
+      self.scores[i] = score
    end
    return self.paths, self.scores
 end
@@ -52,11 +48,9 @@ function BatchCriterion:zeroGradParameters()
 end
 
 function BatchCriterion:updateGradInput(input, target)
-   self.gradInput = {}
-   for i = 1, #input do
-      if input[i]:numel() > 0 then
-         self.gradInput[i] = self.modules[i]:updateGradInput(input[i], target[i])
-      end
+   self.gradInput:resizeAs(input)
+   for i = 1, input:size(1) do
+      self.gradInput[i] = self.modules[i]:updateGradInput(input[i], target[i])
    end
    return self.gradInput
 end

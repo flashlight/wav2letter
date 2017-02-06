@@ -26,7 +26,7 @@ function BatchAutoSegCriterionC:__init(B, N, isposmax, isnegmax, scale, S)
    self.gtransitions = torch.zeros(B, N, N)
    self.fccgtransitions = torch.zeros(B, N, N)
 
-   self.gradInput = {}
+   self.gradInput = torch.Tensor()
    self.gradInputT = torch.Tensor()
    self.fccgradInputT = torch.Tensor()
    self.falacc     = torch.Tensor():double()
@@ -85,13 +85,7 @@ function BatchAutoSegCriterionC:realloc(T, TN)
 end
 
 function BatchAutoSegCriterionC:getB(input, target)
-   local B = 0
-   for i = 1, #input do
-      if input[i]:numel() > 0 then
-         B = i
-      end
-   end
-   return B
+   return input:size(1)
 end
 
 function BatchAutoSegCriterionC:updateOutput(input, target)
@@ -198,6 +192,7 @@ function BatchAutoSegCriterionC:updateGradInput(input, target)
              B)
    self.gtransitions:add(self.fccgtransitions)
    self.gradInputT:add(self.fccgradInputT)
+   self.gradInput:resizeAs(input)
    for i = 1, B do
       self.gradInput[i] = self.gradInputT[i]:narrow(1, 1, self.Tt[i])
    end

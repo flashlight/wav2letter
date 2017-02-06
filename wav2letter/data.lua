@@ -1,5 +1,6 @@
 local argcheck = require 'argcheck'
 local tnt = require 'torchnet'
+require 'torchnet.sequential'
 local threads = require 'threads'
 require 'wav2letter' -- for numberedfilesdataset
 local data = {}
@@ -28,6 +29,21 @@ local dict39 = {
    epi = "h#",
    q = "h#"
 }
+
+local function batchmerge(sample)
+   local pad = 0
+   local imax = 0
+   local channels
+   for _,input in ipairs(sample.input) do
+      imax = math.max(imax, input:size(1))
+      channels = channels or input:size(2)
+   end
+   local mergeinput = torch.Tensor(#sample.input, imax, channels):fill(0)
+   for i,input in ipairs(sample.input) do
+      mergeinput[i]:narrow(1, 1, input:size(1)):copy(input)
+   end
+   return {input=mergeinput, target=sample.target}
+end
 
 data.dictcollapsephones = argcheck{
    noordered = true,
@@ -131,9 +147,10 @@ data.newdataset = argcheck{
    {name='transforms', type='table', opt=true}, -- <alias>: function
    {name='maxload', type='number', opt=true},
    {name='batch', type='number', opt=true},
+   {name='batchresolution', type='number', opt=true},
    {name='sampler', type='function', opt=true},
    call =
-      function(path, features, names, transforms, maxload, batch, sampler)
+      function(path, features, names, transforms, maxload, batch, batchresolution, sampler)
          if names then
             assert(#names > 0, 'names should be a list of strings')
             if #names == 1 then
@@ -182,7 +199,19 @@ data.newdataset = argcheck{
 
          -- batch it?
          if batch and batch > 0 then
-            error("batch is NYI")
+            dataset = tnt.BatchDataset{
+               dataset = tnt.BucketSortedDataset{
+                  dataset = dataset,
+                  resolution = batchresolution,
+                  samplesize =
+                     function(dataset, idx)
+                        return dataset:get(idx).input:size(1)
+                     end
+
+               },
+               merge = batchmerge,
+               batchsize = batch,
+            }
          end
 
          -- resample it?

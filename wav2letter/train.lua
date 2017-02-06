@@ -444,6 +444,8 @@ local function newiterator(names, concat, sampler, aug, maxload, nthread)
             target = transforms.target
          },
          sampler = sampler,
+         batch = opt.batchsize,
+         batchresolution = opt.samplerate/4, -- 250ms
          maxload = maxload
       }
    end
@@ -518,7 +520,6 @@ for name, test in pairs(testiterators) do
 end
 
 meters.stats = tnt.SpeechStatMeter()
-meters.bdev = tnt.AverageValueMeter{}
 
 local logfile = torch.DiskFile(
    string.format('%s/perf', opt.path),
@@ -570,12 +571,6 @@ local function status(state)
          stats['maxtsz'],
          stats['isz']/opt.samplerate/3600)
    )
-   if opt.batchsize > 0 then
-      table.insert(
-         status,
-         string.format("bdev %7.2f", meters.bdev:value()*100)
-      )
-   end
 
    -- print and log
    status = table.concat(status, " | ")
@@ -645,9 +640,10 @@ local function createProgress(iterator)
 end
 
 local function map(closure, a)
-   if type(a) == 'table' then
-      for k,v in pairs(a) do
-         map(closure, a[k])
+   if opt.batchsize > 0 then
+      local bsz = type(a) == 'table' and #a or a:size(1)
+      for k=1,bsz do
+         closure(a[k])
       end
    else
       closure(a)
@@ -655,32 +651,19 @@ local function map(closure, a)
 end
 
 local function map2(closure, a, b)
-   if type(a) == 'table' then
-      for k,v in pairs(a) do
-         map2(closure, a[k], b[k])
+   if opt.batchsize > 0 then
+      local bsz = type(a) == 'table' and #a or a:size(1)
+      for k=1,bsz do
+         closure(a[k], b[k])
       end
    else
       closure(a, b)
    end
 end
 
-local function collectBdev(sample)
-   local minv = sample.input[1]:size(1)
-   local maxv = minv
-   local meanv = 0
-   for i = 2, #sample.input do
-      minv = math.min(minv, sample.input[i]:size(1))
-      maxv = math.max(maxv, sample.input[i]:size(1))
-      meanv = meanv + sample.input[i]:size(1)
-   end
-   return (maxv - minv) / maxv
-end
-
 local function evalOutput(edit, output, target, transforms)
    local function evl(o, t)
-      if o:numel() > 0 then
-         edit:add(transforms.remap(o), transforms.remap(t))
-      end
+      edit:add(transforms.remap(o), transforms.remap(t))
    end
    map2(evl, evlcriterion:viterbi(output), target)
 end
@@ -714,7 +697,6 @@ local function train(network, criterion, iterator, params, opid)
    local engine = tnt.SGDEngine()
 
    function engine.hooks.onStart(state)
-      meters.bdev:reset()
       meters.loss:reset()
       meters.trainedit:reset()
    end
@@ -747,7 +729,6 @@ local function train(network, criterion, iterator, params, opid)
    end
 
    function engine.hooks.onForward(state)
-      if opt.batchsize > 0 then meters.bdev:add(collectBdev(state.sample)) end
       meters.networktimer:stop()
       meters.criteriontimer:resume()
       if state.t % opt.terrsr == 0 then
@@ -783,7 +764,6 @@ local function train(network, criterion, iterator, params, opid)
          savebestmodels()
 
          -- Reset average value meters (so that we average over opt.psr steps)
-         meters.bdev:reset()
          meters.loss:reset()
          meters.trainedit:reset()
       end
@@ -819,7 +799,6 @@ local function train(network, criterion, iterator, params, opid)
       savebestmodels()
 
       -- reset meters for next readings
-      meters.bdev:reset()
       meters.loss:reset()
       meters.trainedit:reset()
    end

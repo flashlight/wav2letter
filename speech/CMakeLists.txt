@@ -7,6 +7,8 @@ set(CMAKE_MODULE_PATH
 find_package(Torch REQUIRED)
 find_package(FFTW REQUIRED)
 
+include_directories(${FFTW_INCLUDES})
+
 set(src
   init.c
 )
@@ -27,4 +29,4 @@ set(luasrc
 )
 
 add_torch_package(speech "${src}" "${luasrc}")
-# target_link_libraries(beamer ${kenlmlib})
+target_link_libraries(speech ${FFTW_LIBRARIES})

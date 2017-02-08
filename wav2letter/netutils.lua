@@ -25,8 +25,9 @@ netutils.create = argcheck{
    {name="nchannel", type="number"},
    {name="nclass", type="number"},
    {name="lsm", type="boolean"},
+   {name="batchsize", type="number"},
    call =
-      function(specs, gpu, nchannel, nclass, lsm)
+      function(specs, gpu, nchannel, nclass, lsm, batchsize)
          local net = nn.Sequential()
 
          local TemporalConvolution
@@ -41,14 +42,14 @@ netutils.create = argcheck{
          local TanhLinear
          local Linear
          local Dropout
+         local transdims = batchsize > 0 and {2, 3} or {1, 2} -- DEBUG: batch or not batch...
          if gpu > 0 then
             require 'cunn'
---            require 'fbcunn'
             require 'cudnn'
-            cudnn.fastest = true --Much better performance!
+            cudnn.fastest = true -- DEBUG: Much better performance!
             net:add( nn.Copy('torch.FloatTensor', 'torch.CudaTensor', true, true) )
-            net:add( nn.Transpose{1, 2}:cuda() )
-            net:add( nn.View(nchannel, 1, -1):cuda() )
+            net:add( nn.Transpose(transdims):cuda() )
+            net:add( nn.View(nchannel, 1, -1):setNumInputDims(2):cuda() )
 
             function TemporalConvolution(nin, nout, kw, dw)
                return cudnn.SpatialConvolution(nin, nout, kw, 1, dw, 1):cuda()
@@ -175,8 +176,8 @@ netutils.create = argcheck{
                   print("current osz", osz, lisz)
                   assert(lisz == osz, 'layer size mismatch')
                   if gpu > 0 and not hastrans then
-                     net:add( nn.View(osz, -1):cuda() )
-                     net:add( nn.Transpose{1, 2}:cuda() )
+                     net:add( nn.View(osz, -1):setNumInputDims(3):cuda() )
+                     net:add( nn.Transpose(transdims):cuda() )
                      hastrans = true
                   end
                   net:add( Linear(lisz, losz) )
@@ -213,8 +214,8 @@ netutils.create = argcheck{
 
          if gpu > 0 then
             if not hastrans then
-               net:add( nn.View(osz, -1):cuda() )
-               net:add( nn.Transpose{1, 2}:cuda() )
+               net:add( nn.View(osz, -1):setNumInputDims(3):cuda() )
+               net:add( nn.Transpose(transdims):cuda() )
             end
             if haslsm then
                net:add( nn.LogSoftMax():cuda() )

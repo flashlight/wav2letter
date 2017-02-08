@@ -285,7 +285,7 @@ if opt.archgen ~= '' then
    opt.arch = opt.archgen
 end
 opt.netspecs = netutils.readspecs(paths.concat(opt.archdir, opt.arch))
-local network, kw, dw = netutils.create(opt.netspecs, opt.gpu, opt.channels, opt.nclass, opt.lsm)
+local network, kw, dw = netutils.create(opt.netspecs, opt.gpu, opt.channels, opt.nclass, opt.lsm, opt.batchsize)
 local zeronet = nn.ZeroNet(kw, dw, opt.nclass)
 local netcopy = network:clone() -- pristine stateless copy
 opt.kw = kw

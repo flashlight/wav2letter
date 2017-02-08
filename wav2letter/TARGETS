@@ -52,6 +52,8 @@ cpp_library(
     ],
     preprocessor_flags = [
         "-Ideeplearning/projects/wav2letter/wav2letter/utils",
+    ],
+    compiler_flags = [
         "-fopenmp",
     ],
     compiler_specific_flags = {
@@ -79,6 +81,7 @@ lua_library(
         '@/torch/fb/fbcunn:fbcunn',
         '@/torch/oss:speech',
         '@/torch/fb/torchnet:torchnet',
+        '@/torch/fb/torchnet:torchnet-sequential',
         '@/torch/fb/torchnet:torchnet-optim',
         '@/torch/fb/fbtorch:fbtorch',
         '@/torch/fb:gtn',

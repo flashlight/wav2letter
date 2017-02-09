@@ -30,3 +30,17 @@ lua_binary(
     ],
     main_module='convert-arpa',
 )
+
+lua_binary(
+    name='create-isz',
+    srcs=[
+        'create-isz.lua',
+    ],
+    deps=[
+        '@/deeplearning/projects/wav2letter:wav2letter',
+    ],
+    external_deps=[
+        ('torch7', None),
+    ],
+    main_module='create-isz',
+)

@@ -90,6 +90,7 @@ lua_library(
     external_deps=[
         ('torch-argcheck', None),
         ('torch-class', None),
+        ('torch-sndfile', None),
     ],
     base_module='',
 )

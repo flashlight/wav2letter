@@ -2,6 +2,7 @@ local argcheck = require 'argcheck'
 local tnt = require 'torchnet'
 require 'torchnet.sequential'
 local threads = require 'threads'
+local readers = require 'wav2letter.readers'
 require 'wav2letter' -- for numberedfilesdataset
 local data = {}
 local dict39 = {
@@ -185,6 +186,7 @@ data.newdataset = argcheck{
             dataset = tnt.NumberedFilesDataset{
                path = path,
                features = features,
+               names = names,
                maxload = maxload
             }
          end
@@ -199,15 +201,19 @@ data.newdataset = argcheck{
 
          -- batch it?
          if batch and batch > 0 then
+            local iszdataset = data.newdataset{
+               path = path,
+               features = {{name="isz", reader=readers.number{}}},
+               maxload = maxload
+            }
             dataset = tnt.BatchDataset{
                dataset = tnt.BucketSortedDataset{
                   dataset = dataset,
                   resolution = batchresolution,
                   samplesize =
                      function(dataset, idx)
-                        return dataset:get(idx).input:size(1)
+                        return iszdataset:get(idx).isz
                      end
-
                },
                merge = batchmerge,
                batchsize = batch,

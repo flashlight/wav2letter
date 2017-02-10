@@ -51,4 +51,19 @@ readers.tokens = argcheck{
       end
 }
 
+readers.number = argcheck{
+   call =
+      function()
+         return function(filename)
+            local f = assert(
+               io.open(filename),
+               string.format("could not read file <%s>", filename))
+            local number = tonumber(f:read('*line'))
+            assert(number, "parsing error: no number in file")
+            f:close()
+            return number
+         end
+      end
+}
+
 return readers

@@ -22,7 +22,7 @@ end
 netutils.create = argcheck{
    {name="specs", type="string"},
    {name="gpu", type="number"},
-   {name="nchannel", type="number"},
+   {name="channels", type="number"},
    {name="nclass", type="number"},
    {name="lsm", type="boolean"},
    {name="batchsize", type="number"},

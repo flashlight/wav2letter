@@ -150,8 +150,10 @@ data.newdataset = argcheck{
    {name='batch', type='number', opt=true},
    {name='batchresolution', type='number', opt=true},
    {name='sampler', type='function', opt=true},
+   {name='partition', type='number', opt=true},
+   {name='npartition', type='number', opt=true},
    call =
-      function(path, features, names, transforms, maxload, batch, batchresolution, sampler)
+      function(path, features, names, transforms, maxload, batch, batchresolution, sampler, partition, npartition)
          if names then
             assert(#names > 0, 'names should be a list of strings')
             if #names == 1 then
@@ -188,6 +190,19 @@ data.newdataset = argcheck{
                features = features,
                names = names,
                maxload = maxload
+            }
+         end
+
+         -- partition it?
+         if partition and npartition then
+            local partitions = {}
+            for i=1,npartition do
+               partitions[tostring(i)] = math.floor(dataset:size()/npartition)
+            end
+            dataset = tnt.SplitDataset{
+               dataset = dataset,
+               partitions = partitions,
+               initialpartition = "" .. partition
             }
          end
 

@@ -70,8 +70,7 @@ function AutoSegCriterion:updateGradInput(input, target)
 end
 
 function AutoSegCriterion:updateParameters(lr)
-   self.fcc:updateParameters(lr)
-   self.fal:updateParameters(lr)
+   self.transitions:add(-lr, self.gtransitions)
 end
 
 function AutoSegCriterion:parameters()

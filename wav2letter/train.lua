@@ -1,10 +1,7 @@
- require 'torch'
+require 'torch'
 require 'nn'
---require 'fbnn'
---require 'fb.debugger'
 
 local tnt = require 'torchnet'
-local xlua = require 'xlua'
 local threads = require 'threads'
 local data = paths.dofile('data.lua')
 
@@ -24,6 +21,7 @@ cmd:option('-rundir', string.format('%s/local/experiments/speech', os.getenv('HO
 cmd:option('-archdir', string.format('%s/local/arch/speech', os.getenv('HOME')), 'arch root directory')
 cmd:option('-gfsai', false, 'override above paths to gfsai ones')
 cmd:option('-hashdir', false, 'hash experiment directory name')
+cmd:option('-mpi', false, 'use mpi parallelization')
 cmd:option('-outputexample', false, 'write out examples into current directory')
 cmd:option('-seed', 1111, 'Manually set RNG seed')
 cmd:option('-progress', false, 'display training progress per epoch')
@@ -147,8 +145,24 @@ cmd:text()
 local opt = cmd:parse(arg)
 local dbg = {} --debugging information (saved first)
 
-if opt.gpu > 0 then
-   cutorch.setDevice(opt.gpu)
+local mpi
+local mpinn
+local mpirank = 1
+local mpisize = 1
+local function reduce(val)
+   return val
+end
+if opt.mpi then
+   mpi = require 'torchmpi'
+   mpinn = require 'torchmpi.nn'
+   mpinn.setCollectiveImpl(mpi.p2p)
+   mpi.start(opt.gpu > 0)
+   mpirank = mpi.rank()+1
+   mpisize = mpi.size()
+   print(string.format('| MPI #%d/%d', mpirank, mpisize))
+   function reduce(val)
+      return mpi.allreduce_double(val)/mpisize
+   end
 end
 
 local function mkdir(path)
@@ -239,7 +253,9 @@ torch.manualSeed(opt.seed)
 if opt.gpu > 0 then
    require 'cutorch'
    require 'cunn'
-   cutorch.setDevice(opt.gpu)
+   if not opt.mpi then
+      cutorch.setDevice(opt.gpu)
+   end
    cutorch.manualSeedAll(opt.seed)
 end
 
@@ -424,6 +440,12 @@ local sampler, resample = data.newsampler()
 
 local function newiterator(names, concat, sampler, aug, maxload, nthread)
    local function subdataset(names)
+      local partition
+      local npartition
+      if opt.mpi then
+         partition = mpirank
+         npartition = mpisize
+      end
       local data = paths.dofile('data.lua')
       local readers = require 'wav2letter.readers'
       local transforms = paths.dofile('transforms.lua')(opt, aug)
@@ -454,7 +476,9 @@ local function newiterator(names, concat, sampler, aug, maxload, nthread)
          sampler = sampler,
          batch = opt.batchsize,
          batchresolution = opt.samplerate/4, -- 250ms
-         maxload = maxload
+         maxload = maxload,
+         partition = partition,
+         npartition = npartition,
       }
    end
    local function subiterator(names, nthread)
@@ -492,7 +516,7 @@ local function newiterator(names, concat, sampler, aug, maxload, nthread)
       end
       return iterators
    end
-   
+
 end
 
 local trainiterator = newiterator(opt.train, true, sampler, opt.aug, opt.maxload, opt.nthread)
@@ -536,6 +560,7 @@ local logfile = torch.DiskFile(
 
 local function status(state)
    local ERR = opt.words > 0 and 'WER' or 'LER'
+   print(string.format("loss = %g", meters.loss:value()))
    local status = {
       string.format("epoch %4.2f", state.epoch),
       string.format("lr %4.6f", state.lr),
@@ -545,28 +570,28 @@ local function status(state)
       string.format("ms(smp) %4d", meters.sampletimer:value()*1000),
       string.format("ms(net) %4d", meters.networktimer:value()*1000),
       string.format("ms(crt) %4d", meters.criteriontimer:value()*1000),
-      string.format("loss %10.5f", meters.loss:value()),
+      string.format("loss %10.5f", reduce(meters.loss:value())),
    }
    if opt.seg then
       table.insert(
          status,
-         string.format("train ferr %5.2f", meters.trainframeerr:value())
+         string.format("train ferr %5.2f", reduce(meters.trainframeerr:value()))
       )
    end
    table.insert(
       status,
-      string.format('train %s %5.2f', ERR, meters.trainedit:value())
+      string.format('train %s %5.2f', ERR, reduce(meters.trainedit:value()))
    )
    for name, meter in pairs(meters.validedit) do
       table.insert(
          status,
-         string.format('%s %s %5.2f', name, ERR, meter:value())
+         string.format('%s %s %5.2f', name, ERR, reduce(meter:value()))
       )
    end
    for name, meter in pairs(meters.testedit) do
       table.insert(
          status,
-         string.format('%s %s %5.2f', name, ERR, meter:value())
+         string.format('%s %s %5.2f', name, ERR, reduce(meter:value()))
       )
    end
    local stats = meters.stats:value()
@@ -574,19 +599,21 @@ local function status(state)
       status,
       string.format(
          "%03d aisz %03d atsz %03d mtsz %7.2fh",
-         stats['isz']/stats['n'],
-         stats['tsz']/stats['n'],
-         stats['maxtsz'],
-         stats['isz']/opt.samplerate/3600)
+         reduce(stats['isz']/stats['n']),
+         reduce(stats['tsz']/stats['n']),
+         reduce(stats['maxtsz']),
+         reduce(stats['isz']/opt.samplerate/3600))
    )
 
    -- print and log
    status = table.concat(status, " | ")
-   print(status)
-   logfile:seekEnd()
-   logfile:writeString(status)
-   logfile:writeString("\n")
-   logfile:synchronize()
+   if mpirank == 1 then
+      print(status)
+      logfile:seekEnd()
+      logfile:writeString(status)
+      logfile:writeString("\n")
+      logfile:synchronize()
+   end
 end
 
 -- best perf so far on valid datasets
@@ -597,9 +624,6 @@ end
 
 local function save(name, network, best)
    name = name:gsub('/', '#') -- DEBUG: FIXME
-   if opt.gpu > 0 then
-      cutorch.synchronizeAll()
-   end
    local f = torch.DiskFile(string.format('%s/model-%s.bin', opt.path, name), 'w')
    f:binary()
    f:writeObject{
@@ -618,6 +642,10 @@ local function save(name, network, best)
 end
 
 local function savebestmodels()
+   if mpirank ~= 1 then
+      return
+   end
+
    -- save last model
    save("last", network)
 
@@ -639,11 +667,14 @@ end
 
 
 local function createProgress(iterator)
+   local xlua = require 'xlua'
    local N = iterator.execSingle and iterator:execSingle('size') or iterator:exec('size')
    local n = 0
    return function ()
-      n = n + 1
-      xlua.progress(n, N)
+      if mpirank == 1 then
+         n = n + 1
+         xlua.progress(n, N)
+      end
    end
 end
 
@@ -693,10 +724,10 @@ local function test(network, criterion, iterator, edit)
       network = network,
       iterator = iterator
    }
-   if progress then
+   if progress and mpirank == 1 then
       print()
    end
-   return edit:value()
+   return reduce(edit:value())
 end
 
 meters.runtime:reset()
@@ -707,6 +738,10 @@ local function train(network, criterion, iterator, params, opid)
    function engine.hooks.onStart(state)
       meters.loss:reset()
       meters.trainedit:reset()
+      if opt.mpi then
+         mpinn.synchronizeParameters(state.network, true) -- DEBUG: FIXME
+         mpinn.synchronizeParameters(state.criterion, true) -- DEBUG: FIXME
+      end
    end
 
    function engine.hooks.onStartEpoch(state)
@@ -755,6 +790,10 @@ local function train(network, criterion, iterator, params, opid)
    function engine.hooks.onBackward(state)
       applyClamp()
       meters.networktimer:stop()
+      if opt.mpi then
+         mpinn.synchronizeGradients(state.network)
+         mpinn.synchronizeGradients(state.criterion)
+      end
    end
 
    function engine.hooks.onUpdate(state)
@@ -821,12 +860,14 @@ local function train(network, criterion, iterator, params, opid)
    }
 end
 
+local lrnorm = opt.batchsize > 0 and 1/(mpisize*opt.batchsize) or 1/mpisize
+
 if not opt.seg and opt.linseg > 0 then
    train(
       opt.linsegznet and zeronet or network,
       lincriterion,
       trainiterator,
-      {lr=opt.linlr, lrcriterion=opt.linlrcrit, maxepoch=opt.linseg},
+      {lr=opt.linlr*lrnorm, lrcriterion=opt.linlrcrit*lrnorm, maxepoch=opt.linseg},
       1
    )
 end
@@ -845,6 +886,10 @@ train(
    network,
    (opt.ctc and ctccriterion) or (opt.seg and fllcriterion or asgcriterion),
    trainiterator,
-   {lr=opt.lr, lrcriterion=opt.lrcrit, maxepoch=opt.iter},
+   {lr=opt.lr*lrnorm, lrcriterion=opt.lrcrit*lrnorm, maxepoch=opt.iter},
    3
 )
+
+if opt.mpi then
+   mpi.stop()
+end

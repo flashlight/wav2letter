@@ -143,6 +143,7 @@ lua_binary(
     + util.files('config/**/*.lua'),
     deps=[
         ':wav2letter',
+        '@/torch/oss/torchmpi:torchmpi',
     ],
     external_deps=[
         ('torch-sndfile', None),

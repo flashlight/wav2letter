@@ -16,6 +16,7 @@ description = {
 
 dependencies = {
    "torch",
+   "tds",
 }
 
 build = {

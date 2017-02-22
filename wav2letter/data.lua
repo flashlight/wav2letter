@@ -133,7 +133,7 @@ data.namelist = argcheck{
    call =
       function(names)
          local list = {}
-         for name in names:gmatch('(%S+)') do
+         for name in names:gmatch('([^%+]+)') do
             table.insert(list, name)
          end
          return list

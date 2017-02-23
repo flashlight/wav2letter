@@ -73,7 +73,7 @@ cmd:option('-force', false, 'force overwriting experiment')
 cmd:option('-noresample', false, 'do not resample training data')
 cmd:option('-terrsr', 1, 'train err sample rate (default: each example; 0 is skip)')
 cmd:option('-psr', 0, 'perf (statistics) print sample rate (default: only at the end of epochs)')
-cmd:option('-replabel', -1, 'replace up to replabel reptitions by additional classes')
+cmd:option('-replabel', 0, 'replace up to replabel reptitions by additional classes')
 cmd:option('-lsm', false, 'add LogSoftMax layer')
 cmd:option('-tag', '', 'tag this experiment with a particular name (e.g. "hypothesis1")')
 
@@ -86,54 +86,37 @@ cmd:option('-samplerate', 16000, 'sample rate (Hz)')
 cmd:option('-channels', 1, 'number of input channels')
 cmd:option('-dict', 'letters.lst', 'dictionary to use')
 cmd:option('-input', 'flac', 'input feature')
-cmd:option('-target', 'ltr', 'target feature')
+cmd:option('-target', 'ltr', 'target feature [phn, ltr, wrd]')
 
 cmd:text()
 cmd:text('MFCC Options:')
 cmd:option('-mfcc', false, 'use standard htk mfcc features as input')
 cmd:option('-pow', false, 'use standard power spectrum as input')
-cmd:option('-mfcc_mel_floor', 0.0, 'specify optional mfcc mel floor')
-cmd:option('-mfcc_coefs', 13, 'number of mfcc coefficients')
+cmd:option('-mfcccoeffs', 13, 'number of mfcc coefficients')
 cmd:option('-mfsc', false, 'use standard mfsc features as input')
+cmd:option('-melfloor', 0.0, 'specify optional mel floor for mfcc/mfsc/pow')
 
 cmd:text()
 cmd:text('Data Augmentation Options:')
 cmd:option('-aug', false, 'Enable data augmentations')
-cmd:option('-bending', -1, 'Enable pitch bending with given probability')
-cmd:option('-caug', false, 'enable flanger')
-cmd:option('-eaug', false, 'enable chorus and echos')
-cmd:option('-noise', -1, 'Enable addition of white/brown noise with given probability')
-cmd:option('-vaug', false, 'enable companding (may clip!)')
-cmd:option('-saug', -1, 'variance of input speed transformation')
-cmd:option('-saugp', 1.0, 'probability with which input speech transformation is applied')
+cmd:option('-augbendingp', 0, 'Enable pitch bending with given probability')
+cmd:option('-augflangerp', 0, 'enable flanger')
+cmd:option('-augechorusp', 0, 'enable chorus')
+cmd:option('-augechop', 0, 'enable echos')
+cmd:option('-augnoisep', 0, 'enable addition of white/brown noise with given probability')
+cmd:option('-augcompandp', 0, 'enable compand (may clip!)')
+cmd:option('-augspeedp', 0, 'probability with which input speech transformation is applied')
+cmd:option('-augspeed', 0, 'variance of input speed transformation')
 
 cmd:text()
 cmd:text('Timit-Only Options:')
 cmd:option('-seg', false, 'segmentation is given or not')
 cmd:option('-dict39', false, 'dictionary with 39 phonemes mode (training -- always for testing)')
-cmd:option('-discardq', false, 'map q to silence')
 cmd:text()
 
 cmd:text()
-cmd:text('Switchboard-Only Options:')
-cmd:option('-swbst', 'trans', 'switchboard transcription subtype (trans or word)')
-cmd:text()
-
-cmd:text()
-cmd:text('LibriSpeech-Only Options:')
-cmd:option('-lsc100', false, 'use clean 100h of speech')
-cmd:option('-lsc360', false, 'use extra clean 360h of speech')
-cmd:option('-lso500', false, 'use extra other 500h of speech')
-cmd:option('-lfisher', false, 'use fisher')
-cmd:option('-lswb', false, 'use switchboard')
-cmd:option('-lmessenger', false, 'use messenger')
-cmd:option('-l8khz', false, 'downsample data to 8khz (if necessary)')
-cmd:option('-surround', false, 'surround target with spaces')
-cmd:option('-words', 0, 'use words (indicate how many) instead of letters')
-cmd:text()
-
-cmd:text('WSJ-Only Options:')
-cmd:option('-si84', false, 'limit to si84 dataset for training')
+cmd:text('Misc Options:')
+cmd:option('-surround', '', 'surround target with provided label')
 cmd:text()
 
 cmd:text('Input shifting Options:')
@@ -155,8 +138,8 @@ end
 if opt.mpi then
    mpi = require 'torchmpi'
    mpinn = require 'torchmpi.nn'
+   mpi.start(opt.gpu > 0, true)
    mpinn.setCollectiveImpl(mpi.p2p)
-   mpi.start(opt.gpu > 0)
    mpirank = mpi.rank()+1
    mpisize = mpi.size()
    print(string.format('| MPI #%d/%d', mpirank, mpisize))
@@ -273,7 +256,7 @@ end
 
 if opt.replabel > 0 then
    for i=1,opt.replabel do
-      data.dictadd{dictionary=dict, name=string.format("%d", opt.replabel-i+1)} -- DEBUG: reverse for now
+      data.dictadd{dictionary=dict, name=string.format("R%d", i)}
    end
 end
 
@@ -304,7 +287,7 @@ opt.netspecs = netutils.readspecs(paths.concat(opt.archdir, opt.arch))
 local network, kw, dw = netutils.create{
    specs = opt.netspecs,
    gpu = opt.gpu,
-   channels = (opt.mfsc and 40 ) or ((opt.pow and 257 ) or (opt.mfcc and opt.mfcc_coefs*3 or opt.channels)), -- DEBUG: UGLY
+   channels = (opt.mfsc and 40 ) or ((opt.pow and 257 ) or (opt.mfcc and opt.mfcccoeffs*3 or opt.channels)), -- DEBUG: UGLY
    nclass = #dict,
    lsm = opt.lsm,
    batchsize = opt.batchsize
@@ -431,8 +414,11 @@ if opt.shift > 0 then
    network = nn.ShiftNet(network, opt.shift, opt.gpushift)
 end
 
-local transformsTrain = paths.dofile('transforms.lua')(opt, opt.aug)
-local transformsTest = paths.dofile('transforms.lua')(opt, false)
+local transforms = paths.dofile('transforms.lua')
+local remaplabels = transforms.remap{
+   uniq = true,
+   replabel = opt.replabel > 0 and {n=opt.replabel, dict=dict} or nil
+}
 
 local trainiterator
 
@@ -448,7 +434,7 @@ local function newiterator(names, concat, sampler, aug, maxload, nthread)
       end
       local data = paths.dofile('data.lua')
       local readers = require 'wav2letter.readers'
-      local transforms = paths.dofile('transforms.lua')(opt, aug)
+      local transforms = paths.dofile('transforms.lua')
       return data.newdataset{
          path = opt.datadir,
          names = data.namelist(names),
@@ -470,8 +456,42 @@ local function newiterator(names, concat, sampler, aug, maxload, nthread)
             },
          },
          transforms = {
-            input = transforms.input,
-            target = transforms.target
+            input = transforms.input{
+               aug = opt.aug and {
+                  samplerate = opt.samplerate,
+                  bendingp = opt.augbendingp,
+                  speedp = opt.augspeedp,
+                  speed = opt.augspeed,
+                  chorusp = opt.chorusp,
+                  echop = opt.echop,
+                  compandp = opt.compandp,
+                  flangerp = opt.flangerp,
+                  noisep = opt.noisep,
+                  threadid = __threadid
+                           } or nil,
+               mfcc = opt.mfcc and {
+                  samplerate = opt.samplerate,
+                  coeffs = opt.mfcccoeffs,
+                  melfloor = opt.melfloor
+                            } or nil,
+               mfsc = opt.mfsc and {
+                  samplerate = opt.samplerate,
+                  melfloor = opt.melfloor
+                            } or nil,
+               pow = opt.pow and {
+                  samplerate = opt.samplerate,
+                  melfloor = opt.melfloor
+                           } or nil,
+               normmax = opt.inormmax,
+               normloc = opt.inormloc and {kw=opt.inkw, dw=opt.indw, noisethreshold=opt.innt} or nil,
+               norm = not opt.inormax and not opt.inormloc,
+               pad = {size=kw/2, value=0},
+            },
+            target = transforms.target{
+               surround = opt.surround ~= '' and assert(dict[opt.surround], 'invalid surround label') or nil,
+               replabel = opt.replabel > 0 and {n=opt.replabel, dict=dict} or nil,
+               uniq = true,
+            }
          },
          sampler = sampler,
          batch = opt.batchsize,
@@ -559,8 +579,7 @@ local logfile = torch.DiskFile(
 )
 
 local function status(state)
-   local ERR = opt.words > 0 and 'WER' or 'LER'
-   print(string.format("loss = %g", meters.loss:value()))
+   local ERR = opt.target:sub(1, 1):upper() .. 'ER'
    local status = {
       string.format("epoch %4.2f", state.epoch),
       string.format("lr %4.6f", state.lr),
@@ -700,9 +719,9 @@ local function map2(closure, a, b)
    end
 end
 
-local function evalOutput(edit, output, target, transforms)
+local function evalOutput(edit, output, target, remaplabels)
    local function evl(o, t)
-      edit:add(transforms.remap(o), transforms.remap(t))
+      edit:add(remaplabels(o), remaplabels(t))
    end
    map2(evl, evlcriterion:viterbi(output), target)
 end
@@ -718,7 +737,7 @@ local function test(network, criterion, iterator, edit)
          progress()
       end
       collectgarbage()
-      evalOutput(edit, state.network.output, state.sample.target, transformsTest)
+      evalOutput(edit, state.network.output, state.sample.target, remaplabels)
    end
    engine:test{
       network = network,
@@ -775,10 +794,10 @@ local function train(network, criterion, iterator, params, opid)
       meters.networktimer:stop()
       meters.criteriontimer:resume()
       if state.t % opt.terrsr == 0 then
-         evalOutput(meters.trainedit, state.network.output, state.sample.target, transformsTrain)
+         evalOutput(meters.trainedit, state.network.output, state.sample.target, remaplabels)
       end
       if trainframeerr then
-         evalOutput(meters.trainframeerr, state.network.output, state.sample.target, transformsTrain)
+         evalOutput(meters.trainframeerr, state.network.output, state.sample.target, remaplabels)
       end
    end
 

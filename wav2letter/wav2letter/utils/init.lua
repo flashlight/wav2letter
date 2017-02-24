@@ -88,8 +88,8 @@ for _, Real in ipairs{'Byte', 'Short', 'Int', 'Long'} do
 void THRealTensor_reduceMostFrequentIndex(THRealTensor *dst, THRealTensor *src, int dimension, int N);
 long THRealTensor_editdistance(THRealTensor *s, THRealTensor *t);
 void THRealTensor_uniq(THRealTensor *dst, THRealTensor *src);
-void THRealTensor_replabel(THRealTensor *dst, THRealTensor *src, int replabel, int nclass);
-void THRealTensor_invreplabel(THRealTensor *dst, THRealTensor *src, int replabel, int nclass);
+void THRealTensor_replabel(THRealTensor *dst, THRealTensor *src, int replabel, THRealTensor *replabels);
+void THRealTensor_invreplabel(THRealTensor *dst, THRealTensor *src, int replabel, THRealTensor *replabels);
 ]]
    cdef = cdef:gsub('Real', Real)
    ffi.cdef(cdef)
@@ -135,13 +135,13 @@ void THRealTensor_invreplabel(THRealTensor *dst, THRealTensor *src, int replabel
    utils.replabel = argcheck{
       {name="src", type=RealTensorReal},
       {name="rep", type='number'},
-      {name="nclass", type='number'},
+      {name="replabels", type=RealTensorReal},
       {name="dst", type=RealTensorReal, opt=true},
       overload = utils.replabel,
       call =
-         function(src, rep, nclass, dst)
+         function(src, rep, replabels, dst)
             dst = dst or RealTensor()
-            C["TH" .. Real .. "Tensor_replabel"](dst:cdata(), src:cdata(), rep, nclass)
+            C["TH" .. Real .. "Tensor_replabel"](dst:cdata(), src:cdata(), rep, replabels:cdata())
             return dst
          end
    }
@@ -149,13 +149,13 @@ void THRealTensor_invreplabel(THRealTensor *dst, THRealTensor *src, int replabel
    utils.invreplabel = argcheck{
       {name="src", type=RealTensorReal},
       {name="rep", type='number'},
-      {name="nclass", type='number'},
+      {name="replabels", type=RealTensorReal},
       {name="dst", type=RealTensorReal, opt=true},
       overload = utils.invreplabel,
       call =
-         function(src, rep, nclass, dst)
+         function(src, rep, replabels, dst)
             dst = dst or RealTensor()
-            C["TH" .. Real .. "Tensor_invreplabel"](dst:cdata(), src:cdata(), rep, nclass)
+            C["TH" .. Real .. "Tensor_invreplabel"](dst:cdata(), src:cdata(), rep, replabels:cdata())
             return dst
          end
    }

@@ -251,12 +251,12 @@ if opt.dict39 then
 end
 
 if opt.ctc or opt.garbage then
-   data.dictadd{dictionary=dict, name="#"} -- blank
+   data.dictadd{dictionary=dict, token="#"} -- blank
 end
 
 if opt.replabel > 0 then
    for i=1,opt.replabel do
-      data.dictadd{dictionary=dict, name=string.format("R%d", i)}
+      data.dictadd{dictionary=dict, token=string.format("%d", i)}
    end
 end
 

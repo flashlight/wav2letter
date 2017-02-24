@@ -253,7 +253,7 @@ transforms.target = argcheck{
             }(replabel)
             local replabels = torch.LongTensor(n)
             for i=1,n do
-               replabels[i] = assert(dict['R' .. i], 'label does not exist: R' .. i)
+               replabels[i] = assert(dict[tostring(i)], 'label does not exist: ' .. i)
             end
             table.insert(
                transforms,
@@ -329,7 +329,7 @@ transforms.remap = argcheck{
             }(replabel)
             local replabels = torch.LongTensor(n)
             for i=1,n do
-               replabels[i] = assert(dict['R' .. i], 'label does not exist: R' .. i)
+               replabels[i] = assert(dict[tostring(i)], 'label does not exist: ' .. i)
             end
             table.insert(
                transforms,

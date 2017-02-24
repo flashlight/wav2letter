@@ -49,15 +49,17 @@ void THTensor_(uniq)(THTensor *dst, THTensor *src)
   THTensor_(resize1d)(dst, m);
 }
 
-void THTensor_(replabel)(THTensor *dst, THTensor *src, int replabel, int nclass)
+void THTensor_(replabel)(THTensor *dst, THTensor *src, int replabel, THTensor *replabels)
 {
   THArgCheck(THTensor_(nDimension)(src) == 1, 1, "src should have only one dimension (be a vector)");
-  THArgCheck(nclass > replabel, 1, "There should be more classes than replabel");
+  THArgCheck(THTensor_(nDimension)(replabels) == 1, 3, "replabels should be a 1d tensor");
+  THArgCheck(THTensor_(size)(replabels, 0) == replabel, 3, "replabels should be of size <replabel>");
 
   long n = src->size[0];
   THTensor_(resize1d)(dst, n);
   real *dst_p = THTensor_(data)(dst);
   real *src_p = THTensor_(data)(src);
+  real *replabels_p = THTensor_(data)(replabels);
 
   dst_p[0] = src_p[0];
   long m = 1;
@@ -66,7 +68,7 @@ void THTensor_(replabel)(THTensor *dst, THTensor *src, int replabel, int nclass)
     if(src_p[i] != dst_p[m-1])
     {
       if (s > 0)
-        dst_p[m++] = nclass - (s - 1);
+        dst_p[m++] = replabels_p[s - 1];
       s = 0;
       dst_p[m++] = src_p[i];
     }
@@ -75,27 +77,36 @@ void THTensor_(replabel)(THTensor *dst, THTensor *src, int replabel, int nclass)
         s += 1;
   }
   if (s > 0)
-    dst_p[m++] = nclass - (s - 1);
+    dst_p[m++] = replabels_p[s - 1];
 
   THTensor_(resize1d)(dst, m);
 }
 
-void THTensor_(invreplabel)(THTensor *dst, THTensor *src, int replabel, int nclass)
+void THTensor_(invreplabel)(THTensor *dst, THTensor *src, int replabel, THTensor *replabels)
 {
   THArgCheck(THTensor_(nDimension)(src) == 1, 1, "src should have only one dimension (be a vector)");
+  THArgCheck(THTensor_(nDimension)(replabels) == 1, 3, "replabels should be a 1d tensor");
+  THArgCheck(THTensor_(size)(replabels, 0) == replabel, 3, "replabels should be of size <replabel>");
   long n = src->size[0];
   THTensor_(resize1d)(dst, (replabel + 1)*n);
   real *dst_p = THTensor_(data)(dst);
   real *src_p = THTensor_(data)(src);
+  real *replabels_p = THTensor_(data)(replabels);
   long m = 0;
-  long j = 0;
-  long top = nclass - replabel; //Highest actual class
   dst_p[m++] = src_p[0];
   for(long i = 1; i < n; i++)
   {
-    if (src_p[i] > top)
+    real src_i = src_p[i];
+    long s = 0;
+    for(long j = 0; j < replabel; j++) {
+      if(src_i == replabels_p[j]) {
+        s = j+1;
+        break;
+      }
+    }
+    if(s > 0)
     {
-      for (j = 0; j <= nclass - src_p[i]; j++)
+      for(long j = 0; j < s; j++)
         dst_p[m++] = src_p[i-1];
     }
     else

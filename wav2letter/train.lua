@@ -118,6 +118,7 @@ cmd:text()
 cmd:text()
 cmd:text('Misc Options:')
 cmd:option('-surround', '', 'surround target with provided label')
+cmd:option('-sqnorm', false, 'use square-root when normalizing lr/batchsize/etc...')
 cmd:text()
 
 cmd:text('Input shifting Options:')
@@ -301,11 +302,11 @@ opt.dw = dw
 local scale
 if opt.onorm == 'input' then
    function scale(input, target)
-      return 1/input:size(1)
+      return opt.sqnorm and math.sqrt(1/input:size(1)) or 1/input:size(1)
    end
 elseif opt.onorm == 'target' then
    function scale(input, target)
-      return 1/target:size(1)
+      return opt.sqnorm and math.sqrt(1/target:size(1)) or 1/target:size(1)
    end
 elseif opt.onorm ~= 'none' then
    error('invalid onorm option')
@@ -853,6 +854,7 @@ local function train(network, criterion, iterator, params, opid)
 end
 
 local lrnorm = opt.batchsize > 0 and 1/(mpisize*opt.batchsize) or 1/mpisize
+lrnorm = opt.sqnorm and math.sqrt(lrnorm) or lrnorm
 
 if not opt.seg and opt.linseg > 0 then
    train(

@@ -140,6 +140,25 @@ data.namelist = argcheck{
       end
 }
 
+data.label2string = argcheck{
+   {name='labels', type='torch.LongTensor'},
+   {name='dict', type='table'},
+   {name='spacing', type='string', default=''},
+   call =
+      function(tensor, dict, spc)
+         local str = {}
+         assert(tensor:nDimension() == 1, '1d tensor expected')
+         for i=1,tensor:size(1) do
+            local lbl = dict[tensor[i]]
+            if not lbl then
+               error(string.format("unknown label <%s>", tensor[i]))
+            end
+            table.insert(str, lbl)
+         end
+         return table.concat(str, spc)
+      end
+}
+
 data.newdataset = argcheck{
    noordered = true,
    {name='path', type='string'},

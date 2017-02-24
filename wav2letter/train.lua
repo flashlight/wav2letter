@@ -4,6 +4,7 @@ require 'nn'
 local tnt = require 'torchnet'
 local threads = require 'threads'
 local data = paths.dofile('data.lua')
+local log = paths.dofile('log.lua')
 
 require 'wav2letter'
 
@@ -573,65 +574,37 @@ end
 
 meters.stats = tnt.SpeechStatMeter()
 
+
 local logfile = torch.DiskFile(
+   string.format('%s/log', opt.path),
+   (opt.continue == '') and "w" or "rw"
+)
+local perffile = torch.DiskFile(
    string.format('%s/perf', opt.path),
    (opt.continue == '') and "w" or "rw"
 )
+do
+   log.print2file{file=logfile, date=true, stdout=true}
+   local _, header = log.status{meters=meters, state=state, separator=" | ", opt=opt, reduce=reduce, date=true}
+   perffile:seekEnd()
+   perffile:writeString('# ' .. header .. '\n')
+   perffile:synchronize()
+end
 
-local function status(state)
-   local ERR = opt.target:sub(1, 1):upper() .. 'ER'
-   local status = {
-      string.format("epoch %4.2f", state.epoch),
-      string.format("lr %4.6f", state.lr),
-      string.format("lrcriterion %4.6f", state.lrcriterion),
-      string.format("runtime(h) %4.2f", meters.runtime:value()/3600),
-      string.format("ms(bch) %4d", meters.timer:value()*1000),
-      string.format("ms(smp) %4d", meters.sampletimer:value()*1000),
-      string.format("ms(net) %4d", meters.networktimer:value()*1000),
-      string.format("ms(crt) %4d", meters.criteriontimer:value()*1000),
-      string.format("loss %10.5f", reduce(meters.loss:value())),
-   }
-   if opt.seg then
-      table.insert(
-         status,
-         string.format("train ferr %5.2f", reduce(meters.trainframeerr:value()))
-      )
-   end
-   table.insert(
-      status,
-      string.format('train %s %5.2f', ERR, reduce(meters.trainedit:value()))
-   )
-   for name, meter in pairs(meters.validedit) do
-      table.insert(
-         status,
-         string.format('%s %s %5.2f', name, ERR, reduce(meter:value()))
-      )
-   end
-   for name, meter in pairs(meters.testedit) do
-      table.insert(
-         status,
-         string.format('%s %s %5.2f', name, ERR, reduce(meter:value()))
-      )
-   end
-   local stats = meters.stats:value()
-   table.insert(
-      status,
-      string.format(
-         "%03d aisz %03d atsz %03d mtsz %7.2fh",
-         reduce(stats['isz']/stats['n']),
-         reduce(stats['tsz']/stats['n']),
-         reduce(stats['maxtsz']),
-         reduce(stats['isz']/opt.samplerate/3600))
-   )
-
-   -- print and log
-   status = table.concat(status, " | ")
+local function logstatus(meters, state)
+   local msgl = log.status{meters=meters, state=state, verbose=true, separator=" | ", opt=opt, reduce=reduce}
+   local msgp = log.status{meters=meters, state=state, opt=opt, reduce=reduce, date=true}
    if mpirank == 1 then
-      print(status)
+      print(msgl)
       logfile:seekEnd()
-      logfile:writeString(status)
+      logfile:writeString(msgl)
       logfile:writeString("\n")
       logfile:synchronize()
+
+      perffile:seekEnd()
+      perffile:writeString(msgp)
+      perffile:writeString("\n")
+      perffile:synchronize()
    end
 end
 
@@ -824,7 +797,7 @@ local function train(network, criterion, iterator, params, opid)
          end
 
          -- print status
-         status(state)
+         logstatus(meters, state)
 
          -- save last and best models
          savebestmodels()
@@ -859,7 +832,7 @@ local function train(network, criterion, iterator, params, opid)
       end
 
       -- print status
-      status(state)
+      logstatus(meters, state)
 
       -- save last and best models
       savebestmodels()

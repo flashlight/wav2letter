@@ -32,9 +32,9 @@ lua_binary(
 )
 
 lua_binary(
-    name='create-isz',
+    name='create-sz',
     srcs=[
-        'create-isz.lua',
+        'create-sz.lua',
     ],
     deps=[
         '@/deeplearning/projects/wav2letter:wav2letter',
@@ -42,5 +42,5 @@ lua_binary(
     external_deps=[
         ('torch7', None),
     ],
-    main_module='create-isz',
+    main_module='create-sz',
 )

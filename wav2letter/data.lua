@@ -119,7 +119,7 @@ data.newsampler =
          threads.safe(
             function(dataset, idx)
                if resampleperm:nDimension() == 0 then
-                  print(string.format('# resampling: size=%d', dataset:size()))
+                  print(string.format('| resampling: size=%d', dataset:size()))
                   resampleperm:randperm(dataset:size())
                end
                return resampleperm[idx]
@@ -159,110 +159,134 @@ data.label2string = argcheck{
       end
 }
 
-data.newdataset = argcheck{
-   noordered = true,
-   {name='path', type='string'},
-   {name='features', type='table'}, -- {name= [alias=] reader=}
-   {name='names', type='table', opt=true}, -- concat?
-   {name='transforms', type='table', opt=true}, -- <alias>: function
-   {name='maxload', type='number', opt=true},
-   {name='batch', type='number', opt=true},
-   {name='batchresolution', type='number', opt=true},
-   {name='sampler', type='function', opt=true},
-   {name='partition', type='number', opt=true},
-   {name='npartition', type='number', opt=true},
+data.transform = argcheck{
+   {name='dataset', type='tnt.Dataset'},
+   {name='transforms', type='table', opt=true},
    call =
-      function(path, features, names, transforms, maxload, batch, batchresolution, sampler, partition, npartition)
-         if names then
-            assert(#names > 0, 'names should be a list of strings')
-            if #names == 1 then
-               path = paths.concat(path, names[1])
-               names = nil
-            end
-         end
-
-         local dataset
-         if names then -- concat several datasets?
-            local datasets = {}
-            for _, name in ipairs(names) do
-               table.insert(
-                  datasets,
-                  data.newdataset{
-                     path = paths.concat(path, name),
-                     features = features,
-                     transforms = transforms,
-                  }
-               )
-            end
-            dataset = tnt.ConcatDataset{datasets = datasets}
-
-            -- brutal cut (one could allow pre-shuffling)
-            if maxload and maxload > 0 then
-               dataset = tnt.ResampleDataset{
-                  dataset = dataset,
-                  size = maxload
-               }
-            end
-         else -- read one dataset
-            dataset = tnt.NumberedFilesDataset{
-               path = path,
-               features = features,
-               names = names,
-               maxload = maxload
-            }
-         end
-
-         -- partition it?
-         if partition and npartition then
-            local partitions = {}
-            for i=1,npartition do
-               partitions[tostring(i)] = math.floor(dataset:size()/npartition)
-            end
-            dataset = tnt.SplitDataset{
-               dataset = dataset,
-               partitions = partitions,
-               initialpartition = "" .. partition
-            }
-         end
-
-         -- transform it?
+      function(dataset, transforms)
          if transforms then
-            dataset = tnt.TransformDataset{
+            return tnt.TransformDataset{
                dataset = dataset,
                transforms = transforms
             }
+         else
+            return dataset
          end
+      end
+}
 
-         -- batch it?
-         if batch and batch > 0 then
-            local iszdataset = data.newdataset{
-               path = path,
-               features = {{name="isz", reader=readers.number{}}},
-               maxload = maxload
+data.partition = argcheck{
+   {name='dataset', type='tnt.Dataset'},
+   {name='n', type='number'},
+   {name='id', type='number'},
+   call =
+      function(dataset, n, id)
+         assert(id >= 1 and id <= n, "invalid id range")
+         if n == 1 then
+            return dataset
+         else
+            local partitions = {}
+            for i=1,n do
+               partitions[tostring(i)] = math.floor(dataset:size()/n)
+            end
+            return tnt.SplitDataset{
+               dataset = dataset,
+               partitions = partitions,
+               initialpartition = "" .. id
             }
-            dataset = tnt.BatchDataset{
+         end
+      end
+}
+
+data.resample = argcheck{
+   {name='dataset', type='tnt.Dataset'},
+   {name='sampler', type='function', opt=true},
+   {name='size', type='number', opt=true},
+   call =
+      function(dataset, sampler, size)
+         if sampler then
+            return tnt.ResampleDataset{
+               dataset = dataset,
+               sampler = sampler,
+               size = size
+            }
+         else
+            return dataset
+         end
+      end
+}
+
+data.filtersizesampler = argcheck{
+   {name='sizedataset', type='tnt.Dataset'},
+   {name='filter', type='function'},
+   call =
+      function(sizedataset, filter)
+         local perm = torch.zeros(sizedataset:size())
+         local size = 0
+         for i=1,sizedataset:size() do
+            local sz = sizedataset:get(i)
+            assert(sz.isz and sz.tsz, 'sizedataset:get() should return {isz=, tsz=}')
+            if filter(sz.isz, sz.tsz) then
+               size = size + 1
+               perm[size] = i
+            end
+         end
+         print(string.format("| %d/%d filtered samples", size, sizedataset:size()))
+         return
+            function(_, idx)
+               return perm[idx]
+            end, size
+      end
+}
+
+data.mapconcat = argcheck{
+   {name='closure', type='function'},
+   {name='args', type='table'},
+   {name='maxload', type='number', opt=triue},
+   call =
+      function(closure, args, maxload)
+         local datasets = {}
+         for i, arg in ipairs(args) do
+            datasets[i] = closure(arg)
+         end
+         local dataset = tnt.ConcatDataset{datasets = datasets}
+         -- brutal cut (one could allow pre-shuffling)
+         if maxload and maxload > 0 then
+            dataset = tnt.ResampleDataset{
+               dataset = dataset,
+               size = maxload
+            }
+         end
+         return dataset
+      end
+}
+
+data.batch = argcheck{
+   {name='dataset', type='tnt.Dataset'},
+   {name='sizedataset', type='tnt.Dataset'},
+   {name='batchsize', type='number'},
+   {name='batchresolution', type='number'},
+   call =
+      function(dataset, sizedataset, batchsize, batchresolution)
+         assert(dataset:size() == sizedataset:size(), 'dataset and sizedataset do not have the same size')
+         if batchsize <= 0 then
+            return dataset
+         else
+            return tnt.BatchDataset{
                dataset = tnt.BucketSortedDataset{
                   dataset = dataset,
                   resolution = batchresolution,
                   samplesize =
                      function(dataset, idx)
-                        return iszdataset:get(idx).isz
+                        local isz = sizedataset:get(idx).isz
+                        assert(type(isz) == 'number', 'isz size feature nil or not a number')
+                        return isz
                      end
                },
+               batchsize = batchsize,
                merge = batchmerge,
-               batchsize = batch,
             }
          end
-
-         -- resample it?
-         if sampler then
-            dataset = tnt.ResampleDataset{
-               dataset = dataset,
-               sampler = sampler
-            }
-         end
-
-         return dataset
       end
 }
 
@@ -278,34 +302,14 @@ data.newfilterbysize = argcheck{
    {name='shift', type='number', default=0},
    call =
       function(kw, dw, minisz, maxisz, mintsz, maxtsz, batchsize, shift)
-         local function check(input, target)
-            local isz = input:size(1)
-            local tsz = target:size(1)
+         return function(isz, tsz)
             if isz < math.max(kw+tsz*dw, minisz) or isz > maxisz then
-               print("I")
                return false
             end
             if tsz < mintsz or tsz > maxtsz then
-               print("T")
                return false
             end
             return true
-         end
-
-         return function(sample)
-            -- with opt.shift last one is smaller
-            local input = shift > 0 and sample.input[#sample.input] or sample.input
-            local target = sample.target
-            if batchsize > 0 then
-               for i=1,input:size(1) do
-                  if not check(input[i], target[i]) then
-                     return false
-                  end
-               end
-               return true
-            else
-               return check(input, target)
-            end
          end
       end
 }

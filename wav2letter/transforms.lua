@@ -20,6 +20,7 @@ transforms.input = argcheck{
    call =
       function(aug, mfcc, mfsc, pow, normmax, normloc, norm, pad)
          local transforms = {}
+         local sizetransforms = {}
 
          if aug then
             local samplerate, bendingp, speedp, speed, chorusp, echop, compandp, flangerp, noisep, threadid = argcheck{
@@ -111,6 +112,15 @@ transforms.input = argcheck{
                   local f = sndfile.SndFile(tmp_wavf_res)
                   local res = f:readFloat(f:info().frames)
                   os.remove(tmp_wavf_res)
+
+                  -- make sure one does not try to use isz in this case
+                  table.insert(
+                     sizetransforms,
+                     function(input)
+                        error('NYI')
+                     end
+                  )
+
                   return res
                end
             )
@@ -123,15 +133,28 @@ transforms.input = argcheck{
                {name="coeffs", type="number"},
                {name="melfloor", type="number"},
             }(mfcc)
+            -- could be options
+            local tw = 25
+            local ts = 10
+            local M = 20
+            local L = 22
+            table.insert(
+               sizetransforms,
+               function(isz)
+                  local fsize  = torch.round(1e-3*tw*samplerate)
+                  local stride = torch.round(1e-3*ts*samplerate)
+                  return math.floor((isz-fsize)/stride+1)
+               end
+            )
             table.insert(
                transforms,
                speech.Mfcc{
                   fs = samplerate,
-                  tw = 25,
-                  ts = 10,
-                  M  = 20,
+                  tw = tw,
+                  ts = ts,
+                  M  = M,
                   N  = coeffs,
-                  L  = 22,
+                  L  = L,
                   R1 = 0,
                   R2 = samplerate/2,
                   dev = 9,
@@ -146,13 +169,25 @@ transforms.input = argcheck{
                {name="samplerate", type="number"},
                {name="melfloor", type="number"},
             }(mfsc)
+            -- could be options
+            local tw = 25
+            local ts = 10
+            local M = 40
+            table.insert(
+               sizetransforms,
+               function(isz)
+                  local fsize  = torch.round(1e-3*tw*samplerate)
+                  local stride = torch.round(1e-3*ts*samplerate)
+                  return math.floor((isz-fsize)/stride+1)
+               end
+            )
             table.insert(
                transforms,
                speech.Mfsc{
                   fs = samplerate,
-                  tw = 25,
-                  ts = 10,
-                  M  = 40,
+                  tw = tw,
+                  ts = ts,
+                  M  = M,
                   mel_floor = melfloor
                }
             )
@@ -164,7 +199,17 @@ transforms.input = argcheck{
                {name="samplerate", type="number"},
                {name="melfloor", type="number"},
             }(pow)
-
+            -- could be options
+            local tw = 25
+            local ts = 10
+            table.insert(
+               sizetransforms,
+               function(isz)
+                  local fsize  = torch.round(1e-3*tw*samplerate)
+                  local stride = torch.round(1e-3*ts*samplerate)
+                  return math.floor((isz-fsize)/stride+1)
+               end
+            )
             table.insert(
                transforms,
                speech.Pow{
@@ -210,6 +255,12 @@ transforms.input = argcheck{
                {name="value", type="number", default=0},
             }(pad)
             table.insert(
+               sizetransforms,
+               function(isz)
+                  return isz + math.floor(size)*2
+               end
+            )
+            table.insert(
                transforms,
                speechtransform.pad{
                   dim=1,
@@ -219,7 +270,7 @@ transforms.input = argcheck{
             )
          end
 
-         return transform.compose(transforms)
+         return transform.compose(transforms), transform.compose(sizetransforms)
       end
 }
 
@@ -231,8 +282,15 @@ transforms.target = argcheck{
    call =
       function(surround, replabel, uniq)
          local transforms = {}
+         local sizetransforms = {}
 
          if surround then
+            table.insert(
+               sizetransforms,
+               function(tsz)
+                  return tsz + 2
+               end
+            )
             table.insert(
                transforms,
                function(target)
@@ -245,6 +303,7 @@ transforms.target = argcheck{
             )
          end
 
+         -- caveat: replabel output size cannot be predicted (will be smaller)
          if replabel then
             local n, dict = argcheck{
                noordered = true,
@@ -263,6 +322,7 @@ transforms.target = argcheck{
             )
          end
 
+         -- caveat: uniq output size cannot be predicted (will be smaller)
          if uniq then
             table.insert(
                transforms,
@@ -270,7 +330,7 @@ transforms.target = argcheck{
             )
          end
 
-         return transform.compose(transforms)
+         return transform.compose(transforms), transform.compose(sizetransforms)
 
          -- DEPRECATED
          -- if nstate > 1 then

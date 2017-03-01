@@ -427,19 +427,70 @@ local sampler, resample = data.newsampler()
 
 local function newiterator(names, concat, sampler, aug, maxload, nthread)
    local function subdataset(names)
-      local partition
-      local npartition
-      if opt.mpi then
-         partition = mpirank
-         npartition = mpisize
-      end
+      local tnt = require 'torchnet'
       local data = paths.dofile('data.lua')
       local readers = require 'wav2letter.readers'
       local transforms = paths.dofile('transforms.lua')
-      return data.newdataset{
-         path = opt.datadir,
-         names = data.namelist(names),
-         features = {
+      require 'wav2letter'
+      local inputtransform, inputsizetransform = transforms.input{
+         aug = opt.aug and {
+            samplerate = opt.samplerate,
+            bendingp = opt.augbendingp,
+            speedp = opt.augspeedp,
+            speed = opt.augspeed,
+            chorusp = opt.chorusp,
+            echop = opt.echop,
+            compandp = opt.compandp,
+            flangerp = opt.flangerp,
+            noisep = opt.noisep,
+            threadid = __threadid
+                           } or nil,
+         mfcc = opt.mfcc and {
+            samplerate = opt.samplerate,
+            coeffs = opt.mfcccoeffs,
+            melfloor = opt.melfloor
+                             } or nil,
+         mfsc = opt.mfsc and {
+            samplerate = opt.samplerate,
+            melfloor = opt.melfloor
+                             } or nil,
+         pow = opt.pow and {
+            samplerate = opt.samplerate,
+            melfloor = opt.melfloor
+                           } or nil,
+         normmax = opt.inormmax,
+         normloc = opt.inormloc and {kw=opt.inkw, dw=opt.indw, noisethreshold=opt.innt} or nil,
+         norm = not opt.inormax and not opt.inormloc,
+         pad = {size=kw/2, value=0},
+      }
+      local targettransform, targetsizetransform = transforms.target{
+         surround = opt.surround ~= '' and assert(dict[opt.surround], 'invalid surround label') or nil,
+         replabel = opt.replabel > 0 and {n=opt.replabel, dict=dict} or nil,
+         uniq = true,
+      }
+
+      local function datasetwithfeatures(features, transforms)
+            return data.transform{
+               dataset = data.partition{
+                  dataset = data.mapconcat{
+                     closure = function(name)
+                        return tnt.NumberedFilesDataset{
+                           path = paths.concat(opt.datadir, name),
+                           features = features,
+                        }
+                     end,
+                     args = data.namelist(names),
+                     maxload = maxload
+                  },
+                  n = mpisize,
+                  id = mpirank
+               },
+               transforms = transforms
+            }
+      end
+
+      local dataset = datasetwithfeatures(
+         {
             {
                name = opt.input,
                alias = "input",
@@ -456,53 +507,24 @@ local function newiterator(names, concat, sampler, aug, maxload, nthread)
                }
             },
          },
-         transforms = {
-            input = transforms.input{
-               aug = opt.aug and {
-                  samplerate = opt.samplerate,
-                  bendingp = opt.augbendingp,
-                  speedp = opt.augspeedp,
-                  speed = opt.augspeed,
-                  chorusp = opt.chorusp,
-                  echop = opt.echop,
-                  compandp = opt.compandp,
-                  flangerp = opt.flangerp,
-                  noisep = opt.noisep,
-                  threadid = __threadid
-                           } or nil,
-               mfcc = opt.mfcc and {
-                  samplerate = opt.samplerate,
-                  coeffs = opt.mfcccoeffs,
-                  melfloor = opt.melfloor
-                            } or nil,
-               mfsc = opt.mfsc and {
-                  samplerate = opt.samplerate,
-                  melfloor = opt.melfloor
-                            } or nil,
-               pow = opt.pow and {
-                  samplerate = opt.samplerate,
-                  melfloor = opt.melfloor
-                           } or nil,
-               normmax = opt.inormmax,
-               normloc = opt.inormloc and {kw=opt.inkw, dw=opt.indw, noisethreshold=opt.innt} or nil,
-               norm = not opt.inormax and not opt.inormloc,
-               pad = {size=kw/2, value=0},
-            },
-            target = transforms.target{
-               surround = opt.surround ~= '' and assert(dict[opt.surround], 'invalid surround label') or nil,
-               replabel = opt.replabel > 0 and {n=opt.replabel, dict=dict} or nil,
-               uniq = true,
-            }
+         {
+            input = inputtransform,
+            target = targettransform
+         }
+      )
+
+      local sizedataset = datasetwithfeatures(
+         {
+            {name = opt.input .. "sz", alias = "isz", reader = readers.number{}},
+            {name = opt.target .. "sz", alias = "tsz", reader = readers.number{}}
          },
-         sampler = sampler,
-         batch = opt.batchsize,
-         batchresolution = opt.samplerate/4, -- 250ms
-         maxload = maxload,
-         partition = partition,
-         npartition = npartition,
-      }
-   end
-   local function subiterator(names, nthread)
+         {
+            isz = inputsizetransform,
+            tsz = targetsizetransform,
+         }
+      )
+
+      -- filter
       local filter = data.newfilterbysize{
          kw = kw,
          dw = dw,
@@ -512,10 +534,38 @@ local function newiterator(names, concat, sampler, aug, maxload, nthread)
          batchsize = opt.batchsize,
          shift = opt.shift
       }
+      local filtersampler, filtersize = data.filtersizesampler{
+         sizedataset = sizedataset,
+         filter = filter
+      }
+
+      dataset = data.resample{
+         dataset = dataset,
+         sampler = filtersampler,
+         size = filtersize
+      }
+      sizedataset = data.resample{
+         dataset = sizedataset,
+         sampler = filtersampler,
+         size = filtersize
+      }
+      print('| batchresolution:', inputsizetransform(opt.samplerate/4))
+      dataset = data.batch{
+         dataset = data.resample{
+            dataset = dataset,
+            sampler = sampler
+         },
+         sizedataset = sizedataset,
+         batchsize = opt.batchsize,
+         batchresolution = inputsizetransform(opt.samplerate/4), -- 250ms
+      }
+
+      return dataset
+   end
+   local function subiterator(names, nthread)
       if nthread == 0 then
          return tnt.DatasetIterator{
             dataset = subdataset(names),
-            filter = filter
          }
       else
          return tnt.ParallelDatasetIterator{
@@ -523,7 +573,6 @@ local function newiterator(names, concat, sampler, aug, maxload, nthread)
                function()
                   return subdataset(names)
                end,
-            filter = filter,
             nthread = nthread
          }
       end

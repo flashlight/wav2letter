@@ -137,6 +137,7 @@ lua_binary(
     srcs=[
         'train.lua',
         'data.lua',
+        'log.lua',
         'netutils.lua',
         'transforms.lua',
     ]

@@ -30,7 +30,7 @@ log.status = argcheck{
          item("epoch", "%10.2f", state.epoch)
          item("lr", "%4.6f", state.lr)
          item("lrcriterion", "%4.6f", state.lrcriterion)
-         item("runtime(h)", "%4.2f", meters.runtime:value()/3600)
+         item("runtime", os.date("!%X", meters.runtime:value()))
          item("ms(bch)", "%4d", meters.timer:value()*1000)
          item("ms(smp)", "%4d", meters.sampletimer:value()*1000)
          item("ms(net)", "%4d", meters.networktimer:value()*1000)

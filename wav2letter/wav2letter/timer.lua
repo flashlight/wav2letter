@@ -30,7 +30,10 @@ end
 
 function Timer:reset()
    self.__total = 0
-   self.__start = nil
+   if self.__start then
+      self.__start = nil
+      self:resume()
+   end
 end
 
 function Timer:resume()

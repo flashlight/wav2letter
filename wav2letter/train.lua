@@ -661,7 +661,6 @@ local function test(network, criterion, iterator, edit)
    return reduce(edit:value())
 end
 
-meters.runtime:reset()
 local function train(network, criterion, iterator, params, opid)
    local progress
    local engine = tnt.SGDEngine()
@@ -676,6 +675,8 @@ local function train(network, criterion, iterator, params, opid)
    end
 
    function engine.hooks.onStartEpoch(state)
+      meters.runtime:reset()
+      meters.runtime:resume()
       if not opt.noresample then
          resample()
       end
@@ -753,6 +754,7 @@ local function train(network, criterion, iterator, params, opid)
    end
 
    function engine.hooks.onEndEpoch(state)
+      meters.runtime:stop()
       meters.timer:stop()
       meters.sampletimer:stop()
       meters.networktimer:stop()

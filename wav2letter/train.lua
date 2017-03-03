@@ -421,179 +421,63 @@ local remaplabels = transforms.remap{
    replabel = opt.replabel > 0 and {n=opt.replabel, dict=dict} or nil
 }
 
-local trainiterator
-
 local sampler, resample = data.newsampler()
-
-local function newiterator(names, concat, sampler, aug, maxload, nthread)
-   local function subdataset(names)
-      local tnt = require 'torchnet'
-      local data = paths.dofile('data.lua')
-      local readers = require 'wav2letter.readers'
-      local transforms = paths.dofile('transforms.lua')
-      require 'wav2letter'
-      local inputtransform, inputsizetransform = transforms.input{
-         aug = opt.aug and {
-            samplerate = opt.samplerate,
-            bendingp = opt.augbendingp,
-            speedp = opt.augspeedp,
-            speed = opt.augspeed,
-            chorusp = opt.chorusp,
-            echop = opt.echop,
-            compandp = opt.compandp,
-            flangerp = opt.flangerp,
-            noisep = opt.noisep,
-            threadid = __threadid
-                           } or nil,
-         mfcc = opt.mfcc and {
-            samplerate = opt.samplerate,
-            coeffs = opt.mfcccoeffs,
-            melfloor = opt.melfloor
-                             } or nil,
-         mfsc = opt.mfsc and {
-            samplerate = opt.samplerate,
-            melfloor = opt.melfloor
-                             } or nil,
-         pow = opt.pow and {
-            samplerate = opt.samplerate,
-            melfloor = opt.melfloor
-                           } or nil,
-         normmax = opt.inormmax,
-         normloc = opt.inormloc and {kw=opt.inkw, dw=opt.indw, noisethreshold=opt.innt} or nil,
-         norm = not opt.inormax and not opt.inormloc,
-         pad = {size=kw/2, value=0},
-      }
-      local targettransform, targetsizetransform = transforms.target{
-         surround = opt.surround ~= '' and assert(dict[opt.surround], 'invalid surround label') or nil,
-         replabel = opt.replabel > 0 and {n=opt.replabel, dict=dict} or nil,
-         uniq = true,
-      }
-
-      local function datasetwithfeatures(features, transforms)
-            return data.transform{
-               dataset = data.partition{
-                  dataset = data.mapconcat{
-                     closure = function(name)
-                        return tnt.NumberedFilesDataset{
-                           path = paths.concat(opt.datadir, name),
-                           features = features,
-                        }
-                     end,
-                     args = data.namelist(names),
-                     maxload = maxload
-                  },
-                  n = mpisize,
-                  id = mpirank
-               },
-               transforms = transforms
-            }
-      end
-
-      local dataset = datasetwithfeatures(
-         {
-            {
-               name = opt.input,
-               alias = "input",
-               reader = readers.audio{
-                  samplerate = opt.samplerate,
-                  channels = opt.channels
-               },
-            },
-            {
-               name = opt.target,
-               alias = "target",
-               reader = readers.tokens{
-                  dictionary = dict
-               }
-            },
-         },
-         {
-            input = inputtransform,
-            target = targettransform
-         }
-      )
-
-      local sizedataset = datasetwithfeatures(
-         {
-            {name = opt.input .. "sz", alias = "isz", reader = readers.number{}},
-            {name = opt.target .. "sz", alias = "tsz", reader = readers.number{}}
-         },
-         {
-            isz = inputsizetransform,
-            tsz = targetsizetransform,
-         }
-      )
-
-      -- filter
-      local filter = data.newfilterbysize{
-         kw = kw,
-         dw = dw,
-         minisz = opt.minisz,
-         maxisz = opt.maxisz,
-         maxtsz = opt.maxtsz,
-         batchsize = opt.batchsize,
-         shift = opt.shift
-      }
-      local filtersampler, filtersize = data.filtersizesampler{
-         sizedataset = sizedataset,
-         filter = filter
-      }
-
-      dataset = data.resample{
-         dataset = dataset,
-         sampler = filtersampler,
-         size = filtersize
-      }
-      sizedataset = data.resample{
-         dataset = sizedataset,
-         sampler = filtersampler,
-         size = filtersize
-      }
-      print('| batchresolution:', inputsizetransform(opt.samplerate/4))
-      dataset = data.batch{
-         dataset = data.resample{
-            dataset = dataset,
-            sampler = sampler
-         },
-         sizedataset = sizedataset,
-         batchsize = opt.batchsize,
-         batchresolution = inputsizetransform(opt.samplerate/4), -- 250ms
-      }
-
-      return dataset
-   end
-   local function subiterator(names, nthread)
-      if nthread == 0 then
-         return tnt.DatasetIterator{
-            dataset = subdataset(names),
-         }
-      else
-         return tnt.ParallelDatasetIterator{
-            closure =
-               function()
-                  return subdataset(names)
-               end,
-            nthread = nthread
+local trainiterator = data.newiterator{
+   nthread = opt.nthread,
+   closure =
+      function()
+         local data = paths.dofile('data.lua')
+         return data.newdataset{
+            names = data.namelist(opt.train),
+            opt = opt,
+            dict = dict,
+            kw = kw,
+            dw = dw,
+            sampler = sampler,
+            aug = opt.aug,
+            maxload = opt.maxload
          }
       end
-   end
-   if concat then
-      return subiterator(names, nthread)
-   else
-      local iterators = {}
-      for name in names:gmatch('(%S+)') do
-         iterators[name] = subiterator(name, nthread)
-      end
-      return iterators
-   end
-
-end
-
-local trainiterator = newiterator(opt.train, true, sampler, opt.aug, opt.maxload, opt.nthread)
+}
 local trainsize = trainiterator.execSingle and trainiterator:execSingle('size') or trainiterator:exec('size')
 
-local validiterators = newiterator(opt.valid, false, nil, false, opt.maxloadvalid, 0)
-local testiterators = newiterator(opt.test, false, nil, false, opt.maxloadtest, 0)
+local validiterators = {}
+for _, name in ipairs(data.namelist(opt.valid)) do
+   validiterators[name] = data.newiterator{
+   nthread = opt.nthread,
+   closure =
+      function()
+         local data = paths.dofile('data.lua')
+         return data.newdataset{
+            names = {name},
+            opt = opt,
+            dict = dict,
+            kw = kw,
+            dw = dw,
+            maxload = opt.maxloadvalid
+         }
+      end
+   }
+end
+
+local testiterators = {}
+for _, name in ipairs(data.namelist(opt.test)) do
+   testiterators[name] = data.newiterator{
+   nthread = opt.nthread,
+   closure =
+      function()
+         local data = paths.dofile('data.lua')
+         return data.newdataset{
+            names = {name},
+            opt = opt,
+            dict = dict,
+            kw = kw,
+            dw = dw,
+            maxload = opt.maxloadtest
+         }
+      end
+   }
+end
 
 ----------------------------------------------------------------------
 -- Performance meters

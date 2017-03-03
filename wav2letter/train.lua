@@ -434,6 +434,8 @@ local trainiterator = data.newiterator{
             kw = kw,
             dw = dw,
             sampler = sampler,
+            mpirank = mpirank,
+            mpisize = mpisize,
             aug = opt.aug,
             maxload = opt.maxload
          }
@@ -454,6 +456,8 @@ for _, name in ipairs(data.namelist(opt.valid)) do
             dict = dict,
             kw = kw,
             dw = dw,
+            mpirank = mpirank,
+            mpisize = mpisize,
             maxload = opt.maxloadvalid
          }
       end
@@ -473,6 +477,8 @@ for _, name in ipairs(data.namelist(opt.test)) do
             dict = dict,
             kw = kw,
             dw = dw,
+            mpirank = mpirank,
+            mpisize = mpisize,
             maxload = opt.maxloadtest
          }
       end

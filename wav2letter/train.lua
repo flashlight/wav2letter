@@ -141,7 +141,6 @@ if opt.mpi then
    mpi = require 'torchmpi'
    mpinn = require 'torchmpi.nn'
    mpi.start(opt.gpu > 0, true)
-   mpinn.setCollectiveImpl(mpi.p2p)
    mpirank = mpi.rank()+1
    mpisize = mpi.size()
    print(string.format('| MPI #%d/%d', mpirank, mpisize))

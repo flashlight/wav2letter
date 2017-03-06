@@ -524,7 +524,7 @@ local perffile = torch.DiskFile(
 )
 do
    log.print2file{file=logfile, date=true, stdout=true}
-   local _, header = log.status{meters=meters, state=state, separator=" | ", opt=opt, reduce=reduce, date=true}
+   local _, header = log.status{meters=meters, state=state, opt=opt, reduce=reduce, date=true}
    perffile:seekEnd()
    perffile:writeString('# ' .. header .. '\n')
    perffile:synchronize()

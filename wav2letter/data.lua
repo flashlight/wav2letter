@@ -39,7 +39,7 @@ local function batchmerge(sample)
       imax = math.max(imax, input:size(1))
       channels = channels or input:size(2)
    end
-   local mergeinput = torch.Tensor(#sample.input, imax, channels):fill(0)
+   local mergeinput = sample.input[1].new(#sample.input, imax, channels):fill(0)
    for i,input in ipairs(sample.input) do
       mergeinput[i]:narrow(1, 1, input:size(1)):copy(input)
    end

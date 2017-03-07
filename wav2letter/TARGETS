@@ -138,6 +138,7 @@ lua_binary(
         'train.lua',
         'data.lua',
         'log.lua',
+        'serial.lua',
         'netutils.lua',
         'transforms.lua',
     ]

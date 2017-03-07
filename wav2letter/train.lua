@@ -5,6 +5,7 @@ local tnt = require 'torchnet'
 local threads = require 'threads'
 local data = paths.dofile('data.lua')
 local log = paths.dofile('log.lua')
+local serial = paths.dofile('serial.lua')
 
 require 'wav2letter'
 
@@ -12,123 +13,169 @@ torch.setdefaulttensortype('torch.FloatTensor')
 
 local netutils = paths.dofile('netutils.lua')
 
-local cmd = torch.CmdLine()
-cmd:text()
-cmd:text('SpeechRec (c) Ronan Collobert 2015')
-cmd:text()
-cmd:text('Options:')
-cmd:option('-datadir', string.format('%s/local/datasets/speech', os.getenv('HOME')), 'speech directory data')
-cmd:option('-rundir', string.format('%s/local/experiments/speech', os.getenv('HOME')), 'experiment root directory')
-cmd:option('-archdir', string.format('%s/local/arch/speech', os.getenv('HOME')), 'arch root directory')
-cmd:option('-gfsai', false, 'override above paths to gfsai ones')
-cmd:option('-hashdir', false, 'hash experiment directory name')
-cmd:option('-mpi', false, 'use mpi parallelization')
-cmd:option('-outputexample', false, 'write out examples into current directory')
-cmd:option('-seed', 1111, 'Manually set RNG seed')
-cmd:option('-progress', false, 'display training progress per epoch')
-cmd:option('-arch', 'default', 'network architecture')
-cmd:option('-archgen', '', 'network architecture generator string')
-cmd:option('-batchsize', 0, 'batchsize')
-cmd:option('-linseg', 0, 'number of linear segmentation iter, if not using -seg')
-cmd:option('-linsegznet', false, 'use fake zero-network with linseg')
-cmd:option('-linlr', -1, 'linear segmentation learning rate (if < 0, use lr)')
-cmd:option('-linlrcrit', -1, 'linear segmentation learning rate (if < 0, use lrcrit)')
-cmd:option('-absclamp', 0, 'if > 0, clamp gradient to -value..value')
-cmd:option('-scaleclamp', 0, 'if > 0, clamp gradient to -(scale*|w|+value)..(scale*|w|+value) (value provided by -absclamp)')
-cmd:option('-normclamp', 0, 'if > 0, clamp gradient to provided norm')
-cmd:option('-falseg', 0, 'number of force aligned segmentation iter')
-cmd:option('-fallr', -1, 'force aligned segmentation learning rate (if < 0, use lr)')
-cmd:option('-iter', 1000000,   'number of iterations')
-cmd:option('-itersz', -1, 'iteration size')
-cmd:option('-lr', 1, 'learning rate')
-cmd:option('-layerlr', false, 'use learning rate per layer (divide by number of inputs)')
-cmd:option('-lrcrit', 0, 'criterion learning rate')
-cmd:option('-lblwin', 21, 'number of frames to estimate the center label (seg=true only)')
-cmd:option('-gpu', 0, 'use gpu instead of cpu (indicate device > 0)')
-cmd:option('-nthread', 1, 'specify number of threads for data parallelization')
-cmd:option('-posmax', false, 'use max instead of logadd (pos)')
-cmd:option('-negmax', false, 'use max instead of logadd (neg)')
-cmd:option('-inormmax', false, 'input norm is max instead of std')
-cmd:option('-inormloc', false, 'input norm is local instead global')
-cmd:option('-inkw', 8000, 'local input norm kw')
-cmd:option('-indw', 2666, 'local input norm dw')
-cmd:option('-innt', 0.01, 'local input noise threshold')
-cmd:option('-onorm', 'none', 'output norm (none, input or target)')
-cmd:option('-maxload', -1, 'max number of training examples (random sub-selection)')
-cmd:option('-maxloadseed', 1111, 'seed for random sub-selection of training examples')
-cmd:option('-maxloadvalid', -1, 'max number of valid examples (linear sub-selection)')
-cmd:option('-maxloadtest', -1, 'max number of testing examples (linear sub-selection)')
-cmd:option('-momentum', -1, 'provide momentum')
-cmd:option('-mtcrit', false, 'use multi-threaded criterion')
-cmd:option('-nstate', 1, 'number of states per label (autoseg only)')
-cmd:option('-msc', false, 'use multi state criterion instead of fcc')
-cmd:option('-ctc', false, 'use ctc criterion for training')
-cmd:option('-garbage', false, 'add a garbage between each target label')
-cmd:option('-maxisz', math.huge, 'max input size allowed during training')
-cmd:option('-maxtsz', math.huge, 'max target size allowed during training')
-cmd:option('-mintsz', 0, 'min target size allowed during training')
-cmd:option('-reload', '', 'reload a particular model')
-cmd:option('-reloadarg', false, 'reload argument string')
-cmd:option('-continue', '', 'continue a particular model')
-cmd:option('-force', false, 'force overwriting experiment')
-cmd:option('-noresample', false, 'do not resample training data')
-cmd:option('-terrsr', 1, 'train err sample rate (default: each example; 0 is skip)')
-cmd:option('-psr', 0, 'perf (statistics) print sample rate (default: only at the end of epochs)')
-cmd:option('-replabel', 0, 'replace up to replabel reptitions by additional classes')
-cmd:option('-lsm', false, 'add LogSoftMax layer')
-cmd:option('-tag', '', 'tag this experiment with a particular name (e.g. "hypothesis1")')
+local function cmdmutableoptions(cmd)
+   cmd:text()
+   cmd:text('Run Options:')
+   cmd:option('-datadir', string.format('%s/local/datasets/speech', os.getenv('HOME')), 'speech directory data')
+   cmd:option('-rundir', string.format('%s/local/experiments/speech', os.getenv('HOME')), 'experiment root directory')
+   cmd:option('-archdir', string.format('%s/local/arch/speech', os.getenv('HOME')), 'arch root directory')
+   cmd:option('-gfsai', false, 'override above paths to gfsai ones')
+   cmd:option('-mpi', false, 'use mpi parallelization')
+   cmd:option('-seed', 1111, 'Manually set RNG seed')
+   cmd:option('-progress', false, 'display training progress per epoch')
+   cmd:option('-batchsize', 0, 'batchsize') -- not that mutable...
+   cmd:option('-gpu', 0, 'use gpu instead of cpu (indicate device > 0)') -- not that mutable...
+   cmd:option('-nthread', 1, 'specify number of threads for data parallelization')
+   cmd:option('-mtcrit', false, 'use multi-threaded criterion')
+   cmd:option('-terrsr', 1, 'train err sample rate (default: each example; 0 is skip)')
+   cmd:option('-psr', 0, 'perf (statistics) print sample rate (default: only at the end of epochs)')
+   cmd:option('-tag', '', 'tag this experiment with a particular name (e.g. "hypothesis1")')
+   cmd:text()
+   cmd:text('Learning hyper-parameter Options:')
+   cmd:option('-linseg', 0, 'number of linear segmentation iter, if not using -seg')
+   cmd:option('-linsegznet', false, 'use fake zero-network with linseg')
+   cmd:option('-linlr', -1, 'linear segmentation learning rate (if < 0, use lr)')
+   cmd:option('-linlrcrit', -1, 'linear segmentation learning rate (if < 0, use lrcrit)')
+   cmd:option('-iter', 1000000,   'number of iterations')
+   cmd:option('-itersz', -1, 'iteration size')
+   cmd:option('-lr', 1, 'learning rate')
+   cmd:option('-falseg', 0, 'number of force aligned segmentation iter')
+   cmd:option('-fallr', -1, 'force aligned segmentation learning rate (if < 0, use lr)')
+   cmd:option('-sqnorm', false, 'use square-root when normalizing lr/batchsize/etc...')
+   cmd:option('-layerlr', false, 'use learning rate per layer (divide by number of inputs)')
+   cmd:option('-lrcrit', 0, 'criterion learning rate')
+   cmd:option('-momentum', -1, 'provide momentum')
+   cmd:text()
+   cmd:text('Filtering and normalization options:')
+   cmd:option('-absclamp', 0, 'if > 0, clamp gradient to -value..value')
+   cmd:option('-scaleclamp', 0, 'if > 0, clamp gradient to -(scale*|w|+value)..(scale*|w|+value) (value provided by -absclamp)')
+   cmd:option('-normclamp', 0, 'if > 0, clamp gradient to provided norm')
+   cmd:option('-maxisz', math.huge, 'max input size allowed during training')
+   cmd:option('-maxtsz', math.huge, 'max target size allowed during training')
+   cmd:option('-mintsz', 0, 'min target size allowed during training')
+   cmd:option('-noresample', false, 'do not resample training data')
+   cmd:text()
+   cmd:text('Data Options:')
+   cmd:option('-train', '', 'space-separated list of training data')
+   cmd:option('-valid', '', 'space-separated list of valid data')
+   cmd:option('-test', '', 'space-separated list of test data')
+   cmd:option('-maxload', -1, 'max number of training examples (random sub-selection)')
+   cmd:option('-maxloadvalid', -1, 'max number of valid examples (linear sub-selection)')
+   cmd:option('-maxloadtest', -1, 'max number of testing examples (linear sub-selection)')
+   cmd:text()
+   cmd:text('Data Augmentation Options:')
+   cmd:option('-aug', false, 'Enable data augmentations')
+   cmd:option('-augbendingp', 0, 'Enable pitch bending with given probability')
+   cmd:option('-augflangerp', 0, 'enable flanger')
+   cmd:option('-augechorusp', 0, 'enable chorus')
+   cmd:option('-augechop', 0, 'enable echos')
+   cmd:option('-augnoisep', 0, 'enable addition of white/brown noise with given probability')
+   cmd:option('-augcompandp', 0, 'enable compand (may clip!)')
+   cmd:option('-augspeedp', 0, 'probability with which input speech transformation is applied')
+   cmd:option('-augspeed', 0, 'variance of input speed transformation')
+end
 
-cmd:text()
-cmd:text('Data Options:')
-cmd:option('-train', '', 'space-separated list of training data')
-cmd:option('-valid', '', 'space-separated list of valid data')
-cmd:option('-test', '', 'space-separated list of test data')
-cmd:option('-samplerate', 16000, 'sample rate (Hz)')
-cmd:option('-channels', 1, 'number of input channels')
-cmd:option('-dict', 'letters.lst', 'dictionary to use')
-cmd:option('-input', 'flac', 'input feature')
-cmd:option('-target', 'ltr', 'target feature [phn, ltr, wrd]')
+function cmdimmutableoptions(cmd)
+   cmd:text()
+   cmd:text('----- Immutable Options -----')
+   cmd:text()
+   cmd:text('Architecture Options:')
+   cmd:option('-arch', 'default', 'network architecture')
+   cmd:option('-posmax', false, 'use max instead of logadd (pos)')
+   cmd:option('-negmax', false, 'use max instead of logadd (neg)')
+   cmd:option('-inormmax', false, 'input norm is max instead of std')
+   cmd:option('-inormloc', false, 'input norm is local instead global')
+   cmd:option('-nstate', 1, 'number of states per label (autoseg only)')
+   cmd:option('-msc', false, 'use multi state criterion instead of fcc')
+   cmd:option('-ctc', false, 'use ctc criterion for training')
+   cmd:option('-garbage', false, 'add a garbage between each target label')
+   cmd:option('-lsm', false, 'add LogSoftMax layer')
+   cmd:text()
+   cmd:text('Data Options:')
+   cmd:option('-input', 'flac', 'input feature')
+   cmd:option('-target', 'ltr', 'target feature [phn, ltr, wrd]')
+   cmd:option('-samplerate', 16000, 'sample rate (Hz)')
+   cmd:option('-channels', 1, 'number of input channels')
+   cmd:option('-dict', 'letters.lst', 'dictionary to use')
+   cmd:option('-replabel', 0, 'replace up to replabel reptitions by additional classes')
+   cmd:option('-dict39', false, 'dictionary with 39 phonemes mode (training -- always for testing)')
+   cmd:option('-surround', '', 'surround target with provided label')
+   cmd:option('-seg', false, 'segmentation is given or not')
+   cmd:text()
+   cmd:text('MFCC Options:')
+   cmd:option('-mfcc', false, 'use standard htk mfcc features as input')
+   cmd:option('-pow', false, 'use standard power spectrum as input')
+   cmd:option('-mfcccoeffs', 13, 'number of mfcc coefficients')
+   cmd:option('-mfsc', false, 'use standard mfsc features as input')
+   cmd:option('-melfloor', 0.0, 'specify optional mel floor for mfcc/mfsc/pow')
+   cmd:text()
+   cmd:text('Normalization Options:')
+   cmd:option('-inkw', 8000, 'local input norm kw')
+   cmd:option('-indw', 2666, 'local input norm dw')
+   cmd:option('-innt', 0.01, 'local input noise threshold')
+   cmd:option('-onorm', 'none', 'output norm (none, input or target)')
+   cmd:text()
+   cmd:text('Input shifting Options:')
+   cmd:option('-shift', 0, 'number of shifts')
+   cmd:option('-dshift', 0, '# of frames to shift')
+   cmd:text()
+end
 
-cmd:text()
-cmd:text('MFCC Options:')
-cmd:option('-mfcc', false, 'use standard htk mfcc features as input')
-cmd:option('-pow', false, 'use standard power spectrum as input')
-cmd:option('-mfcccoeffs', 13, 'number of mfcc coefficients')
-cmd:option('-mfsc', false, 'use standard mfsc features as input')
-cmd:option('-melfloor', 0.0, 'specify optional mel floor for mfcc/mfsc/pow')
+local opt -- current options
+local path -- current experiment path
+local runidx -- current #runs in this path
+local reload -- path to model to reload
+if #arg >= 1 and arg[1] == '--train' then
+   table.remove(arg, 1)
+   opt = serial.parsecmdline{
+      closure =
+         function(cmd)
+            cmdmutableoptions(cmd)
+            cmdimmutableoptions(cmd)
+         end,
+      arg = arg
+   }
+   runidx = 1
+   path = serial.newpath(opt.rundir, opt)
+elseif #arg >= 2 and arg[1] == '--continue' then
+   path = arg[2]
+   table.remove(arg, 1)
+   table.remove(arg, 1)
+   runidx = serial.runidx(path, "model_last.bin")
+   reload = serial.runidx(path, "model_last.bin", runidx-1)
+   opt = serial.parsecmdline{
+      closure = cmdmutableoptions,
+      arg = arg,
+      default = serial.loadmodel(reload).info.opt
+   }
+elseif #arg >= 2 and arg[1] == '--fork' then
+   reload = arg[2]
+   table.remove(arg, 1)
+   table.remove(arg, 1)
+   opt = serial.parsecmdline{
+      closure = cmdmutableoptions,
+      arg = arg,
+      default = serial.loadmodel(reload).info.opt
+   }
+   runidx = 1
+   path = serial.newpath(opt.rundir, opt)
+else
+   error(string.format([[
+usage:
+   %s --train <options...>
+or %s --continue <directory> <options...>
+or %s --fork <directory/model> <options...>
+]], arg[0], arg[0], arg[0]))
+end
 
-cmd:text()
-cmd:text('Data Augmentation Options:')
-cmd:option('-aug', false, 'Enable data augmentations')
-cmd:option('-augbendingp', 0, 'Enable pitch bending with given probability')
-cmd:option('-augflangerp', 0, 'enable flanger')
-cmd:option('-augechorusp', 0, 'enable chorus')
-cmd:option('-augechop', 0, 'enable echos')
-cmd:option('-augnoisep', 0, 'enable addition of white/brown noise with given probability')
-cmd:option('-augcompandp', 0, 'enable compand (may clip!)')
-cmd:option('-augspeedp', 0, 'probability with which input speech transformation is applied')
-cmd:option('-augspeed', 0, 'variance of input speed transformation')
-
-cmd:text()
-cmd:text('Timit-Only Options:')
-cmd:option('-seg', false, 'segmentation is given or not')
-cmd:option('-dict39', false, 'dictionary with 39 phonemes mode (training -- always for testing)')
-cmd:text()
-
-cmd:text()
-cmd:text('Misc Options:')
-cmd:option('-surround', '', 'surround target with provided label')
-cmd:option('-sqnorm', false, 'use square-root when normalizing lr/batchsize/etc...')
-cmd:text()
-
-cmd:text('Input shifting Options:')
-cmd:option('-shift', 0, 'number of shifts')
-cmd:option('-dshift', 0, '# of frames to shift')
-cmd:option('-gpushift', false, 'use one GPU per shift')
-cmd:text()
-
-local opt = cmd:parse(arg)
-local dbg = {} --debugging information (saved first)
+-- saved information
+local info = {
+   username = os.getenv('USER'),
+   hostname = os.getenv('HOSTNAME'),
+   timestamp = os.date("%Y-%m-%d %H:%M:%S"),
+   opt = opt,
+   arg = arg,
+}
 
 local mpi
 local mpinn
@@ -149,38 +196,6 @@ if opt.mpi then
    end
 end
 
-local function mkdir(path)
-   os.execute(string.format('mkdir -p "%s"', path))
-end
-
-if opt.continue ~= '' then
-   opt.reload = opt.continue
-   opt.reloadarg = true
-end
-
-if opt.reload ~= '' and opt.reloadarg then
-   print(string.format('| Reloading options <%s>', opt.reload))
-   local f = torch.DiskFile(opt.reload):binary()
-   local setup = f:readObject()
-   if setup.opt.gpu > 0 then
-      require 'cunn'
-      require 'fbcunn'
-      require 'cudnn'
-   end
-   local reloadArg = setup.arg
-   if opt.continue ~= '' then
-      print('| Adding current options')
-      for i = 1, #arg do
-         print(string.format("  | %s", arg[i]))
-         reloadArg[#reloadArg+1] = arg[i]
-      end
-   end
-   arg = reloadArg
-   local reload = opt.reload
-   opt = cmd:parse(arg)
-   opt.reload = reload -- make sure we reload the model below
-end
-
 -- override paths?
 if opt.gfsai then
    opt.datadir = '/mnt/vol/gfsai-flash-east/ai-group/datasets/speech'
@@ -188,45 +203,8 @@ if opt.gfsai then
    opt.archdir = '/mnt/vol/gfsai-east/ai-group/teams/wav2letter/arch'
 end
 
-
-dbg.name = cmd:string(
-   'exp',
-   opt,
-   {
-      force=true, gfsai=true,
-      datadir=true, rundir=true, archdir=true,
-      iter=true, gpu=true, reload=true, progress=true,
-      continue=true,
-      train=true, valid=true, test=true -- DEBUG: FIXME
-   }
-)
-print("| ExpName: " .. dbg.name)
-
-local path = opt.reload == '' and opt.rundir or paths.dirname(opt.reload)
-if opt.hashdir then
-   -- hash based on experiment name
-   path = paths.concat(path, tnt.utils.sys.md5(dbg.name))
-else
-   path = paths.concat(path, dbg.name)
-end
-
--- check if experiment exists
-if not opt.force then
-   local f = io.open(path .. '/log')
-   if f then
-      f:close()
-      error(string.format('experiment <%s> already exists! use -force to overwrite', path))
-   end
-end
-
-opt.path = path
 print(string.format("| experiment path: %s", path))
-mkdir(path)
-
--- collect debug info
-dbg.username = os.getenv('USER')
-dbg.hostname = os.getenv('HOSTNAME')
-dbg.timestamp = os.time()
+serial.mkdir(path)
 
 -- default lr
 opt.linlr = (opt.linlr < 0) and opt.lr or opt.linlr
@@ -237,6 +215,7 @@ torch.manualSeed(opt.seed)
 if opt.gpu > 0 then
    require 'cutorch'
    require 'cunn'
+   require 'cudnn'
    if not opt.mpi then
       cutorch.setDevice(opt.gpu)
    end
@@ -261,43 +240,52 @@ if opt.replabel > 0 then
    end
 end
 
-opt.nclass = #dict
-
-opt.nchannel = opt.channels
-
 -- if opt.garbage then
 --    assert(opt.nstate == 1, 'cannot have garbage and nstate set together')
---    opt.nclass = opt.nclass + 1
+--    #dict = #dict + 1
 -- else
---    opt.nclass = opt.nclass*opt.nstate
+--    #dict = #dict*opt.nstate
 -- end
 
-print(string.format('| number of classes (network) = %d', opt.nclass))
+print(string.format('| number of classes (network) = %d', #dict))
 
 -- neural network and training criterion
 -- we make sure we save the network specs
 -- optional argument archgen generates the network file on the fly
-if opt.archgen ~= '' then
-   local arch_s = paths.dofile('arch_gen/conv_gen.lua')(opt.archgen)
-   local arch_f = io.open(paths.concat(opt.archdir, opt.archgen), "wb")
-   arch_f:write(arch_s)
-   arch_f:close()
-   opt.arch = opt.archgen
+-- if opt.archgen ~= '' then
+--    local arch_s = paths.dofile('arch_gen/conv_gen.lua')(opt.archgen)
+--    local arch_f = io.open(paths.concat(opt.archdir, opt.archgen), "wb")
+--    arch_f:write(arch_s)
+--    arch_f:close()
+--    opt.arch = opt.archgen
+-- end
+info.netspecs = netutils.readspecs(paths.concat(opt.archdir, opt.arch))
+local network, transitions, kw, dw
+if reload then
+   print(string.format('| reloading model <%s>', reload))
+   local model = serial.loadmodel{filename=reload, arch=true}
+   network = model.arch.network
+   transitions = model.arch.transitions
+   kw = model.info.kw
+   dw = model.info.dw
+   assert(kw and dw, 'kw and dw could not be found in model archive')
+   model = nil
+   collectgarbage()
+else
+   network, kw, dw = netutils.create{
+      specs = info.netspecs,
+      gpu = opt.gpu,
+      channels = (opt.mfsc and 40 ) or ((opt.pow and 257 ) or (opt.mfcc and opt.mfcccoeffs*3 or opt.channels)), -- DEBUG: UGLY
+      nclass = #dict,
+      lsm = opt.lsm,
+      batchsize = opt.batchsize
+   }
 end
-opt.netspecs = netutils.readspecs(paths.concat(opt.archdir, opt.arch))
-local network, kw, dw = netutils.create{
-   specs = opt.netspecs,
-   gpu = opt.gpu,
-   channels = (opt.mfsc and 40 ) or ((opt.pow and 257 ) or (opt.mfcc and opt.mfcccoeffs*3 or opt.channels)), -- DEBUG: UGLY
-   nclass = #dict,
-   lsm = opt.lsm,
-   batchsize = opt.batchsize
-}
+info.kw = kw
+info.dw = dw
 
-local zeronet = nn.ZeroNet(kw, dw, opt.nclass)
+local zeronet = nn.ZeroNet(kw, dw, #dict)
 local netcopy = network:clone() -- pristine stateless copy
-opt.kw = kw
-opt.dw = dw
 local scale
 if opt.onorm == 'input' then
    function scale(input, target)
@@ -326,18 +314,18 @@ end
 
 local fllcriterion
 local asgcriterion
-local ctccriterion = initCriterion('ConnectionistTemporalCriterion', opt.nclass, scale)
-local msccriterion = initCriterion('MultiStateFullConnectCriterion', opt.nclass/opt.nstate, opt.nstate, opt.posmax, scale)
-local lincriterion = initCriterion('LinearSegCriterion', opt.nclass, opt.negmax, scale, opt.linlrcrit == 0)
-local falcriterion = initCriterion('CrossEntropyForceAlignCriterion', opt.nclass, opt.posmax, scale)
-local viterbi      = initCriterion('Viterbi', opt.nclass, scale)
+local ctccriterion = initCriterion('ConnectionistTemporalCriterion', #dict, scale)
+local msccriterion = initCriterion('MultiStateFullConnectCriterion', #dict/opt.nstate, opt.nstate, opt.posmax, scale)
+local lincriterion = initCriterion('LinearSegCriterion', #dict, opt.negmax, scale, opt.linlrcrit == 0)
+local falcriterion = initCriterion('CrossEntropyForceAlignCriterion', #dict, opt.posmax, scale)
+local viterbi      = initCriterion('Viterbi', #dict, scale)
 
 if opt.garbage then
-   fllcriterion = initCriterion('FullConnectGarbageCriterion', opt.nclass-1, opt.posmax, scale)
-   asgcriterion = initCriterion('AutoSegCriterion', opt.nclass-1, opt.posmax, opt.negmax, scale, 'garbage')
+   fllcriterion = initCriterion('FullConnectGarbageCriterion', #dict-1, opt.posmax, scale)
+   asgcriterion = initCriterion('AutoSegCriterion', #dict-1, opt.posmax, opt.negmax, scale, 'garbage')
 else
-   fllcriterion = initCriterion('FullConnectCriterionC', opt.nclass, opt.posmax, scale)
-   asgcriterion = initCriterion('AutoSegCriterion', opt.nclass, opt.posmax, opt.negmax, scale, opt.msc and opt.nstate or nil)
+   fllcriterion = initCriterion('FullConnectCriterionC', #dict, opt.posmax, scale)
+   asgcriterion = initCriterion('AutoSegCriterion', #dict, opt.posmax, opt.negmax, scale, opt.msc and opt.nstate or nil)
 end
 
 lincriterion:share(asgcriterion, 'transitions') -- beware (asg...)
@@ -351,15 +339,9 @@ local evlcriterion = (opt.ctc and ctccriterion) or (opt.msc and msccriterion or 
 -- because we evaluate right after the forward and before the backward)
 evlcriterion = evlcriterion:clone():share(asgcriterion, 'transitions')
 
-if opt.reload ~= '' then
-   print(string.format('| reloading model <%s>', opt.reload))
-   local f = torch.DiskFile(opt.reload):binary()
-   f:readObject() -- setup
-   local arch = f:readObject()
-   network = arch.network
-   asgcriterion.transitions:copy(arch.transitions)
-   arch = nil
-   collectgarbage()
+-- from reload?
+if transitions then
+   asgcriterion.transitions:copy(transitions)
 end
 
 if opt.layerlr then
@@ -406,13 +388,9 @@ end
 assert(not(opt.batchsize > 0 and opt.shift > 0), 'Cannot allow both shifting and batching')
 
 if opt.shift > 0 then
-   if opt.gpushift then
-      network = makeParallel(network, opt.shift)
-   else
-      network = nn.MapTable(network, {'weight', 'bias'})
-      network:resize(opt.shift)
-   end
-   network = nn.ShiftNet(network, opt.shift, opt.gpushift)
+   network = nn.MapTable(network, {'weight', 'bias'})
+   network:resize(opt.shift)
+   network = nn.ShiftNet(network, opt.shift)
 end
 
 local transforms = paths.dofile('transforms.lua')
@@ -514,14 +492,8 @@ end
 meters.stats = tnt.SpeechStatMeter()
 
 
-local logfile = torch.DiskFile(
-   string.format('%s/log', opt.path),
-   (opt.continue == '') and "w" or "rw"
-)
-local perffile = torch.DiskFile(
-   string.format('%s/perf', opt.path),
-   (opt.continue == '') and "w" or "rw"
-)
+local logfile = torch.DiskFile(serial.runidx(path, "log", runidx), "w")
+local perffile = torch.DiskFile(serial.runidx(path, "perf", runidx), "w")
 do
    log.print2file{file=logfile, date=true, stdout=true}
    local _, header = log.status{meters=meters, state=state, opt=opt, reduce=reduce, date=true}
@@ -553,45 +525,47 @@ for name, valid in pairs(validiterators) do
    minerrs[name] = math.huge
 end
 
-local function save(name, network, best)
-   name = name:gsub('/', '#') -- DEBUG: FIXME
-   local f = torch.DiskFile(string.format('%s/model-%s.bin', opt.path, name), 'w')
-   f:binary()
-   f:writeObject{
-      best = best,
-      opt = opt,
-      arg = arg
-   }
-   f:writeObject{
-      network = netutils.copy(
-         netcopy,
-         (opt.shift > 0) and network.network or network
-      ),
-      transitions = asgcriterion.transitions
-   }
-   f:close()
-end
-
 local function savebestmodels()
    if mpirank ~= 1 then
       return
    end
 
    -- save last model
-   save("last", network)
+   serial.savemodel{
+      filename = serial.runidx(path, "model_last.bin", runidx),
+      info = info,
+      arch = {
+         network = netutils.copy(
+            netcopy,
+            (opt.shift > 0) and network.network or network
+         ),
+         transitions = asgcriterion.transitions
+      }
+   }
 
    -- save if better than ever for one valid
-   local best = {}
+   local err = {}
    for name, validedit in pairs(meters.validedit) do
       local value = validedit:value()
       if value < minerrs[name] then
-         best[name] = value
+         err[name] = value
          minerrs[name] = value
-         save(name, network, value)
+         serial.savemodel{
+            filename = serial.runidx(path, serial.cleanfilename("model_" .. name .. ".bin"), runidx),
+            info = info,
+            arch = {
+               network = netutils.copy(
+                  netcopy,
+                  (opt.shift > 0) and network.network or network
+               ),
+               transitions = asgcriterion.transitions,
+               perf = value
+            },
+         }
       end
    end
 
-   return best
+   return err
 end
 
 ----------------------------------------------------------------------
@@ -792,6 +766,11 @@ local function train(network, criterion, iterator, params, opid)
       maxepoch = params.maxepoch
    }
 end
+
+serial.saveopt{
+   filename = serial.runidx(path, "opt.lua", runidx),
+   opt = opt
+}
 
 local lrnorm = opt.batchsize > 0 and 1/(mpisize*opt.batchsize) or 1/mpisize
 lrnorm = opt.sqnorm and math.sqrt(lrnorm) or lrnorm

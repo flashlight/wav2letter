@@ -2,6 +2,23 @@ local argcheck = require 'argcheck'
 local utils = require 'wav2letter.utils'
 local transform = {}
 
+transform.dictconvert = argcheck{
+   noordered = true,
+   {name="src", type="table"},
+   {name="dst", type="table"},
+   call =
+      function(dictsrc, dictdst)
+         local s2d = torch.LongTensor(#dictsrc)
+         for s=1,#dictsrc do
+            s2d[s] = assert(dictdst[dictsrc[s]], string.format("unknown token <%s> in destination dictionary", dictsrc[i]))
+         end
+         return
+            function(src)
+               return s2d:gather(1, src)
+            end
+      end
+}
+
 transform.pad = argcheck{
    {name="dim", type="number"},
    {name="size", type="number"},

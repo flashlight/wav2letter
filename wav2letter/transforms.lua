@@ -356,8 +356,9 @@ transforms.remap = argcheck{
    noordered = true,
    {name='uniq', type='boolean', opt=true},
    {name='replabel', type='table', opt=true}, -- {n=, dict=}
+   {name='phn61to39', type='table', opt=true}, -- {dict39=, dict61=}
    call =
-      function(uniq, replabel)
+      function(uniq, replabel, phn61to39)
          local transforms = {}
 
          -- if nstate > 1 then
@@ -373,6 +374,16 @@ transforms.remap = argcheck{
          --       end
          --    )
          -- end
+
+         if phn61to39 then
+            table.insert(
+               transforms,
+               speechtransform.dictconvert{
+                  src = assert(phn61to39.dict61, "dict61 expected in phn61to39"),
+                  dst = assert(phn61to39.dict39, "dict39 expected in phn61to39"),
+               }
+            )
+         end
 
          if uniq then
             table.insert(

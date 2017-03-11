@@ -98,7 +98,7 @@ function cmdimmutableoptions(cmd)
    cmd:option('-channels', 1, 'number of input channels')
    cmd:option('-dict', 'letters.lst', 'dictionary to use')
    cmd:option('-replabel', 0, 'replace up to replabel reptitions by additional classes')
-   cmd:option('-dict39', false, 'dictionary with 39 phonemes mode (training -- always for testing)')
+   cmd:option('-dict39', false, 'with target=phn, dictionary with 39 phonemes mode (training -- always for testing)')
    cmd:option('-surround', '', 'surround target with provided label')
    cmd:option('-seg', false, 'segmentation is given or not')
    cmd:text()
@@ -226,8 +226,14 @@ local dict = data.newdict{
    path = paths.concat(opt.datadir, opt.dict)
 }
 
-if opt.dict39 then
-   dict = data.dictcollapsephones{dictionary=dict}
+local dict61phn
+local dict39phn
+if opt.target == "phn" then
+   dict61phn = dict
+   dict39phn = data.dictcollapsephones{dictionary=dict}
+   if opt.dict39 then
+      dict = dict39phn
+   end
 end
 
 if opt.ctc or opt.garbage then
@@ -396,7 +402,8 @@ end
 local transforms = paths.dofile('transforms.lua')
 local remaplabels = transforms.remap{
    uniq = true,
-   replabel = opt.replabel > 0 and {n=opt.replabel, dict=dict} or nil
+   replabel = opt.replabel > 0 and {n=opt.replabel, dict=dict} or nil,
+   phn61to39 = ((opt.target == "phn") and not opt.dict39) and {dict39=dict39phn, dict61=dict61phn} or nil
 }
 
 local sampler, resample = data.newsampler()

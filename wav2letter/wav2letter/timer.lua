@@ -51,7 +51,7 @@ end
 function Timer:time()
    return {
       real = tonumber(self.__total + self:ticks())/1000
-   }   
+   }
 end
 
 function Timer:ticks()

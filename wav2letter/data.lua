@@ -2,7 +2,6 @@ local argcheck = require 'argcheck'
 local tnt = require 'torchnet'
 require 'torchnet.sequential'
 local threads = require 'threads'
-local readers = require 'wav2letter.readers'
 require 'wav2letter' -- for numberedfilesdataset
 local data = {}
 local dict39 = {
@@ -32,7 +31,6 @@ local dict39 = {
 }
 
 local function batchmerge(sample)
-   local pad = 0
    local imax = 0
    local channels
    for _,input in ipairs(sample.input) do
@@ -242,7 +240,7 @@ data.filtersizesampler = argcheck{
 data.mapconcat = argcheck{
    {name='closure', type='function'},
    {name='args', type='table'},
-   {name='maxload', type='number', opt=triue},
+   {name='maxload', type='number', opt=true},
    call =
       function(closure, args, maxload)
          local datasets = {}

@@ -107,7 +107,7 @@ local function createidx(src, dst)
 
          -- speaker
          local spkr = filename:match('/(%d+)[^/]+$')
-         spkr = assert(tonumber(spkr)) 
+         spkr = assert(tonumber(spkr))
          local f = io.open(string.format('%s/%09d.spk', dst, idx), 'w')
          f:write(string.format("%s %s", spkr, gender[spkr]))
          f:close()

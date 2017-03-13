@@ -275,8 +275,6 @@ if reload then
    kw = model.info.kw
    dw = model.info.dw
    assert(kw and dw, 'kw and dw could not be found in model archive')
-   model = nil
-   collectgarbage()
 else
    network, kw, dw = netutils.create{
       specs = info.netspecs,

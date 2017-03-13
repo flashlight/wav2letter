@@ -10,7 +10,7 @@ transform.dictconvert = argcheck{
       function(dictsrc, dictdst)
          local s2d = torch.LongTensor(#dictsrc)
          for s=1,#dictsrc do
-            s2d[s] = assert(dictdst[dictsrc[s]], string.format("unknown token <%s> in destination dictionary", dictsrc[i]))
+            s2d[s] = assert(dictdst[dictsrc[s]], string.format("unknown token <%s> in destination dictionary", dictsrc[s]))
          end
          return
             function(src)

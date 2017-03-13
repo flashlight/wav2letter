@@ -91,7 +91,7 @@ transforms.input = argcheck{
                   os.remove(tmp_wavf)
 
                   -- noise
-                  if torch.uniform() <= noise then
+                  if torch.uniform() <= noisep then
                      local tmp_wavf_noise = os.tmpname() .. threadid .. '.wav'
                      local tmp_wavf_effect= os.tmpname() .. threadid .. '.wav'
                      if torch.uniform() > 0.5 then

@@ -17,6 +17,7 @@ local function cmdmutableoptions(cmd)
    cmd:text()
    cmd:text('Run Options:')
    cmd:option('-datadir', string.format('%s/local/datasets/speech', os.getenv('HOME')), 'speech directory data')
+   cmd:option('-dictdir', paths.thisfile('data/dict'))
    cmd:option('-rundir', string.format('%s/local/experiments/speech', os.getenv('HOME')), 'experiment root directory')
    cmd:option('-archdir', string.format('%s/local/arch/speech', os.getenv('HOME')), 'arch root directory')
    cmd:option('-gfsai', false, 'override above paths to gfsai ones')
@@ -223,7 +224,7 @@ if opt.gpu > 0 then
 end
 
 local dict = data.newdict{
-   path = paths.concat(opt.datadir, opt.dict)
+   path = paths.concat(opt.dictdir, opt.dict)
 }
 
 local dict61phn

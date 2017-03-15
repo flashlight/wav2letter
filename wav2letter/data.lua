@@ -373,8 +373,14 @@ data.newdataset = argcheck{
                dataset = data.partition{
                   dataset = data.mapconcat{
                      closure = function(name)
+                        local path = paths.concat(opt.datadir, name)
+                        -- make sure path exist (also useful with automounts)
+                        assert(
+                           paths.dirp(path),
+                           string.format("directory <%s> does not exist", path)
+                        )
                         return tnt.NumberedFilesDataset{
-                           path = paths.concat(opt.datadir, name),
+                           path = path,
                            features = features,
                         }
                      end,

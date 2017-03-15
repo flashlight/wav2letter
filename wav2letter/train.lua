@@ -200,7 +200,7 @@ end
 
 -- override paths?
 if opt.gfsai then
-   opt.datadir = '/mnt/vol/gfsai-flash-east/ai-group/datasets/speech'
+   opt.datadir = '/mnt/fair-flash-east'
    opt.rundir = '/mnt/vol/gfsai-east/ai-group/teams/wav2letter/experiments'
    opt.archdir = '/mnt/vol/gfsai-east/ai-group/teams/wav2letter/arch'
 end

@@ -126,7 +126,8 @@ local opt -- current options
 local path -- current experiment path
 local runidx -- current #runs in this path
 local reload -- path to model to reload
-if #arg >= 1 and arg[1] == '--train' then
+local command = arg[1]
+if #arg >= 1 and command == '--train' then
    table.remove(arg, 1)
    opt = serial.parsecmdline{
       closure =
@@ -177,6 +178,7 @@ local info = {
    opt = opt,
    arg = arg,
    reload = reload,
+   command = command,
 }
 
 local mpi

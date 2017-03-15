@@ -176,6 +176,7 @@ local info = {
    timestamp = os.date("%Y-%m-%d %H:%M:%S"),
    opt = opt,
    arg = arg,
+   reload = reload,
 }
 
 local mpi

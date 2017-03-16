@@ -509,7 +509,7 @@ if mpirank == 1 then
    logfile = torch.DiskFile(serial.runidx(path, "log", runidx), "w")
    perffile = torch.DiskFile(serial.runidx(path, "perf", runidx), "w")
    log.print2file{file=logfile, date=true, stdout=true}
-   local _, header = log.status{meters=meters, state=state, opt=opt, date=true}
+   local _, header = log.status{meters=meters, opt=opt, date=true}
    perffile:seekEnd()
    perffile:writeString('# ' .. header .. '\n')
    perffile:synchronize()

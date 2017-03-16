@@ -155,6 +155,13 @@ lua_binary(
     main_module='train',
 )
 
+include_defs("//tools/xar/defs.py")
+xar_lua_binary(
+    name = 'train_xar',
+    src_rule_name = ':train',
+    output_name = 'train.xar'
+)
+
 lua_binary(
     name='test',
     srcs=[

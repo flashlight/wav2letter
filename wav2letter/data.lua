@@ -376,7 +376,7 @@ data.newdataset = argcheck{
                         local path = paths.concat(opt.datadir, name)
                         -- make sure path exist (also useful with automounts)
                         assert(
-                           paths.dirp(path),
+                           paths.dir(path),
                            string.format("directory <%s> does not exist", path)
                         )
                         return tnt.NumberedFilesDataset{

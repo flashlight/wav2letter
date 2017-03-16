@@ -140,7 +140,13 @@ serial.saveopt = argcheck{
    call=
       function(filename, opt)
          local str = {"return {"}
+         local keys = {}
          for k, v in pairs(opt) do
+            table.insert(keys, k)
+         end
+         table.sort(keys)
+         for _, k in ipairs(keys) do
+            local v = opt[k]
             assert(type(k) == "string")
             if type(v) == "number" or type(v) == "boolean" then
                table.insert(str, string.format("%s = %s,", k, v))

@@ -9,7 +9,7 @@ log.status = argcheck{
    {name="separator", type="string", default=" "},
    {name="date", type="boolean", default=false},
    {name="opt", type="table"},
-   {name="reduce", type="function"},
+   {name="reduce", type="function", default=function(x) return x end},
    call =
       function(meters, state, verbose, separator, date, opt, reduce)
          local header = {}

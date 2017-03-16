@@ -207,8 +207,10 @@ if opt.gfsai then
    opt.archdir = '/mnt/vol/gfsai-east/ai-group/teams/wav2letter/arch'
 end
 
-print(string.format("| experiment path: %s", path))
-serial.mkdir(path)
+if mpirank == 1 then
+   print(string.format("| experiment path: %s", path))
+   serial.mkdir(path)
+end
 
 -- default lr
 opt.linlr = (opt.linlr < 0) and opt.lr or opt.linlr
@@ -501,11 +503,13 @@ end
 meters.stats = tnt.SpeechStatMeter()
 
 
-local logfile = torch.DiskFile(serial.runidx(path, "log", runidx), "w")
-local perffile = torch.DiskFile(serial.runidx(path, "perf", runidx), "w")
-do
+local logfile
+local perffile
+if mpirank == 1 then
+   logfile = torch.DiskFile(serial.runidx(path, "log", runidx), "w")
+   perffile = torch.DiskFile(serial.runidx(path, "perf", runidx), "w")
    log.print2file{file=logfile, date=true, stdout=true}
-   local _, header = log.status{meters=meters, state=state, opt=opt, reduce=reduce, date=true}
+   local _, header = log.status{meters=meters, state=state, opt=opt, date=true}
    perffile:seekEnd()
    perffile:writeString('# ' .. header .. '\n')
    perffile:synchronize()
@@ -776,10 +780,12 @@ local function train(network, criterion, iterator, params, opid)
    }
 end
 
-serial.saveopt{
-   filename = serial.runidx(path, "opt.lua", runidx),
-   opt = opt
-}
+if mpirank == 1 then
+   serial.saveopt{
+      filename = serial.runidx(path, "opt.lua", runidx),
+      opt = opt
+   }
+end
 
 local lrnorm = opt.batchsize > 0 and 1/(mpisize*opt.batchsize) or 1/mpisize
 lrnorm = opt.sqnorm and math.sqrt(lrnorm) or lrnorm

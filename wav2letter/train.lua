@@ -781,9 +781,15 @@ local function train(network, criterion, iterator, params, opid)
 end
 
 if mpirank == 1 then
-   serial.saveopt{
-      filename = serial.runidx(path, "opt.lua", runidx),
-      opt = opt
+   serial.savetable{
+      filename = serial.runidx(path, "config.lua", runidx),
+      tbl = {
+         opt = opt,
+         path = path,
+         runidx = runidx,
+         reload = reload,
+         command = command,
+      }
    }
 end
 

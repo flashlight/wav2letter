@@ -52,7 +52,7 @@ serial.newpath = argcheck{
          if opt.tag ~= '' then
             table.insert(path, opt.tag)
          end
-         table.insert(path, md5.sumhexa(serial.saveopt{opt=opt}))
+         table.insert(path, md5.sumhexa(serial.savetable{tbl=opt}))
          return paths.concat(root, table.concat(path, '_'))
       end
 }
@@ -117,7 +117,7 @@ serial.runidx = argcheck{
       end
 }
 
-serial.loadopt = argcheck{
+serial.loadtable = argcheck{
    {name="filename", type="string"},
    call =
       function(filename)
@@ -133,33 +133,40 @@ serial.loadopt = argcheck{
       end
 }
 
-serial.saveopt = argcheck{
+local function table2string(tbl)
+   local str = {"{"}
+   local keys = {}
+   for k, v in pairs(tbl) do
+      table.insert(keys, k)
+   end
+   table.sort(keys)
+   for _, k in ipairs(keys) do
+      local v = tbl[k]
+      assert(type(k) == "string")
+      if type(v) == "number" or type(v) == "boolean" then
+         table.insert(str, string.format("%s = %s,", k, v))
+      elseif type(v) == "string" then
+         table.insert(str, string.format("%s = %q,", k, v))
+      elseif type(v) == "table" then
+         table.insert(str, string.format("%s = %s,", k, table2string(v)))
+      else
+         error("invalid table value type (number, string or boolean expected)")
+      end
+   end
+   table.insert(str, "}")
+   return table.concat(str, "\n")
+end
+
+serial.savetable = argcheck{
    noordered = true,
    {name="filename", type="string", opt=true},
-   {name="opt", type="table"},
+   {name="tbl", type="table"},
    call=
-      function(filename, opt)
-         local str = {"return {"}
-         local keys = {}
-         for k, v in pairs(opt) do
-            table.insert(keys, k)
-         end
-         table.sort(keys)
-         for _, k in ipairs(keys) do
-            local v = opt[k]
-            assert(type(k) == "string")
-            if type(v) == "number" or type(v) == "boolean" then
-               table.insert(str, string.format("%s = %s,", k, v))
-            elseif type(v) == "string" then
-               table.insert(str, string.format("%s = '%s',", k, v))
-            else
-               error("invalid opt value type (number, string or boolean expected)")
-            end
-         end
-         table.insert(str, "}\n")
-         str = table.concat(str, "\n")
+      function(filename, tbl)
+         local str = table2string(tbl)
          if filename then
             local f = torch.DiskFile(filename, "w")
+            f:writeString("return ")
             f:writeString(str)
             f:close()
          end

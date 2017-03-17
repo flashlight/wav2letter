@@ -650,6 +650,9 @@ end
 
 local function train(network, criterion, iterator, params, opid)
    local progress
+   local heartbeat = serial.heartbeat{
+      filename = paths.concat(path, "heartbeat"),
+   }
    local engine = tnt.SGDEngine()
 
    function engine.hooks.onStart(state)
@@ -688,6 +691,7 @@ local function train(network, criterion, iterator, params, opid)
       end
       meters.sampletimer:stop()
       meters.networktimer:resume()
+      heartbeat()
    end
 
    function engine.hooks.onForward(state)

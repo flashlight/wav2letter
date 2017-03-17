@@ -174,4 +174,29 @@ serial.savetable = argcheck{
       end
 }
 
+serial.heartbeat = argcheck{
+   noordered = true,
+   {name="filename", type="string", opt=true},
+   {name="interval", type="number", default=60},
+   {name="closure", type="function", opt=true},
+   call=
+      function(filename, interval, closure)
+         local clock
+         return function(...)
+            local newclock = os.clock()
+            if not clock or newclock-clock > interval then
+               local f = assert(
+                  io.open(filename, "w"),
+                  string.format("could not open <%s> for writing", filename)
+               )
+               f:close()
+               clock = newclock
+               if closure then
+                  closure(filename, ...)
+               end
+            end
+         end
+      end
+}
+
 return serial

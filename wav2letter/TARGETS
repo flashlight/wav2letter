@@ -135,8 +135,6 @@ lua_binary(
 lua_binary(
     name='train',
     srcs=[
-        'data/dict/letters.lst',
-        'data/dict/phones.lst',
         'train.lua',
         'data.lua',
         'log.lua',

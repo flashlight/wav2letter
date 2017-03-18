@@ -2,6 +2,19 @@ local argcheck = require 'argcheck'
 local md5 = require 'md5'
 local serial = {}
 
+serial.savecmdline = argcheck{
+   noordered = true,
+   {name="arg", type="table"},
+   call =
+      function(arg)
+         local str = {}
+         for i=0,#arg do
+            table.insert(str, string.format("%q", arg[i]))
+         end
+         return table.concat(str, " ")
+      end
+}
+
 serial.cleanfilename = argcheck{
    {name="filename", type="string"},
    call =
@@ -18,7 +31,7 @@ serial.loadmodel = argcheck{
       function(filename, larch)
          local model = {}
          local f = torch.DiskFile(filename):binary()
-         model.info = f:readObject()
+         model.config = f:readObject()
          if larch then
             model.arch = f:readObject()
          end
@@ -29,13 +42,13 @@ serial.loadmodel = argcheck{
 
 serial.savemodel = argcheck{
    {name="filename", type="string"},
-   {name="info", type="table"},
+   {name="config", type="table"},
    {name="arch", type="table"},
    call =
-      function(filename, info, arch)
+      function(filename, config, arch)
          local f = torch.DiskFile(filename, 'w')
          f:binary()
-         f:writeObject(info)
+         f:writeObject(config)
          f:writeObject(arch)
          f:close()
       end
@@ -46,14 +59,18 @@ serial.newpath = argcheck{
    {name="opt", type="table"},
    call =
       function(root, opt)
-         local path = {}
-         table.insert(path, os.date("%Y-%m-%d_%H-%M-%S"))
-         table.insert(path, os.getenv('HOSTNAME'))
-         if opt.tag ~= '' then
-            table.insert(path, opt.tag)
+         if opt.runname == '' then
+            local path = {}
+            table.insert(path, os.date("%Y-%m-%d_%H-%M-%S"))
+            table.insert(path, os.getenv('HOSTNAME'))
+            if opt.tag ~= '' then
+               table.insert(path, opt.tag)
+            end
+            table.insert(path, md5.sumhexa(serial.savetable{tbl=opt}))
+            return paths.concat(root, table.concat(path, '_'))
+         else
+            return paths.concat(root, opt.runname)
          end
-         table.insert(path, md5.sumhexa(serial.savetable{tbl=opt}))
-         return paths.concat(root, table.concat(path, '_'))
       end
 }
 
@@ -92,7 +109,9 @@ serial.mkdir = argcheck{
    {name="path", type="string"},
    call =
       function(path)
-         os.execute(string.format('mkdir -p "%s"', path))
+         if not paths.dirp(path) then
+            os.execute(string.format('mkdir -p %q', path))
+         end
       end
 }
 

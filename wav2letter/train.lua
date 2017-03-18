@@ -20,6 +20,7 @@ local function cmdmutableoptions(cmd)
    cmd:option('-dictdir', string.format('%s/local/datasets/speech/dict', os.getenv('HOME')), 'dictionary directory')
    cmd:option('-rundir', string.format('%s/local/experiments/speech', os.getenv('HOME')), 'experiment root directory')
    cmd:option('-archdir', string.format('%s/local/arch/speech', os.getenv('HOME')), 'arch root directory')
+   cmd:option('-runname', '', 'name of current run')
    cmd:option('-gfsai', false, 'override above paths to gfsai ones')
    cmd:option('-mpi', false, 'use mpi parallelization')
    cmd:option('-seed', 1111, 'Manually set RNG seed')
@@ -126,6 +127,7 @@ local opt -- current options
 local path -- current experiment path
 local runidx -- current #runs in this path
 local reload -- path to model to reload
+local cmdline = serial.savecmdline{arg=arg}
 local command = arg[1]
 if #arg >= 1 and command == '--train' then
    table.remove(arg, 1)
@@ -148,7 +150,7 @@ elseif #arg >= 2 and arg[1] == '--continue' then
    opt = serial.parsecmdline{
       closure = cmdmutableoptions,
       arg = arg,
-      default = serial.loadmodel(reload).info.opt
+      default = serial.loadmodel(reload).config.opt
    }
 elseif #arg >= 2 and arg[1] == '--fork' then
    reload = arg[2]
@@ -157,7 +159,7 @@ elseif #arg >= 2 and arg[1] == '--fork' then
    opt = serial.parsecmdline{
       closure = cmdmutableoptions,
       arg = arg,
-      default = serial.loadmodel(reload).info.opt
+      default = serial.loadmodel(reload).config.opt
    }
    runidx = 1
    path = serial.newpath(opt.rundir, opt)
@@ -170,15 +172,18 @@ or %s --fork <directory/model> <options...>
 ]], arg[0], arg[0], arg[0]))
 end
 
--- saved information
-local info = {
+-- saved configuration
+local config = {
+   opt = opt,
+   path = path,
+   runidx = runidx,
+   reload = reload,
+   cmdline = cmdline,
+   command = command,
+   -- extra goodies:
    username = os.getenv('USER'),
    hostname = os.getenv('HOSTNAME'),
    timestamp = os.date("%Y-%m-%d %H:%M:%S"),
-   opt = opt,
-   arg = arg,
-   reload = reload,
-   command = command,
 }
 
 local mpi
@@ -271,19 +276,18 @@ print(string.format('| number of classes (network) = %d', #dict))
 --    arch_f:close()
 --    opt.arch = opt.archgen
 -- end
-info.netspecs = netutils.readspecs(paths.concat(opt.archdir, opt.arch))
 local network, transitions, kw, dw
 if reload then
    print(string.format('| reloading model <%s>', reload))
    local model = serial.loadmodel{filename=reload, arch=true}
    network = model.arch.network
    transitions = model.arch.transitions
-   kw = model.info.kw
-   dw = model.info.dw
+   kw = model.config.kw
+   dw = model.config.dw
    assert(kw and dw, 'kw and dw could not be found in model archive')
 else
    network, kw, dw = netutils.create{
-      specs = info.netspecs,
+      specs = netutils.readspecs(paths.concat(opt.archdir, opt.arch)),
       gpu = opt.gpu,
       channels = (opt.mfsc and 40 ) or ((opt.pow and 257 ) or (opt.mfcc and opt.mfcccoeffs*3 or opt.channels)), -- DEBUG: UGLY
       nclass = #dict,
@@ -291,8 +295,8 @@ else
       batchsize = opt.batchsize
    }
 end
-info.kw = kw
-info.dw = dw
+config.kw = kw
+config.dw = dw
 
 local zeronet = nn.ZeroNet(kw, dw, #dict)
 local netcopy = network:clone() -- pristine stateless copy
@@ -546,7 +550,7 @@ local function savebestmodels()
    -- save last model
    serial.savemodel{
       filename = serial.runidx(path, "model_last.bin", runidx),
-      info = info,
+      config = config,
       arch = {
          network = netutils.copy(
             netcopy,
@@ -565,7 +569,7 @@ local function savebestmodels()
          minerrs[name] = value
          serial.savemodel{
             filename = serial.runidx(path, serial.cleanfilename("model_" .. name .. ".bin"), runidx),
-            info = info,
+            config = config,
             arch = {
                network = netutils.copy(
                   netcopy,
@@ -787,13 +791,7 @@ end
 if mpirank == 1 then
    serial.savetable{
       filename = serial.runidx(path, "config.lua", runidx),
-      tbl = {
-         opt = opt,
-         path = path,
-         runidx = runidx,
-         reload = reload,
-         command = command,
-      }
+      tbl = config
    }
 end
 

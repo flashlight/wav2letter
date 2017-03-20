@@ -123,6 +123,17 @@ function cmdimmutableoptions(cmd)
    cmd:text()
 end
 
+-- override paths?
+local function overridepath(opt)
+   if opt.gfsai then
+      opt.datadir = '/mnt/fair-flash-east'
+      opt.dictdir = '/mnt/vol/gfsai-east/ai-group/teams/wav2letter/dict'
+      opt.archdir = '/mnt/vol/gfsai-east/ai-group/teams/wav2letter/arch'
+      opt.rundir = '/mnt/vol/gfsai-east/users/' .. assert(os.getenv('USER'), 'unknown user') .. '/chronos'
+      opt.runname = assert(os.getenv('CHRONOS_JOB_ID'), 'unknown job id')
+   end
+end
+
 local opt -- current options
 local path -- current experiment path
 local runidx -- current #runs in this path
@@ -139,6 +150,7 @@ if #arg >= 1 and command == '--train' then
          end,
       arg = arg
    }
+   overridepath(opt)
    runidx = 1
    path = serial.newpath(opt.rundir, opt)
 elseif #arg >= 2 and arg[1] == '--continue' then
@@ -152,6 +164,16 @@ elseif #arg >= 2 and arg[1] == '--continue' then
       arg = arg,
       default = serial.loadmodel(reload).config.opt
    }
+   if opt.gfsai then
+      overridepath(opt)
+      local symlink = serial.newpath(opt.rundir, opt)
+      -- make a symlink to track exp id
+      serial.symlink(
+         path,
+         symlink
+      )
+      print(string.format("| experiment symlink path: %s", symlink))
+   end
 elseif #arg >= 2 and arg[1] == '--fork' then
    reload = arg[2]
    table.remove(arg, 1)
@@ -161,6 +183,7 @@ elseif #arg >= 2 and arg[1] == '--fork' then
       arg = arg,
       default = serial.loadmodel(reload).config.opt
    }
+   overridepath(opt)
    runidx = 1
    path = serial.newpath(opt.rundir, opt)
 else
@@ -205,15 +228,9 @@ if opt.mpi then
    end
 end
 
--- override paths?
-if opt.gfsai then
-   opt.datadir = '/mnt/fair-flash-east'
-   opt.rundir = '/mnt/vol/gfsai-east/ai-group/teams/wav2letter/experiments'
-   opt.archdir = '/mnt/vol/gfsai-east/ai-group/teams/wav2letter/arch'
-end
-
 if mpirank == 1 then
    print(string.format("| experiment path: %s", path))
+   print(string.format("| experiment runidx: %d", runidx))
    serial.mkdir(path)
 end
 

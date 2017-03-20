@@ -1,6 +1,20 @@
 local argcheck = require 'argcheck'
 local md5 = require 'md5'
 local serial = {}
+local ffi = require 'ffi'
+
+ffi.cdef[[
+int symlink(const char *path1, const char *path2);
+]]
+
+serial.symlink = argcheck{
+   {name="dir", type="string"},
+   {name="link", type="string"},
+   call =
+      function(dir, link)
+         return ffi.C.symlink(dir, link) == 0
+      end
+}
 
 serial.savecmdline = argcheck{
    noordered = true,
@@ -59,18 +73,18 @@ serial.newpath = argcheck{
    {name="opt", type="table"},
    call =
       function(root, opt)
+         local path = {}
          if opt.runname == '' then
-            local path = {}
             table.insert(path, os.date("%Y-%m-%d_%H-%M-%S"))
             table.insert(path, os.getenv('HOSTNAME'))
-            if opt.tag ~= '' then
-               table.insert(path, opt.tag)
-            end
             table.insert(path, md5.sumhexa(serial.savetable{tbl=opt}))
-            return paths.concat(root, table.concat(path, '_'))
          else
-            return paths.concat(root, opt.runname)
+            table.insert(path, opt.runname)
          end
+         if opt.tag ~= '' then
+            table.insert(path, opt.tag)
+         end
+         return paths.concat(root, table.concat(path, '_'))
       end
 }
 

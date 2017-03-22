@@ -34,7 +34,7 @@ ENDIF (WITH_OPENMP)
 FIND_PACKAGE(MKL REQUIRED)
 
 INCLUDE_DIRECTORIES(${MKL_INCLUDE_DIR})
-FIND_PACKAGE(Torch QUIET)
+FIND_PACKAGE(Torch REQUIRED)
 IF(Torch_FOUND)
   ADD_DEFINITIONS(-DHAS_TORCH)
   ADD_DEFINITIONS(-std=c99)
@@ -63,3 +63,19 @@ install(FILES ${luafiles}
 install(FILES
   "utils/init.lua"
   DESTINATION ${LUA_PATH}/${PKGNAME}/utils)
+
+set(LIBPKGNAME libwaveval)
+set(LIBTESTPKGNAME wavevaltest)
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib)
+add_library(${LIBPKGNAME} SHARED "libwaveval/waveval.c")
+add_executable(${LIBTESTPKGNAME} ${CMAKE_CURRENT_SOURCE_DIR}/libwaveval/test/wavevaltest.c)
+
+TARGET_LINK_LIBRARIES(${LIBPKGNAME} TH luaT)
+TARGET_LINK_LIBRARIES(${LIBTESTPKGNAME} ${LIBPKGNAME} ${LUA_LIB})
+
+install(TARGETS ${LIBPKGNAME} LIBRARY
+  DESTINATION ${LIB_DIR})
+FILE(GLOB wavevalluafiles runtime/*.lua)
+install(FILES ${wavevalluafiles}
+  DESTINATION ${LUA_PATH}/${PKGNAME}/runtime)

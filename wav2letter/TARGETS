@@ -136,11 +136,7 @@ lua_binary(
     name='train',
     srcs=[
         'train.lua',
-        'data.lua',
-        'log.lua',
-        'serial.lua',
         'netutils.lua',
-        'transforms.lua',
     ]
     + util.files('config/**/*.lua'),
     deps=[
@@ -164,7 +160,6 @@ lua_binary(
     name='test',
     srcs=[
         'test.lua',
-        'transforms.lua',
     ]
     + util.files('config/**/*.lua'),
     deps=[
@@ -193,7 +188,6 @@ lua_binary(
     name='test-one-file',
     srcs=[
         'test-one-file.lua',
-        'transforms.lua',
     ]
     + util.files('config/**/*.lua'),
     deps=[

@@ -3,9 +3,9 @@ require 'nn'
 
 local tnt = require 'torchnet'
 local threads = require 'threads'
-local data = paths.dofile('data.lua')
-local log = paths.dofile('log.lua')
-local serial = paths.dofile('serial.lua')
+local data = require 'wav2letter.runtime.data'
+local log = require 'wav2letter.runtime.log'
+local serial = require 'wav2letter.runtime.serial'
 
 require 'wav2letter'
 
@@ -424,7 +424,7 @@ if opt.shift > 0 then
    network = nn.ShiftNet(network, opt.shift)
 end
 
-local transforms = paths.dofile('transforms.lua')
+local transforms = require 'wav2letter.runtime.transforms'
 local remaplabels = transforms.remap{
    uniq = true,
    replabel = opt.replabel > 0 and {n=opt.replabel, dict=dict} or nil,
@@ -436,7 +436,7 @@ local trainiterator = data.newiterator{
    nthread = opt.nthread,
    closure =
       function()
-         local data = paths.dofile('data.lua')
+         local data = require 'wav2letter.runtime.data'
          return data.newdataset{
             names = data.namelist(opt.train),
             opt = opt,
@@ -459,7 +459,7 @@ for _, name in ipairs(data.namelist(opt.valid)) do
    nthread = opt.nthread,
    closure =
       function()
-         local data = paths.dofile('data.lua')
+         local data = require 'wav2letter.runtime.data'
          return data.newdataset{
             names = {name},
             opt = opt,
@@ -480,7 +480,7 @@ for _, name in ipairs(data.namelist(opt.test)) do
    nthread = opt.nthread,
    closure =
       function()
-         local data = paths.dofile('data.lua')
+         local data = require 'wav2letter.runtime.data'
          return data.newdataset{
             names = {name},
             opt = opt,

@@ -79,7 +79,7 @@ local kw, dw = opt.kw, opt.dw
 
 local config = paths.dofile(string.format('config/%s.lua', opt.config))
 config = config(opt)
-local transforms = paths.dofile('transforms.lua')(opt, config, false)
+local transforms = (require 'wav2letter.runtime.transforms')(opt, config, false)
 
 print(string.format('| number of classes (network) = %d', opt.nclass))
 

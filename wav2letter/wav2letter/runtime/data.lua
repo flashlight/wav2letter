@@ -327,41 +327,11 @@ data.newdataset = argcheck{
    call =
       function(names, opt, dict, kw, dw, sampler, mpirank, mpisize, maxload, aug)
          local tnt = require 'torchnet'
-         local data = paths.dofile('data.lua')
+         local data = require 'wav2letter.runtime.data'
          local readers = require 'wav2letter.readers'
-         local transforms = paths.dofile('transforms.lua')
+         local transforms = require 'wav2letter.runtime.transforms'
          require 'wav2letter'
-         local inputtransform, inputsizetransform = transforms.input{
-            aug = opt.aug and {
-               samplerate = opt.samplerate,
-               bendingp = opt.augbendingp,
-               speedp = opt.augspeedp,
-               speed = opt.augspeed,
-               chorusp = opt.chorusp,
-               echop = opt.echop,
-               compandp = opt.compandp,
-               flangerp = opt.flangerp,
-               noisep = opt.noisep,
-               threadid = __threadid
-                              } or nil,
-            mfcc = opt.mfcc and {
-               samplerate = opt.samplerate,
-               coeffs = opt.mfcccoeffs,
-               melfloor = opt.melfloor
-                                } or nil,
-            mfsc = opt.mfsc and {
-               samplerate = opt.samplerate,
-               melfloor = opt.melfloor
-                                } or nil,
-            pow = opt.pow and {
-               samplerate = opt.samplerate,
-               melfloor = opt.melfloor
-                              } or nil,
-            normmax = opt.inormmax,
-            normloc = opt.inormloc and {kw=opt.inkw, dw=opt.indw, noisethreshold=opt.innt} or nil,
-            norm = not opt.inormax and not opt.inormloc,
-            pad = {size=kw/2, value=0},
-         }
+         local inputtransform, inputsizetransform = transforms.inputfromoptions(opt, kw, dw)
          local targettransform, targetsizetransform = transforms.target{
             surround = opt.surround ~= '' and assert(dict[opt.surround], 'invalid surround label') or nil,
             replabel = opt.replabel > 0 and {n=opt.replabel, dict=dict} or nil,

@@ -227,6 +227,7 @@ if opt.mpi then
       return mpi.allreduce_double(val)/mpisize
    end
 end
+config.mpisize = mpisize
 
 if mpirank == 1 then
    print(string.format("| experiment path: %s", path))

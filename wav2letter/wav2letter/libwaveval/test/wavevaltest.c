@@ -9,7 +9,7 @@
 int main(int argc, char** argv[]) {
   int error = 0;
   // models are too big to check in to repository, use your local conv model
-  WavEvalState* state = waveval_init("/home/vitaliy888/temp/model.bin",
+  WavEvalState* state = waveval_init("model.bin",
                                            &error);
   if (error != NO_ERROR) {
     printf("Initialization failed: %s", waveval_geterror(state, error));

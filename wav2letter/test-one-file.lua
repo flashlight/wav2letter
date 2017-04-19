@@ -37,7 +37,7 @@ opt.datadir = testopt.datadir
 -- only for tostring()
 local config = paths.dofile(string.format('config/%s.lua', opt.config))
 config = config(opt)
-local transforms = paths.dofile('transforms.lua')(opt, config)
+local transforms = (require 'wav2letter.runtime.transforms')(opt, config)
 
 print(string.format('| number of classes (network) = %d', opt.nclass))
 

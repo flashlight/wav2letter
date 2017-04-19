@@ -2,8 +2,8 @@ local argcheck = require 'argcheck'
 local speechtransform = require 'wav2letter.transform'
 local utils = require 'wav2letter.utils'
 local transform = require 'torchnet.transform'
-local speech = require'speech'
 local sndfile = require 'sndfile'
+local speech = require 'speech'
 
 local transforms = {}
 
@@ -273,6 +273,50 @@ transforms.input = argcheck{
          return transform.compose(transforms), transform.compose(sizetransforms)
       end
 }
+
+transforms.inputfromoptions = argcheck{
+   {name='opt', type='table'},
+   {name="kw", type="number"},
+   {name="dw", type="number"},
+   call =
+      function(opt, kw, dw)
+         return transforms.input{
+           aug = opt.aug and {
+              samplerate = opt.samplerate,
+              bendingp = opt.augbendingp,
+              speedp = opt.augspeedp,
+              speed = opt.augspeed,
+              chorusp = opt.chorusp,
+              echop = opt.echop,
+              compandp = opt.compandp,
+              flangerp = opt.flangerp,
+              noisep = opt.noisep,
+              threadid = __threadid
+                             } or nil,
+           mfcc = opt.mfcc and {
+              samplerate = opt.samplerate,
+              coeffs = opt.mfcccoeffs,
+              melfloor = opt.melfloor
+                               } or nil,
+           mfsc = opt.mfsc and {
+              samplerate = opt.samplerate,
+              melfloor = opt.melfloor
+                               } or nil,
+           pow = opt.pow and {
+              samplerate = opt.samplerate,
+              melfloor = opt.melfloor
+                             } or nil,
+           normmax = opt.inormmax,
+           normloc = opt.inormloc and {
+              kw=opt.inkw, dw=opt.indw,
+              noisethreshold=opt.innt
+                                      } or nil,
+           norm = not opt.inormax and not opt.inormloc,
+           pad = {size=kw/2, value=0},
+         }
+      end
+}
+
 
 transforms.target = argcheck{
    noordered = true,

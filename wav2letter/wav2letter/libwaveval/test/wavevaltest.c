@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <stdio.h>
 
-int main(int argc, char** argv[]) {
+int main(int argc, char* argv[]) {
   int error = 0;
   // models are too big to check in to repository, use your local conv model
   WavEvalState* state = waveval_init("model.bin",
@@ -23,16 +23,16 @@ int main(int argc, char** argv[]) {
     long depth = waveval_getModelDepth(state, &error);
     if (error != NO_ERROR) {
       printf("LUA ERROR occured: ");
-      printf(waveval_geterror(state, error));
+      printf("%s\n", waveval_geterror(state, error));
     }
-    printf("getDepth succeeded. Depth: %d!\n", depth);
+    printf("getDepth succeeded. Depth: %ld!\n", depth);
     assert(depth == 27);
 
     float* output = waveval_forward(state, input, inputSize, 27, &outputSize,
                                        &error);
     if (error != NO_ERROR) {
       printf("LUA ERROR occured: ");
-      printf(waveval_geterror(state, error));
+      printf("%s\n", waveval_geterror(state, error));
     }
     printf("feedForward succeeded!\n");
 

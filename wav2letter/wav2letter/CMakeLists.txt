@@ -64,14 +64,14 @@ install(FILES
   "utils/init.lua"
   DESTINATION ${LUA_PATH}/${PKGNAME}/utils)
 
-set(LIBPKGNAME libwaveval)
+set(LIBPKGNAME waveval)
 set(LIBTESTPKGNAME wavevaltest)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib)
 add_library(${LIBPKGNAME} SHARED "libwaveval/waveval.c")
 add_executable(${LIBTESTPKGNAME} ${CMAKE_CURRENT_SOURCE_DIR}/libwaveval/test/wavevaltest.c)
 
-TARGET_LINK_LIBRARIES(${LIBPKGNAME} TH luaT)
+TARGET_LINK_LIBRARIES(${LIBPKGNAME} TH luaT ${LUA_LIB})
 TARGET_LINK_LIBRARIES(${LIBTESTPKGNAME} ${LIBPKGNAME} ${LUA_LIB})
 
 install(TARGETS ${LIBPKGNAME} LIBRARY

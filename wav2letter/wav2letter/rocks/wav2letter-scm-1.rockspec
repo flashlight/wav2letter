@@ -27,5 +27,12 @@ build = {
       LUA_CPATH="$(LIBDIR)",
       LIB_DIR="$(LUA_LIBDIR)",
       LUA_LIB="$(LUA_LIBDIR)/libluajit.so"
+   },
+   platforms = {
+      macosx = {
+         variables = {
+            LUA_LIB="$(LUA_LIBDIR)/libluajit.dylib",
+         }
+      }
    }
 }

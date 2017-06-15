@@ -364,7 +364,7 @@ data.newdataset = argcheck{
             }
          end
 
-         local dataset = datasetwithfeatures(
+         local features =
             {
                {
                   name = opt.input,
@@ -381,7 +381,17 @@ data.newdataset = argcheck{
                      dictionary = dict
                   }
                },
-            },
+            }
+         if opt.words then
+            table.insert(features,
+               {
+                  name = opt.words,
+                  alias = "words",
+                  reader = readers.words()
+               })
+         end
+         local dataset = datasetwithfeatures(
+            features,
             {
                input = inputtransform,
                target = targettransform

@@ -61,7 +61,7 @@ local function decoder(letterdictname, worddictname, lmname, smearing, nword)
    end
 
    local lm = beamer.LM(lmname)
-   local sil = letters[' ']
+   local sil = letters['|']
    local unk = lm:index(LMUNK)
 
    local lmidx2word = {}

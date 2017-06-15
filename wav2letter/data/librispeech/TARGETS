@@ -1,31 +1,31 @@
 lua_binary(
-    name='create',
-    srcs=[
-        'create.lua',
+    name = "create",
+    srcs = [
+        "create.lua",
     ],
-    deps=[
-        '@/torch/fb/torchnet:torchnet',
+    main_module = "create",
+    deps = [
+        "@/torch/fb/torchnet:torchnet",
     ],
-    external_deps=[
-        'luafilesystem',
-        ('torch7', 'trunk'),
-        ('torch-paths', 'trunk'),
-        ('torch--tds', 'trunk'),
+    external_deps = [
+        "luafilesystem",
+        ("torch7", "trunk"),
+        ("torch-paths", "trunk"),
+        ("torch--tds", "trunk"),
     ],
-    main_module='create',
 )
 
 lua_binary(
-    name='count-words',
-    srcs=[
-        'count-words.lua',
+    name = "count-words",
+    srcs = [
+        "count-words.lua",
     ],
-    deps=[
-        '@/torch/fb/torchnet:torchnet',
+    main_module = "count-words",
+    deps = [
+        "@/torch/fb/torchnet:torchnet",
     ],
-    external_deps=[
-        ('torch7', 'trunk'),
-        ('torch-paths', 'trunk'),
+    external_deps = [
+        ("torch7", "trunk"),
+        ("torch-paths", "trunk"),
     ],
-    main_module='count-words',
 )

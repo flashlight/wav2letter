@@ -1,46 +1,46 @@
 lua_binary(
-    name='arpa-to-arparep',
-    srcs=[
-        'arpa-to-arparep.lua',
+    name = "arpa-to-arparep",
+    srcs = [
+        "arpa-to-arparep.lua",
     ],
-    external_deps=[
-        ('torch7', None),
+    main_module = "arpa-to-arparep",
+    external_deps = [
+        ("torch7", None),
     ],
-    main_module='arpa-to-arparep',
 )
 
 lua_binary(
-    name='read-dict-from-arpa',
-    srcs=[
-        'read-dict-from-arpa.lua',
+    name = "read-dict-from-arpa",
+    srcs = [
+        "read-dict-from-arpa.lua",
     ],
-    main_module='read-dict-from-arpa',
+    main_module = "read-dict-from-arpa",
 )
 
 lua_binary(
-    name='convert-arpa',
-    srcs=[
-        'convert-arpa.lua',
+    name = "convert-arpa",
+    srcs = [
+        "convert-arpa.lua",
     ],
-    deps=[
-        '@/deeplearning/projects/wav2letter:wav2letter',
+    main_module = "convert-arpa",
+    deps = [
+        "@/deeplearning/projects/wav2letter:wav2letter",
     ],
-    external_deps=[
-        ('torch7', None),
+    external_deps = [
+        ("torch7", None),
     ],
-    main_module='convert-arpa',
 )
 
 lua_binary(
-    name='create-sz',
-    srcs=[
-        'create-sz.lua',
+    name = "create-sz",
+    srcs = [
+        "create-sz.lua",
     ],
-    deps=[
-        '@/deeplearning/projects/wav2letter:wav2letter',
+    main_module = "create-sz",
+    deps = [
+        "@/deeplearning/projects/wav2letter:wav2letter",
     ],
-    external_deps=[
-        ('torch7', None),
+    external_deps = [
+        ("torch7", None),
     ],
-    main_module='create-sz',
 )

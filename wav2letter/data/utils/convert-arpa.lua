@@ -45,31 +45,31 @@ local function spellingremoveletterrepeat(spelling, maxr)
    end
    local prevletter = spelling:sub(1, 1)
    local newspelling = prevletter
-   local r = 1
+   local r = 0
    local invalid = false
    for i=2,#spelling do
       local letter = spelling:sub(i, i)
       if letter == prevletter then
          r = r + 1
-         if r > maxr then
-            newspelling = newspelling .. r-1 .. letter
-            r = 1
+         if r == maxr then
+            newspelling = newspelling .. r
+            prevletter = nil
+            r = 0
             invalid = true
-         end
-      else
-         if r > 1 then
+         elseif i == #spelling then
             newspelling = newspelling .. r
          end
-         r = 1
+      else
+         if r >= 1 then
+            newspelling = newspelling .. r
+         end
+         r = 0
          prevletter = letter
          newspelling = newspelling .. letter
       end
    end
    if invalid then
       print('! invalid spelling <' .. spelling .. '> converted to <' .. newspelling .. '>')
-   end
-   if r > 1 then
-      newspelling = newspelling .. r
    end
    return newspelling
 end

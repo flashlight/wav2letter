@@ -1,33 +1,33 @@
 lua_binary(
-    name='model2name',
-    srcs=[
-        'model2name.lua',
+    name = "model2name",
+    srcs = [
+        "model2name.lua",
     ],
-    deps=[
-        '@/torch/fb/torchnet:torchnet',
+    main_module = "model2name",
+    deps = [
+        "@/torch/fb/torchnet:torchnet",
     ],
-    external_deps=[
-        'luafilesystem',
-        ('torch7', None),
-        ('torch-paths', None),
-        ('torch--tds', None),
+    external_deps = [
+        "luafilesystem",
+        ("torch7", None),
+        ("torch-paths", None),
+        ("torch--tds", None),
     ],
-    main_module='model2name',
 )
 
 lua_binary(
-    name='model2continue',
-    srcs=[
-        'model2continue.lua',
+    name = "model2continue",
+    srcs = [
+        "model2continue.lua",
     ],
-    deps=[
-        '@/torch/fb/torchnet:torchnet',
+    main_module = "model2continue",
+    deps = [
+        "@/torch/fb/torchnet:torchnet",
     ],
-    external_deps=[
-        'luafilesystem',
-        ('torch7', None),
-        ('torch-paths', None),
-        ('torch--tds', None),
+    external_deps = [
+        "luafilesystem",
+        ("torch7", None),
+        ("torch-paths", None),
+        ("torch--tds", None),
     ],
-    main_module='model2continue',
 )

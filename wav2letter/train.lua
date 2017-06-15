@@ -126,10 +126,10 @@ end
 -- override paths?
 local function overridepath(opt)
    if opt.gfsai then
-      opt.datadir = '/mnt/fair-flash-east'
-      opt.dictdir = '/mnt/vol/gfsai-east/ai-group/teams/wav2letter/dict'
+      opt.datadir = '/data/local/packages/ai-group.speechdata/latest/speech'
+      opt.dictdir = '/data/local/packages/ai-group.speechdata/latest/speech'
       opt.archdir = '/mnt/vol/gfsai-east/ai-group/teams/wav2letter/arch'
-      opt.rundir = '/mnt/vol/gfsai-east/users/' .. assert(os.getenv('USER'), 'unknown user') .. '/chronos'
+      opt.rundir = '/mnt/vol/gfsai-east/ai-group/users/' .. assert(os.getenv('USER'), 'unknown user') .. '/chronos'
       opt.runname = assert(os.getenv('CHRONOS_JOB_ID'), 'unknown job id')
    end
 end
@@ -401,20 +401,6 @@ elseif opt.normclamp > 0 then
    function applyClamp()
       apply(opt.normclamp)
    end
-end
-
-local function makeParallel(network, size)
-   local _network = nn.DataParallelTableTable(true, true):threads(function()
-        require 'cudnn'
-        require 'fbcunn'
-        cudnn.fastest = true
-     end)
-   local gpus = {}
-   for i = 1, size do
-      gpus[i] = opt.gpu - 1 + i
-   end
-   _network:add(network, gpus)
-   return _network
 end
 
 assert(not(opt.batchsize > 0 and opt.shift > 0), 'Cannot allow both shifting and batching')

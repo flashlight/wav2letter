@@ -1,16 +1,16 @@
 lua_binary(
-    name='create',
-    srcs=[
-        'create.lua',
-        'preprocess.lua',
+    name = "create",
+    srcs = [
+        "create.lua",
+        "preprocess.lua",
     ],
-    deps=[
-        '@/torch/fb/torchnet:torchnet',
+    main_module = "create",
+    deps = [
+        "@/torch/fb/torchnet:torchnet",
     ],
-    external_deps=[
-        ('torch7', 'trunk'),
-        ('torch-paths', 'trunk'),
-        ('torch-xlua', 'trunk'),
+    external_deps = [
+        ("torch7", "trunk"),
+        ("torch-paths", "trunk"),
+        ("torch-xlua", "trunk"),
     ],
-    main_module='create',
 )

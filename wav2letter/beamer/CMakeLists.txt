@@ -9,6 +9,10 @@ FIND_LIBRARY(kenlmlib kenlm
   ENV KENLM_LIB
 )
 
+FIND_LIBRARY(kenlmutillib kenlm_util
+  ENV KENLM_UTIL_LIB
+)
+
 IF(NOT kenlmlib)
   MESSAGE(FATAL_ERROR "kenlm library not found; please set CMAKE_LIBRARY_PATH or KENLM_LIB")
 ENDIF()
@@ -48,4 +52,4 @@ set(luasrc
 )
 
 add_torch_package(beamer "${src}" "${luasrc}")
-target_link_libraries(beamer ${kenlmlib})
+target_link_libraries(beamer ${kenlmlib} ${kenlmutillib})

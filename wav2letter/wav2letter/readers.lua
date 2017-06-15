@@ -14,13 +14,15 @@ readers.audio = argcheck{
                sndfile.SndFile(filename),
                string.format("could not read file <%s>", filename))
             local info = f:info()
+            local data = f:readFloat(info.frames)
             if samplerate and info.samplerate ~= samplerate then
-               error("NYI: sample rate conversion")
+               local sampleratelib = require 'samplerate'
+               local samplingRate = samplerate / info.samplerate
+               data = sampleratelib.sample(data, samplingRate)
             end
             if channels and info.channels ~= channels then
                error("NYI: # of channel conversion")
             end
-            local data = f:readFloat(info.frames)
             f:close()
             return data
          end
@@ -62,6 +64,21 @@ readers.number = argcheck{
             assert(number, "parsing error: no number in file")
             f:close()
             return number
+         end
+      end
+}
+
+readers.words = argcheck{
+   call =
+      function()
+         return function(filename)
+            local f = io.open(filename)
+            local data
+            if f then
+               data = f:read('*all')
+               f:close()
+            end
+            return data
          end
       end
 }

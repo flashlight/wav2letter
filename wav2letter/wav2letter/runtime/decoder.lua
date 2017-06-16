@@ -44,7 +44,7 @@ local function decoder(letterdictname, worddictname, lmname, smearing, nword)
    local letters = loadletterhash(letterdictname)
 
    -- add <unk> in words (only :))
-   do
+   if not words[LMUNK] then
       local def = {idx=#words+1, word=LMUNK, spellings={}}
       words[def.idx] = def
       words[def.word] = def
@@ -67,11 +67,11 @@ local function decoder(letterdictname, worddictname, lmname, smearing, nword)
    local unk = lm:index(LMUNK)
 
    local lmidx2word = {}
-   lmidx2word[unk] = LMUNK
    local trie = beamer.Trie(#letters+1, sil) -- 0 based
    for i=0,#words do
       local lmidx = lm:index(words[i].word)
       local _, score = lm:score(lmidx)
+      assert(not lmidx2word[lmidx])
       lmidx2word[lmidx] = words[i].word
       assert(score < 0)
       for _, spelling in ipairs(words[i].spellings) do

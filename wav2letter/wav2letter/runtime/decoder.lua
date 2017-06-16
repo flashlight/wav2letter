@@ -64,28 +64,22 @@ local function decoder(letterdictname, worddictname, lmname, smearing, nword)
 
    local lm = beamer.LM(lmname)
    local sil = letters['|']
-   local unk = lm:index(LMUNK)
+   local unk = {lm=lm:index(LMUNK), usr=words[LMUNK].idx}
 
-   local lmidx2word = {}
    local trie = beamer.Trie(#letters+1, sil) -- 0 based
    for i=0,#words do
       local lmidx = lm:index(words[i].word)
       local _, score = lm:score(lmidx)
-      assert(not lmidx2word[lmidx])
-      lmidx2word[lmidx] = words[i].word
       assert(score < 0)
       for _, spelling in ipairs(words[i].spellings) do
-         trie:insert(spelling2indices(spelling), lmidx, score)
+         trie:insert(spelling2indices(spelling), {lm=lmidx, usr=i}, score)
       end
    end
 
-   local function toword(lmidx)
-      lmidx = tonumber(lmidx)
-      if lmidx2word[lmidx] then
-         return lmidx2word[lmidx]
-      else
-         return LMUNK
-      end
+   local function toword(usridx)
+      local word = words[usridx]
+      assert(word, 'unknown word index')
+      return word.word
    end
 
    if smearing == 'max' then
@@ -120,8 +114,8 @@ local function decoder(letterdictname, worddictname, lmname, smearing, nword)
                   table.insert(lsentence, letteridx)
                end
                if wordidx >= 0 then
-                  assert(lmidx2word[wordidx] and words[lmidx2word[wordidx]])
-                  table.insert(sentence, words[lmidx2word[wordidx]].idx)
+                  assert(words[wordidx])
+                  table.insert(sentence, wordidx)
                end
             end
          end
@@ -151,7 +145,7 @@ local function decoder(letterdictname, worddictname, lmname, smearing, nword)
       sil = sil,
       decoder = decoder,
       decode = decode,
-      toword = toword, -- lmidx to word
+      toword = toword, -- usridx to word
       spelling2indices = spelling2indices -- word to letter idx
    }
    setmetatable(obj, {__call=function(...) return decode(select(2, ...), select(3, ...)) end})

@@ -18,7 +18,7 @@ typedef struct BMRDecoderOptions_ {
   int logadd; /* use logadd instead of max when merging same word hypothesis */
 } BMRDecoderOptions;
 
-BMRDecoder* BMRDecoder_new(BMRTrie *lexicon, BMRLM *lm, long sil, long unk);
+BMRDecoder* BMRDecoder_new(BMRTrie *lexicon, BMRLM *lm, long sil, BMRTrieLabel unk);
 void BMRDecoder_decode(BMRDecoder *decoder, BMRDecoderOptions *opt, float *transitions, float *emissions, long T, long N, long *nhyp_, float *scores_, long *llabels_, long *labels_);
 long BMRDecoder_mem(BMRDecoder *decoder);
 void BMRDecoder_free(BMRDecoder *decoder);
@@ -29,6 +29,7 @@ void BMRDecoder_settoword(BMRDecoder *decoder, const char* (*toword)(long)); /* 
 local mt = {}
 
 function mt:__new(lexicon, lm, sil, unk)
+   assert(unk.lm and unk.usr)
    local self = C.BMRDecoder_new(lexicon, lm, sil, unk)
    if self == nil then
       error('not enough memory')

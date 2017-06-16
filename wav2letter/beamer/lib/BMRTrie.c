@@ -13,7 +13,7 @@ struct BMRTrieNode_ {
   struct BMRTrieNode_ **children; /* letters */
   long idx; /* letter */
   long nlabel; /* number of labels */
-  long label[BMR_TRIE_MAXLABEL]; /* word labels */
+  BMRTrieLabel label[BMR_TRIE_MAXLABEL]; /* word labels */
   float score[BMR_TRIE_MAXLABEL]; /* score to pass through */
   float maxscore; /* max score of children */
 };
@@ -69,7 +69,7 @@ static BMRTrieNode* BMRTrie_newnode(BMRTrie *trie, long idx)
   return node;
 }
 
-BMRTrieNode* BMRTrie_insert(BMRTrie *trie, long *indices, long n, long label, float score)
+BMRTrieNode* BMRTrie_insert(BMRTrie *trie, long *indices, long n, BMRTrieLabel label, float score)
 {
   BMRTrieNode *node = trie->root;
   long i;
@@ -169,12 +169,12 @@ long BMRTrieNode_nlabel(BMRTrieNode *node)
   return node->nlabel;
 }
 
-long BMRTrieNode_label(BMRTrieNode *node, int n)
+BMRTrieLabel* BMRTrieNode_label(BMRTrieNode *node, int n)
 {
   if(n >= node->nlabel) {
-    return -1;
+    return NULL;
   }
-  return node->label[n];
+  return &node->label[n];
 }
 
 long BMRTrieNode_idx(BMRTrieNode *node)

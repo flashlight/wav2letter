@@ -16,7 +16,7 @@ typedef struct BMRDecoderNode_ {
   struct BMRDecoderNode_ *parent; /* to backtrack */
   float score; /* score so far */
   float wordscore; /* word score so far (TODO) */
-  long label; /* label of word (-1 if nothing) */
+  BMRTrieLabel *label; /* label of word (-1 if nothing) */
   /* BMRList *merged; /\* chained list of merged nodes, if any (TODO) *\/ */
   int alive; /* (TODO) */
 } BMRDecoderNode;
@@ -29,7 +29,7 @@ struct BMRDecoder_ {
   BMRBuffer *nodes; /* store selected nodes for all frames */
   float candidatesbestscore;
   long sil; /* silence label (letter) */
-  long unk; /* unknown label (word) */
+  BMRTrieLabel unk; /* unknown label (word) */
 };
 
 void BMRDecoder_settoword(BMRDecoder *decoder, const char* (*toword)(long))
@@ -62,7 +62,7 @@ static BMRDecoderNode* BMRDecoder_node_new(
   BMRDecoderNode *parent,
   float score,
   float wordscore,
-  long label)
+  BMRTrieLabel *label)
 {
   BMRDecoderNode *node = BMRBuffer_grow(buffer, BMRBuffer_size(buffer)+1);
   if(node) {
@@ -102,7 +102,7 @@ static int BMRDecoder_candidates_add(
   BMRDecoderNode *parent,
   float score,
   float wordscore,
-  long label)
+  BMRTrieLabel *label)
 {
   if(score > decoder->candidatesbestscore) {
     decoder->candidatesbestscore = score;
@@ -234,7 +234,7 @@ static int BMRDecoder_candidates_store(BMRDecoder *decoder, BMRDecoderOptions *o
   return 0;
 }
 
-BMRDecoder* BMRDecoder_new(BMRTrie *lexicon, BMRLM *lm, long sil, long unk)
+BMRDecoder* BMRDecoder_new(BMRTrie *lexicon, BMRLM *lm, long sil, BMRTrieLabel unk)
 {
   BMRDecoder *decoder = malloc(sizeof(BMRDecoder));
   if(decoder) {
@@ -280,7 +280,7 @@ void BMRDecoder_decode(BMRDecoder *decoder, BMRDecoderOptions *opt, float *trans
       BMRLM_start(decoder->lm, 0),
       BMRTrie_root(decoder->lexicon),
       NULL,
-      0, 0, -1)
+      0, 0, NULL)
     );
 
   for(t = 0; t < T; t++) {
@@ -299,28 +299,28 @@ void BMRDecoder_decode(BMRDecoder *decoder, BMRDecoderOptions *opt, float *trans
         if(n == decoder->sil) {
           for(long i = 0; i < BMRTrieNode_nlabel(lex); i++) { /* true word? */
             float lmscore;
-            BMRLMState *newlmstate = BMRLM_score(decoder->lm, lmstate, BMRTrieNode_label(lex, i), &lmscore);
+            BMRLMState *newlmstate = BMRLM_score(decoder->lm, lmstate, BMRTrieNode_label(lex, i)->lm, &lmscore);
             BMRDecoder_candidates_add(decoder, opt, newlmstate, BMRTrie_root(decoder->lexicon), prevhyp, score+opt->lmweight*(lmscore-lexmaxscore)+opt->wordscore, 0, BMRTrieNode_label(lex, i));
           }
           if((BMRTrieNode_nlabel(lex) == 0) && (opt->unkscore > -FLT_MAX)) { /* unknown? */
             float lmscore;
-            BMRLMState *newlmstate = BMRLM_score(decoder->lm, lmstate, decoder->unk, &lmscore);
-            BMRDecoder_candidates_add(decoder, opt, newlmstate, BMRTrie_root(decoder->lexicon), prevhyp, score+opt->lmweight*(lmscore-lexmaxscore)+opt->unkscore, 0, decoder->unk);
+            BMRLMState *newlmstate = BMRLM_score(decoder->lm, lmstate, decoder->unk.lm, &lmscore);
+            BMRDecoder_candidates_add(decoder, opt, newlmstate, BMRTrie_root(decoder->lexicon), prevhyp, score+opt->lmweight*(lmscore-lexmaxscore)+opt->unkscore, 0, &decoder->unk);
           }
           if(t == 0) { /* allow starting with a sil */
-            BMRDecoder_candidates_add(decoder, opt, lmstate, lex, prevhyp, score, 0, -1);
+            BMRDecoder_candidates_add(decoder, opt, lmstate, lex, prevhyp, score, 0, NULL);
           }
         }
 
         if(n == prevn && t > 0) { /* same place in lexicon (or sil) */
-          BMRDecoder_candidates_add(decoder, opt, lmstate, lex, prevhyp, score, 0, -1);
+          BMRDecoder_candidates_add(decoder, opt, lmstate, lex, prevhyp, score, 0, NULL);
         }
         else if(n != decoder->sil) { /* we assume sil cannot be in the lexicon */
           /* we eat-up a new token */
           lex = BMRTrieNode_child(lex, n);
           if(lex) { /* valid word(part) in lexicon? */
             /* may continue along current lex */
-            BMRDecoder_candidates_add(decoder, opt, lmstate, lex, prevhyp, score+opt->lmweight*(BMRTrieNode_maxscore(lex)-lexmaxscore), 0, -1);
+            BMRDecoder_candidates_add(decoder, opt, lmstate, lex, prevhyp, score+opt->lmweight*(BMRTrieNode_maxscore(lex)-lexmaxscore), 0, NULL);
 
             /* DEBUG: works but emit word as soon as it find one valid */
             /* only for no-sil (NYI) */
@@ -348,7 +348,7 @@ void BMRDecoder_decode(BMRDecoder *decoder, BMRDecoderOptions *opt, float *trans
     for(long i = 0; i < BMRTrieNode_nlabel(prevhyp->lex); i++) { /* true word? */
       float lmscore;
       float lmscoreend;
-      BMRLMState *newlmstate = BMRLM_score(decoder->lm, lmstate, BMRTrieNode_label(lex, i), &lmscore);
+      BMRLMState *newlmstate = BMRLM_score(decoder->lm, lmstate, BMRTrieNode_label(lex, i)->lm, &lmscore);
       newlmstate = BMRLM_finish(decoder->lm, newlmstate, &lmscoreend);
       BMRDecoder_candidates_add(decoder, opt, newlmstate, BMRTrie_root(decoder->lexicon), prevhyp, prevhyp->score+opt->lmweight*(lmscore+lmscoreend-lexmaxscore)+opt->wordscore, 0, BMRTrieNode_label(lex, i));
     }
@@ -359,7 +359,7 @@ void BMRDecoder_decode(BMRDecoder *decoder, BMRDecoderOptions *opt, float *trans
     {
       float lmscoreend;
       BMRLMState *newlmstate = BMRLM_finish(decoder->lm, lmstate, &lmscoreend);
-      BMRDecoder_candidates_add(decoder, opt, newlmstate, lex, prevhyp, prevhyp->score+opt->lmweight*lmscoreend, 0, -1);
+      BMRDecoder_candidates_add(decoder, opt, newlmstate, lex, prevhyp, prevhyp->score+opt->lmweight*lmscoreend, 0, NULL);
     }
   }
   BMRDecoder_candidates_store(decoder, opt, hyp[T+1], 1); /* sort */
@@ -369,7 +369,7 @@ void BMRDecoder_decode(BMRDecoder *decoder, BMRDecoderOptions *opt, float *trans
     scores_[r] = node->score;
     long i = 0;
     while(node) {
-      labels_[r*(T+2)+T+1-i] = node->label;
+      labels_[r*(T+2)+T+1-i] = (node->label ? node->label->usr : -1);
       llabels_[r*(T+2)+T+1-i] = BMRTrieNode_idx(node->lex);
       node = node->parent;
       i++;

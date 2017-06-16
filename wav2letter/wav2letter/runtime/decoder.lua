@@ -9,10 +9,12 @@ local function loadwordhash(filename, maxn)
    for line in io.lines(filename) do
       local word, spelling = line:match('^(%S+)%s+(%S+)$')
       assert(word and spelling, string.format("error parsing <%s> at line #%d", filename, i+1))
-      local def = {idx=i, word=word, spelling=spelling}
-      hash[word] = def
-      hash[i] = def
-      i = i + 1
+      if not hash[word] then
+         hash[word] = {idx=i, word=word, spellings={}}
+         hash[i] = hash[word]
+         i = i + 1
+      end
+      table.insert(hash[word].spellings, spelling)
       if maxn and maxn > 0 and maxn == i then
          break
       end
@@ -43,13 +45,13 @@ local function decoder(letterdictname, worddictname, lmname, smearing, nword)
 
    -- add <unk> in words (only :))
    do
-      local def = {idx=#words+1, word=LMUNK}
+      local def = {idx=#words+1, word=LMUNK, spellings={}}
       words[def.idx] = def
       words[def.word] = def
    end
 
    local buffer = torch.LongTensor()
-   local function word2indices(word)
+   local function spelling2indices(word)
       buffer:resize(#word)
       for i=1,#word do
          if not letters[word:sub(i, i)] then
@@ -69,11 +71,11 @@ local function decoder(letterdictname, worddictname, lmname, smearing, nword)
    local trie = beamer.Trie(#letters+1, sil) -- 0 based
    for i=0,#words do
       local lmidx = lm:index(words[i].word)
-      if lmidx ~= unk then -- not <unk>?
-         local _, score = lm:score(lmidx)
-         assert(score < 0)
-         trie:insert(word2indices(words[i].spelling), lmidx, score)
-         lmidx2word[lmidx] = words[i].word
+      local _, score = lm:score(lmidx)
+      lmidx2word[lmidx] = words[i].word
+      assert(score < 0)
+      for _, spelling in ipairs(words[i].spellings) do
+         trie:insert(spelling2indices(spelling), lmidx, score)
       end
    end
 
@@ -150,7 +152,7 @@ local function decoder(letterdictname, worddictname, lmname, smearing, nword)
       decoder = decoder,
       decode = decode,
       toword = toword, -- lmidx to word
-      word2indices = word2indices -- word to letter idx
+      spelling2indices = spelling2indices -- word to letter idx
    }
    setmetatable(obj, {__call=function(...) return decode(select(2, ...), select(3, ...)) end})
 

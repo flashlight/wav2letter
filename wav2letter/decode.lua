@@ -37,7 +37,7 @@ local function test(opt, slice, nslice)
    local tnt = require 'torchnet'
    require 'wav2letter'
 
-   local decoder = paths.dofile('decoder.lua')
+   local decoder = require 'wav2letter.runtime.decoder'
    decoder = decoder(
       opt.letters,
       opt.words,

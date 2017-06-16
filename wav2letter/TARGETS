@@ -48,12 +48,6 @@ cpp_library(
         "wav2letter/utils/viterbi.c",
     ],
     headers = glob(["wav2letter/utils/*.gen.c"]),
-    compiler_flags = [
-        "-fopenmp",
-    ],
-    compiler_specific_flags = {
-        "clang": ["-fopenmp=libgomp"],
-    },
     preprocessor_flags = [
         "-Ideeplearning/projects/wav2letter/wav2letter/utils",
     ],
@@ -183,7 +177,6 @@ lua_binary(
     name = "decode",
     srcs = [
         "decode.lua",
-        "decoder.lua",
     ],
     main_module = "decode",
     deps = [

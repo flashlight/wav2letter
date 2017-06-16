@@ -16,6 +16,10 @@ description = {
 dependencies = {
    "lua >= 5.1",
    "sndfile",
+   "torchnet",
+   "torchnet-sequential",
+   "torchnet-optim",
+   "speech",
 }
 
 build = {

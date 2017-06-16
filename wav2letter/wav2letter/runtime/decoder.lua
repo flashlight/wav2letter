@@ -151,6 +151,7 @@ local function decoder(letterdictname, worddictname, lmname, smearing, nword)
    local function string2tensor(str, funk)
       local t = {}
       for word in str:gmatch('(%S+)') do
+         local idx
          if words[word] then
             idx = words[word].idx
          else

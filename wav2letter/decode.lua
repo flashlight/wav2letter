@@ -47,33 +47,11 @@ local function test(opt, slice, nslice)
    )
 
    local __unknowns = {}
-   local function string2tensor(str)
-      local words = decoder.words
-      local t = {}
-      for word in str:gmatch('(%S+)') do
-         if not words[word] then
-            if not __unknowns[word] then
-               __unknowns[word] = true
-               print(string.format('$ warning: unknown word <%s>', word))
-            end
-         end
-         table.insert(t, words[word] and words[word].idx or #words+1)
+   local function funk(word)
+      if not __unknowns[word] then
+         __unknowns[word] = true
+         print(string.format('$ warning: unknown word <%s>', word))
       end
-      return torch.LongTensor(t)
-   end
-
-   local function tensor2string(t)
-      if t:nDimension() == 0 then
-         return ""
-      end
-      local words = decoder.words
-      local str = {}
-      for i=1,t:size(1) do
-         local word = words[t[i]].word
-         assert(word)
-         table.insert(str, word)
-      end
-      return table.concat(str, ' ')
    end
 
    local function tensor2letterstring(t)
@@ -134,9 +112,9 @@ local function test(opt, slice, nslice)
       local emissions = prediction.output
       local predictions, lpredictions = decoder(dopt, transitions, emissions)
       -- remove <unk>
-      predictions = string2tensor(tensor2string(predictions):gsub("%<unk%>", ""))
+      predictions = decoder.removeunk(predictions)
       do
-         local targets = string2tensor(targets)
+         local targets = decoder.string2tensor(targets, funk)
          iwer:reset()
          iwer:add(predictions, targets)
          wer:add(predictions, targets)
@@ -146,7 +124,7 @@ local function test(opt, slice, nslice)
             string.format(
                "%06d |P| %s\n%06d |T| %s {progress=%03d%% iWER=%06.2f%% sliceWER=%06.2f%%}",
                i,
-               tensor2string(predictions),
+               decoder.tensor2string(predictions),
                i,
                targets:gsub("^%s+", ""):gsub("%s+$", ""),
                n1 == n2 and 100 or (i-n1)/(n2-n1)*100,
@@ -154,7 +132,7 @@ local function test(opt, slice, nslice)
                wer:value()
             )
          )
-         sentences[i] = {ref=targets:gsub("^%s+", ""):gsub("%s+$", ""), hyp=tensor2string(predictions)}
+         sentences[i] = {ref=targets:gsub("^%s+", ""):gsub("%s+$", ""), hyp=decoder.tensor2string(predictions)}
       end
       if opt.showletters then
          print(

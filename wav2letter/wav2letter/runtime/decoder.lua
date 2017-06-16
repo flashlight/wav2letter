@@ -51,7 +51,7 @@ local function decoder(letterdictname, worddictname, lmname, smearing, nword)
    end
 
    local buffer = torch.LongTensor()
-   local function spelling2indices(word)
+   local function spelling2tensor(word)
       buffer:resize(#word)
       for i=1,#word do
          if not letters[word:sub(i, i)] then
@@ -72,7 +72,7 @@ local function decoder(letterdictname, worddictname, lmname, smearing, nword)
       local _, score = lm:score(lmidx)
       assert(score < 0)
       for _, spelling in ipairs(words[i].spellings) do
-         trie:insert(spelling2indices(spelling), {lm=lmidx, usr=i}, score)
+         trie:insert(spelling2tensor(spelling), {lm=lmidx, usr=i}, score)
       end
    end
 
@@ -137,6 +137,37 @@ local function decoder(letterdictname, worddictname, lmname, smearing, nword)
       end
    end
 
+   local function tensor2string(t)
+      if t:nDimension() == 0 then
+         return ""
+      end
+      local str = {}
+      for i=1,t:size(1) do
+         table.insert(str, toword(t[i]))
+      end
+      return table.concat(str, ' ')
+   end
+
+   local function string2tensor(str, funk)
+      local t = {}
+      for word in str:gmatch('(%S+)') do
+         if words[word] then
+            idx = words[word].idx
+         else
+            if funk then
+               funk(word)
+            end
+            idx = words[LMUNK].idx
+         end
+         table.insert(t, idx)
+      end
+      return torch.LongTensor(t)
+   end
+
+   local function removeunk(t)
+      return t:maskedSelect(t:ne(unk.usr))
+   end
+
    local obj = {
       words = words,
       letters = letters,
@@ -146,7 +177,10 @@ local function decoder(letterdictname, worddictname, lmname, smearing, nword)
       decoder = decoder,
       decode = decode,
       toword = toword, -- usridx to word
-      spelling2indices = spelling2indices -- word to letter idx
+      spelling2tensor = spelling2tensor, -- word to letter idx
+      string2tensor = string2tensor, -- string to usr word indices
+      tensor2string = tensor2string, -- usr word indices to string
+      removeunk = removeunk
    }
    setmetatable(obj, {__call=function(...) return decode(select(2, ...), select(3, ...)) end})
 

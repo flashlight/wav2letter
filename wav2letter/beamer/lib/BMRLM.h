@@ -13,6 +13,7 @@ BMRLMState* BMRLM_score(BMRLM *lm, BMRLMState *inState, long wordidx, float *sco
 BMRLMState* BMRLM_scorebest(BMRLM *lm, BMRLMState *inState, long *words, long nwords, float *score_, long* nextword_);
 void BMRLM_scoreall(BMRLM *lm, BMRLMState *inState, long* words, long nwords, float *score_);
 BMRLMState* BMRLM_finish(BMRLM *lm, BMRLMState *inState, float *score_);
+float BMRLM_estimate(BMRLM *lm, long *sentence, long size, int isnullstart);
 void BMRLM_free(BMRLM *lm);
 long BMRLM_mem(BMRLM *lm);
 int BMRLMState_compare(BMRLMState *state1_, BMRLMState *state2_);

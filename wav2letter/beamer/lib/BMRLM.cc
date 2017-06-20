@@ -124,4 +124,18 @@ int BMRLMState_compare(BMRLMState *state1_, BMRLMState *state2_)
   return state1->Compare(*state2);
 }
 
+float BMRLM_estimate(BMRLM *lm, long *sentence, long size, int isnullstart)
+{
+  BMRLMState *state = BMRLM_start(lm, isnullstart);
+  float score = 0;
+  float wordscore;
+  for(long i = 0; i < size; i++) {
+    state = BMRLM_score(lm, state, sentence[i], &wordscore);
+    score += wordscore;
+  }
+  state = BMRLM_finish(lm, state, &wordscore);
+  score += wordscore;
+  return score;
+}
+
 }

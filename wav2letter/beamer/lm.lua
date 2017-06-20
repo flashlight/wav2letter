@@ -16,6 +16,7 @@ BMRLMState& BMRLM_score(BMRLM *lm, BMRLMState *inState, long wordidx, float *sco
 BMRLMState& BMRLM_scorebest(BMRLM *lm, BMRLMState *inState, long* wordidx, long nwords, float *score_, long *nextword_);
 void BMRLM_scoreall(BMRLM *lm, BMRLMState *inState, long* words, long nwords, float *score_);
 BMRLMState& BMRLM_finish(BMRLM *lm, BMRLMState *inState, float *score_);
+float BMRLM_estimate(BMRLM *lm, long *sentence, long size, int isnullstart);
 void BMRLM_free(BMRLM *lm);
 long BMRLM_mem(BMRLM *lm);
 int BMRLMState_compare(BMRLMState *state1_, BMRLMState *state2_);
@@ -81,6 +82,12 @@ end
 function mt:finish(inState)
    local outState = C.BMRLM_finish(self, inState, scorep)
    return outState, scorep[0]
+end
+
+function mt:estimate(t, isnullstart)
+   assert(t:isContiguous() and t:nDimension() == 1)
+   isnullstart = isnullstart and 1 or 0
+   return C.BMRLM_estimate(self, t:data(), t:size(1), isnullstart)
 end
 
 function mt:mem()

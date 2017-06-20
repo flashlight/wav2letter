@@ -69,7 +69,6 @@ function ForceAlignCriterion:realloc(T, N)
    self.gemissions = gemissions
    self.gsubtransitions = gsubtransitions
    self.g = g
-   self.gradInput = torch.Tensor()
    self.T = T
    self.N = N
    self.path = torch.LongTensor(g:nNode())
@@ -83,6 +82,7 @@ function ForceAlignCriterion:__init(N, ismax, scale)
    self.T = 0
    self.transitions = torch.zeros(N, N)
    self.gtransitions = torch.zeros(N, N)
+   self.gradInput = torch.Tensor()
 end
 
 function ForceAlignCriterion:updateOutput(input, target)

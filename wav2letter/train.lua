@@ -79,6 +79,7 @@ local function cmdmutableoptions(cmd)
    cmd:text()
    cmd:text('Word Decoder Options:')
    cmd:option('-bmr', false, 'compute WER')
+   cmd:option('-bmrcrt', false, 'train through beam')
    cmd:option('-bmrletters', '', 'path to LM letters')
    cmd:option('-bmrwords', '', 'path to LM words')
    cmd:option('-bmrlm', '', 'path to LM model')
@@ -409,6 +410,15 @@ fllcriterion:share(asgcriterion, 'transitions')
 msccriterion:share(asgcriterion, 'transitions')
 viterbi:share(asgcriterion, 'transitions')
 
+local bmrcriterion
+if opt.bmrcrt then
+   bmrcriterion = nn.DecoderCriterion{
+      decoder = decoder,
+      dopt = dopt,
+      N = #dict,
+      scale = scale
+   }
+end
 local evlcriterion = (opt.ctc and ctccriterion) or (opt.msc and msccriterion or viterbi)
 -- clone is important (otherwise forward/backward not in a row
 -- because we evaluate right after the forward and before the backward)
@@ -764,6 +774,9 @@ local function train(network, criterion, iterator, params, opid)
       if progress then
          progress()
       end
+      if opt.bmrcrt then
+         bmrcriterion:setWordTarget(state.sample.words)
+      end
       meters.sampletimer:stop()
       meters.networktimer:resume()
       heartbeat()
@@ -891,7 +904,7 @@ end
 
 train(
    network,
-   (opt.ctc and ctccriterion) or (opt.seg and fllcriterion or asgcriterion),
+   opt.bmrcrt and bmrcriterion or ((opt.ctc and ctccriterion) or (opt.seg and fllcriterion or asgcriterion)),
    trainiterator,
    {lr=opt.lr*lrnorm, lrcriterion=opt.lrcrit*lrnorm, maxepoch=opt.iter},
    3

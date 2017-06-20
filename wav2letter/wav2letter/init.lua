@@ -30,5 +30,6 @@ require 'wav2letter.shiftdataset'
 require 'wav2letter.batchcriterion'
 require 'wav2letter.batchautosegcriterionc'
 require 'wav2letter.multithreadedbatchcriterion'
+require 'wav2letter.decodercriterion'
 
 return tnt

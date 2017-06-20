@@ -172,7 +172,7 @@ local function decoder(letterdictname, worddictname, lmname, smearing, nword)
    end
 
    local function usridx2lmidx(t)
-      local lmt = t.new().resizeAs(t)
+      local lmt = t.new():resizeAs(t)
       for i=1,t:size(1) do
          lmt[i] = words[t[i]].lmidx
       end

@@ -39,12 +39,20 @@ log.status = argcheck{
          if opt.seg then
             item("train ferr", "%5.2f", reduce(meters.trainframeerr:value()))
          end
-         item(string.format("train-%s", ERR), "%5.2f", reduce(meters.trainedit:value()))
+         item(string.format("train-%s", ERR), "%5.2f", meters.trainedit:reduce(reduce):value())
          for name, meter in pairs(meters.validedit) do
-            item(string.format("%s-%s", name, ERR), "%5.2f", reduce(meter:value()))
+            item(string.format("%s-%s", name, ERR), "%5.2f", meter:reduce(reduce):value())
          end
          for name, meter in pairs(meters.testedit) do
-            item(string.format("%s-%s", name, ERR), "%5.2f", reduce(meter:value()))
+            item(string.format("%s-%s", name, ERR), "%5.2f", meter:reduce(reduce):value())
+         end
+         if opt.bmr then
+            for name, meter in pairs(meters.validwordedit) do
+               item(string.format("%s-bWER", name), "%5.2f", meter:reduce(reduce):value())
+            end
+            for name, meter in pairs(meters.testwordedit) do
+               item(string.format("%s-bWER", name), "%5.2f", meter:reduce(reduce):value())
+            end
          end
          local stats = meters.stats:value()
          item("aisz", "%03d", reduce(stats["isz"]/stats["n"]))

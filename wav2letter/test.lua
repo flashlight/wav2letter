@@ -29,7 +29,6 @@ local function cmdtestoptions(cmd)
    cmd:option('-progress', false, 'display testing progress per epoch')
    cmd:option('-gfsai', false, 'override above paths to gfsai ones')
    cmd:option('-test', '', 'space-separated list of test data')
-   cmd:option('-words', 'wrd', 'input feature')
    cmd:text()
 end
 
@@ -150,7 +149,8 @@ for _, name in ipairs(data.namelist(opt.test)) do
             dict = dict,
             kw = kw,
             dw = dw,
-            maxload = opt.maxloadtest
+            maxload = opt.maxloadtest,
+            words = 'unk'
          }
       end
    }

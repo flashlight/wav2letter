@@ -41,3 +41,14 @@ EditDistanceMeter.value = argcheck{
          return self.sum / self.n * 100
       end
 }
+
+EditDistanceMeter.reduce = argcheck{
+   {name="self", type="tnt.EditDistanceMeter"},
+   {name="reduce", type="function"},
+   call =
+      function(self, reduce)
+         self.sum = reduce(self.sum, true)
+         self.n = reduce(self.n, true)
+         return self
+      end
+}

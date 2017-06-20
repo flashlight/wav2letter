@@ -1,20 +1,21 @@
 local beamer = require 'beamer'
+local tds = require 'tds'
 
 local LMUNK = "<unk>"
 
 local function loadwordhash(filename, maxn)
    print(string.format('[loading %s]', filename))
-   local hash = {}
+   local hash = tds.Hash()
    local i = 0 -- 0 based
    for line in io.lines(filename) do
       local word, spelling = line:match('^(%S+)%s+(%S+)$')
       assert(word and spelling, string.format("error parsing <%s> at line #%d", filename, i+1))
       if not hash[word] then
-         hash[word] = {idx=i, word=word, spellings={}}
+         hash[word] = tds.Hash{idx=i, word=word, spellings=tds.Vec{}}
          hash[i] = hash[word]
          i = i + 1
       end
-      table.insert(hash[word].spellings, spelling)
+      hash[word].spellings[#hash[word].spellings+1] = spelling
       if maxn and maxn > 0 and maxn == i then
          break
       end
@@ -45,7 +46,7 @@ local function decoder(letterdictname, worddictname, lmname, smearing, nword)
 
    -- add <unk> in words (only :))
    if not words[LMUNK] then
-      local def = {idx=#words+1, word=LMUNK, spellings={}}
+      local def = tds.Hash{idx=#words/2, word=LMUNK, spellings=tds.Vec{}}
       words[def.idx] = def
       words[def.word] = def
    end
@@ -67,8 +68,9 @@ local function decoder(letterdictname, worddictname, lmname, smearing, nword)
    local unk = {lm=lm:index(LMUNK), usr=words[LMUNK].idx}
 
    local trie = beamer.Trie(#letters+1, sil) -- 0 based
-   for i=0,#words do
+   for i=0,#words/2-1 do
       local lmidx = lm:index(words[i].word)
+      words[i].lmidx = lmidx
       local _, score = lm:score(lmidx)
       assert(score < 0)
       for _, spelling in ipairs(words[i].spellings) do
@@ -169,6 +171,14 @@ local function decoder(letterdictname, worddictname, lmname, smearing, nword)
       return t:maskedSelect(t:ne(unk.usr))
    end
 
+   local function usridx2lmidx(t)
+      local lmt = t.new().resizeAs(t)
+      for i=1,t:size(1) do
+         lmt[i] = words[t[i]].lmidx
+      end
+      return lmt
+   end
+   
    local obj = {
       words = words,
       letters = letters,
@@ -181,7 +191,8 @@ local function decoder(letterdictname, worddictname, lmname, smearing, nword)
       spelling2tensor = spelling2tensor, -- word to letter idx
       string2tensor = string2tensor, -- string to usr word indices
       tensor2string = tensor2string, -- usr word indices to string
-      removeunk = removeunk
+      removeunk = removeunk,
+      usridx2lmidx = usridx2lmidx
    }
    setmetatable(obj, {__call=function(...) return decode(select(2, ...), select(3, ...)) end})
 

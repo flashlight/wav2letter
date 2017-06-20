@@ -6,6 +6,7 @@ local threads = require 'threads'
 local data = require 'wav2letter.runtime.data'
 local log = require 'wav2letter.runtime.log'
 local serial = require 'wav2letter.runtime.serial'
+local tds = require 'tds'
 
 require 'wav2letter'
 
@@ -75,6 +76,22 @@ local function cmdmutableoptions(cmd)
    cmd:option('-augcompandp', 0, 'enable compand (may clip!)')
    cmd:option('-augspeedp', 0, 'probability with which input speech transformation is applied')
    cmd:option('-augspeed', 0, 'variance of input speed transformation')
+   cmd:text()
+   cmd:text('Word Decoder Options:')
+   cmd:option('-bmr', false, 'compute WER')
+   cmd:option('-bmrletters', '', 'path to LM letters')
+   cmd:option('-bmrwords', '', 'path to LM words')
+   cmd:option('-bmrlm', '', 'path to LM model')
+   cmd:option('-bmrsmearing', 'max', 'use LM smearing or not')
+   cmd:option('-bmrmaxword', -1, 'limit LM word dictionary')
+   cmd:option('-bmrlmweight', 1, 'language model weight')
+   cmd:option('-bmrwordscore', 0, 'word insertion score')
+   cmd:option('-bmrunkscore', -math.huge, 'unknown word insertion score')
+   cmd:option('-bmrbeamsize', 25, 'beam size')
+   cmd:option('-bmrbeamscore', 25, 'beam threshold')
+   cmd:option('-bmrforceendsil', false, 'force end sil')
+   cmd:option('-bmrlogadd', false, 'use logadd instead of max')
+   cmd:text()
 end
 
 function cmdimmutableoptions(cmd)
@@ -223,8 +240,12 @@ if opt.mpi then
    mpirank = mpi.rank()+1
    mpisize = mpi.size()
    print(string.format('| MPI #%d/%d', mpirank, mpisize))
-   function reduce(val)
-      return mpi.allreduce_double(val)/mpisize
+   function reduce(val, noavg)
+      if noavg then
+         return mpi.allreduce_double(val)
+      else
+         return mpi.allreduce_double(val)/mpisize
+      end
    end
 end
 config.mpisize = mpisize
@@ -273,6 +294,28 @@ if opt.replabel > 0 then
    for i=1,opt.replabel do
       data.dictadd{dictionary=dict, token=string.format("%d", i)}
    end
+end
+
+local decoder
+local dopt
+if opt.bmr then
+   decoder = require 'wav2letter.runtime.decoder'
+   decoder = decoder(
+      opt.bmrletters,
+      opt.bmrwords,
+      opt.bmrlm,
+      opt.bmrsmearing,
+      opt.bmrmaxword
+   )
+   dopt = {
+      lmweight = opt.bmrlmweight,
+      wordscore = opt.bmrwordscore,
+      unkscore = opt.bmrunkscore,
+      beamsize = opt.bmrbeamsize,
+      beamscore = opt.bmrbeamscore,
+      forceendsil = opt.bmrforceendsil,
+      logadd = opt.bmrlogadd
+   }
 end
 
 -- if opt.garbage then
@@ -419,6 +462,13 @@ local remaplabels = transforms.remap{
 }
 
 local sampler, resample = data.newsampler()
+local worddict = tds.Hash()
+if opt.bmr then
+   for i=0,#decoder.words/2-1 do
+      local word = decoder.words[i].word
+      worddict[word] = i
+   end
+end
 local trainiterator = data.newiterator{
    nthread = opt.nthread,
    closure =
@@ -434,7 +484,9 @@ local trainiterator = data.newiterator{
             mpirank = mpirank,
             mpisize = mpisize,
             aug = opt.aug,
-            maxload = opt.maxload
+            maxload = opt.maxload,
+            words = opt.bmr and 'wrd' or nil,
+            worddict = opt.bmr and worddict or nil
          }
       end
 }
@@ -455,7 +507,9 @@ for _, name in ipairs(data.namelist(opt.valid)) do
             dw = dw,
             mpirank = mpirank,
             mpisize = mpisize,
-            maxload = opt.maxloadvalid
+            maxload = opt.maxloadvalid,
+            words = opt.bmr and 'wrd' or nil,
+            worddict = opt.bmr and worddict or nil
          }
       end
    }
@@ -476,7 +530,9 @@ for _, name in ipairs(data.namelist(opt.test)) do
             dw = dw,
             mpirank = mpirank,
             mpisize = mpisize,
-            maxload = opt.maxloadtest
+            maxload = opt.maxloadtest,
+            words = opt.bmr and 'wrd' or nil,
+            worddict = opt.bmr and worddict or nil
          }
       end
    }
@@ -499,13 +555,17 @@ end
 meters.trainedit = tnt.EditDistanceMeter()
 
 meters.validedit = {}
+meters.validwordedit = {}
 for name, valid in pairs(validiterators) do
    meters.validedit[name] = tnt.EditDistanceMeter()
+   meters.validwordedit[name] = tnt.EditDistanceMeter()
 end
 
 meters.testedit = {}
+meters.testwordedit = {}
 for name, test in pairs(testiterators) do
    meters.testedit[name] = tnt.EditDistanceMeter()
+   meters.testwordedit[name] = tnt.EditDistanceMeter()
 end
 
 meters.stats = tnt.SpeechStatMeter()
@@ -633,7 +693,7 @@ local function evalOutput(edit, output, target, remaplabels)
    map2(evl, evlcriterion:viterbi(output), target)
 end
 
-local function test(network, criterion, iterator, edit)
+local function test(network, criterion, iterator, edit, wordedit)
    local progress = opt.progress and createProgress(iterator)
    local engine = tnt.SGDEngine()
    function engine.hooks.onStart()
@@ -645,6 +705,14 @@ local function test(network, criterion, iterator, edit)
       end
       collectgarbage()
       evalOutput(edit, state.network.output, state.sample.target, remaplabels)
+      -- compute WER?
+      if opt.bmr and wordedit then
+         local function decode(output, words)
+            local wpred = decoder.removeunk(decoder(dopt, asgcriterion.transitions, output))
+            wordedit:add(wpred, words)
+         end
+         map2(decode, state.network.output, state.sample.words)
+      end
    end
    engine:test{
       network = network,
@@ -653,7 +721,6 @@ local function test(network, criterion, iterator, edit)
    if progress and mpirank == 1 then
       print()
    end
-   return reduce(edit:value())
 end
 
 local function train(network, criterion, iterator, params, opid)
@@ -763,12 +830,12 @@ local function train(network, criterion, iterator, params, opid)
 
       -- valid
       for name, validiterator in pairs(validiterators) do
-         test(network, criterion, validiterator, meters.validedit[name])
+         test(network, criterion, validiterator, meters.validedit[name], meters.validwordedit[name])
       end
 
       -- test
       for name, testiterator in pairs(testiterators) do
-         test(network, criterion, testiterator, meters.testedit[name])
+         test(network, criterion, testiterator, meters.testedit[name], meters.testwordedit[name])
       end
 
       -- print status

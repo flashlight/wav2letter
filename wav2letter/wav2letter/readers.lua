@@ -69,14 +69,25 @@ readers.number = argcheck{
 }
 
 readers.words = argcheck{
+   noordered=true,
+   {name="dict", type="tds.Hash", opt=true},
    call =
-      function()
+      function(dictionary)
+         local unkidx = dictionary["<unk>"]
          return function(filename)
             local f = io.open(filename)
             local data
             if f then
                data = f:read('*all')
                f:close()
+            end
+            if dictionary then
+               local tokens = {}
+               for token in data:gmatch('(%S+)') do
+                  local tokenidx = dictionary[token] and dictionary[token] or unkidx
+                  table.insert(tokens, tokenidx)
+               end
+               data = torch.LongTensor(tokens)
             end
             return data
          end

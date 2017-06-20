@@ -324,8 +324,10 @@ data.newdataset = argcheck{
    {name="mpisize", type="number", default=1},
    {name="maxload", type="number", opt=true},
    {name="aug", type="boolean", opt=true},
+   {name="words", type="string", opt=true},
+   {name="worddict", type="tds.Hash", opt=true},
    call =
-      function(names, opt, dict, kw, dw, sampler, mpirank, mpisize, maxload, aug)
+      function(names, opt, dict, kw, dw, sampler, mpirank, mpisize, maxload, aug, words, worddict)
          local tnt = require 'torchnet'
          local data = require 'wav2letter.runtime.data'
          local readers = require 'wav2letter.readers'
@@ -382,13 +384,15 @@ data.newdataset = argcheck{
                   }
                },
             }
-         if opt.words then
-            table.insert(features,
+         if words then
+            table.insert(
+               features,
                {
-                  name = opt.words,
+                  name = words,
                   alias = "words",
-                  reader = readers.words()
-               })
+                  reader = readers.words{dict=worddict}
+               }
+            )
          end
          local dataset = datasetwithfeatures(
             features,

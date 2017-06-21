@@ -129,14 +129,24 @@ local function decoder(letterdictname, worddictname, lmname, smearing, nword)
          local sentences = {}
          local lsentences = {}
          local scores = {}
-         for k=1,K do
-            local sentence, lsentence, score = bestpath(k)
-            table.insert(sentences, sentence)
-            table.insert(lsentences, lsentence)
-            table.insert(scores, score)
+         if labels:nDimension() > 0 then
+            for k=1,math.min(K, labels:size(1)) do
+               local sentence, lsentence, score = bestpath(k)
+               table.insert(sentences, sentence)
+               table.insert(lsentences, lsentence)
+               table.insert(scores, score)
+            end
          end
          return sentences, lsentences, scores
       end
+   end
+
+   function lettertensor2string(t)
+      local str = {}
+      for i=1,t:size(1) do
+         table.insert(str, assert(letters[t[i]]))
+      end
+      return table.concat(str)
    end
 
    local function tensor2string(t)
@@ -191,6 +201,7 @@ local function decoder(letterdictname, worddictname, lmname, smearing, nword)
       spelling2tensor = spelling2tensor, -- word to letter idx
       string2tensor = string2tensor, -- string to usr word indices
       tensor2string = tensor2string, -- usr word indices to string
+      lettertensor2string = lettertensor2string, -- letter indices to string
       removeunk = removeunk,
       usridx2lmidx = usridx2lmidx
    }

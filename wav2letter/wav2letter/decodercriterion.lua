@@ -17,7 +17,12 @@ DecoderCriterion.__init = argcheck{
             self.__scale = scale(input, target)
             return -self.__scale
          end
+         local function fccscale()
+            return self.__scale
+         end
          self.fal = nn.ForceAlignCriterion(N, true, falscale)
+         self.fcc = nn.FullConnectCriterionC(N, false, fccscale)
+         self.fcc.transitions = self.fal.transitions
          self.transitions = self.fal.transitions
          self.gtransitions = self.fal.gtransitions
          self.gradInput = self.fal.gradInput
@@ -31,26 +36,31 @@ end
 function DecoderCriterion:updateOutput(input, target)
    -- fal first because of scale(input, target)
    -- viterbi to get the path as hint
-   local path, output = self.fal:viterbi(input, target)
+   local faloutput = self.fal:updateOutput(input, target)
+   local scale = self.__scale
 
    -- we need to add the lm score note: substracting lm score from the
    -- decoder is wrong (decoder finds best path with lm score... so fal
    -- might be higher if lm score is removed there)
-   output = output + self.dopt.lmweight*self.decoder.lm:estimate(self.decoder.usridx2lmidx(self.__words))
-   output = output + self.dopt.wordscore*self.__words:size(1)
-   output = output*self.fal.scale(input, target)
+   local lmoutput = self.dopt.lmweight*self.decoder.lm:estimate(self.decoder.usridx2lmidx(self.__words))
+   lmoutput = lmoutput + self.dopt.wordscore*self.__words:size(1)
+   lmoutput = lmoutput*(-scale)
 
    -- we do not clone path (fast but ugly)
-   self.__predictions, self.__lpredictions, self.__score
+   local decoutputs
+   self.__predictions, self.__lpredictions, decoutputs
       = self.decoder(self.dopt, self.transitions, input)
-   self.output = output + self.__scale*self.__score
+
+   local decoutput = scale*decoutputs
+
+   self.output = (faloutput + lmoutput) + decoutput
 
    -- skip if score is negative (could also use the hint...)
    if self.output <= 0 then
---      print("*")
-      self.output = 0
+      self.__fallback = true
+      self.output = faloutput + self.fcc:updateOutput(input)
    else
---      print("-")
+      self.__fallback = false
    end
 
    return self.output
@@ -60,19 +70,18 @@ function DecoderCriterion:decodedstring()
    return self.decoder.tensor2string(self.__predictions)
 end
 
-function DecoderCriterion:viterbi(input)
-   error('NYI')
-   return self.fcc:viterbi(input)
-end
-
 function DecoderCriterion:zeroGradParameters()
    self.fal:zeroGradParameters()
+   self.fcc:zeroGradParameters()
 end
 
 function DecoderCriterion:updateGradInput(input, target)
    -- skip if score is negative
-   if self.output <= 0 then
-      self.gradInput:resizeAs(input):zero()
+   if self.__fallback then
+      self.fal:updateGradInput(input, target)
+      self.fcc:updateGradInput(input)
+      self.gradInput:add(self.fcc.gradInput)
+      self.gtransitions:add(self.fcc.gtransitions)
       return self.gradInput
    end
 

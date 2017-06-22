@@ -1,5 +1,5 @@
 require 'nn'
---require 'fbcunn'
+
 local argcheck = require 'argcheck'
 local optim = require 'torchnet.optim'
 
@@ -10,6 +10,16 @@ local function isz(oikw, oidw, kw, dw)
    oikw = oikw*dw + kw-dw
    oidw = oidw*dw
    return oikw, oidw
+end
+
+local function weightnormdecorator(f, cuda)
+   return function(...)
+      if cuda then
+         return nn.WeightNorm(f(...)):cuda()
+      else
+         return nn.WeightNorm(f(...))
+      end
+   end
 end
 
 function netutils.readspecs(filename)
@@ -26,8 +36,12 @@ netutils.create = argcheck{
    {name="nclass", type="number"},
    {name="lsm", type="boolean"},
    {name="batchsize", type="number"},
+   {name="wnorm", type="boolean"},
    call =
-      function(specs, gpu, nchannel, nclass, lsm, batchsize)
+      function(specs, gpu, nchannel, nclass, lsm, batchsize, wnorm)
+         print('[Network spec]')
+         print(specs)
+
          local net = nn.Sequential()
 
          local TemporalConvolution
@@ -42,7 +56,9 @@ netutils.create = argcheck{
          local TanhLinear
          local Linear
          local Dropout
+         local GatedLinearUnit
          local transdims = batchsize > 0 and {2, 3} or {1, 2} -- DEBUG: batch or not batch...
+         --input to network is time x channels
          if gpu > 0 then
             require 'cunn'
             require 'cudnn'
@@ -50,6 +66,7 @@ netutils.create = argcheck{
             net:add( nn.Copy('torch.FloatTensor', 'torch.CudaTensor', true, true) )
             net:add( nn.Transpose(transdims):cuda() )
             net:add( nn.View(nchannel, 1, -1):setNumInputDims(2):cuda() )
+            -- actual dims after this transformation: B x DIM x 1 x T
 
             function TemporalConvolution(nin, nout, kw, dw)
                return cudnn.SpatialConvolution(nin, nout, kw, 1, dw, 1):cuda()
@@ -100,14 +117,26 @@ netutils.create = argcheck{
                return nn.HardTanh():cuda()
             end
 
+            function GatedLinearUnit()
+               --third dimension is features
+               return nn.GatedLinearUnit(1):cuda()
+            end
+
+            if wnorm then
+               TemporalConvolution = weightnormdecorator(TemporalConvolution, true)
+               Linear = weightnormdecorator(Linear, true)
+            end
+
          else
+            --TODO residual is not supported on CPU yet
             TemporalConvolution = nn.TemporalConvolution
+            Linear = nn.Linear
             TemporalMaxPooling = nn.TemporalMaxPooling
             Tanh = nn.Tanh
             TanhLinear = nn.TanhLinear
             HardTanh = nn.HardTanh
-            Linear = nn.Linear
             Dropout = nn.Dropout
+            function GatedLinearUnit() return nn.GatedLinearUnit(1) end
             function TemporalAveragePooling(kw, dw)
                return nn.SpatialAveragePooling(kw, 1, dw, 1)
             end
@@ -125,6 +154,10 @@ netutils.create = argcheck{
                return nn.ReLU()
             end
 
+            if wnorm then
+               TemporalConvolution = weightnormdecorator(TemporalConvolution, false)
+               Linear = weightnormdecorator(Linear, false)
+            end
          end
 
          -- LogSoftMax might be only at the very end
@@ -153,6 +186,7 @@ netutils.create = argcheck{
                local hh = line:match('^%s*HT%s*$')
                local flp = line:match('^%s*FLP%s*$')
                local donsz = line:match('^%s*DO%s+(%S+)%s*$')
+               local glu = line:match('^%s*GLU%s*$')
 
                cisz, cosz, ckw, cdw = tonumber(cisz), tonumber(cosz), tonumber(ckw), tonumber(cdw)
                mkw, mdw = tonumber(mkw), tonumber(mdw)
@@ -160,7 +194,7 @@ netutils.create = argcheck{
                donsz = tonumber(donsz)
 
                if cisz and cosz and ckw and cdw then
-                  assert(cisz == osz, 'layer size mismatch')
+                  assert(cisz == osz, string.format('layer size mismatch. expected: %s, actual: %s', cisz, osz))
                   assert(gpu <= 0 or not hastrans, 'cannot add a convolutional layer after a linear one')
                   net:add( TemporalConvolution(cisz, cosz, ckw, cdw) )
                   table.insert(kwdw, {kw=ckw, dw=cdw})
@@ -174,7 +208,7 @@ netutils.create = argcheck{
                   table.insert(kwdw, {kw=akw, dw=adw})
                elseif lisz and losz then
                   print("current osz", osz, lisz)
-                  assert(lisz == osz, 'layer size mismatch')
+                  assert(lisz == osz, string.format('layer size mismatch. expected: %s, actual: %s', lisz, osz))
                   if gpu > 0 and not hastrans then
                      net:add( nn.View(osz, -1):setNumInputDims(3):cuda() )
                      net:add( nn.Transpose(transdims):cuda() )
@@ -197,6 +231,11 @@ netutils.create = argcheck{
                   net:add( HardTanh() )
                elseif flp then
                   net:add( FeatureLPPooling() )
+                  osz = osz / 2
+               elseif glu then
+                  -- GLU is applied to features, i.e. first dimension
+                  net:add( GatedLinearUnit() )
+                  -- GLU halves input features
                   osz = osz / 2
                else
                   error(string.format('unrecognized layer <%s>', line))
@@ -243,23 +282,21 @@ function netutils.size(src)
    return size
 end
 
---Return network that applies momentum before updating
-function netutils.momentum(network, momentum)
-   print('| Using momentum: ' .. momentum)
-   for i,module in ipairs(network.modules) do
-      local w =  network.modules[i].weight
-      local dw = network.modules[i].gradWeight
-      if w and dw then
-         local applyMomentum = optim.momentum(module)
-         local oldUpdateParameters = module.updateParameters
-         function module.updateParameters(self, lr)
-            applyMomentum(momentum)
-            return oldUpdateParameters(self, lr)
-         end
-         print('(' .. i .. ') momentum ' .. momentum)
-      end
+--Returns a closure that over a network
+--to apply momentum and/or l2 regularization before updating
+function netutils.applyOptim(network, momentum, weightDecay)
+   if momentum > 0 then
+       print('| Using momentum: ' .. momentum)
    end
-   return network
+   if weightDecay > 0 then
+      print('| Using L2 regularization: ' .. weightDecay)
+   end
+   local fmom = optim.momentum(network)
+   local fweightdecay = optim.weightDecay(network)
+   return function ()
+      if momentum > 0 then fmom(momentum) end
+      if weightDecay > 0 then fweightdecay(weightDecay) end
+   end
 end
 
 --Return network that scales learning rate by number of inputs

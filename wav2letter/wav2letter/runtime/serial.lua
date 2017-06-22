@@ -218,15 +218,17 @@ serial.heartbeat = argcheck{
          return function(...)
             local newclock = os.clock()
             if not clock or newclock-clock > interval then
-               local f = assert(
-                  io.open(filename, "w"),
-                  string.format("could not open <%s> for writing", filename)
-               )
-               f:close()
-               clock = newclock
-               if closure then
-                  closure(filename, ...)
+               local f = io.open(filename, "w")
+               if f then
+                  f:close()
+                  clock = newclock
+                  if closure then
+                     closure(filename, ...)
+                  end
                end
+               -- gfsai is super unstable, we just ignore failure to write a
+               -- heartbeat file and continue without even writing a log message
+               -- to avoid polluting the log
             end
          end
       end

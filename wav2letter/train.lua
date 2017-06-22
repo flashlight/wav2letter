@@ -134,6 +134,8 @@ function cmdimmutableoptions(cmd)
    cmd:option('-indw', 2666, 'local input norm dw')
    cmd:option('-innt', 0.01, 'local input noise threshold')
    cmd:option('-onorm', 'none', 'output norm (none, input or target)')
+   cmd:option('-wnorm', false, 'weight normalization')
+   cmd:option('-weightdecay', -1, 'weight decay')
    cmd:text()
    cmd:text('Input shifting Options:')
    cmd:option('-shift', 0, 'number of shifts')
@@ -354,7 +356,8 @@ else
       channels = (opt.mfsc and 40 ) or ((opt.pow and 257 ) or (opt.mfcc and opt.mfcccoeffs*3 or opt.channels)), -- DEBUG: UGLY
       nclass = #dict,
       lsm = opt.lsm,
-      batchsize = opt.batchsize
+      batchsize = opt.batchsize,
+      wnorm = opt.wnorm
    }
 end
 config.kw = kw
@@ -433,8 +436,11 @@ if opt.layerlr then
    network = netutils.layerlr(network, opt.lr)
 end
 
-if opt.momentum > 0 then
-   network = netutils.momentum(network, opt.momentum)
+local function applyOnBackwardOptims() end
+if opt.weightdecay or opt.momentum > 0 then
+   applyOnBackwardOptims = netutils.applyOptim(network,
+                                               opt.momentum,
+                                               opt.weightdecay)
 end
 
 local function applyClamp() end
@@ -800,6 +806,7 @@ local function train(network, criterion, iterator, params, opid)
 
    function engine.hooks.onBackward(state)
       applyClamp()
+      applyOnBackwardOptims()
       meters.networktimer:stop()
       if opt.mpi then
          mpinn.synchronizeGradients(state.network)
@@ -860,6 +867,7 @@ local function train(network, criterion, iterator, params, opid)
       -- reset meters for next readings
       meters.loss:reset()
       meters.trainedit:reset()
+
    end
 
    engine:train{

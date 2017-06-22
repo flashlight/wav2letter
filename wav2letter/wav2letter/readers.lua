@@ -69,11 +69,10 @@ readers.number = argcheck{
 }
 
 readers.words = argcheck{
-   noordered=true,
    {name="dict", type="tds.Hash", opt=true},
    call =
       function(dictionary)
-         local unkidx = dictionary["<unk>"]
+         local unkidx = dictionary and dictionary["<unk>"]
          return function(filename)
             local f = io.open(filename)
             local data

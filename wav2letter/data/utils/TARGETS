@@ -21,8 +21,24 @@ lua_binary(
     name = "convert-arpa",
     srcs = [
         "convert-arpa.lua",
+        "spelling.lua",
     ],
     main_module = "convert-arpa",
+    deps = [
+        "@/deeplearning/projects/wav2letter:wav2letter",
+    ],
+    external_deps = [
+        ("torch7", None),
+    ],
+)
+
+lua_binary(
+    name = "build-dictionary",
+    srcs = [
+        "build-dictionary.lua",
+        "spelling.lua",
+    ],
+    main_module = "build-dictionary",
     deps = [
         "@/deeplearning/projects/wav2letter:wav2letter",
     ],

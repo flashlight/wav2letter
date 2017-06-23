@@ -26,8 +26,8 @@ NumberedFilesDataset.__init = argcheck{
             table.insert(self.__readers, feature.reader)
             table.insert(self.__aliases, feature.alias or feature.name)
          end
-         io.write(string.format("| dataset <%s>: ", path))
-         io.flush()
+         io.stderr:write(string.format("| dataset <%s>: ", path))
+         io.stderr:flush()
          for i=1,maxload do
             local f = io.open(
                paths.concat(path, string.format("%09d.%s", i, features[1].name))
@@ -40,7 +40,8 @@ NumberedFilesDataset.__init = argcheck{
             end
          end
          self.__size = self.__size or maxload
-         print(string.format("%d files found", self.__size))
+         io.stderr:write(string.format("%d files found\n", self.__size))
+         io.stderr:flush()
          assert(self.__size > 0, string.format("no file found in <%s/?????????.%s>", path, features[1].name))
       end
 }

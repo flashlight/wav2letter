@@ -180,6 +180,20 @@ local function tostring(tensor)
    return table.concat(str)
 end
 
+local words = {}
+local wordsIdx = 0
+local function string2wordtensor(str)
+   local t = {}
+   for word in str:gmatch('([^|]+)') do
+      if not words[word] then
+         words[word] = wordsIdx
+         wordsIdx = wordsIdx + 1
+      end
+      table.insert(t, words[word])
+   end
+   return torch.LongTensor(t)
+end
+
 local function test(name, network, iterator)
    local fout
    local encodedName = string.gsub(name, '/', '-')
@@ -201,6 +215,8 @@ local function test(name, network, iterator)
    local engine = tnt.SGDEngine()
    local edit = tnt.EditDistanceMeter()
    local progress = opt.progress and createProgress(iterator)
+   local wer = tnt.EditDistanceMeter()
+   local iwer = tnt.EditDistanceMeter()
    function engine.hooks.onStart(state)
       edit:reset()
    end
@@ -209,12 +225,21 @@ local function test(name, network, iterator)
       local predictions = criterion:viterbi(state.network.output)
       predictions = utils.uniq(predictions)
       local targets = utils.uniq(state.sample.target)
+      iwer:reset()
+      local viterbi = tostring(predictions)
+      local viterbiTensor = string2wordtensor(viterbi)
+      local targetTensor = string2wordtensor(tostring(targets))
+      iwer:add(viterbiTensor, targetTensor)
+      wer:add(viterbiTensor, targetTensor)
       if opt.show then
          print(
-            string.format("<%s> || <%s>",
+            string.format("<%s>\n<%s>",
                           tostring(predictions),
                           tostring(targets))
          )
+         print(
+            string.format("[Sentence WER: %06.2f%%, dataset WER: %06.2f%%]",
+                          iwer:value(), wer:value()))
       end
       if progress then
          progress()
@@ -237,10 +262,11 @@ local function test(name, network, iterator)
    if opt.save then
       fout:close()
    end
-   return edit:value()
+   return edit:value(), wer:value()
 end
 
 for name, iterator in pairs(iterators) do
-   print(string.format("| %s error = %05.2f%%",
-                       name, test(name, network, iterator)))
+   local ler, wer = test(name, network, iterator)
+   print(string.format("| %s LER = %05.2f%%, WER = %05.2f%%",
+                       name, ler, wer))
 end

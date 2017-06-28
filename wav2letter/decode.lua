@@ -142,6 +142,11 @@ local function test(opt, slice, nslice)
                tensor2letterstring(lpredictions)
             )
          )
+         local _, maxEmissions = torch.max(emissions, 2)
+         maxEmissions:apply(function(x) return (x - 1) % emissions:size(2) end)
+         maxEmissions = maxEmissions:squeeze()
+         print(string.format("%06d |M| \"%s\"", i,
+                             tensor2letterstring(maxEmissions)))
       end
    end
    print(string.format("[Memory usage: %.2f Mb]", decoder.decoder:mem()/2^20))

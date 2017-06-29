@@ -78,6 +78,7 @@ local function test(opt, slice, nslice)
 
    local wer = tnt.EditDistanceMeter()
    local iwer = tnt.EditDistanceMeter()
+   local ler = tnt.EditDistanceMeter()
    local n1 = 1
    local n2 = opt.maxload > 0 and opt.maxload or fout:size()
    local timer = torch.Timer()
@@ -114,6 +115,12 @@ local function test(opt, slice, nslice)
       -- remove <unk>
       predictions = decoder.removeunk(predictions)
       do
+         local utils = require 'wav2letter.utils'
+         local lpred = utils.uniq(lpredictions)
+         --decoder's lpredictions are 0-based
+         local spellings = prediction.spellings:apply(function(x) return x - 1 end)
+         ler:add(lpred, spellings)
+
          local targets = decoder.string2tensor(targets, funk)
          iwer:reset()
          iwer:add(predictions, targets)
@@ -150,19 +157,21 @@ local function test(opt, slice, nslice)
       end
    end
    print(string.format("[Memory usage: %.2f Mb]", decoder.decoder:mem()/2^20))
-   return wer.sum, wer.n, n2-n1+1, sentences, timer:time().real
+   return wer.sum, wer.n, ler.sum, ler.n, n2-n1+1, sentences, timer:time().real
 end
 
 local totalacc = 0
 local totaln = 0
 local totalseq = 0
 local totaltime = 0
+local totalleracc = 0
+local totallern = 0
 
 local timer = torch.Timer()
 local sentences = {}
 
 if testopt.nthread <= 0 then
-   totalacc, totaln, totalseq, sentences, totaltime = test(testopt)
+   totalacc, totaln, totalleracc, totallern, totalseq, sentences, totaltime = test(testopt)
 else
    local threads = require 'threads'
    local pool = threads.Threads(testopt.nthread)
@@ -171,9 +180,11 @@ else
          function()
             return test(testopt, i, testopt.nthread)
          end,
-         function(acc, n, seq, subsentences, time)
+         function(acc, n, leracc, lern, seq, subsentences, time)
             totalacc = totalacc + acc
             totaln = totaln + n
+            totalleracc = totalleracc + leracc
+            totallern = totallern + lern
             totalseq = totalseq + seq
             totaltime = totaltime + time
             for i, p in pairs(subsentences) do
@@ -187,7 +198,7 @@ else
 end
 
 print(string.format("[Decoded %d sequences in %.2f s (actual: %.2f s)]", totalseq, timer:time().real, totaltime))
-print(string.format("[WER on %s = %03.2f%%]", testopt.name, totalacc/totaln*100))
+print(string.format("[WER on %s = %03.2f%%, LER = %03.2f%%]", testopt.name, totalacc/totaln*100, totalleracc/totallern*100))
 
 if testopt.sclite then
    local fhyp = io.open(string.format("%s/sclite-%s.hyp", testopt.dir, testopt.name), "w")

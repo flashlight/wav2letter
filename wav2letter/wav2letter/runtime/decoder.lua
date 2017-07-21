@@ -178,7 +178,7 @@ local function decoder(letterdictname, worddictname, lmname, smearing, nword)
       end
       return lmt
    end
-   
+
    local obj = {
       words = words,
       letters = letters,

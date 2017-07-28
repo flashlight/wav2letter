@@ -94,6 +94,10 @@ local function cmdmutableoptions(cmd)
    cmd:option('-bmrlogadd', false, 'use logadd instead of max')
    cmd:option('-bmrk', 10, 'number of negative hypothesis to consider')
    cmd:text()
+   cmd:text('Architecture Options:')
+   cmd:option('-posmax', false, 'use max instead of logadd (pos)')
+   cmd:option('-negmax', false, 'use max instead of logadd (neg)')
+   cmd:text()
 end
 
 function cmdimmutableoptions(cmd)
@@ -102,8 +106,6 @@ function cmdimmutableoptions(cmd)
    cmd:text()
    cmd:text('Architecture Options:')
    cmd:option('-arch', 'default', 'network architecture')
-   cmd:option('-posmax', false, 'use max instead of logadd (pos)')
-   cmd:option('-negmax', false, 'use max instead of logadd (neg)')
    cmd:option('-inormmax', false, 'input norm is max instead of std')
    cmd:option('-inormloc', false, 'input norm is local instead global')
    cmd:option('-nstate', 1, 'number of states per label (autoseg only)')
@@ -404,7 +406,11 @@ if opt.garbage then
    fllcriterion = initCriterion('FullConnectGarbageCriterion', #dict-1, opt.posmax, scale)
    asgcriterion = initCriterion('AutoSegCriterion', #dict-1, opt.posmax, opt.negmax, scale, 'garbage')
 else
-   fllcriterion = initCriterion('FullConnectCriterionC', #dict, opt.posmax, scale)
+   if opt.posmax then
+      fllcriterion = initCriterion('FullConnectCriterion', #dict, opt.posmax, scale)
+   else
+      fllcriterion = initCriterion('FullConnectCriterionC', #dict, opt.posmax, scale)
+   end
    asgcriterion = initCriterion('AutoSegCriterion', #dict, opt.posmax, opt.negmax, scale, opt.msc and opt.nstate or nil)
 end
 

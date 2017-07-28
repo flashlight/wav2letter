@@ -14,7 +14,7 @@ function AutoSegCriterion:__init(N, isposmax, isnegmax, scale, S, noC)
       print('| AutoSegCriterion uses ForceAlignGarbageCriterion')
       self.fal = nn.ForceAlignGarbageCriterion(N, isposmax, falscale)
    else
-      if noC then
+      if isposmax or noC then
          print('| AutoSegCriterion uses ForceAlignCriterion')
          self.fal = nn.ForceAlignCriterion(N, isposmax, falscale)
       else
@@ -29,7 +29,7 @@ function AutoSegCriterion:__init(N, isposmax, isnegmax, scale, S, noC)
       print('| AutoSegCriterion uses FullConnectGarbageCriterion')
       self.fcc = nn.FullConnectGarbageCriterion(N, isnegmax, fccscale)
    else
-      if noC then
+      if isnegmax or noC then
          print('| AutoSegCriterion uses FullConnectCriterion')
          self.fcc = nn.FullConnectCriterion(N, isnegmax, fccscale)
       else

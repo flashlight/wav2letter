@@ -69,7 +69,7 @@ function DecoderCriterion:updateOutput(input, target)
       end
    end
    if not hasfalpath then
-      table.insert(self.__lpredictions, falpath)
+      table.insert(self.__lpredictions, self.__falpath)
       table.insert(self.__scores, falscore)
    end
    self.__scores = torch.DoubleTensor(self.__scores)

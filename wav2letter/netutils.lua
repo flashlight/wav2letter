@@ -85,10 +85,13 @@ netutils.create = argcheck{
             end
 
             function TemporalAveragePooling(kw, dw)
+               kw = assert(tonumber(kw))
+               dw = assert(tonumber(dw))
                return nn.SpatialAveragePooling(kw, 1, dw, 1):cuda()
             end
 
             function FeatureLPPooling(batch_mode)
+               require 'fbcunn'
                batch_mode = batch_mode or false
                return nn.FeatureLPPooling(2, 2, 2, batch_mode):cuda()
             end

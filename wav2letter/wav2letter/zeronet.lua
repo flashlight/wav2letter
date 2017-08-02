@@ -7,6 +7,11 @@ function ZeroNet:__init(kw, dw, nclass)
    self.nclass = nclass
 end
 
+
+function ZeroNet:parameters()
+    return {}, {}
+end
+
 function ZeroNet:updateOutput(input)
    local T = input:size(1)
    T = math.floor((T-self.kw)/self.dw)+1

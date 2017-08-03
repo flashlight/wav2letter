@@ -181,6 +181,10 @@ local function decoder(letterdictname, worddictname, lmname, smearing, nword)
       return t:maskedSelect(t:ne(unk.usr))
    end
 
+   local function removeneg(t)
+      return t:maskedSelect(t:ge(0))
+   end
+
    local function usridx2lmidx(t)
       local lmt = t.new():resizeAs(t)
       for i=1,t:size(1) do
@@ -203,6 +207,7 @@ local function decoder(letterdictname, worddictname, lmname, smearing, nword)
       tensor2string = tensor2string, -- usr word indices to string
       lettertensor2string = lettertensor2string, -- letter indices to string
       removeunk = removeunk,
+      removeneg = removeneg,
       usridx2lmidx = usridx2lmidx
    }
    setmetatable(obj, {__call=function(...) return decode(select(2, ...), select(3, ...)) end})

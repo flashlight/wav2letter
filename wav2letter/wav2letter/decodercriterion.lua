@@ -1,18 +1,28 @@
+require 'beamer'
+
 local DecoderCriterion = torch.class('nn.DecoderCriterion', 'nn.Criterion')
 local argcheck = require 'argcheck'
+local ffi = require 'ffi'
+local C = require 'beamer.env'.C
 
-local function logadd(t)
-   local m = t:max()
-   t = t:clone()
-   return m + math.log(t:add(-m):exp():sum())
+ffi.cdef[[
+double BMRDecoder_forward(BMRDecoder *decoder, BMRDecoderOptions *opt, float *transitions, float *emissions, long T, long N, double scale);
+void BMRDecoder_backward(BMRDecoder *decoder, BMRDecoderOptions *opt, float *gtransitions, float *gemissions, long T, long N, double scale, double g);
+int BMRDecoder_haspath(BMRDecoder *decoder, long *path, long T);
+void BMRDecoder_store_hypothesis(BMRDecoder *decoder, long *nhyp_, float *scores_, long *llabels_, long *labels_);
+]]
+
+local function logadd(a, b)
+   local m = math.max(a, b)
+   return m + math.log(math.exp(a-m)+math.exp(b-m))
 end
 
-local function dlogadd(t)
-   local m = t:max()
-   local g = t:clone()
-   g:add(-m):exp()
-   g:div(g:sum())
-   return g
+local function dlogadd(a, b)
+   local m = math.max(a, b)
+   a = math.exp(a-m)
+   b = math.exp(b-m)
+   local s = a+b
+   return a/s, b/s
 end
 
 DecoderCriterion.__init = argcheck{
@@ -21,15 +31,12 @@ DecoderCriterion.__init = argcheck{
    {name="decoder", type="table"},
    {name="dopt", type="table"},
    {name="N", type="number"},
-   {name="K", type="number"}, -- number of paths to consider
    {name="scale", type="function", default=function(input, target) return 1 end},
    call =
-      function(self, decoder, dopt, N, K, scale)
-         assert(K > 0)
+      function(self, decoder, dopt, N, scale)
          assert(N == #decoder.letters+1)
          self.decoder = decoder
          self.dopt = dopt
-         self.K = K
          self.scale = scale
          self.fal = nn.ForceAlignCriterion(N, true)
          self.transitions = self.fal.transitions
@@ -56,36 +63,30 @@ function DecoderCriterion:updateOutput(input, target)
    local lmscore = self.dopt.lmweight*self.decoder.lm:estimate(self.decoder.usridx2lmidx(self.__words))
    lmscore = lmscore + self.dopt.wordscore*self.__words:size(1)
    falscore = falscore + lmscore
+   self.__falscore = falscore
 
-   -- we do not clone path (fast but ugly)
-   self.__predictions, self.__lpredictions, self.__scores
-      = self.decoder(self.dopt, self.transitions, input, self.K)
-   local K = #self.__lpredictions
-   local hasfalpath = false
-   for k=1,K do
-      if self.__lpredictions[k]:equal(self.__falpath) then
-         hasfalpath = true
-         break
-      end
+   local opt = ffi.new('BMRDecoderOptions', self.dopt)
+   local decscore = C.BMRDecoder_forward(self.decoder.decoder, opt, self.transitions:data(), input:data(), input:size(1), input:size(2), scale)
+   local output
+   self.__decscore = decscore
+   self.__haspath = (C.BMRDecoder_haspath(self.decoder.decoder, self.__falpath:data(), input:size(1)) == 1)
+   if self.__haspath then
+      output = decscore
+   else
+      output = logadd(decscore, falscore*scale) -- DEBUG: FIXME (*scale)
    end
-   if not hasfalpath then
-      table.insert(self.__lpredictions, self.__falpath)
-      table.insert(self.__scores, falscore)
-   end
-   self.__scores = torch.DoubleTensor(self.__scores)
-   self.__scores:mul(scale)
-
-   self.output = logadd(self.__scores) - falscore*scale
-
-   -- print('O', K, self.output, hasfalpath, falscore*scale)
-   -- print(self.decoder.tensor2string(self.__words))
-   -- print(self:decodedstring())
+   self.output = output - falscore*scale
 
    return self.output
 end
 
-function DecoderCriterion:decodedstring()
-   return self.decoder.tensor2string(self.__predictions[1])
+function DecoderCriterion:labels(labels_, llabels_)
+   llabels_ = llabels_ or torch.LongTensor()
+   labels_ = labels_ or torch.LongTensor()
+   labels_:resize(self.dopt.beamsize, self.__falpath:size(1))
+   llabels_:resize(self.dopt.beamsize, self.__falpath:size(1))
+   C.BMRDecoder_store_hypothesis(self.decoder.decoder, nil, nil, llabels_:data(), labels_:data())
+   return labels_, llabels_
 end
 
 function DecoderCriterion:zeroGradParameters()
@@ -101,26 +102,28 @@ function DecoderCriterion:updateGradInput(input, target)
    self.gradInput:add(-scale, self.fal.gradInput)
    self.gtransitions:add(-scale, self.fal.gtransitions)
 
-   local g = dlogadd(self.__scores)
    local ginput = self.gradInput
    local gtransitions = self.gtransitions
-   for k = 1,#self.__lpredictions do
-      local g_k = g[k]
-      local target = self.__lpredictions[k]
+
+   local opt = ffi.new('BMRDecoderOptions', self.dopt)
+   if self.__haspath then
+      C.BMRDecoder_backward(self.decoder.decoder, opt, gtransitions:data(), ginput:data(), input:size(1), input:size(2), scale, 1)
+   else
+      local gdecscore, gfalscore = dlogadd(self.__decscore, scale*self.__falscore) -- DEBUG: FIXME (*scale)
+      C.BMRDecoder_backward(self.decoder.decoder, opt, gtransitions:data(), ginput:data(), input:size(1), input:size(2), scale, gdecscore)
+      local target = self.__falpath
       local idxm1
       local N = target:size(1)-2 -- beware of start/end nodes
       for t=1,N do
          -- beware of start/end nodes -- beware of 0 indexing
          local idx = target[t+1]+1
-         ginput[t][idx] = ginput[t][idx] + scale*g_k
+         ginput[t][idx] = ginput[t][idx] + scale*gfalscore
          if idxm1 then
-            gtransitions[idx][idxm1] = gtransitions[idx][idxm1] + scale*g_k
+            gtransitions[idx][idxm1] = gtransitions[idx][idxm1] + scale*gfalscore
          end
          idxm1 = idx
       end
    end
-
-   --   print('G', self.gradInput:norm())
 
    return self.gradInput
 end

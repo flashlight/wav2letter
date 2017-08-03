@@ -92,7 +92,6 @@ local function cmdmutableoptions(cmd)
    cmd:option('-bmrbeamscore', 25, 'beam threshold')
    cmd:option('-bmrforceendsil', false, 'force end sil')
    cmd:option('-bmrlogadd', false, 'use logadd instead of max')
-   cmd:option('-bmrk', 10, 'number of negative hypothesis to consider')
    cmd:text()
    cmd:text('Architecture Options:')
    cmd:option('-posmax', false, 'use max instead of logadd (pos)')
@@ -426,7 +425,6 @@ if opt.bmrcrt then
       decoder = decoder,
       dopt = dopt,
       N = #dict,
-      K = opt.bmrk,
       scale = scale,
    }
 end
@@ -577,6 +575,7 @@ if opt.seg then -- frame error rate
    meters.trainframeerr = tnt.FrameErrorMeter{}
 end
 meters.trainedit = tnt.EditDistanceMeter()
+meters.wordedit = tnt.EditDistanceMeter()
 
 meters.validedit = {}
 meters.validwordedit = {}
@@ -757,6 +756,7 @@ local function train(network, criterion, iterator, params, opid)
    function engine.hooks.onStart(state)
       meters.loss:reset()
       meters.trainedit:reset()
+      meters.wordedit:reset()
       if opt.mpi then
          mpinn.synchronizeParameters(state.network, true) -- DEBUG: FIXME
          mpinn.synchronizeParameters(state.criterion, true) -- DEBUG: FIXME
@@ -808,6 +808,15 @@ local function train(network, criterion, iterator, params, opid)
    end
 
    function engine.hooks.onBackwardCriterion(state)
+      if opt.bmrcrt then -- compute WER if necessary
+         -- DEBUG: batching is not supported with bmrcriterion
+         local labels = bmrcriterion:labels()[1]
+         local wpred = decoder.removeunk(decoder.removeneg(labels))
+         local words = state.sample.words
+         -- print('P', decoder.tensor2string(wpred))
+         -- print('G', decoder.tensor2string(words))
+         meters.wordedit:add(wpred, words)
+      end
       meters.criteriontimer:stop()
       meters.networktimer:resume()
    end
@@ -875,6 +884,7 @@ local function train(network, criterion, iterator, params, opid)
       -- reset meters for next readings
       meters.loss:reset()
       meters.trainedit:reset()
+      meters.wordedit:reset()
 
    end
 

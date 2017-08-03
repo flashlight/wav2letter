@@ -3,7 +3,7 @@ require 'wav2letter'
 local decoder = require 'wav2letter.runtime.decoder'
 
 local datadir = assert(arg[1], 'datadir expected')
-local eps = 1e-2
+local eps = 1e-3
 
 local function criterionJacobianTest1D(cri, input, target)
    local _ = cri:forward(input, target)
@@ -76,7 +76,7 @@ local dopt = {
    beamsize = 25, -- beware: small (~25) for GRAD TEST
    beamscore = 25,
    forceendsil = false,
-   logadd = false -- NYI
+   logadd = true -- false
 }
 
 local N = #decoder.letters+1
@@ -84,7 +84,6 @@ local criterion = nn.DecoderCriterion{
    decoder = decoder,
    dopt = dopt,
    N = N,
-   K = 10,
    scale =
       function(input, target)
          return math.sqrt(1/target:size(1))
@@ -92,10 +91,10 @@ local criterion = nn.DecoderCriterion{
 }
 criterion.transitions:copy( torch.randn(N, N) )
 
-local x = torch.rand(100, N)
+local x = torch.rand(20, N)
 
-local target = " the cat sat on the mat before eating the bone "
 -- DEBUG: beware to unknowns in target!!!
+local target = " the cat sat "
 local words = decoder.string2tensor(target)
 target = target:gsub(' ', '|')
 
@@ -107,17 +106,9 @@ end
 print(words)
 criterion:setWordTarget(words)
 
-local function tensor2letter(t)
-   local str = {}
-   for i=1,t:size(1) do
-      table.insert(str, assert(decoder.letters[t[i]]))
-   end
-   return table.concat(str)
-end
-
 -- criterion = nn.AutoSegCriterion(N, true, false, nil, nil, true) -- beware the scale
--- print('GRAD TEST', criterionJacobianTest1D(criterion, x, y))
--- print('GRAD TEST (PARAMS)', criterionJacobianTest1D(criterion, x, y, criterion.transitions, criterion.gtransitions))
+print('GRAD TEST', criterionJacobianTest1D(criterion, x, y))
+print('GRAD TEST (PARAMS)', criterionJacobianTest1D(criterion, x, y, criterion.transitions, criterion.gtransitions))
 
 local lr = 10 -- beware the scale
 for i=1,10 do
@@ -127,8 +118,9 @@ for i=1,10 do
    criterion:backward(x, y)
    criterion:updateParameters(lr/1000)
    x:add(-lr, criterion.gradInput)
-   print('word (gld):', tensor2letter(torch.add(y,-1)))
-   print('word (dec):', criterion:decodedstring())
-   print("letter (fal):", tensor2letter(criterion.__falpath))
-   print("letter (dec)", tensor2letter(criterion.__lpredictions[1]))
+   local labels, llabels = criterion:labels()
+   print('word (gld):', decoder.lettertensor2string(torch.add(y,-1)))
+   print('word (dec):', decoder.tensor2string(decoder.removeneg(labels[1])))
+   print("letter (fal):", decoder.lettertensor2string(criterion.__falpath))
+   print("letter (dec)", decoder.lettertensor2string(llabels[1]))
 end

@@ -47,6 +47,9 @@ log.status = argcheck{
             item(string.format("%s-%s", name, ERR), "%5.2f", meter:reduce(reduce):value())
          end
          if opt.bmr then
+            if opt.bmrcrt then
+               item("train-bWER", "%5.2f", meters.wordedit:reduce(reduce):value())
+            end
             for name, meter in pairs(meters.validwordedit) do
                item(string.format("%s-bWER", name), "%5.2f", meter:reduce(reduce):value())
             end

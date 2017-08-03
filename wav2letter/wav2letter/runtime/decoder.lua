@@ -141,7 +141,7 @@ local function decoder(letterdictname, worddictname, lmname, smearing, nword)
       end
    end
 
-   function lettertensor2string(t)
+   local function lettertensor2string(t)
       local str = {}
       for i=1,t:size(1) do
          table.insert(str, assert(letters[t[i]]))

@@ -1,0 +1,14 @@
+lua_binary(
+    name = "test-decoder-criterion",
+    srcs = [
+        "test-decoder-criterion.lua",
+    ],
+    base_module = "",
+    main_module = "test-decoder-criterion",
+    deps = [
+        "@/deeplearning/projects/wav2letter:beamer",
+        "@/deeplearning/projects/wav2letter:wav2letter",
+    ],
+    external_deps = [
+    ],
+)

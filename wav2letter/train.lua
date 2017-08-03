@@ -92,6 +92,7 @@ local function cmdmutableoptions(cmd)
    cmd:option('-bmrbeamscore', 25, 'beam threshold')
    cmd:option('-bmrforceendsil', false, 'force end sil')
    cmd:option('-bmrlogadd', false, 'use logadd instead of max')
+   cmd:option('-bmrk', 10, 'number of negative hypothesis to consider')
    cmd:text()
 end
 
@@ -419,7 +420,8 @@ if opt.bmrcrt then
       decoder = decoder,
       dopt = dopt,
       N = #dict,
-      scale = scale
+      K = opt.bmrk,
+      scale = scale,
    }
 end
 local evlcriterion = (opt.ctc and ctccriterion) or (opt.msc and msccriterion or viterbi)

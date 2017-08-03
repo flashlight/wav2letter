@@ -142,6 +142,7 @@ lua_binary(
     ] + util.files("config/**/*.lua"),
     main_module = "train",
     deps = [
+        ":beamer",
         ":wav2letter",
         "@/torch/oss:samplerate",
         "@/torch/oss/torchmpi:torchmpi",

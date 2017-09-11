@@ -167,6 +167,7 @@ lua_binary(
     ] + util.files("config/**/*.lua"),
     main_module = "test",
     deps = [
+        ":beamer",
         ":wav2letter",
     ],
     external_deps = [

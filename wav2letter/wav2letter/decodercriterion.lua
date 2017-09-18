@@ -6,8 +6,8 @@ local ffi = require 'ffi'
 local C = require 'beamer.env'.C
 
 ffi.cdef[[
-double BMRDecoder_forward(BMRDecoder *decoder, BMRDecoderOptions *opt, float *transitions, float *emissions, long T, long N, double scale);
-void BMRDecoder_backward(BMRDecoder *decoder, BMRDecoderOptions *opt, float *gtransitions, float *gemissions, long T, long N, double scale, double g);
+double BMRDecoder_forward(BMRDecoder *decoder, BMRDecoderOptions *opt, float *transitions, float *emissions, long T, long N);
+void BMRDecoder_backward(BMRDecoder *decoder, BMRDecoderOptions *opt, float *gtransitions, float *gemissions, long T, long N, double g);
 int BMRDecoder_haspath(BMRDecoder *decoder, long *path, long T);
 void BMRDecoder_store_hypothesis(BMRDecoder *decoder, long *nhyp_, float *scores_, long *llabels_, long *labels_);
 ]]
@@ -66,16 +66,16 @@ function DecoderCriterion:updateOutput(input, target)
    self.__falscore = falscore
 
    local opt = ffi.new('BMRDecoderOptions', self.dopt)
-   local decscore = C.BMRDecoder_forward(self.decoder.decoder, opt, self.transitions:data(), input:data(), input:size(1), input:size(2), scale)
+   local decscore = C.BMRDecoder_forward(self.decoder.decoder, opt, self.transitions:data(), input:data(), input:size(1), input:size(2))
    local output
    self.__decscore = decscore
    self.__haspath = (C.BMRDecoder_haspath(self.decoder.decoder, self.__falpath:data(), input:size(1)) == 1)
    if self.__haspath then
       output = decscore
    else
-      output = logadd(decscore, falscore*scale) -- DEBUG: FIXME (*scale)
+      output = logadd(decscore, falscore)
    end
-   self.output = output - falscore*scale
+   self.output = (output - falscore)*scale
 
    return self.output
 end
@@ -107,19 +107,21 @@ function DecoderCriterion:updateGradInput(input, target)
 
    local opt = ffi.new('BMRDecoderOptions', self.dopt)
    if self.__haspath then
-      C.BMRDecoder_backward(self.decoder.decoder, opt, gtransitions:data(), ginput:data(), input:size(1), input:size(2), scale, 1)
+      C.BMRDecoder_backward(self.decoder.decoder, opt, gtransitions:data(), ginput:data(), input:size(1), input:size(2), scale)
    else
-      local gdecscore, gfalscore = dlogadd(self.__decscore, scale*self.__falscore) -- DEBUG: FIXME (*scale)
-      C.BMRDecoder_backward(self.decoder.decoder, opt, gtransitions:data(), ginput:data(), input:size(1), input:size(2), scale, gdecscore)
+      local gdecscore, gfalscore = dlogadd(self.__decscore, self.__falscore)
+      gdecscore = gdecscore * scale
+      gfalscore = gfalscore * scale
+      C.BMRDecoder_backward(self.decoder.decoder, opt, gtransitions:data(), ginput:data(), input:size(1), input:size(2), gdecscore)
       local target = self.__falpath
       local idxm1
       local N = target:size(1)-2 -- beware of start/end nodes
       for t=1,N do
          -- beware of start/end nodes -- beware of 0 indexing
          local idx = target[t+1]+1
-         ginput[t][idx] = ginput[t][idx] + scale*gfalscore
+         ginput[t][idx] = ginput[t][idx] + gfalscore
          if idxm1 then
-            gtransitions[idx][idxm1] = gtransitions[idx][idxm1] + scale*gfalscore
+            gtransitions[idx][idxm1] = gtransitions[idx][idxm1] + gfalscore
          end
          idxm1 = idx
       end

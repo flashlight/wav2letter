@@ -48,7 +48,7 @@ void BMRDecoder_settoword(BMRDecoder *decoder, const char* (*toword)(long))
   decoder->toword = toword;
 }
 
-static double BMRDecoderNodeList_max(BMRDecoderNodeList *lst, double scale)
+static double BMRDecoderNodeList_max(BMRDecoderNodeList *lst)
 {
   double m = lst->node->score;
   while(lst->next) {
@@ -57,10 +57,10 @@ static double BMRDecoderNodeList_max(BMRDecoderNodeList *lst, double scale)
       m = lst->node->score;
     }
   }
-  return m*scale;
+  return m;
 }
 
-static void BMRDecoderNodeList_dmax(BMRDecoderNodeList *lst, double scale, double g)
+static void BMRDecoderNodeList_dmax(BMRDecoderNodeList *lst, double g)
 {
   double m = lst->node->score;
   BMRDecoderNode *o = lst->node;
@@ -73,34 +73,34 @@ static void BMRDecoderNodeList_dmax(BMRDecoderNodeList *lst, double scale, doubl
       o = lst->node;
     }
   }
-  o->gscore = scale*g;
+  o->gscore = g;
 }
 
-static double BMRDecoderNodeList_logadd(BMRDecoderNodeList *lst, double scale)
+static double BMRDecoderNodeList_logadd(BMRDecoderNodeList *lst)
 {
-  double m = BMRDecoderNodeList_max(lst, 1);
+  double m = BMRDecoderNodeList_max(lst);
   double s = 0;
   while(lst) {
-    s += exp(scale*(lst->node->score-m));
+    s += exp(lst->node->score-m);
     lst = lst->next;
   }
-  s = log(s) + scale*m;
+  s = log(s) + m;
   return s;
 }
 
-static void BMRDecoderNodeList_dlogadd(BMRDecoderNodeList *lst, double scale, double g)
+static void BMRDecoderNodeList_dlogadd(BMRDecoderNodeList *lst, double g)
 {
-  double m = BMRDecoderNodeList_max(lst, 1);
+  double m = BMRDecoderNodeList_max(lst);
   double s = 0;
   BMRDecoderNodeList *lst_ = lst;
   while(lst) {
-    lst->node->gscore = exp(scale*(lst->node->score-m));
+    lst->node->gscore = exp(lst->node->score-m);
     s += lst->node->gscore;
     lst = lst->next;
   }
   lst = lst_;
   while(lst) {
-    lst->node->gscore *= (scale*g/s);
+    lst->node->gscore *= (g/s);
     lst = lst->next;
   }
 }
@@ -228,10 +228,10 @@ static int BMRDecoder_compare_nodes(const void *node1_, const void *node2_)
   return 0;
 }
 
-static BMRDecoderNode* BMRDecoder_finalize_merge(BMRDecoder *decoder,  BMRDecoderOptions *opt, BMRDecoderNode *best, BMRDecoderNodeList *merged, double scale)
+static BMRDecoderNode* BMRDecoder_finalize_merge(BMRDecoder *decoder,  BMRDecoderOptions *opt, BMRDecoderNode *best, BMRDecoderNodeList *merged)
 {
   merged = BMRDecoder_node_list_new(decoder->merged, best, merged);
-  double score = (opt->logadd ? BMRDecoderNodeList_logadd(merged, scale) : BMRDecoderNodeList_max(merged, scale));
+  double score = (opt->logadd ? BMRDecoderNodeList_logadd(merged) : BMRDecoderNodeList_max(merged));
   return BMRDecoder_node_new(decoder->candidates, best->lmstate, best->lex, best->parent, score, best->wordscore, best->label, merged);
 }
 
@@ -259,7 +259,7 @@ static int BMRDecoder_candidates_store(BMRDecoder *decoder, BMRDecoderOptions *o
       BMRLMState_compare(CANDIDATE(i)->lmstate, CANDIDATE(m-1)->lmstate) ||
       CANDIDATE(i)->lex != CANDIDATE(m-1)->lex) {
       if(merged) {
-        BMRArray_set(candidates, m-1, BMRDecoder_finalize_merge(decoder, opt, CANDIDATE(m-1), merged, 1));
+        BMRArray_set(candidates, m-1, BMRDecoder_finalize_merge(decoder, opt, CANDIDATE(m-1), merged));
         merged = NULL;
       }
       BMRArray_set(candidates, m, CANDIDATE(i));
@@ -271,7 +271,7 @@ static int BMRDecoder_candidates_store(BMRDecoder *decoder, BMRDecoderOptions *o
   }
   /* do not forget final one */
   if(merged) {
-    BMRArray_set(candidates, m-1, BMRDecoder_finalize_merge(decoder, opt, CANDIDATE(m-1), merged, 1));
+    BMRArray_set(candidates, m-1, BMRDecoder_finalize_merge(decoder, opt, CANDIDATE(m-1), merged));
     merged = NULL;
   }
   BMRArray_resize(candidates, m);
@@ -482,7 +482,7 @@ void BMRDecoder_store_hypothesis(BMRDecoder *decoder, long *nhyp_, float *scores
   }
 }
 
-double BMRDecoder_forward(BMRDecoder *decoder, BMRDecoderOptions *opt, float *transitions, float *emissions, long T, long N, double scale)
+double BMRDecoder_forward(BMRDecoder *decoder, BMRDecoderOptions *opt, float *transitions, float *emissions, long T, long N)
 {
   BMRDecoder_decode(decoder, opt, transitions, emissions, T, N, NULL, NULL, NULL, NULL);
   BMRDecoderNodeList *merged = NULL;
@@ -498,13 +498,13 @@ double BMRDecoder_forward(BMRDecoder *decoder, BMRDecoderOptions *opt, float *tr
   opt->logadd = 1;
   BMRDecoderNode *node = BMRArray_get(lhyp, 0);
   BMRDecoderNode *nodeclone = BMRDecoder_node_new(decoder->candidates, node->lmstate, node->lex, node, node->score, node->wordscore, NULL, NULL);
-  BMRDecoderNode *mergedscorenode = BMRDecoder_finalize_merge(decoder, opt, nodeclone, merged, scale);
+  BMRDecoderNode *mergedscorenode = BMRDecoder_finalize_merge(decoder, opt, nodeclone, merged);
   BMRArray_set(BMRArray_get(decoder->hyp, T+2), 0, mergedscorenode);
   opt->logadd = logadd;
   return mergedscorenode->score;
 }
 
-void BMRDecoder_backward(BMRDecoder *decoder, BMRDecoderOptions *opt, float *gtransitions, float *gemissions, long T, long N, double scale, double g)
+void BMRDecoder_backward(BMRDecoder *decoder, BMRDecoderOptions *opt, float *gtransitions, float *gemissions, long T, long N, double g)
 {
   // init the beast
   BMRDecoderNode *mergedscorenode = BMRArray_get(BMRArray_get(decoder->hyp, T+2), 0);
@@ -519,12 +519,12 @@ void BMRDecoder_backward(BMRDecoder *decoder, BMRDecoderOptions *opt, float *gtr
       if(node->active) {
         if(node->merged) {
           if(node == mergedscorenode) {
-            BMRDecoderNodeList_dlogadd(node->merged, scale, node->gscore); // DEBUG: for now we finalize with logadd (forced)
+            BMRDecoderNodeList_dlogadd(node->merged, node->gscore); // DEBUG: for now we finalize with logadd (forced)
           } else {
             if(opt->logadd) {
-              BMRDecoderNodeList_dlogadd(node->merged, 1, node->gscore);
+              BMRDecoderNodeList_dlogadd(node->merged, node->gscore);
             } else {
-              BMRDecoderNodeList_dmax(node->merged, 1, node->gscore);
+              BMRDecoderNodeList_dmax(node->merged, node->gscore);
             }
           }
           BMRDecoderNodeList *lst = node->merged;
@@ -606,13 +606,11 @@ int BMRDecoder_haspath(BMRDecoder *decoder, long *path, long T) // size == T+2
     matchlst = BMRDecoder_haspath_addcheck(matchlst, buffer, node, path[T+1]);
   }
   for(long t = T; t >= 0 && matchlst; t--) {
-    long count = 0;
     newmatchlst = NULL;
     BMRBuffer_reset(newbuffer);
     while(matchlst) {
       newmatchlst = BMRDecoder_haspath_addcheck(newmatchlst, newbuffer, matchlst->node, path[t]);
       matchlst = matchlst->next;
-      count++;
     }
     matchlst = newmatchlst;
     BMRBuffer *tmp = buffer;

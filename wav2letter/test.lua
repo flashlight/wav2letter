@@ -150,7 +150,7 @@ for _, name in ipairs(data.namelist(opt.test)) do
             kw = kw,
             dw = dw,
             maxload = opt.maxloadtest,
-            words = 'unk'
+            words = 'wrd'
          }
       end
    }

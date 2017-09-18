@@ -427,6 +427,7 @@ if opt.bmrcrt then
       N = #dict,
       scale = scale,
    }
+   bmrcriterion:share(asgcriterion, 'transitions')
 end
 local evlcriterion = (opt.ctc and ctccriterion) or (opt.msc and msccriterion or viterbi)
 -- clone is important (otherwise forward/backward not in a row
@@ -721,6 +722,7 @@ local function test(network, criterion, iterator, edit, wordedit)
    local engine = tnt.SGDEngine()
    function engine.hooks.onStart()
       edit:reset()
+      wordedit:reset()
    end
    function engine.hooks.onForward(state)
       if progress then
@@ -808,7 +810,7 @@ local function train(network, criterion, iterator, params, opid)
    end
 
    function engine.hooks.onBackwardCriterion(state)
-      if opt.bmrcrt then -- compute WER if necessary
+      if state.criterion == bmrcriterion then -- compute WER if necessary
          -- DEBUG: batching is not supported with bmrcriterion
          local labels = bmrcriterion:labels()[1]
          local wpred = decoder.removeunk(decoder.removeneg(labels))

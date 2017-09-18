@@ -114,6 +114,7 @@ local lr = 10 -- beware the scale
 for i=1,10 do
    print("=======================================================================")
    print('iter', i, 'loss', criterion:forward(x, y))
+   print('is forced-align path in beam?', criterion.__haspath)
    criterion:zeroGradParameters()
    criterion:backward(x, y)
    criterion:updateParameters(lr/1000)
@@ -123,4 +124,6 @@ for i=1,10 do
    print('word (dec):', decoder.tensor2string(decoder.removeneg(labels[1])))
    print("letter (fal):", decoder.lettertensor2string(criterion.__falpath))
    print("letter (dec)", decoder.lettertensor2string(llabels[1]))
+   print('GRAD TEST', criterionJacobianTest1D(criterion, x, y))
+   print('GRAD TEST (PARAMS)', criterionJacobianTest1D(criterion, x, y, criterion.transitions, criterion.gtransitions))
 end

@@ -26,7 +26,7 @@ void BMRDecoder_settoword(BMRDecoder *decoder, const char* (*toword)(long)); /* 
 /* valid only after forward */
 /* nhyp_, scores_, llabels_, labels_ may be NULL (in which case they are not returned) */
 void BMRDecoder_store_hypothesis(BMRDecoder *decoder, long *nhyp_, float *scores_, long *llabels_, long *labels_);
-double BMRDecoder_forward(BMRDecoder *decoder, BMRDecoderOptions *opt, float *transitions, float *emissions, long T, long N, double scale);
-void BMRDecoder_backward(BMRDecoder *decoder, BMRDecoderOptions *opt, float *gtransitions, float *gemissions, long T, long N, double scale, double g);
+double BMRDecoder_forward(BMRDecoder *decoder, BMRDecoderOptions *opt, float *transitions, float *emissions, long T, long N);
+void BMRDecoder_backward(BMRDecoder *decoder, BMRDecoderOptions *opt, float *gtransitions, float *gemissions, long T, long N, double g);
 
 #endif

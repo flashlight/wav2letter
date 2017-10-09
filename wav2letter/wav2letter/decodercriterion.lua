@@ -1,4 +1,7 @@
-require 'beamer'
+local hasbeamer = pcall(require, 'beamer')
+if not hasbeamer then
+   return
+end
 
 local DecoderCriterion = torch.class('nn.DecoderCriterion', 'nn.Criterion')
 local argcheck = require 'argcheck'

@@ -12,5 +12,6 @@ lua_binary(
         ("torch7", "trunk"),
         ("torch-paths", "trunk"),
         ("torch-xlua", "trunk"),
+        ("torch-sndfile", None),
     ],
 )

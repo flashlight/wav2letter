@@ -43,7 +43,7 @@ for _, path in ipairs(arg) do
       for feature, data in pairs(sample) do
          local fname = paths.concat(path, string.format("%09d.%s", n, feature .. "sz"))
          local f = io.open(fname, "w")
-         f:write(data:size(1))
+         f:write(data:nDimension() > 0 and data:size(1) or 0)
          f:close()
       end
       xlua.progress(n, N)

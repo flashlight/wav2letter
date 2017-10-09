@@ -338,10 +338,18 @@ transforms.target = argcheck{
             table.insert(
                transforms,
                function(target)
-                  local newtarget = target:clone():resize(target:size(1) + 2)
-                  newtarget[1] = surround
-                  newtarget[target:size(1) + 2] = surround
-                  newtarget:narrow(1, 2, target:size(1)):copy(target)
+                  local tgsz = target:nDimension() > 0 and target:size(1) or 0
+                  local newtarget
+                  -- note: dim=0 case should be generally better handled
+                  if tgsz > 0 then
+                     newtarget = target:clone():resize(tgsz + 2)
+                     newtarget[1] = surround
+                     newtarget[tgsz + 2] = surround
+                     newtarget:narrow(1, 2, tgsz):copy(target)
+                  else
+                     newtarget = target:clone():resize(1)
+                     newtarget[1] = surround
+                  end
                   return newtarget
                end
             )

@@ -6,6 +6,7 @@
 local tnt = require 'torchnet'
 local paths = require 'paths'
 local xlua = require 'xlua'
+local sndfile = require 'sndfile'
 
 torch.setheaptracking(true)
 
@@ -18,7 +19,7 @@ cmd:argument('-WSJ0', 'top level directory containing all WSJ0 discs')
 cmd:argument('-WSJ1', 'top level directory containing all WSJ1 discs')
 cmd:text()
 cmd:text('Options:')
-cmd:option('-dst', "./wsj-idx", "destination directory")
+cmd:option('-dst', "./wsj", "destination directory")
 cmd:option('-sph2pipe', "./sph2pipe_v2.5/sph2pipe", "path to sph2pipe executable")
 cmd:text()
 
@@ -220,12 +221,8 @@ end
 
 for name, list in pairs(sets) do
    print(string.format("# Writing %s with %d samples", name, #list))
-   os.execute(string.format('mkdir -p "%s/%s"', dst, name))
-   local data = tnt.IndexedDatasetWriter{
-      indexfilename = string.format("%s/%s/data.idx", dst, name),
-      datafilename = string.format("%s/%s/data.bin", dst, name),
-      type = "table"
-   }
+   local dst = string.format("%s/%s", dst, name)
+   os.execute(string.format('mkdir -p "%s"', dst))
    for idx, sample in ipairs(list) do
       local filename = sample.filename
       local id = sample.id
@@ -235,8 +232,37 @@ for name, list in pairs(sets) do
       local wav = f:readByte(2^30)
       assert(wav:size() > 0)
       f:close()
-      data:add{filename=filename, id=id, subset=subset, words=words, spellings=spellings, wav=wav}
+
+      -- wav
+      local f = sndfile.SndFile(wav)
+      local info = f:info()
+      local data = f:readShort(info.frames)
+      f:close()
+      local f = sndfile.SndFile(string.format('%s/%09d.flac', dst, idx), 'w', {samplerate=info.samplerate, channels=info.channels, format='FLAC', subformat="PCM16"})
+      f:writeShort(data)
+      f:close()
+
+      -- words
+      local f = io.open(string.format('%s/%09d.wrd', dst, idx), 'w')
+      f:write(words)
+      f:close()
+
+      -- letters
+      local f = io.open(string.format('%s/%09d.ltr', dst, idx), 'w')
+      spellings = spellings:gsub('%s', '|'):gsub('(.)', '%1 '):gsub(' $', '')
+      f:write(spellings)
+      f:close()
+
+      -- id
+      local f = io.open(string.format('%s/%09d.fid', dst, idx), 'w')
+      f:write(id)
+      f:close()
+
+      -- filename
+      local f = io.open(string.format('%s/%09d.fln', dst, idx), 'w')
+      f:write(filename)
+      f:close()
+
       xlua.progress(idx, #list)
    end
-   data:close()
 end

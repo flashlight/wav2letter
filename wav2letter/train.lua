@@ -756,6 +756,8 @@ local function train(network, criterion, iterator, params, opid)
    local engine = tnt.SGDEngine()
 
    function engine.hooks.onStart(state)
+      print("onStart(state)")
+print(state)
       meters.loss:reset()
       meters.trainedit:reset()
       meters.wordedit:reset()
@@ -766,6 +768,8 @@ local function train(network, criterion, iterator, params, opid)
    end
 
    function engine.hooks.onStartEpoch(state)
+print("onStartEpoch(state)")
+print(state)
       meters.runtime:reset()
       meters.runtime:resume()
       if not opt.noresample then
@@ -787,6 +791,8 @@ local function train(network, criterion, iterator, params, opid)
    end
 
    function engine.hooks.onSample(state)
+print("onSample(state)")
+print(state)
       if progress then
          progress()
       end
@@ -799,6 +805,8 @@ local function train(network, criterion, iterator, params, opid)
    end
 
    function engine.hooks.onForward(state)
+print("onForward(state)")
+print(state)
       meters.networktimer:stop()
       meters.criteriontimer:resume()
       if state.t % opt.terrsr == 0 then
@@ -810,6 +818,8 @@ local function train(network, criterion, iterator, params, opid)
    end
 
    function engine.hooks.onBackwardCriterion(state)
+print("on(state)")
+print(state)
       if state.criterion == bmrcriterion then -- compute WER if necessary
          -- DEBUG: batching is not supported with bmrcriterion
          local labels = bmrcriterion:labels()[1]
@@ -824,6 +834,8 @@ local function train(network, criterion, iterator, params, opid)
    end
 
    function engine.hooks.onBackward(state)
+print("onBackward(state)")
+print(state)
       applyClamp()
       applyOnBackwardOptims()
       meters.networktimer:stop()
@@ -834,6 +846,8 @@ local function train(network, criterion, iterator, params, opid)
    end
 
    function engine.hooks.onUpdate(state)
+print("onUpdate(state)")
+print(state)
       map(function(out) if out then meters.loss:add(out) end end, state.criterion.output)
       map2(function(i, t) if i then meters.stats:add(i, t) end end, opt.shift > 0 and state.sample.input[1] or state.sample.input, state.sample.target)
       if state.t % opt.psr == 0 and state.t % trainsize ~= 0 then
@@ -859,6 +873,8 @@ local function train(network, criterion, iterator, params, opid)
    end
 
    function engine.hooks.onEndEpoch(state)
+print("onEndEpoch(state)")
+print(state)
       meters.runtime:stop()
       meters.timer:stop()
       meters.sampletimer:stop()

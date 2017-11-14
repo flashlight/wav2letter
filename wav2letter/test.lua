@@ -147,6 +147,7 @@ for _, name in ipairs(data.namelist(opt.test)) do
             names = {name},
             opt = opt,
             dict = dict,
+            speakers_dict = {},
             kw = kw,
             dw = dw,
             maxload = opt.maxloadtest,

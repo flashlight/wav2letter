@@ -13,6 +13,7 @@ require 'wav2letter'
 torch.setdefaulttensortype('torch.FloatTensor')
 
 local netutils = paths.dofile('netutils.lua')
+paths.dofile('SpeakerSGDEngine.lua')
 paths.dofile('LogSumExp.lua')
 
 local function cmdmutableoptions(cmd)
@@ -816,7 +817,7 @@ local function train(network, criterion, iterator, params, opid, use_labmda)
    local heartbeat = serial.heartbeat{
       filename = paths.concat(path, "heartbeat"),
    }
-   local engine = tnt.SGDEngine()
+   local engine = tnt.SpeakerSGDEngine()
 
    function engine.hooks.onStart(state)
       meters.loss:reset()
@@ -889,8 +890,6 @@ local function train(network, criterion, iterator, params, opid, use_labmda)
       else
         outputs = state.network.output[1]
         targets = state.sample.target[1]
-        print(state.criterion.criterions[2].output)
-        print(state.sample.target[2])
       end
 
       if state.t % opt.terrsr == 0 then
@@ -916,8 +915,8 @@ local function train(network, criterion, iterator, params, opid, use_labmda)
    end
 
    function engine.hooks.onBackward(state)
-      applyClamp()
-      applyOnBackwardOptims()
+      -- applyClamp()
+      -- applyOnBackwardOptims()
       meters.networktimer:stop()
       if opt.mpi then
          mpinn.synchronizeGradients(state.network)
@@ -1052,7 +1051,7 @@ end
 local net_criterion = nil
 if opt.speaker ~= '' then
   net_criterion = nn.ParallelCriterion():cuda()
-  net_criterion:add(opt.bmrcrt and bmrcriterion or ((opt.ctc and ctccriterion) or (opt.seg and fllcriterion or asgcriterion)))
+  net_criterion:add(opt.bmrcrt and bmrcriterion or ((opt.ctc and ctccriterion) or (opt.seg and fllcriterion or asgcriterion)), 0)
   net_criterion:add(nn.ClassNLLCriterion():cuda(), opt.lambdaloss)
 else
   net_criterion = opt.bmrcrt and bmrcriterion or ((opt.ctc and ctccriterion) or (opt.seg and fllcriterion or asgcriterion))

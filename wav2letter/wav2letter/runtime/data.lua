@@ -98,6 +98,22 @@ data.newdict = argcheck{
       end
 }
 
+data.buildspeakerdict = argcheck{
+   {name='path', type='string'},
+   call =
+      function(path)
+         local dict = {}
+         local idx = 1
+         for line in io.lines(path) do
+            local speaker_idx = line:match('^(%S+)')
+            speaker_idx = tonumber(speaker_idx)
+            dict[speaker_idx] = idx
+            idx = idx + 1
+         end
+         return dict, (idx - 1)
+      end
+}
+
 data.dictmaxvalue =
    function(dict)
       local maxvalue = 0
@@ -317,6 +333,7 @@ data.newdataset = argcheck{
    {name="names", type="table"},
    {name="opt", type="table"},
    {name="dict", type="table"},
+   {name="speakers_dict", type="table"},
    {name="kw", type="number"},
    {name="dw", type="number"},
    {name="sampler", type="function", opt=true},
@@ -327,7 +344,7 @@ data.newdataset = argcheck{
    {name="words", type="string", opt=true},
    {name="worddict", type="tds.Hash", opt=true},
    call =
-      function(names, opt, dict, kw, dw, sampler, mpirank, mpisize, maxload, aug, words, worddict)
+      function(names, opt, dict, speakers_dict, kw, dw, sampler, mpirank, mpisize, maxload, aug, words, worddict)
          local tnt = require 'torchnet'
          local data = require 'wav2letter.runtime.data'
          local readers = require 'wav2letter.readers'
@@ -381,7 +398,14 @@ data.newdataset = argcheck{
                   alias = "target",
                   reader = readers.tokens{
                      dictionary = dict
-                  }
+                  },
+               },
+               {
+                  name = opt.speaker,
+                  alias = "speaker",
+                  reader = readers.speakers{
+                    dictionary = speakers_dict
+                  },
                },
             }
          if words then

@@ -53,6 +53,34 @@ readers.tokens = argcheck{
       end
 }
 
+-- parse speaker id and gender
+readers.speakers = argcheck{
+  noordered = true,
+  {name='dictionary', type='table'},
+   call =
+      function(dictionary)
+         return function(filename)
+            if paths.filep(filename) then
+              local f = assert(
+                 io.open(filename),
+                 string.format("could not read file <%s>", filename))
+              local data = f:read('*all')
+              f:close()
+              local speaker = {}
+              local speaker_meta = {}
+              for line in data:gmatch('(%S+)') do
+                local id = tonumber(line)
+                table.insert(speaker_meta, id)
+              end
+              table.insert(speaker, dictionary[speaker_meta[1]]) -- validate speaker_id exists
+              return torch.LongTensor(speaker)
+            else
+              return nil
+            end
+         end
+      end
+}
+
 readers.number = argcheck{
    call =
       function()

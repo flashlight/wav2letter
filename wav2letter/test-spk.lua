@@ -7,7 +7,6 @@ local data = require 'wav2letter.runtime.data'
 local log = require 'wav2letter.runtime.log'
 local serial = require 'wav2letter.runtime.serial'
 local tds = require 'tds'
-
 require 'optim'
 require 'wav2letter'
 
@@ -27,7 +26,7 @@ local function cmdmutableoptions(cmd)
    cmd:option('-gfsai', false, 'override above paths to gfsai ones')
    cmd:option('-mpi', false, 'use mpi parallelization')
    cmd:option('-seed', 1111, 'Manually set RNG seed')
-   cmd:option('-progress', false, 'display training progress per epoch')
+   cmd:option('-progress', true, 'display training progress per epoch')
    cmd:option('-batchsize', 0, 'batchsize') -- not that mutable...
    cmd:option('-gpu', 0, 'use gpu instead of cpu (indicate device > 0)') -- not that mutable...
    cmd:option('-nthread', 1, 'specify number of threads for data parallelization')
@@ -104,7 +103,6 @@ local function cmdmutableoptions(cmd)
    cmd:option('-speaker', 'spk', 'target speaker feature [spk]')
    cmd:option('-speakerslist', '/private/home/adiyoss/wav2letter/wav2letterdata/speakers.lst', 'the path to the speakers list')
    cmd:option('-lambdadecay', 0.0001, 'the decay factor used to increased! the lambda value during training (the balance between the loss functions)')
-   cmd:option('-lambdaloss', 1, 'the balance between the loss functions')
    cmd:option('-spkbranch', false, 'whether to plug the branch of the speaker id training, to be used with pretrained models')
    cmd:option('-brancharch', 'default', 'the architecture of the extra branch')
    cmd:text()
@@ -171,70 +169,29 @@ local path -- current experiment path
 local runidx -- current #runs in this path
 local reload -- path to model to reload
 local cmdline = serial.savecmdline{arg=arg}
-local command = arg[1]
-if #arg >= 1 and command == '--train' then
-   table.remove(arg, 1)
-   opt = serial.parsecmdline{
-      closure =
-         function(cmd)
-            cmdmutableoptions(cmd)
-            cmdimmutableoptions(cmd)
-         end,
-      arg = arg
-   }
-   overridepath(opt)
-   runidx = 1
-   path = serial.newpath(opt.rundir, opt)
-elseif #arg >= 2 and arg[1] == '--continue' then
-   path = arg[2]
-   table.remove(arg, 1)
-   table.remove(arg, 1)
-   runidx = serial.runidx(path, "model_last.bin")
-   reload = serial.runidx(path, "model_last.bin", runidx-1)
-   local curr_opt = serial.parsecmdline{
-      closure = cmdmutableoptions,
-      arg = arg
-   }
 
-   opt = serial.parsecmdline{
-      closure = cmdmutableoptions,
-      arg = arg,
-      default = serial.loadmodel(reload).config.opt
-   }
-   -- TODO: remove this after debugging
-   opt.gfsai = false
-   if opt.gfsai then
-      overridepath(opt)
-      local symlink = serial.newpath(opt.rundir, opt)
-      -- make a symlink to track exp id
-      serial.symlink(
-         path,
-         symlink
-      )
-      print(string.format("| experiment symlink path: %s", symlink))
-   end
-
-   -- save the path in new dir if specify
-   path = serial.newpath(opt.rundir, curr_opt)
-elseif #arg >= 2 and arg[1] == '--fork' then
-   reload = arg[2]
-   table.remove(arg, 1)
-   table.remove(arg, 1)
-   opt = serial.parsecmdline{
-      closure = cmdmutableoptions,
-      arg = arg,
-      default = serial.loadmodel(reload).config.opt
-   }
-   overridepath(opt)
-   runidx = 1
-   path = serial.newpath(opt.rundir, opt)
-else
-   error(string.format([[
-usage:
-   %s --train <options...>
-or %s --continue <directory> <options...>
-or %s --fork <directory/model> <options...>
-]], arg[0], arg[0], arg[0]))
+-- extract the model's path and remove it from the args
+path = arg[1]
+table.remove(arg, 1)
+runidx = serial.runidx(path, "model_last.bin")
+reload = serial.runidx(path, "model_last.bin", runidx-1)
+opt = serial.parsecmdline{
+  closure = cmdmutableoptions,
+  arg = arg,
+  default = serial.loadmodel(reload).config.opt
+}
+-- TODO: remove this after debugging
+opt.gfsai = false
+opt.mpi = false
+if opt.gfsai then
+  overridepath(opt)
+  local symlink = serial.newpath(opt.rundir, opt)
+  -- make a symlink to track exp id
+  serial.symlink(
+     path,
+     symlink
+  )
+  print(string.format("| experiment symlink path: %s", symlink))
 end
 
 -- saved configuration
@@ -308,6 +265,7 @@ if opt.speaker ~= '' then
   speakers_dict, n_speakers = data.buildspeakerdict{
      path = opt.speakerslist
   }
+
 end
 
 local dict61phn
@@ -375,40 +333,14 @@ end
 --    opt.arch = opt.archgen
 -- end
 local network, transitions, kw, dw
-if reload then
-   print(string.format('| reloading model <%s>', reload))
-   local model = serial.loadmodel{filename=reload, arch=true}
-   network = model.arch.network
-   transitions = model.arch.transitions
-   kw = model.config.kw
-   dw = model.config.dw
-   assert(kw and dw, 'kw and dw could not be found in model archive')
-   if opt.spkbranch then
-     network = netutils.create{
-       specs = netutils.readspecs(paths.concat(opt.archdir, opt.brancharch)),
-       gpu = opt.gpu,
-       channels = (opt.mfsc and 40 ) or ((opt.pow and 257 ) or (opt.mfcc and opt.mfcccoeffs*3 or opt.channels)), -- DEBUG: UGLY
-       nclass = #dict,
-       nspeakers = n_speakers,
-       lsm = opt.lsm,
-       batchsize = opt.batchsize,
-       wnorm = opt.wnorm,
-       pretrain = true,
-       pre_model = network
-     }
-   end
-else
-   network, kw, dw = netutils.create{
-      specs = netutils.readspecs(paths.concat(opt.archdir, opt.arch)),
-      gpu = opt.gpu,
-      channels = (opt.mfsc and 40 ) or ((opt.pow and 257 ) or (opt.mfcc and opt.mfcccoeffs*3 or opt.channels)), -- DEBUG: UGLY
-      nclass = #dict,
-      nspeakers = n_speakers,
-      lsm = opt.lsm,
-      batchsize = opt.batchsize,
-      wnorm = opt.wnorm
-   }
-end
+print(string.format('| reloading model <%s>', reload))
+local model = serial.loadmodel{filename=reload, arch=true}
+network = model.arch.network
+transitions = model.arch.transitions
+kw = model.config.kw
+dw = model.config.dw
+assert(kw and dw, 'kw and dw could not be found in model archive')
+
 config.kw = kw
 config.dw = dw
 
@@ -540,30 +472,6 @@ if opt.bmr then
    end
 end
 
-local trainiterator = data.newiterator{
-   nthread = opt.nthread,
-   closure =
-      function()
-         local data = require 'wav2letter.runtime.data'
-         return data.newdataset{
-            names = data.namelist(opt.train),
-            opt = opt,
-            dict = dict,
-            speakers_dict = speakers_dict,
-            kw = kw,
-            dw = dw,
-            sampler = sampler,
-            mpirank = mpirank,
-            mpisize = mpisize,
-            aug = opt.aug,
-            maxload = opt.maxload,
-            words = opt.bmr and 'wrd' or nil,
-            worddict = opt.bmr and worddict or nil
-         }
-      end
-}
-local trainsize = trainiterator.execSingle and trainiterator:execSingle('size') or trainiterator:exec('size')
-
 local validiterators = {}
 for _, name in ipairs(data.namelist(opt.valid)) do
    validiterators[name] = data.newiterator{
@@ -623,9 +531,6 @@ meters.sampletimer = tnt.TimeMeter{unit = true}
 meters.networktimer = tnt.TimeMeter{unit = true}
 meters.criteriontimer = tnt.TimeMeter{unit = true}
 meters.loss = tnt.AverageValueMeter{}
-if opt.seg then -- frame error rate
-   meters.trainframeerr = tnt.FrameErrorMeter{}
-end
 meters.trainedit = tnt.EditDistanceMeter()
 meters.wordedit = tnt.EditDistanceMeter()
 
@@ -644,7 +549,6 @@ for name, test in pairs(testiterators) do
 end
 
 meters.stats = tnt.SpeechStatMeter()
--- calc speaker acc.
 if opt.speaker ~= '' then
   meters.spkconfmat = optim.ConfusionMatrix(n_speakers)
 end
@@ -664,18 +568,7 @@ end
 local function logstatus(meters, state)
    local msgl = log.status{meters=meters, state=state, verbose=true, separator=" | ", opt=opt, reduce=reduce}
    local msgp = log.status{meters=meters, state=state, opt=opt, reduce=reduce, date=true}
-   if mpirank == 1 then
-      print(msgl)
-      logfile:seekEnd()
-      logfile:writeString(msgl)
-      logfile:writeString("\n")
-      logfile:synchronize()
-
-      perffile:seekEnd()
-      perffile:writeString(msgp)
-      perffile:writeString("\n")
-      perffile:synchronize()
-   end
+   print(msgl)
 end
 
 -- best perf so far on valid datasets
@@ -684,52 +577,7 @@ for name, valid in pairs(validiterators) do
    minerrs[name] = math.huge
 end
 
-local function savebestmodels()
-   if mpirank ~= 1 then
-      return
-   end
-
-   -- save last model
-   serial.savemodel{
-      filename = serial.runidx(path, "model_last.bin", runidx),
-      config = config,
-      arch = {
-         network = netutils.copy(
-            netcopy,
-            (opt.shift > 0) and network.network or network
-         ),
-         transitions = asgcriterion.transitions
-      }
-   }
-
-   -- save if better than ever for one valid
-   local err = {}
-   for name, validedit in pairs(meters.validedit) do
-      local value = validedit:value()
-      if value < minerrs[name] then
-         err[name] = value
-         minerrs[name] = value
-         serial.savemodel{
-            filename = serial.runidx(path, serial.cleanfilename("model_" .. name .. ".bin"), runidx),
-            config = config,
-            arch = {
-               network = netutils.copy(
-                  netcopy,
-                  (opt.shift > 0) and network.network or network
-               ),
-               transitions = asgcriterion.transitions,
-               perf = value
-            },
-         }
-      end
-   end
-
-   return err
-end
-
 ----------------------------------------------------------------------
-
-
 local function createProgress(iterator)
    local xlua = require 'xlua'
    local N = iterator.execSingle and iterator:execSingle('size') or iterator:exec('size')
@@ -796,6 +644,10 @@ local function test(network, criterion, iterator, edit, wordedit)
         outputs = state.network.output[1]
       end
 
+      if opt.speaker ~= '' then
+        meters.spkconfmat:add(state.network.output[2], state.sample.speaker[1])
+      end
+
       evalOutput(edit, outputs, state.sample.target, remaplabels)
 
       -- compute WER?
@@ -816,206 +668,34 @@ local function test(network, criterion, iterator, edit, wordedit)
    end
 end
 
-local function train(network, criterion, iterator, params, opid, use_labmda)
-   local progress
-   local use_labmda = use_labmda
-   local heartbeat = serial.heartbeat{
-      filename = paths.concat(path, "heartbeat"),
-   }
-   local engine = tnt.SGDEngine()
+local function train(network, criterion, params)
+    -- valid
+    for name, validiterator in pairs(validiterators) do
+       test(network, criterion, validiterator, meters.validedit[name], meters.validwordedit[name])
+    end
+    local validacc = 0
+    local testacc = 0
 
-   function engine.hooks.onStart(state)
-      meters.loss:reset()
-      meters.trainedit:reset()
-      meters.wordedit:reset()
-      if opt.mpi then
-         mpinn.synchronizeParameters(state.network, true) -- DEBUG: FIXME
-         mpinn.synchronizeParameters(state.criterion, true) -- DEBUG: FIXME
-      end
-   end
+    if opt.speaker ~= '' then
+      meters.spkconfmat:updateValids()
+      validacc = meters.spkconfmat.totalValid*100
+      meters.spkconfmat:zero()
+    end
 
-   function engine.hooks.onStartEpoch(state)
-      -- -- schedualing lambda value
-      -- -- TODO: fix this issue!!!
-      -- if use_labmda then
-      --   local l = lambdaSchedule(state.epoch)
-      --   adv_model:setLambda(l):setLambda(l)
-      --   print(l)
-      --   print(state.network.modules[45].modules[2].modules[1].lambda)
-      -- end
+    -- test
+    for name, testiterator in pairs(testiterators) do
+       test(network, criterion, testiterator, meters.testedit[name], meters.testwordedit[name])
+    end
 
-      meters.runtime:reset()
-      meters.runtime:resume()
-      if not opt.noresample then
-         resample()
-      end
-      if trainframeerr then
-         trainframeerr:reset()
-      end
-      progress = opt.progress and createProgress(iterator)
-      meters.stats:reset()
-      meters.timer:reset()
-      meters.sampletimer:resume()
-      meters.sampletimer:reset()
-      meters.networktimer:stop()
-      meters.networktimer:reset()
-      meters.criteriontimer:stop()
-      meters.criteriontimer:reset()
-      meters.timer:resume()
-      if opt.speaker ~= '' then
-        meters.spkconfmat:zero()
-      end
-   end
-
-   function engine.hooks.onSample(state)
-      if progress then
-         progress()
-      end
-      -- add speaker id target
-      if state.sample.speaker then
-        local target = {}
-        target = {state.sample.target, state.sample.speaker:cuda()}
-        state.sample.target = target
-      end
-
-      if opt.bmrcrt then
-         bmrcriterion:setWordTarget(state.sample.words)
-      end
-      meters.sampletimer:stop()
-      meters.networktimer:resume()
-      heartbeat()
-   end
-
-   function engine.hooks.onForward(state)
-      meters.networktimer:stop()
-      meters.criteriontimer:resume()
-
-      -- support training with speaker id
-      local outputs, targets
-      if not state.sample.speaker then
-        outputs = state.network.output
-        targets = state.sample.target
-      else
-        outputs = state.network.output[1]
-        targets = state.sample.target[1]
-      end
-
-      -- get acc. for speaker classification
-      if opt.speaker ~= '' then
-        meters.spkconfmat:add(state.network.output[2], state.sample.speaker[1])
-      end
-
-      if state.t % opt.terrsr == 0 then
-         evalOutput(meters.trainedit, outputs, targets, remaplabels)
-      end
-      if trainframeerr then
-         evalOutput(meters.trainframeerr, outputs, targets, remaplabels)
-      end
-   end
-
-   function engine.hooks.onBackwardCriterion(state)
-      if state.criterion == bmrcriterion then -- compute WER if necessary
-         -- DEBUG: batching is not supported with bmrcriterion
-         local labels = bmrcriterion:labels()[1]
-         local wpred = decoder.removeunk(decoder.removeneg(labels))
-         local words = state.sample.words
-         -- print('P', decoder.tensor2string(wpred))
-         -- print('G', decoder.tensor2string(words))
-         meters.wordedit:add(wpred, words)
-      end
-      meters.criteriontimer:stop()
-      meters.networktimer:resume()
-   end
-
-   function engine.hooks.onBackward(state)
-      applyClamp()
-      applyOnBackwardOptims()
-      meters.networktimer:stop()
-      if opt.mpi then
-         mpinn.synchronizeGradients(state.network)
-         mpinn.synchronizeGradients(state.criterion)
-      end
-   end
-
-   function engine.hooks.onUpdate(state)
-      -- support training with speaker id
-      if not state.sample.speaker then
-        map(function(out) if out then meters.loss:add(out) end end, state.criterion.output)
-        map2(function(i, t) if i then meters.stats:add(i, t) end end, opt.shift > 0 and state.sample.input[1] or state.sample.input, state.sample.target)
-      else
-        map(function(out) if out then meters.loss:add(out) end end, state.criterion.criterions[1].output)
-        map2(function(i, t) if i then meters.stats:add(i, t) end end, opt.shift > 0 and state.sample.input[1] or state.sample.input, state.sample.target[1])
-      end
-      if state.t % opt.psr == 0 and state.t % trainsize ~= 0 then
-         if progress then
-            print()
-         end
-
-         -- print status
-         logstatus(meters, state)
-
-         -- save last and best models
-         savebestmodels()
-
-         -- Reset average value meters (so that we average over opt.psr steps)
-         meters.loss:reset()
-         meters.trainedit:reset()
-      end
-      meters.timer:incUnit()
-      meters.sampletimer:incUnit()
-      meters.networktimer:incUnit()
-      meters.criteriontimer:incUnit()
-      meters.sampletimer:resume()
-   end
-
-   function engine.hooks.onEndEpoch(state)
-      meters.runtime:stop()
-      meters.timer:stop()
-      meters.sampletimer:stop()
-      meters.networktimer:stop()
-      if progress then
-         print()
-      end
-
-      local trainspkearacc = 0
-
-      -- valid
-      for name, validiterator in pairs(validiterators) do
-         test(network, criterion, validiterator, meters.validedit[name], meters.validwordedit[name])
-      end
-
-      -- test
-      for name, testiterator in pairs(testiterators) do
-         test(network, criterion, testiterator, meters.testedit[name], meters.testwordedit[name])
-      end
-
-      if opt.speaker ~= '' then
-        meters.spkconfmat:updateValids()
-        trainspkearacc = meters.spkconfmat.totalValid*100
-        print('Train speaker acc. ' .. trainspkearacc .. '%')
-      end
-
-      -- print status
-      logstatus(meters, state)
-
-      -- save last and best models
-      savebestmodels()
-
-      -- reset meters for next readings
-      meters.loss:reset()
-      meters.trainedit:reset()
-      meters.wordedit:reset()
-   end
-
-   engine:train{
-      network = network,
-      criterion = criterion,
-      iterator = iterator,
-      lr = params.lr,
-      lrcriterion = params.lrcriterion,
-      maxepoch = params.maxepoch
-   }
-
+    if opt.speaker ~= '' then
+      meters.spkconfmat:updateValids()
+      testacc = meters.spkconfmat.totalValid*100
+      print('Valid speaker acc. ' .. validacc)
+      print('Test speaker acc. ' .. testacc)
+      meters.spkconfmat:zero()
+    end
+    -- print status
+    logstatus(meters, state)
 end
 
 if mpirank == 1 then
@@ -1028,65 +708,14 @@ end
 local lrnorm = opt.batchsize > 0 and 1/(mpisize*opt.batchsize) or 1/mpisize
 lrnorm = opt.sqnorm and math.sqrt(lrnorm) or lrnorm
 
-print("Lambda loss is: " .. opt.lambdaloss)
-
-if not opt.seg and opt.linseg > 0 then
-   local net_criterion = nil
-   --  support speaker adaptation loss function
-   if opt.speaker ~= '' then
-     net_criterion = nn.ParallelCriterion():cuda()
-     net_criterion:add(lincriterion)
-     net_criterion:add(nn.ClassNLLCriterion():cuda(), 0)
-   else
-     net_criterion = lincriterion
-   end
-   train(
-      opt.linsegznet and zeronet or network,
-      net_criterion,
-      trainiterator,
-      {lr=opt.linlr*lrnorm, lrcriterion=opt.linlrcrit*lrnorm, maxepoch=opt.linseg},
-      1
-   )
-end
-
-if opt.falseg > 0 then
-   --  support speaker adaptation loss function
-   local net_criterion = nil
-   if opt.speaker ~= '' then
-     net_criterion = nn.ParallelCriterion():cuda()
-     net_criterion:add(falcriterion)
-     net_criterion:add(nn.ClassNLLCriterion():cuda(), 0)
-   else
-     net_criterion = falcriterion
-   end
-   train(
-      network,
-      net_criterion,
-      trainiterator,
-      {lr=opt.fallr, maxepoch=opt.falseg},
-      2
-   )
-end
-
 --  support speaker adaptation loss function
 local net_criterion = nil
 if opt.speaker ~= '' then
   net_criterion = nn.ParallelCriterion():cuda()
   net_criterion:add(opt.bmrcrt and bmrcriterion or ((opt.ctc and ctccriterion) or (opt.seg and fllcriterion or asgcriterion)))
-  net_criterion:add(nn.ClassNLLCriterion():cuda(), opt.lambdaloss)
+  net_criterion:add(nn.ClassNLLCriterion():cuda())
 else
   net_criterion = opt.bmrcrt and bmrcriterion or ((opt.ctc and ctccriterion) or (opt.seg and fllcriterion or asgcriterion))
 end
 
-train(
-   network,
-   net_criterion,
-   trainiterator,
-   {lr=opt.lr*lrnorm, lrcriterion=opt.lrcrit*lrnorm, maxepoch=opt.iter},
-   3,
-   true
-)
-
-if opt.mpi then
-   mpi.stop()
-end
+train(network, net_criterion)

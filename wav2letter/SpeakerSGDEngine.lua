@@ -30,7 +30,7 @@ SpeakerSGDEngine.train = argcheck{
          }
 
          self.hooks("onStart", state)
-         while state.epoch < state.maxepoch do
+         while state.epoch < state.maxepoch do            
             state.network:training()
 
             self.hooks("onStartEpoch", state)
@@ -53,20 +53,17 @@ SpeakerSGDEngine.train = argcheck{
                state.network:backward(sample.input, state.criterion.gradInput)
                self.hooks("onBackward", state)
 
-              --  assert(state.lrcriterion >= 0, 'lrcriterion should be positive or zero')
-              --  if state.lrcriterion > 0 and state.criterion.updateParameters then
-              --     state.criterion:updateParameters(state.lrcriterion)
-              --  end
-              --  assert(state.lr >= 0, 'lr should be positive or zero')
-              --  if state.lr > 0 then
-              --     local ct_idx = 0
-              --     for i=1, #state.network.modules do
-              --       if torch.type(state.network.modules[i]) == 'nn.ConcatTable' then
-              --         ct_idx = i
-              --       end
-              --     end
-              --     -- state.network.modules[ct_idx].modules[2]:updateParameters(state.lr)
-              --  end            
+               assert(state.lr >= 0, 'lr should be positive or zero')
+               if state.lr > 0 then
+                  local ct_idx = 0
+                  for i=1, #state.network.modules do
+                    if torch.type(state.network.modules[i]) == 'nn.ConcatTable' then
+                      ct_idx = i
+                    end
+                  end
+                  state.network.modules[ct_idx].modules[2]:updateParameters(state.lr)
+               end
+
                state.t = state.t + 1
                self.hooks("onUpdate", state)
             end

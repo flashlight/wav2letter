@@ -8,6 +8,7 @@ local log = require 'wav2letter.runtime.log'
 local serial = require 'wav2letter.runtime.serial'
 local tds = require 'tds'
 
+require 'optim'
 require 'wav2letter'
 
 torch.setdefaulttensortype('torch.FloatTensor')
@@ -203,7 +204,6 @@ elseif #arg >= 2 and arg[1] == '--continue' then
    }
    -- TODO: remove this after debugging
    opt.gfsai = false
-   opt.mpi = false
    if opt.gfsai then
       overridepath(opt)
       local symlink = serial.newpath(opt.rundir, opt)
@@ -385,14 +385,17 @@ if reload then
    dw = model.config.dw
    assert(kw and dw, 'kw and dw could not be found in model archive')
    if opt.spkbranch then
-     network = netutils.createfromcheckpoint{
+     network = netutils.create{
        specs = netutils.readspecs(paths.concat(opt.archdir, opt.brancharch)),
        gpu = opt.gpu,
+       channels = (opt.mfsc and 40 ) or ((opt.pow and 257 ) or (opt.mfcc and opt.mfcccoeffs*3 or opt.channels)), -- DEBUG: UGLY
+       nclass = #dict,
        nspeakers = n_speakers,
        lsm = opt.lsm,
        batchsize = opt.batchsize,
        wnorm = opt.wnorm,
-       net = network
+       pretrain = true,
+       pre_model = network
      }
    end
 else
@@ -562,54 +565,6 @@ local trainiterator = data.newiterator{
 }
 local trainsize = trainiterator.execSingle and trainiterator:execSingle('size') or trainiterator:exec('size')
 
-local validiterators = {}
-for _, name in ipairs(data.namelist(opt.valid)) do
-   validiterators[name] = data.newiterator{
-   nthread = opt.nthread,
-   closure =
-      function()
-         local data = require 'wav2letter.runtime.data'
-         return data.newdataset{
-            names = {name},
-            opt = opt,
-            dict = dict,
-            speakers_dict = speakers_dict,
-            kw = kw,
-            dw = dw,
-            mpirank = mpirank,
-            mpisize = mpisize,
-            maxload = opt.maxloadvalid,
-            words = opt.bmr and 'wrd' or nil,
-            worddict = opt.bmr and worddict or nil
-         }
-      end
-   }
-end
-
-local testiterators = {}
-for _, name in ipairs(data.namelist(opt.test)) do
-   testiterators[name] = data.newiterator{
-   nthread = opt.nthread,
-   closure =
-      function()
-         local data = require 'wav2letter.runtime.data'
-         return data.newdataset{
-            names = {name},
-            opt = opt,
-            dict = dict,
-            speakers_dict = speakers_dict,
-            kw = kw,
-            dw = dw,
-            mpirank = mpirank,
-            mpisize = mpisize,
-            maxload = opt.maxloadtest,
-            words = opt.bmr and 'wrd' or nil,
-            worddict = opt.bmr and worddict or nil
-         }
-      end
-   }
-end
-
 ----------------------------------------------------------------------
 -- Performance meters
 
@@ -627,34 +582,14 @@ end
 meters.trainedit = tnt.EditDistanceMeter()
 meters.wordedit = tnt.EditDistanceMeter()
 
-meters.validedit = {}
-meters.validwordedit = {}
-for name, valid in pairs(validiterators) do
-   meters.validedit[name] = tnt.EditDistanceMeter()
-   meters.validwordedit[name] = tnt.EditDistanceMeter()
-end
-
-meters.testedit = {}
-meters.testwordedit = {}
-for name, test in pairs(testiterators) do
-   meters.testedit[name] = tnt.EditDistanceMeter()
-   meters.testwordedit[name] = tnt.EditDistanceMeter()
-end
-
 meters.stats = tnt.SpeechStatMeter()
-
+-- calc speaker acc.
+if opt.speaker ~= '' then
+  meters.spkconfmat = optim.ConfusionMatrix(n_speakers)
+end
 
 local logfile
 local perffile
-if mpirank == 1 then
-   logfile = torch.DiskFile(serial.runidx(path, "log", runidx), "w")
-   perffile = torch.DiskFile(serial.runidx(path, "perf", runidx), "w")
-   log.print2file{file=logfile, date=true, stdout=true}
-   local _, header = log.status{meters=meters, opt=opt, date=true}
-   perffile:seekEnd()
-   perffile:writeString('# ' .. header .. '\n')
-   perffile:synchronize()
-end
 
 local function logstatus(meters, state)
    local msgl = log.status{meters=meters, state=state, verbose=true, separator=" | ", opt=opt, reduce=reduce}
@@ -671,12 +606,6 @@ local function logstatus(meters, state)
       perffile:writeString("\n")
       perffile:synchronize()
    end
-end
-
--- best perf so far on valid datasets
-local minerrs = {}
-for name, valid in pairs(validiterators) do
-   minerrs[name] = math.huge
 end
 
 local function savebestmodels()
@@ -696,32 +625,8 @@ local function savebestmodels()
          transitions = asgcriterion.transitions
       }
    }
-
-   -- save if better than ever for one valid
-   local err = {}
-   for name, validedit in pairs(meters.validedit) do
-      local value = validedit:value()
-      if value < minerrs[name] then
-         err[name] = value
-         minerrs[name] = value
-         serial.savemodel{
-            filename = serial.runidx(path, serial.cleanfilename("model_" .. name .. ".bin"), runidx),
-            config = config,
-            arch = {
-               network = netutils.copy(
-                  netcopy,
-                  (opt.shift > 0) and network.network or network
-               ),
-               transitions = asgcriterion.transitions,
-               perf = value
-            },
-         }
-      end
-   end
-
    return err
 end
-
 ----------------------------------------------------------------------
 
 
@@ -830,15 +735,6 @@ local function train(network, criterion, iterator, params, opid, use_labmda)
    end
 
    function engine.hooks.onStartEpoch(state)
-      -- -- schedualing lambda value
-      -- -- TODO: fix this issue!!!
-      -- if use_labmda then
-      --   local l = lambdaSchedule(state.epoch)
-      --   adv_model:setLambda(l):setLambda(l)
-      --   print(l)
-      --   print(state.network.modules[45].modules[2].modules[1].lambda)
-      -- end
-
       meters.runtime:reset()
       meters.runtime:resume()
       if not opt.noresample then
@@ -857,6 +753,9 @@ local function train(network, criterion, iterator, params, opid, use_labmda)
       meters.criteriontimer:stop()
       meters.criteriontimer:reset()
       meters.timer:resume()
+      if opt.speaker ~= '' then
+        meters.spkconfmat:zero()
+      end
    end
 
    function engine.hooks.onSample(state)
@@ -892,6 +791,11 @@ local function train(network, criterion, iterator, params, opid, use_labmda)
         targets = state.sample.target[1]
       end
 
+      -- get acc. for speaker classification
+      if opt.speaker ~= '' then
+        meters.spkconfmat:add(state.network.output[2], state.sample.speaker[1])
+      end
+
       if state.t % opt.terrsr == 0 then
          evalOutput(meters.trainedit, outputs, targets, remaplabels)
       end
@@ -915,8 +819,6 @@ local function train(network, criterion, iterator, params, opid, use_labmda)
    end
 
    function engine.hooks.onBackward(state)
-      -- applyClamp()
-      -- applyOnBackwardOptims()
       meters.networktimer:stop()
       if opt.mpi then
          mpinn.synchronizeGradients(state.network)
@@ -964,18 +866,11 @@ local function train(network, criterion, iterator, params, opid, use_labmda)
          print()
       end
 
-      -- valid
-      for name, validiterator in pairs(validiterators) do
-         test(network, criterion, validiterator, meters.validedit[name], meters.validwordedit[name])
+      if opt.speaker ~= '' then
+        meters.spkconfmat:updateValids()
+        trainspkearacc = meters.spkconfmat.totalValid*100
+        print('Train speaker acc. ' .. trainspkearacc .. '%')
       end
-
-      -- test
-      for name, testiterator in pairs(testiterators) do
-         test(network, criterion, testiterator, meters.testedit[name], meters.testwordedit[name])
-      end
-
-      -- print status
-      logstatus(meters, state)
 
       -- save last and best models
       savebestmodels()
@@ -1051,7 +946,7 @@ end
 local net_criterion = nil
 if opt.speaker ~= '' then
   net_criterion = nn.ParallelCriterion():cuda()
-  net_criterion:add(opt.bmrcrt and bmrcriterion or ((opt.ctc and ctccriterion) or (opt.seg and fllcriterion or asgcriterion)), 0)
+  net_criterion:add(opt.bmrcrt and bmrcriterion or ((opt.ctc and ctccriterion) or (opt.seg and fllcriterion or asgcriterion)))
   net_criterion:add(nn.ClassNLLCriterion():cuda(), opt.lambdaloss)
 else
   net_criterion = opt.bmrcrt and bmrcriterion or ((opt.ctc and ctccriterion) or (opt.seg and fllcriterion or asgcriterion))

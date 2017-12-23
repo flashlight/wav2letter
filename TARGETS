@@ -1,0 +1,215 @@
+cpp_library(
+    name = "libbeamer",
+    srcs = [
+        "beamer/lib/BMRArray.c",
+        "beamer/lib/BMRBuffer.c",
+        "beamer/lib/BMRDecoder.c",
+        "beamer/lib/BMRLM.cc",
+        "beamer/lib/BMRTrie.c",
+    ],
+    preprocessor_flags = [
+        "-DBMR_USE_QUICKSELECT",  # quickselect instead of qsort
+    ],
+    external_deps = [
+        "kenlm",
+    ],
+)
+
+custom_rule(
+    name = "beamer-env",
+    build_args = "deeplearning/projects/wav2letter/beamer/env.lua",
+    build_script = "beamer/env.sh",
+    output_gen_files = [
+        "beamer/env.lua",
+    ],
+    strict = False,
+)
+
+lua_library(
+    name = "beamer",
+    srcs = glob(
+        ["beamer/*.lua"],
+        excludes = ["beamer/env.lua"],
+    ) + [":beamer-env"],
+    base_module = "",
+    deps = [
+        ":libbeamer",
+    ],
+    external_deps = [
+        ("torch7", None, "TH"),
+    ],
+)
+
+cpp_library(
+    name = "libwav2letter",
+    srcs = [
+        "wav2letter/utils/autosegcriterion.c",
+        "wav2letter/utils/utils.c",
+        "wav2letter/utils/viterbi.c",
+    ],
+    headers = glob(["wav2letter/utils/*.gen.c"]),
+    preprocessor_flags = [
+        "-Ideeplearning/projects/wav2letter/wav2letter/utils",
+    ],
+    external_deps = [
+        ("torch7", None, "TH"),
+    ],
+)
+
+custom_rule(
+    name = "wav2letter-utils-init",
+    build_args = "deeplearning/projects/wav2letter/wav2letter/utils/init.lua",
+    build_script = "wav2letter/utils/init.sh",
+    output_gen_files = [
+        "wav2letter/utils/init.lua",
+    ],
+    strict = False,
+)
+
+lua_library(
+    name = "wav2letter",
+    srcs = glob(
+        ["wav2letter/**/*.lua"],
+        excludes = [
+            "wav2letter/test/test.lua",
+            "wav2letter/utils/init.lua",
+        ],
+    ) + [":wav2letter-utils-init"],
+    base_module = "",
+    deps = [
+        ":libwav2letter",
+        "@/torch/fb:gtn",
+        "@/torch/fb/fbtorch:fbtorch",
+        "@/torch/fb/torchnet:torchnet",
+        "@/torch/fb/torchnet:torchnet-optim",
+        "@/torch/oss:nn",
+        "@/torch/oss:samplerate",
+        "@/torch/oss:speech",
+        "@/torch/oss/torchnet:torchnet-sequential",
+    ],
+    external_deps = [
+        ("torch-argcheck", None),
+        ("torch-class", None),
+        ("torch-sndfile", None),
+    ],
+)
+
+lua_unittest(
+    name = "wav2letter_test",
+    srcs = [
+        "wav2letter/test/test.lua",
+    ] + util.files("config/**/*.lua"),
+    base_module = "",
+    main_module = "wav2letter.test.test",
+    deps = [
+        ":wav2letter",
+        "@/torch/fb/fbtorch:fbtorch",
+    ],
+    external_deps = [
+        ("torch7", None),
+        ("torch-sndfile", None),
+    ],
+)
+
+lua_binary(
+    name = "wav2letter_prof",
+    srcs = [
+        "wav2letter/test/prof.lua",
+    ],
+    base_module = "",
+    main_module = "wav2letter.test.prof",
+    deps = [
+        ":wav2letter",
+        "@/torch/fb/fbtorch:fbtorch",
+        "@/torch/oss:warpctc",
+    ],
+    external_deps = [
+        ("torch7", None),
+        ("torch-sndfile", None),
+    ],
+)
+
+lua_binary(
+    name = "train",
+    srcs = [
+        "train.lua",
+    ],
+    main_module = "train",
+    deps = [
+        ":beamer",
+        ":wav2letter",
+        "@/torch/oss:samplerate",
+        "@/torch/oss/torchmpi:torchmpi",
+    ],
+    external_deps = [
+        ("torch-sndfile", None),
+    ],
+)
+
+include_defs("//tools/xar/defs.py")
+
+xar_lua_binary(
+    name = "train_xar",
+    output_name = "train.xar",
+    src_rule_name = ":train",
+)
+
+lua_binary(
+    name = "test",
+    srcs = [
+        "test.lua",
+    ] + util.files("config/**/*.lua"),
+    main_module = "test",
+    deps = [
+        ":beamer",
+        ":wav2letter",
+    ],
+    external_deps = [
+        ("torch-sndfile", None),
+    ],
+)
+
+lua_binary(
+    name = "decode",
+    srcs = [
+        "decode.lua",
+    ],
+    main_module = "decode",
+    deps = [
+        ":beamer",
+        ":wav2letter",
+    ],
+)
+
+xar_lua_binary(
+    name = "decode_xar",
+    output_name = "decode.xar",
+    src_rule_name = ":decode",
+)
+
+lua_binary(
+    name = "test-one-file",
+    srcs = [
+        "test-one-file.lua",
+    ] + util.files("config/**/*.lua"),
+    main_module = "test-one-file",
+    deps = [
+        ":wav2letter",
+    ],
+    external_deps = [
+        ("torch-sndfile", None),
+    ],
+)
+
+lua_binary(
+    name = "plot",
+    srcs = [
+        "plot.lua",
+    ],
+    main_module = "plot",
+    external_deps = [
+        ("torch7", None),
+        ("torch-paths", None),
+        ("torch-gnuplot", None),
+    ],
+)

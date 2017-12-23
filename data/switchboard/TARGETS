@@ -1,0 +1,17 @@
+lua_binary(
+    name = "create",
+    srcs = [
+        "create.lua",
+    ],
+    main_module = "create",
+    deps = [
+        "@/torch/fb/torchnet:torchnet",
+    ],
+    external_deps = [
+        "luafilesystem",
+        ("torch7", None),
+        ("torch-paths", None),
+        ("torch--tds", None),
+        ("torch-sndfile", None),
+    ],
+)

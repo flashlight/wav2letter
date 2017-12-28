@@ -787,7 +787,9 @@ local function train(network, criterion, iterator, params, opid)
       meters.bmrwordedit:reset()
       if opt.mpi then
          mpinn.synchronizeParameters(state.network, true) -- DEBUG: FIXME
-         mpinn.synchronizeParameters(state.criterion, true) -- DEBUG: FIXME
+         if state.criterion.parameters and state.criterion:parameters() then
+            mpinn.synchronizeParameters(state.criterion, true) -- DEBUG: FIXME
+         end
       end
    end
 
@@ -842,13 +844,15 @@ local function train(network, criterion, iterator, params, opid)
    end
 
    function engine.hooks.onBackward(state)
+      if opt.mpi then
+         mpinn.synchronizeGradients(state.network)
+         if state.criterion.parameters and state.criterion:parameters() then
+            mpinn.synchronizeGradients(state.criterion)
+         end
+      end
       applyClamp()
       applyOnBackwardOptims()
       meters.networktimer:stop()
-      if opt.mpi then
-         mpinn.synchronizeGradients(state.network)
-         mpinn.synchronizeGradients(state.criterion)
-      end
    end
 
    function engine.hooks.onUpdate(state)

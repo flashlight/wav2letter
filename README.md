@@ -29,10 +29,10 @@ and
 @article{liptchinsky:2017,
   author    = {Vitaliy Liptchinsky and Gabriel Synnaeve and Ronan Collobert},
   title     = {Letter-Based Speech Recognition with Gated ConvNets},
-  journal   = {CoRR},
-  volume    = {abs/1609.03193},
+  journal   = {ArXiv e-prints},
+  volume    = {abs/1712.09444},
   year      = {2017},
-  url       = {http://arxiv.org/abs/1609.03193},
+  url       = {http://arxiv.org/abs/1712.09444},
 }
 ```
 

@@ -6,10 +6,12 @@ this implementation are Ronan Collobert, Christian Puhrsch, Gabriel
 Synnaeve, Neil Zeghidour, and Vitaliy Liptchinsky.
 
 wav2letter implements the architecture proposed in
-[Wav2Letter: an End-to-End ConvNet-based Speech Recognition System](https://arxiv.org/pdf/1609.03193.pdf)
-and [Gated ConvNets for Letter-Based ASR](https://arxiv.org/pdf/1609.03193.pdf).
+[Wav2Letter: an End-to-End ConvNet-based Speech Recognition System](https://arxiv.org/abs/1609.03193)
+and [Letter-Based Speech Recognition with Gated ConvNets](https://arxiv.org/abs/1712.09444).
 
-We provide pre-trained models for [Librispeech](http://www.openslr.org/12) dataset.
+If you want to get started transcribing speech right away, we provide
+[pre-trained models](#pre-trained-models) for the
+[Librispeech](http://www.openslr.org/12) dataset.
 
 ## Papers
 
@@ -29,10 +31,10 @@ and
 @article{liptchinsky:2017,
   author    = {Vitaliy Liptchinsky and Gabriel Synnaeve and Ronan Collobert},
   title     = {Letter-Based Speech Recognition with Gated ConvNets},
-  journal   = {ArXiv e-prints},
+  journal   = {CoRR},
   volume    = {abs/1712.09444},
   year      = {2017},
-  url       = {http://arxiv.org/abs/1712.09444},
+  url       = {http://arxiv.org/abs/1609.03193},
 }
 ```
 
@@ -252,6 +254,9 @@ We provide a fully pre-trained model for LibriSpeech:
 ```
 wget https://s3.amazonaws.com/wav2letter/models/librispeech-glu-highdropout.bin
 ```
+
+To transcribe speech using this model, you need to follow the some of the [requirements](#requirements), [installation](#installation), and [decoding](#running-the-decoder-inference) parts of this README.
+
 NOTE: the model was pre-trained on Facebook infrastructure, so you need to run *test.lua* with slightly different parameters to use it:
 ```
 luajit ~/wav2letter/test.lua ~/librispeech-glu-highdropout.bin -progress -show -test dev-clean -save -datadir ~/librispeech-proc/ -dictdir ~/librispeech-proc/ -gfsai

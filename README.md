@@ -34,7 +34,7 @@ and
   journal   = {CoRR},
   volume    = {abs/1712.09444},
   year      = {2017},
-  url       = {http://arxiv.org/abs/1609.03193},
+  url       = {http://arxiv.org/abs/1712.09444},
 }
 ```
 

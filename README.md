@@ -43,7 +43,7 @@ If you use wav2letter or related pre-trained models, then please cite one of the
 ## Requirements
 
 * A computer running MacOS or Linux.
-* [Torch](http://http://torch.ch). We detail in the following how to install it.
+* [Torch](http://torch.ch). We detail in the following how to install it.
 * For training on CPU: [Intel MKL](https://software.intel.com/en-us/intel-mkl).
 * For training on GPU: [NVIDIA CUDA Toolkit (cuDNN v5.1 for CUDA 8.0)](http://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html).
 * For reading of audio file: [Libsndfile](http://www.mega-nerd.com/libsndfile) - should be available in any standard distribution.

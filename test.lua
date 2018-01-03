@@ -7,8 +7,6 @@
 
 require 'torch'
 require 'nn'
-require 'cunn'
-require 'cudnn'
 
 local tnt = require 'torchnet'
 local xlua = require 'xlua'

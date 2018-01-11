@@ -250,9 +250,10 @@ luajit ~/wav2letter/decode.lua ~/experiments/hello_librispeech dev-clean -show -
 ```
 
 ## Pre-trained models
-We provide a fully pre-trained model for LibriSpeech:
+We provide a fully pre-trained models for LibriSpeech (GPU and CPU):
 ```
 wget https://s3.amazonaws.com/wav2letter/models/librispeech-glu-highdropout.bin
+wget https://s3.amazonaws.com/wav2letter/models/librispeech-glu-highdropout-cpu.bin
 ```
 
 To transcribe speech using this model, you need to follow the some of the [requirements](#requirements), [installation](#installation), and [decoding](#running-the-decoder-inference) parts of this README.

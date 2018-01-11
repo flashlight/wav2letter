@@ -137,7 +137,6 @@ netutils.create = argcheck{
             end
 
          else
-            --TODO residual is not supported on CPU yet
             TemporalConvolution = nn.TemporalConvolution
             Linear = nn.Linear
             TemporalMaxPooling = nn.TemporalMaxPooling
@@ -145,7 +144,7 @@ netutils.create = argcheck{
             TanhLinear = nn.TanhLinear
             HardTanh = nn.HardTanh
             Dropout = nn.Dropout
-            function GatedLinearUnit() return nn.GatedLinearUnit(1) end
+            function GatedLinearUnit() return nn.GatedLinearUnit(2) end
             function TemporalAveragePooling(kw, dw)
                kw = assert(tonumber(kw))
                dw = assert(tonumber(dw))

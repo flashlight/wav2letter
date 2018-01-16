@@ -254,6 +254,7 @@ We provide a fully pre-trained models for LibriSpeech (GPU and CPU):
 ```
 wget https://s3.amazonaws.com/wav2letter/models/librispeech-glu-highdropout.bin
 wget https://s3.amazonaws.com/wav2letter/models/librispeech-glu-highdropout-cpu.bin
+wget https://s3.amazonaws.com/wav2letter/models/librispeech-glu-lowdropout.bin
 ```
 
 To transcribe speech using this model, you need to follow the some of the [requirements](#requirements), [installation](#installation), and [decoding](#running-the-decoder-inference) parts of this README.

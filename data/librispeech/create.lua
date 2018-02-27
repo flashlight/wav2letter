@@ -51,6 +51,12 @@ local gender = parse_speakers_gender(io.open(string.format('%s/SPEAKERS.TXT',
                                              arg[1]), 'r'):read("*all"))
 
 local function fileapply(path, regex, closure)
+   local cd = lfs.currentdir()
+   local exists = lfs.chdir(path) and true or false
+   lfs.chdir(cd)
+   if not exists then
+      lfs.mkdir(path)
+   end
    for filename in lfs.dir(path) do
       if filename ~= '.' and filename ~= '..' then
          filename = path .. '/' .. filename

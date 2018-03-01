@@ -64,7 +64,7 @@ assert(ofarpa, string.format('cannot open <%s> for writing', opt.arpadst))
 -- src arpa
 local ifarpa
 if opt.arpasrc:match('%.z$') or opt.arpasrc:match('%.gz$') then
-   ifarpa = io.popen(string.format('zcat %s', opt.arpasrc))
+   ifarpa = io.popen(string.format('zcat < "%s"', opt.arpasrc))
 else
    ifarpa = io.open(opt.arpasrc)
 end

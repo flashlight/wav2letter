@@ -142,7 +142,7 @@ First install OpenMPI:
 wget https://www.open-mpi.org/software/ompi/v2.1/downloads/openmpi-2.1.2.tar.bz2
 tar xfj openmpi-2.1.2.tar.bz2
 cd openmpi-2.1.2; mkdir build; cd build
-./configure --prefix=$HOME/usr --enable-mpi-cxx --enable-shared --with-slurm --enable-mpi-thread-multiple --enable-mpi-ext=affinity,cuda --with-cuda=/public/apps/cuda/9.0
+../configure --prefix=$HOME/usr --enable-mpi-cxx --enable-shared --with-slurm --enable-mpi-thread-multiple --enable-mpi-ext=affinity,cuda --with-cuda=/public/apps/cuda/9.0
 make -j 20 all
 make install
 ```

@@ -8,11 +8,11 @@
 require 'audio'
 require 'torch'
 require 'nn'
+require 'wav2letter'
 
 local sndfile = require 'sndfile'
 local tnt = require 'torchnet'
 local xlua = require 'xlua'
-require 'wav2letter'
 local serial = require 'wav2letter.runtime.serial'
 local data = require 'wav2letter.runtime.data'
 local transforms = require 'wav2letter.runtime.transforms'
@@ -211,4 +211,4 @@ local predictions, lpredictions = decoder(dopt, transitions, network.output)
 predictions = decoder.removeunk(predictions)
 predictions = decoder.tensor2string(predictions)
 
-print(string.format("\n| decoded output: %s", predictions))
+print(string.format("\n| decoded output: %s\n", predictions))

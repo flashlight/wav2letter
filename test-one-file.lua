@@ -193,7 +193,7 @@ decoder = decoder(
    opt.words,
    opt.lm,
    opt.smearing,
-   -1
+   opt.maxword
 )
 
 local dopt = {

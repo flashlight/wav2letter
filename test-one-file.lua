@@ -6,6 +6,7 @@
 -- of patent rights can be found in the PATENTS file in the same directory.
 
 require 'audio'
+require 'io'
 require 'torch'
 require 'nn'
 require 'wav2letter'
@@ -50,6 +51,7 @@ local function cmdtestoptions(cmd)
    cmd:option('-forceendsil', false, 'force end sil')
    cmd:option('-logadd', false, 'use logadd instead of max')
    cmd:option('-nthread', 0, 'number of threads to use')
+   cmd:option('-output', "", "an output file for the decoded results")
    cmd:text()
 end
 
@@ -212,3 +214,9 @@ predictions = decoder.removeunk(predictions)
 predictions = decoder.tensor2string(predictions)
 
 print(string.format("\n| decoded output: %s\n", predictions))
+
+if #opt.output > 0 then
+    file = io.open(opt.output, "w")
+    file:write(predictions)
+    file:close()
+end

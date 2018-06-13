@@ -413,7 +413,6 @@ data.newdataset = argcheck{
 
          local function datasetwithfeatures(features, transforms)
             return data.transform{
-               dataset = data.partition{
                   dataset = data.mapconcat{
                      closure = function(name)
                         local path = paths.concat(opt.datadir, name)
@@ -430,9 +429,6 @@ data.newdataset = argcheck{
                      args = names,
                      maxload = maxload
                   },
-                  n = mpisize,
-                  id = mpirank
-               },
                transforms = transforms
             }
          end
@@ -499,15 +495,23 @@ data.newdataset = argcheck{
             filter = filter
          }
 
-         dataset = data.resample{
-            dataset = dataset,
-            sampler = filtersampler,
-            size = filtersize
+         dataset = data.partition{
+            dataset = data.resample{
+               dataset = dataset,
+               sampler = filtersampler,
+              size = filtersize
+            },
+            n = mpisize,
+            id = mpirank
          }
-         sizedataset = data.resample{
-            dataset = sizedataset,
-            sampler = filtersampler,
-            size = filtersize
+         sizedataset = data.partition{
+            dataset = data.resample{
+               dataset = sizedataset,
+               sampler = filtersampler,
+               size = filtersize
+            },
+            n = mpisize,
+            id = mpirank
          }
          print('| batchresolution:', inputsizetransform(opt.samplerate/4))
          dataset = data.batch{

@@ -160,7 +160,6 @@ MPI_CXX_COMPILER=$HOME/usr/bin/mpicxx ~/usr/bin/luarocks install torchmpi
 luarocks install torch
 luarocks install cudnn # for GPU support
 luarocks install cunn # for GPU support
-luarocks install https://raw.githubusercontent.com/soumith/lua---audio/master/audio-0.1-0.rockspec # for loading audio files
 ```
 
 ###  wav2letter packages

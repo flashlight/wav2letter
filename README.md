@@ -249,6 +249,14 @@ obtained by constraining the decoding with a particular language model:
 luajit ~/wav2letter/decode.lua ~/experiments/hello_librispeech dev-clean -show -letters ~/librispeech-proc/letters-rep.lst  -words ~/dict.lst -lm ~/3-gram.pruned.3e-7.arpa -lmweight 3.1639 -beamsize 25000 -beamscore 40 -nthread 10 -smearing max -show
 ```
 
+## Running the decoder on one file (inference)
+
+Below is the command to transcribe a single file.
+
+```sh
+luajit test-one-file.lua <PATH_TO_MODEL> <PATH_TO_WAV_FILE> -letters ~/letters.lst -lettersrep ~/letters-rep.lst -lm ~/lm.mmap -lmweight 3.1639 -beamsize 500 -beamscore 40 -nthread 8 -smearing max -words ~/dict.lst
+```
+
 ## Pre-trained models
 We provide a fully pre-trained models for LibriSpeech (GPU and CPU):
 ```

@@ -170,7 +170,7 @@ local fwavinfo = fwav:info()
 
 if (fwavinfo.samplerate ~= opt.samplerate) then
     fwav:close()
-    print(string.format('Invalid sample rate. The sample rate must be %sHz.', fwavinfo.samplerate))
+    print(string.format('Invalid sample rate. The sample rate must be %sHz.', opt.samplerate))
     return
 end
 

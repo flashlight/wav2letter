@@ -177,14 +177,14 @@ local function tostring(tensor)
 -- basic info
 local fwav = sndfile.SndFile(opt.wav)
 local fwavinfo = fwav:info()
-local wav = fwav:readShort(fwavinfo.frames)
+local wav = fwav:readFloat(fwavinfo.frames)
 print(string.format('| number of frames: %d (%6.2fs) [samplerate: %d channels: %d]',
                     fwavinfo.frames, fwavinfo.frames/fwavinfo.samplerate, fwavinfo.samplerate, fwavinfo.channels))
 fwav:close()
 
 -- note that the current setup expect the whole file as a ByteTensor
 local transformations = transforms.inputfromoptions(opt, kw, dw)
-local netoutput = network:forward(transformations(wav:float()))
+local netoutput = network:forward(transformations(wav))
 local predictions = criterion:viterbi(netoutput)
 predictions = utils.uniq(predictions)
 

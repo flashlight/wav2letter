@@ -254,7 +254,7 @@ luajit ~/wav2letter/decode.lua ~/experiments/hello_librispeech dev-clean -show -
 Below is the command to transcribe a single file.
 
 ```sh
-luajit test-one-file.lua <PATH_TO_MODEL> <PATH_TO_WAV_FILE> -letters ~/letters.lst -lettersrep ~/letters-rep.lst -lm ~/lm.mmap -lmweight 3.1639 -beamsize 500 -beamscore 40 -nthread 8 -smearing max -words ~/dict.lst
+luajit test-one-file.lua <PATH_TO_MODEL> <PATH_TO_WAV_FILE> -dict ~/letters.lst -letters ~/letters-rep.lst -lm ~/3-gram.pruned.3e-7.arpa -lmweight 3.1639 -beamsize 25000 -beamscore 40 -nthread 10 -smearing max -words ~/dict.lst
 ```
 
 ## Pre-trained models

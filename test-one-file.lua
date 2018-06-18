@@ -5,7 +5,6 @@
 -- LICENSE file in the root directory of this source tree. An additional grant
 -- of patent rights can be found in the PATENTS file in the same directory.
 
-require 'audio'
 require 'io'
 require 'torch'
 require 'nn'
@@ -31,13 +30,11 @@ local function cmdtestoptions(cmd)
    cmd:argument('-wav', 'a sound file')
    cmd:text()
    cmd:text('Options:')
-   cmd:option('-datadir', string.format('%s/local/datasets/speech', os.getenv('HOME')), 'speech directory data')
-   cmd:option('-dictdir', string.format('%s/local/datasets/speech', os.getenv('HOME')), 'dictionary directory')
    cmd:option('-gpu', 1, 'gpu device')
    cmd:option('-nolsm', false, 'remove lsm layer')
    cmd:option('-addlsm', false, 'add lsm layer')
-   cmd:option('-gfsai', false, 'override above paths to gfsai ones')
-   cmd:option('-letters', "", 'letters.lst')
+   cmd:option('-dict', "", 'letters.lst')
+   cmd:option('-letters', "", 'letter-rep.lst')
    cmd:option('-words', "", 'words.lst')
    cmd:option('-maxword', -1, 'maximum number of words to use')
    cmd:option('-lm', "", 'lm.arpa.bin')
@@ -69,12 +66,6 @@ local opt = serial.parsecmdline{
    default = serial.loadmodel(reload).config.opt
 }
 
--- override paths?
-if opt.gfsai then
-   opt.datadir = '/mnt/vol/gfsai-east/ai-group/datasets/speech'
-   opt.rundir = '/mnt/vol/gfsai-east/ai-group/users/' .. assert(os.getenv('USER'), 'unknown user') .. '/chronos'
-end
-
 if opt.gpu > 0 then
    require 'cutorch'
    require 'cunn'
@@ -83,10 +74,9 @@ if opt.gpu > 0 then
    cutorch.manualSeedAll(opt.seed)
 end
 
-
 --dictionaries
 local dict = data.newdict{
-   path = paths.concat(opt.dictdir, opt.dict)
+   path = opt.dict
 }
 
 local dict39phn
@@ -177,6 +167,13 @@ local function tostring(tensor)
 -- basic info
 local fwav = sndfile.SndFile(opt.wav)
 local fwavinfo = fwav:info()
+
+if (fwavinfo.samplerate ~= opt.samplerate) then
+    fwav:close()
+    print(string.format('Invalid sample rate. The sample rate must be %sHz.', opt.samplerate))
+    return
+end
+
 local wav = fwav:readFloat(fwavinfo.frames)
 print(string.format('| number of frames: %d (%6.2fs) [samplerate: %d channels: %d]',
                     fwavinfo.frames, fwavinfo.frames/fwavinfo.samplerate, fwavinfo.samplerate, fwavinfo.channels))

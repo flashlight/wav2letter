@@ -222,8 +222,8 @@ might warn you about words which are incorrectly transcribed, due to
 insufficient number of repetitions letters (here 2, with `-r 2`). This is
 not a problem in our case, as these words are rare.
 ```sh
-wget http://www.openslr.org/resources/11/3-gram.pruned.3e-7.arpa.gz luajit
-~/wav2letter/data/utils/convert-arpa.lua ~/3-gram.pruned.3e-7.arpa.gz ~/3-gram.pruned.3e-7.arpa ~/dict.lst -preprocess ~/wav2letter/data/librispeech/preprocess.lua -r 2 -letters letters-rep.lst
+wget http://www.openslr.org/resources/11/3-gram.pruned.3e-7.arpa.gz 
+luajit ~/wav2letter/data/utils/convert-arpa.lua ~/3-gram.pruned.3e-7.arpa.gz ~/3-gram.pruned.3e-7.arpa ~/dict.lst -preprocess ~/wav2letter/data/librispeech/preprocess.lua -r 2 -letters letters-rep.lst
 ```
 
 _Note: one can use the pre-trained 4-gram language model `4-gram.arpa.gz`

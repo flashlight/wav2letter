@@ -127,7 +127,7 @@ netutils.create = argcheck{
             end
 
             function GatedLinearUnit()
-               return nn.GatedLinearUnit(2):cuda()
+               return nn.GatedLinearUnit(1):cuda()
             end
 
             if wnorm then
@@ -143,7 +143,7 @@ netutils.create = argcheck{
             TanhLinear = nn.TanhLinear
             HardTanh = nn.HardTanh
             Dropout = nn.Dropout
-            function GatedLinearUnit() return nn.GatedLinearUnit(3) end
+            function GatedLinearUnit() return nn.GatedLinearUnit(2) end
             function TemporalAveragePooling(kw, dw)
                kw = assert(tonumber(kw))
                dw = assert(tonumber(dw))

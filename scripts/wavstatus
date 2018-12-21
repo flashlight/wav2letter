@@ -1,0 +1,94 @@
+-- Copyright (c) 2017-present, Facebook, Inc.
+-- All rights reserved.
+
+-- This source code is licensed under the BSD-style license found in the
+-- LICENSE file in the root directory of this source tree.
+
+#!/bin/lua
+
+local id2run = {}
+local runs = {}
+
+function dir2id(dir)
+   dir = dir:gsub('/+$', '')
+   return assert(dir:match('([^/]+)$'):match('^(%d+)'), 'could not infer id')
+end
+
+for _, dir in ipairs(arg) do
+   local id = dir2id(dir)
+   id2run[id] = id2run[id] or {}
+   local run = id2run[id]
+   run.dir = dir
+   run.id = id
+
+   local runidx
+   for i=1,999 do
+      local fn = string.format("%s/%03d_config.lua", dir, i)
+      local f = io.open(fn)
+      if f then
+         f:close()
+         -- did this continued/forked something else?
+         local config = dofile(string.format("%s/%03d_config.lua", dir, i))
+         if config.reload then
+            local idr = dir2id(config.reload:gsub('[^/]+$', ''))
+            id2run[idr] = id2run[idr] or {}
+            if config.command == '--continue' then
+               id2run[idr].continued = true
+            elseif config.command == '--fork' then
+               id2run[idr].forked = true
+            else
+               error(string.format('unknown command <%s>', config.command))
+            end
+         end
+      else
+         runidx = i-1
+         break
+      end
+   end
+
+   -- is running?
+   -- this is slow:
+   -- local f = io.popen(string.format("/usr/local/chronos/scripts/cinfo --jobState %s", id))
+   -- local status = f:read('*l')
+   -- f:close()
+   -- print(string.format("status <%s>", status or "NONE"))
+
+   local fn = string.format("%s/heartbeat", dir)
+   local f = io.open(fn)
+   if f then
+      f:close()
+      local f = io.popen(string.format('stat -c %%Y "%s"', fn))
+      local ts = assert(tonumber(f:read('*all')), 'could not stat file')
+      f:close()
+      -- make sure this is not just a continuation by checking ids match
+      local config = dofile(string.format("%s/%03d_config.lua", dir, runidx))
+      if config.opt.runname == id then
+         local rts = os.date("%s")
+         if rts - ts > 900 then
+            run.finished = true
+         else
+            run.running = true
+         end
+      else
+         run.finished = true
+      end
+   else
+      run.failed = true
+   end
+   table.insert(runs, run)
+end
+
+for _, run in ipairs(runs) do
+   print(
+      run.dir,
+      run.id,
+      string.format(
+         "%s%s%s%s%s",
+         run.running and "@RUNNING" or "",
+         run.finished and "@FINISHED" or "",
+         run.failed and "@FAILED" or "",
+         run.forked and "@FORKED" or "",
+         run.continued and "@CONTINUED" or ""
+      )
+   )
+end

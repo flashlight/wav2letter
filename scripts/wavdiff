@@ -1,0 +1,53 @@
+-- Copyright (c) 2017-present, Facebook, Inc.
+-- All rights reserved.
+
+-- This source code is licensed under the BSD-style license found in the
+-- LICENSE file in the root directory of this source tree.
+
+#!/bin/lua
+
+local ignore = {}
+for i=#arg,1,-1 do
+   if arg[i] == '-i' then
+      table.remove(arg, i)
+      local argignore = assert(table.remove(arg, i), '-i <comma separated list of fields to ignore> expected')
+      for k in argignore:gmatch('([^%s%,]+)') do
+         ignore[k] = true
+      end
+   end
+end
+
+local runs = {}
+
+for i, dir in ipairs(arg) do
+   local res, opt = pcall(dofile, dir .. "/001_config.lua")
+   if res then
+      opt = opt.opt
+   else
+      opt = nil
+   end
+   runs[i] = {dir=dir, opt=opt}
+end
+
+for i, run in ipairs(runs) do
+   local diffs = {}
+   if run.opt then
+      for k, v in pairs(run.opt) do
+         if not ignore[k] then
+            for j, orun in ipairs(runs) do
+               if orun.opt and orun.opt[k] ~= v then
+                  table.insert(diffs, string.format("%s=%s", k, tostring(v)))
+                  break
+               end
+            end
+         end
+      end
+   else
+      diffs = {"@FAILED"}
+   end
+   run.diffs = diffs
+end
+
+for i, run in ipairs(runs) do
+   print(run.dir, table.concat(run.diffs, ","))
+end

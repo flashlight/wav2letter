@@ -1,5 +1,5 @@
 # Decoder
-![alt text](sketch.pdf)
+![Decoder Diagram](DecoderSketch.png "Decoder Diagram")
 
 There are two components in decoding — test and decode.
 

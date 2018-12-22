@@ -10,6 +10,7 @@
 
 #include <functional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include <arrayfire.h>
@@ -18,6 +19,9 @@
 #include "common/Dictionary.h"
 
 namespace w2l {
+
+typedef std::unordered_map<std::string, std::vector<std::vector<std::string>>>
+    LexiconMap;
 
 template <typename T>
 std::vector<T> afToVector(const af::array& arr) {
@@ -91,8 +95,10 @@ std::vector<std::string> loadTarget(const std::string& filepath);
 
 int64_t loadSize(const std::string& filepath);
 
-Dictionary makeDictionary(const std::string& filepath);
-Dictionary makeDictionary();
+Dictionary createTokenDict(const std::string& filepath);
+Dictionary createTokenDict();
+
+Dictionary createWordDict(const LexiconMap& lexicon);
 
 int64_t numTotalParams(std::shared_ptr<fl::Module> module);
 
@@ -114,14 +120,11 @@ struct EmissionSet {
       emissionN)
 };
 
-typedef std::unordered_map<std::string, std::vector<std::vector<std::string>>>
-    Word2Spell;
+LexiconMap loadWords(const std::string& fn, const int64_t maxNumWords);
 
-Word2Spell loadWords(const std::string& fn, const int64_t maxNumWords);
+std::vector<int> tokens2Tensor(const std::string&, const Dictionary&);
 
-std::vector<int> spelling2tensor(const std::string&, const Dictionary&);
-
-std::vector<int> spelling2tensor(
+std::vector<int> tokens2Tensor(
     const std::vector<std::string>&,
     const Dictionary&);
 
@@ -131,13 +134,13 @@ std::string tensor2words(const std::vector<int>&, const Dictionary&);
 
 void validateWords(std::vector<int>&, const int);
 
-std::vector<int> ltrTensor2wrdTensor(
+std::vector<int> tknTensor2wrdTensor(
     const std::vector<int>&,
     const Dictionary&,
     const Dictionary&,
     const int);
 
-std::vector<int> wrdTensor2ltrTensor(
+std::vector<int> wrdTensor2tknTensor(
     const std::vector<int>&,
     const Dictionary&,
     const Dictionary&,

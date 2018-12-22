@@ -226,8 +226,29 @@ int64_t loadSize(const std::string& filepath) {
   return std::stol(line);
 }
 
-Dictionary makeDictionary(const std::string& filepath) {
-  Dictionary dict(filepath);
+Dictionary createTokenDict(const std::string& filepath) {
+  Dictionary dict;
+  if (filepath.empty()) {
+    LOG(FATAL) << "Empty filepath specified for token dictiinary.";
+    return dict;
+  }
+  std::ifstream infile(trim(filepath));
+  if (!infile) {
+    LOG(FATAL) << "Unable to open dictionary file '" << filepath << "'";
+  }
+  std::string line;
+  while (std::getline(infile, line)) {
+    if (line.empty()) {
+      continue;
+    }
+    auto tkns = splitOnWhitespace(line, true);
+    auto idx = dict.indexSize();
+    for (const auto& tkn : tkns) {
+      dict.addToken(tkn, idx);
+    }
+  }
+  LOG_IF(FATAL, !dict.isContiguous()) << "Invalid Dictionary! ";
+
   for (int64_t r = 1; r <= FLAGS_replabel; ++r) {
     dict.addToken(std::to_string(r));
   }
@@ -241,8 +262,17 @@ Dictionary makeDictionary(const std::string& filepath) {
   return dict;
 }
 
-Dictionary makeDictionary() {
-  return makeDictionary(pathsConcat(FLAGS_tokensdir, FLAGS_tokens));
+Dictionary createTokenDict() {
+  return createTokenDict(pathsConcat(FLAGS_tokensdir, FLAGS_tokens));
+}
+
+Dictionary createWordDict(const LexiconMap& lexicon) {
+  Dictionary dict;
+  for (const auto& it : lexicon) {
+    dict.addToken(it.first);
+  }
+  dict.setDefaultIndex(dict.getIndex(kUnkToken));
+  return dict;
 }
 
 std::vector<std::string> getFileContent(const std::string& file) {
@@ -273,8 +303,8 @@ int64_t numTotalParams(std::shared_ptr<fl::Module> module) {
 }
 
 /************** Decoder helpers **************/
-Word2Spell loadWords(const std::string& fn, const int64_t maxNumWords) {
-  Word2Spell word2spell;
+LexiconMap loadWords(const std::string& fn, const int64_t maxNumWords) {
+  LexiconMap lexicon;
 
   std::string line;
   std::ifstream infile(fn);
@@ -289,55 +319,55 @@ Word2Spell loadWords(const std::string& fn, const int64_t maxNumWords) {
     std::copy(fields.begin() + 1, fields.end(), spelling.begin());
 
     // Add the word into the dictionary.
-    if (word2spell.find(word) == word2spell.end()) {
-      word2spell[word] = {};
+    if (lexicon.find(word) == lexicon.end()) {
+      lexicon[word] = {};
     }
 
     // Add the current spelling of the words to the list of spellings.
-    word2spell[word].push_back(spelling);
+    lexicon[word].push_back(spelling);
 
     // Add at most maxn words into the dictionary.
-    if (maxNumWords == word2spell.size()) {
+    if (maxNumWords == lexicon.size()) {
       break;
     }
   }
 
   // Insert unknown word.
-  word2spell[kUnkToken] = {};
-  LOG(INFO) << "[Words] " << word2spell.size() << " tokens loaded.\n";
-  return word2spell;
+  lexicon[kUnkToken] = {};
+  LOG(INFO) << "[Words] " << lexicon.size() << " tokens loaded.\n";
+  return lexicon;
 }
 
-std::vector<int> spelling2tensor(
+std::vector<int> tokens2Tensor(
     const std::string& spelling,
-    const Dictionary& letterDict) {
+    const Dictionary& tokenDict) {
   std::vector<int> ret;
   ret.reserve(spelling.size());
   for (auto c : spelling) {
-    ret.push_back(letterDict.getIndex(std::string(1, c)));
+    ret.push_back(tokenDict.getIndex(std::string(1, c)));
   }
-  replaceReplabels(ret, FLAGS_replabel, letterDict);
+  replaceReplabels(ret, FLAGS_replabel, tokenDict);
   return ret;
 }
 
-std::vector<int> spelling2tensor(
+std::vector<int> tokens2Tensor(
     const std::vector<std::string>& spelling,
-    const Dictionary& letterDict) {
+    const Dictionary& tokenDict) {
   std::vector<int> ret;
   ret.reserve(spelling.size());
   for (auto c : spelling) {
-    ret.push_back(letterDict.getIndex(c));
+    ret.push_back(tokenDict.getIndex(c));
   }
-  replaceReplabels(ret, FLAGS_replabel, letterDict);
+  replaceReplabels(ret, FLAGS_replabel, tokenDict);
   return ret;
 }
 
 std::string tensor2letters(
     const std::vector<int>& input,
-    const Dictionary& letterDict) {
+    const Dictionary& tokenDict) {
   std::string ret = "";
   for (auto ltrIdx : input) {
-    ret += letterDict.getToken(ltrIdx);
+    ret += tokenDict.getToken(ltrIdx);
   }
   return ret;
 }
@@ -363,10 +393,10 @@ void validateWords(std::vector<int>& input, const int unkIdx) {
   input.resize(newSize);
 }
 
-std::vector<int> ltrTensor2wrdTensor(
+std::vector<int> tknTensor2wrdTensor(
     const std::vector<int>& input,
     const Dictionary& wordDict,
-    const Dictionary& letterDict,
+    const Dictionary& tokenDict,
     const int spliterIdx) {
   std::vector<int> ret;
   std::string currentWord = "";
@@ -379,7 +409,7 @@ std::vector<int> ltrTensor2wrdTensor(
         currentWord = "";
       }
     } else {
-      currentWord += letterDict.getToken(ltrIdx);
+      currentWord += tokenDict.getToken(ltrIdx);
     }
   }
   if (!currentWord.empty() && wordDict.contains(currentWord)) {
@@ -388,16 +418,16 @@ std::vector<int> ltrTensor2wrdTensor(
   return ret;
 }
 
-std::vector<int> wrdTensor2ltrTensor(
+std::vector<int> wrdTensor2tknTensor(
     const std::vector<int>& input,
     const Dictionary& wordDict,
-    const Dictionary& letterDict,
+    const Dictionary& tokenDict,
     const int spliterIdx) {
   std::vector<int> ret;
   int inputSize = input.size();
   for (int i = 0; i < inputSize; i++) {
     for (auto c : wordDict.getToken(input[i])) {
-      ret.push_back(letterDict.getIndex(std::string(1, c)));
+      ret.push_back(tokenDict.getIndex(std::string(1, c)));
     }
     if (i < inputSize - 1) {
       ret.push_back(spliterIdx);

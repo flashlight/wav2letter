@@ -73,22 +73,16 @@ int main(int argc, char** argv) {
   LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   /* ===================== Create Dictionary ===================== */
-  auto word2spell = loadWords(FLAGS_lexicon, FLAGS_maxword);
 
-  auto letterDict = makeDictionary(FLAGS_tokens);
-  int numClasses = letterDict.indexSize();
+  auto tokenDict = createTokenDict(FLAGS_tokens);
+  int numClasses = tokenDict.indexSize();
   LOG(INFO) << "Number of classes (network): " << numClasses;
 
-  Dictionary wordDict;
-  for (auto& it : word2spell) {
-    wordDict.addToken(it.first);
-  }
-  wordDict.setDefaultIndex(wordDict.getIndex(kUnkToken));
+  auto lexicon = loadWords(FLAGS_lexicon, FLAGS_maxword);
+  auto wordDict = createWordDict(lexicon);
   LOG(INFO) << "Number of words: " << wordDict.indexSize();
 
-  DictionaryMap dicts;
-  dicts.insert({kTargetIdx, letterDict});
-  dicts.insert({kWordIdx, wordDict});
+  DictionaryMap dicts = {{kTargetIdx, tokenDict}, {kWordIdx, wordDict}};
 
   /* ===================== Create Dataset ===================== */
   int worldRank = 0;
@@ -121,18 +115,18 @@ int main(int argc, char** argv) {
       uniq(viterbiPath);
     }
     if (FLAGS_criterion == kCtcCriterion) {
-      auto blankidx = letterDict.getIndex(kBlankToken);
+      auto blankidx = tokenDict.getIndex(kBlankToken);
       viterbiPath.erase(
           std::remove(viterbiPath.begin(), viterbiPath.end(), blankidx),
           viterbiPath.end());
     }
-    remapLabels(viterbiPath, letterDict);
-    remapLabels(ltrTarget, letterDict);
+    remapLabels(viterbiPath, tokenDict);
+    remapLabels(ltrTarget, tokenDict);
 
     meters.lerSlice.add(viterbiPath, ltrTarget);
 
-    auto wordViterbi = ltrTensor2wrdTensor(
-        viterbiPath, wordDict, letterDict, letterDict.getIndex(kSilToken));
+    auto wordViterbi = tknTensor2wrdTensor(
+        viterbiPath, wordDict, tokenDict, tokenDict.getIndex(kSilToken));
 
     meters.werSlice.add(wordViterbi, wrdTarget);
 
@@ -142,9 +136,8 @@ int main(int argc, char** argv) {
       meters.ler.add(viterbiPath, ltrTarget);
       meters.wer.add(wordViterbi, wrdTarget);
 
-      std::cout << "|T|: " << tensor2letters(ltrTarget, letterDict)
-                << std::endl;
-      std::cout << "|P|: " << tensor2letters(viterbiPath, letterDict)
+      std::cout << "|T|: " << tensor2letters(ltrTarget, tokenDict) << std::endl;
+      std::cout << "|P|: " << tensor2letters(viterbiPath, tokenDict)
                 << std::endl;
       std::cout << "[sample: " << cnt << ", WER: " << meters.wer.value()[0]
                 << "\%, LER: " << meters.ler.value()[0]

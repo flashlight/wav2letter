@@ -14,12 +14,11 @@
 
 namespace w2l {
 
-// A simple dictionary class. Not thread-safe !
+// A simple dictionary class which holds a bidirectional map
+// tokens (strings) <--> integer indices. Not thread-safe !
 class Dictionary {
  public:
   Dictionary() {}
-
-  explicit Dictionary(const std::string& filepath);
 
   size_t tokenSize() const;
 
@@ -37,7 +36,8 @@ class Dictionary {
 
   bool contains(const std::string& token) const;
 
-  void validate() const;
+  // checks if all the indices are contiguous
+  bool isContiguous() const;
 
   std::vector<int> mapTokensToIndices(
       const std::vector<std::string>& tokens) const;
@@ -48,7 +48,7 @@ class Dictionary {
  private:
   std::unordered_map<std::string, int> token2idx_;
   std::unordered_map<int, std::string> idx2token_;
-  int defaultIndex_;
+  int defaultIndex_ = -1;
 };
 
 typedef std::unordered_map<int, Dictionary> DictionaryMap;

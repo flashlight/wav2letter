@@ -15,29 +15,6 @@
 
 namespace w2l {
 
-Dictionary::Dictionary(const std::string& filepath) : defaultIndex_(-1) {
-  if (filepath.empty()) {
-    LOG(WARNING) << "Empty dictionary created.";
-    return;
-  }
-  std::ifstream infile(trim(filepath));
-  if (!infile) {
-    LOG(FATAL) << "Unable to open dictionary file '" << filepath << "'";
-  }
-  std::string line;
-  while (std::getline(infile, line)) {
-    if (line.empty()) {
-      continue;
-    }
-    auto tkns = splitOnWhitespace(line, true);
-    auto idx = idx2token_.size();
-    for (const auto& tkn : tkns) {
-      addToken(tkn, idx);
-    }
-  }
-  validate();
-}
-
 void Dictionary::addToken(const std::string& token, int idx) {
   if (token2idx_.find(token) != token2idx_.end()) {
     LOG(FATAL) << "Duplicate entry name in dictionary '" << token << "'";
@@ -94,19 +71,18 @@ size_t Dictionary::tokenSize() const {
   return token2idx_.size();
 }
 
-void Dictionary::validate() const {
+bool Dictionary::isContiguous() const {
   for (size_t i = 0; i < indexSize(); ++i) {
     if (idx2token_.find(i) == idx2token_.end()) {
-      LOG(FATAL) << "Invalid Dictionary! "
-                 << "Indices mus be contiguous starting from 0.";
+      return false;
     }
   }
   for (const auto& tknidx : token2idx_) {
     if (idx2token_.find(tknidx.second) == idx2token_.end()) {
-      LOG(FATAL) << "Invalid Dictionary! Index of token" << tknidx.first
-                 << " is not present in idx2token map";
+      return false;
     }
   }
+  return true;
 }
 
 std::vector<int> Dictionary::mapTokensToIndices(

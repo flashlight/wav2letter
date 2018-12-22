@@ -16,7 +16,7 @@ namespace w2l {
 DEFINE_string(train, "", "comma-separated list of training data");
 DEFINE_string(valid, "", "comma-separated list of valid data");
 DEFINE_string(test, "", "comma-separated list of test data");
-DEFINE_int64(batchsize, 1, "batch size");
+DEFINE_int64(batchsize, 1, "batch size (per process in distributed training)");
 DEFINE_string(input, "flac", "input feature");
 DEFINE_string(target, "ltr", "target feature [phn, ltr, wrd]");
 DEFINE_int64(samplerate, 16000, "sample rate (Hz)");

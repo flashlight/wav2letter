@@ -182,7 +182,7 @@ TEST(DataTest, W2lDataset) {
 TEST(DataTest, W2lDatasetDeterministicSampling) {
   w2l::FLAGS_target = "phn";
   std::string hubPaths = "timit/train";
-  auto dict = Dictionary(w2l::pathsConcat(loadPath, "dict39.phn"));
+  auto dict = createTokenDict(w2l::pathsConcat(loadPath, "dict39.phn"));
   DictionaryMap dicts;
   dicts.insert({kTargetIdx, dict});
 

@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
   gflags::ReadFlagsFromString(flags->second, gflags::GetArgv0(), true);
   LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
-  Dictionary dict = makeDictionary();
+  Dictionary dict = createTokenDict();
 
   LOG(INFO) << "Number of classes (network) = " << dict.indexSize();
 

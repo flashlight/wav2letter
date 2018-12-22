@@ -85,7 +85,7 @@ int findBestParams(std::function<int(int)> sorter) {
 std::vector<SpeechSampleMetaInfo> loadEverstore(const std::string& path) {
   W2lEverstoreDataset::init(); // Required for everstore client
 
-  auto dict = makeDictionary();
+  auto dict = createTokenDict();
   LOG(INFO) << "Number of classes (network) = " << dict.indexSize();
 
   DictionaryMap dicts;

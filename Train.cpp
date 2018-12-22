@@ -154,7 +154,7 @@ int main(int argc, char** argv) {
   auto validsets = split(',', trim(FLAGS_valid));
 
   /* ===================== Create Dictionary ===================== */
-  Dictionary dict = makeDictionary();
+  Dictionary dict = createTokenDict();
   int numClasses = dict.indexSize();
   LOG_MASTER(INFO) << "Number of classes (network) = " << numClasses;
 

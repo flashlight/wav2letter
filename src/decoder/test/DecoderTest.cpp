@@ -79,13 +79,9 @@ TEST(DecoderTest, run) {
   LOG(INFO) << "[Serialization] Loaded emissions [" << T << " x " << N << ']';
 
   /* ===================== Create Dictionary ===================== */
-  auto word2spell = loadWords(pathsConcat(dataDir, "words.lst"), -1);
-  auto letterDict = makeDictionary(pathsConcat(dataDir, "letters.lst"));
-  Dictionary wordDict;
-  for (auto& it : word2spell) {
-    wordDict.addToken(it.first);
-  }
-  wordDict.setDefaultIndex(wordDict.getIndex(kUnkToken));
+  auto lexicon = loadWords(pathsConcat(dataDir, "words.lst"), -1);
+  auto tokenDict = createTokenDict(pathsConcat(dataDir, "letters.lst"));
+  auto wordDict = createWordDict(lexicon);
 
   LOG(INFO) << "[Dictionary] Number of words: " << wordDict.indexSize();
 
@@ -110,15 +106,15 @@ TEST(DecoderTest, run) {
   ASSERT_NEAR(total_score, -19.5123, 1e-5);
 
   /* -------- Build Trie --------*/
-  int sil_idx = letterDict.getIndex(kSilToken);
+  int sil_idx = tokenDict.getIndex(kSilToken);
   int blank_idx =
-      FLAGS_criterion == kCtcCriterion ? letterDict.getIndex(kBlankToken) : -1;
+      FLAGS_criterion == kCtcCriterion ? tokenDict.getIndex(kBlankToken) : -1;
   int unk_idx = lm->index(kUnkToken);
-  auto trie = std::make_shared<Trie>(letterDict.indexSize(), sil_idx);
+  auto trie = std::make_shared<Trie>(tokenDict.indexSize(), sil_idx);
   auto start_state = lm->start(false);
 
   // Insert words
-  for (auto& it : word2spell) {
+  for (auto& it : lexicon) {
     std::string word = it.first;
     int lm_idx = lm->index(word);
     if (lm_idx == unk_idx) {
@@ -127,7 +123,7 @@ TEST(DecoderTest, run) {
     float score;
     auto dummy_state = lm->score(start_state, lm_idx, score);
     for (auto& spelling : it.second) {
-      auto spelling_tensor = spelling2tensor(spelling, letterDict);
+      auto spelling_tensor = tokens2Tensor(spelling, tokenDict);
       trie->insert(
           spelling_tensor,
           std::make_shared<TrieLabel>(lm_idx, wordDict.getIndex(word)),
@@ -144,7 +140,7 @@ TEST(DecoderTest, run) {
       -1.05971, -4.41062, -3.67099, -3.06203, -1.05971, -4.29683};
   for (int i = 0; i < sentence.size(); i++) {
     auto word = sentence[i];
-    auto word_tensor = spelling2tensor(word, letterDict);
+    auto word_tensor = tokens2Tensor(word, tokenDict);
     auto node = trie->search(word_tensor);
     ASSERT_NEAR(node->maxScore_, trieScoreTarget[i], 1e-5);
   }

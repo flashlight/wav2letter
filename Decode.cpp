@@ -85,22 +85,16 @@ int main(int argc, char** argv) {
   LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   /* ===================== Create Dictionary ===================== */
-  auto word2spell = loadWords(FLAGS_lexicon, FLAGS_maxword);
 
-  auto letterDict = makeDictionary(FLAGS_tokens);
-  int numClasses = letterDict.indexSize();
+  auto tokenDict = createTokenDict(FLAGS_tokens);
+  int numClasses = tokenDict.indexSize();
   LOG(INFO) << "Number of classes (network): " << numClasses;
 
-  Dictionary wordDict;
-  for (auto& it : word2spell) {
-    wordDict.addToken(it.first);
-  }
-  wordDict.setDefaultIndex(wordDict.getIndex(kUnkToken));
+  auto lexicon = loadWords(FLAGS_lexicon, FLAGS_maxword);
+  auto wordDict = createWordDict(lexicon);
   LOG(INFO) << "Number of words: " << wordDict.indexSize();
 
-  DictionaryMap dicts;
-  dicts.insert({kTargetIdx, letterDict});
-  dicts.insert({kWordIdx, wordDict});
+  DictionaryMap dicts = {{kTargetIdx, tokenDict}, {kWordIdx, wordDict}};
 
   /* ===================== Create Dataset ===================== */
   if (!(FLAGS_am.empty() ^ FLAGS_emission_dir.empty())) {
@@ -259,16 +253,16 @@ int main(int argc, char** argv) {
       if (std::strlen(kBlankToken) != 1) {
         LOG(FATAL) << "[Decoder] Invalid unknown_symbol: " << kBlankToken;
       }
-      int silIdx = letterDict.getIndex(kSilToken);
+      int silIdx = tokenDict.getIndex(kSilToken);
       int blankIdx = FLAGS_criterion == kCtcCriterion
-          ? letterDict.getIndex(kBlankToken)
+          ? tokenDict.getIndex(kBlankToken)
           : -1;
       int unkIdx = lm->index(kUnkToken);
       std::shared_ptr<Trie> trie =
-          std::make_shared<Trie>(letterDict.indexSize(), silIdx);
+          std::make_shared<Trie>(tokenDict.indexSize(), silIdx);
       auto start_state = lm->start(false);
 
-      for (auto& it : word2spell) {
+      for (auto& it : lexicon) {
         std::string word = it.first;
         int lmIdx = lm->index(word);
         if (lmIdx == unkIdx) { // We don't insert unknown words
@@ -276,10 +270,10 @@ int main(int argc, char** argv) {
         }
         float score;
         auto dummyState = lm->score(start_state, lmIdx, score);
-        for (auto& spelling : it.second) {
-          auto spellingTensor = spelling2tensor(spelling, letterDict);
+        for (auto& tokens : it.second) {
+          auto tokensTensor = tokens2Tensor(tokens, tokenDict);
           trie->insert(
-              spellingTensor,
+              tokensTensor,
               std::make_shared<TrieLabel>(lmIdx, wordDict.getIndex(word)),
               score);
         }
@@ -335,8 +329,8 @@ int main(int argc, char** argv) {
                   letterPrediction.begin(), letterPrediction.end(), blankIdx),
               letterPrediction.end());
         }
-        remapLabels(letterTarget, letterDict);
-        remapLabels(letterPrediction, letterDict);
+        remapLabels(letterTarget, tokenDict);
+        remapLabels(letterPrediction, tokenDict);
         validateWords(wordPrediction, wordDict.getIndex(kUnkToken));
 
         // Update meters & print out predictions
@@ -356,9 +350,9 @@ int main(int argc, char** argv) {
           buffer << "|T|: " << wordTargetStr << std::endl;
           buffer << "|P|: " << wordPredictionStr << std::endl;
           if (FLAGS_showletters) {
-            buffer << "|t|: " << tensor2letters(letterTarget, letterDict)
+            buffer << "|t|: " << tensor2letters(letterTarget, tokenDict)
                    << std::endl;
-            buffer << "|p|: " << tensor2letters(letterPrediction, letterDict)
+            buffer << "|p|: " << tensor2letters(letterPrediction, tokenDict)
                    << std::endl;
           }
           buffer << "[sample: " << s << ", WER: " << meters.wer.value()[0]

@@ -11,14 +11,17 @@
 #include "CriterionUtils.h"
 #include "math.h"
 
-namespace fl {
+using namespace fl;
+
+namespace w2l {
 
 FullConnectionCriterion::FullConnectionCriterion(
     intl N,
     w2l::CriterionScaleMode scalemode)
     : N_(N), scaleMode_(scalemode) {
   if (N_ <= 0) {
-    throw(af::exception("FCC: Size of transition matrix is less than 0."));
+    throw std::invalid_argument(
+        "FCC: Size of transition matrix is less than 0.");
   }
   auto transition = constant(0.0, af::dim4(N_, N_));
   params_ = {transition};
@@ -32,7 +35,7 @@ Variable FullConnectionCriterion::forward(
   const intl B = input.dims(2);
   const intl L = target.dims(0);
   if (N != N_) {
-    throw(af::exception("FCC: N doesn't match with the letter size."));
+    throw std::invalid_argument("FCC: N doesn't match with the letter size.");
   }
 
   /* Forward */
@@ -49,7 +52,7 @@ Variable FullConnectionCriterion::forward(
     intl TN = w2l::getTargetSize(targets, L);
     TN = std::min(TN, T);
     if (TN == 0) {
-      throw(af::exception("Target size cannot be empty for FCC"));
+      throw std::invalid_argument("Target size cannot be empty for FCC");
     }
     fwBuf.scale[b] = scaleFn(N, T, TN);
     double* alpha = fwBuf.alpha.data() + b * N * T;
@@ -192,4 +195,4 @@ std::string FullConnectionCriterion::prettyString() const {
   return "FullConnectionCriterion";
 }
 
-} // namespace fl
+} // namespace w2l

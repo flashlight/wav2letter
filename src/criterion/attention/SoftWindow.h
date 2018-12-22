@@ -10,20 +10,20 @@
 
 #include "WindowBase.h"
 
-namespace fl {
+namespace w2l {
 
 class SoftWindow : public WindowBase {
  public:
   SoftWindow();
   SoftWindow(double std, double avgRate, int offset);
 
-  Variable computeSingleStepWindow(
-      const Variable& prevAttn,
+  fl::Variable computeSingleStepWindow(
+      const fl::Variable& prevAttn,
       int inputSteps,
       int batchSize,
       int step) override;
 
-  Variable computeWindowMask(int targetLen, int inputSteps, int batchSize)
+  fl::Variable computeWindowMask(int targetLen, int inputSteps, int batchSize)
       override;
 
  private:
@@ -36,6 +36,6 @@ class SoftWindow : public WindowBase {
   FL_SAVE_LOAD_WITH_BASE(WindowBase, std_, avgRate_, offset_)
 };
 
-} // namespace fl
+} // namespace w2l
 
-CEREAL_REGISTER_TYPE(fl::SoftWindow)
+CEREAL_REGISTER_TYPE(w2l::SoftWindow)

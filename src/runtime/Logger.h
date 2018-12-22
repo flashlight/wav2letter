@@ -14,6 +14,8 @@
 
 #include "SpeechStatMeter.h"
 
+#define LOG_MASTER(lvl) LOG_IF(lvl, (fl::getWorldRank() == 0))
+
 namespace w2l {
 struct EditDistMeters {
   fl::EditDistanceMeter edit, wordedit;

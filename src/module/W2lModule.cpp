@@ -22,7 +22,7 @@ std::shared_ptr<Module> parseLine(const std::string& line);
 
 namespace w2l {
 
-std::shared_ptr<Module> createW2lSeqModule(
+std::shared_ptr<Sequential> createW2lSeqModule(
     const std::string& archfile,
     int64_t nFeatures,
     int64_t nClasses) {

@@ -65,10 +65,6 @@ Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx) {
       FLAGS_inputfeeding);
 }
 
-} // namespace w2l
-
-namespace fl {
-
 Seq2SeqCriterion::Seq2SeqCriterion(
     int nClass,
     int hiddenDim,
@@ -97,9 +93,14 @@ Seq2SeqCriterion::Seq2SeqCriterion(
   params_.push_back(uniform(af::dim4{hiddenDim}, -1e-1, 1e-1));
 }
 
-Variable Seq2SeqCriterion::forward(
-    const Variable& input,
-    const Variable& target) {
+std::vector<Variable> Seq2SeqCriterion::forward(
+    const std::vector<Variable>& inputs) {
+  if (inputs.size() != 2) {
+    throw std::invalid_argument("Invalid inputs size");
+  }
+  const auto& input = inputs[0];
+  const auto& target = inputs[1];
+
   Variable out, alpha;
   if (useSequentialDecoder_) {
     std::tie(out, alpha) = decoder(input, target);
@@ -118,7 +119,7 @@ Variable Seq2SeqCriterion::forward(
     losses = (1 - labelSmooth_) * losses - (labelSmooth_ / nClass) * smoothLoss;
   }
 
-  return losses;
+  return {losses};
 }
 
 std::pair<Variable, Variable> Seq2SeqCriterion::vectorizedDecoder(
@@ -379,4 +380,4 @@ std::string Seq2SeqCriterion::prettyString() const {
   return "Seq2SeqCriterion";
 }
 
-} // namespace fl
+} // namespace w2l

@@ -8,7 +8,9 @@
 
 #include "StepWindow.h"
 
-namespace fl {
+using namespace fl;
+
+namespace w2l {
 
 StepWindow::StepWindow() {}
 StepWindow::StepWindow(int sMin, int sMax, double vMin, double vMax)
@@ -53,4 +55,4 @@ StepWindow::computeWindowMask(int targetLen, int inputSteps, int batchSize) {
   return mask;
 }
 
-} // namespace fl
+} // namespace w2l

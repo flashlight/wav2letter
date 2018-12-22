@@ -14,7 +14,7 @@
 #include "FullConnectionCriterion.h"
 #include "SequenceCriterion.h"
 
-namespace fl {
+namespace w2l {
 
 class AutoSegmentationCriterion : public SequenceCriterion {
  public:
@@ -29,20 +29,25 @@ class AutoSegmentationCriterion : public SequenceCriterion {
     if (N_ <= 0) {
       throw af::exception("ASG: N is zero or negative.");
     }
-    Variable transition(transdiag * af::identity(af::dim4(N_, N_)), true);
+    fl::Variable transition(transdiag * af::identity(af::dim4(N_, N_)), true);
     params_ = {transition};
     syncTransitions();
   }
 
-  Variable forward(const Variable& input, const Variable& target) override {
-    return fcc_.forward(input, target) - fac_.forward(input, target);
+  std::vector<fl::Variable> forward(
+      const std::vector<fl::Variable>& inputs) override {
+    if (inputs.size() != 2) {
+      throw std::invalid_argument("Invalid inputs size");
+    }
+    return {fcc_.forward(inputs[0], inputs[1]) -
+            fac_.forward(inputs[0], inputs[1])};
   }
 
   af::array viterbiPath(const af::array& input) override {
     return w2l::viterbiPath(input, params_[0].array());
   }
 
-  void setParams(const Variable& var, int position) override {
+  void setParams(const fl::Variable& var, int position) override {
     Module::setParams(var, position);
     syncTransitions();
   }
@@ -70,6 +75,6 @@ class AutoSegmentationCriterion : public SequenceCriterion {
 
 using ASGLoss = AutoSegmentationCriterion;
 
-} // namespace fl
+} // namespace w2l
 
-CEREAL_REGISTER_TYPE(fl::AutoSegmentationCriterion)
+CEREAL_REGISTER_TYPE(w2l::AutoSegmentationCriterion)

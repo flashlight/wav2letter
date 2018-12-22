@@ -12,15 +12,16 @@
 #include "CriterionUtils.h"
 #include "Defines.h"
 
-namespace fl {
+namespace w2l {
 
-class FullConnectionCriterion : public Loss {
+class FullConnectionCriterion : public fl::BinaryModule {
  public:
   explicit FullConnectionCriterion(
       intl N,
       w2l::CriterionScaleMode scalemode = w2l::CriterionScaleMode::NONE);
 
-  Variable forward(const Variable& input, const Variable& target) override;
+  fl::Variable forward(const fl::Variable& input, const fl::Variable& target)
+      override;
 
   virtual std::string prettyString() const override;
 
@@ -31,7 +32,7 @@ class FullConnectionCriterion : public Loss {
   intl N_;
   w2l::CriterionScaleMode scaleMode_;
 
-  FL_SAVE_LOAD_WITH_BASE(Loss, N_, scaleMode_)
+  FL_SAVE_LOAD_WITH_BASE(fl::BinaryModule, N_, scaleMode_)
 
   struct fwParams {
     std::vector<int> targetsRaw;
@@ -69,6 +70,6 @@ class FullConnectionCriterion : public Loss {
 
 typedef FullConnectionCriterion FCCLoss;
 
-} // namespace fl
+} // namespace w2l
 
-CEREAL_REGISTER_TYPE(fl::FullConnectionCriterion)
+CEREAL_REGISTER_TYPE(w2l::FullConnectionCriterion)

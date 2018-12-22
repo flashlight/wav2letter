@@ -13,7 +13,9 @@
 #include <flashlight/autograd/autograd.h>
 #include <flashlight/common/cuda.h>
 
-namespace fl {
+using namespace fl;
+
+namespace w2l {
 
 namespace {
 inline void throw_on_error(ctcStatus_t status, const char* message) {
@@ -24,9 +26,13 @@ inline void throw_on_error(ctcStatus_t status, const char* message) {
 }
 } // namespace
 
-Variable ConnectionistTemporalCriterion::forward(
-    const Variable& input,
-    const Variable& target) {
+std::vector<Variable> ConnectionistTemporalCriterion::forward(
+    const std::vector<Variable>& inputs) {
+  if (inputs.size() != 2) {
+    throw std::invalid_argument("Invalid inputs size");
+  }
+  const auto& input = inputs[0];
+  const auto& target = inputs[1];
   validate(input, target);
   const int64_t N = input.dims(0);
   const int64_t T = input.dims(1);
@@ -107,19 +113,20 @@ Variable ConnectionistTemporalCriterion::forward(
   result = result * batchScales;
 
   auto gradFunc = [grad, batchScales](
-                      std::vector<Variable>& inputs,
+                      std::vector<Variable>& moduleInputs,
                       const Variable& grad_output) {
     auto gradScales = grad_output.array() * batchScales;
-    auto& in = inputs[0];
+    auto& in = moduleInputs[0];
     gradScales = af::tile(
         moddims(gradScales, 1, grad_output.dims(0), 1),
         in.dims(0),
         1,
         in.dims(1));
-    inputs[0].addGrad(Variable(reorder(grad * gradScales, 0, 2, 1), false));
+    moduleInputs[0].addGrad(
+        Variable(reorder(grad * gradScales, 0, 2, 1), false));
   };
 
-  return Variable(result, {input, target}, gradFunc);
+  return {Variable(result, {input, target}, gradFunc)};
 }
 
-} // namespace fl
+} // namespace w2l

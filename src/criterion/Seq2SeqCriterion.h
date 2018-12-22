@@ -14,14 +14,14 @@
 #include "criterion/attention/attention.h"
 #include "criterion/attention/window.h"
 
-namespace fl {
+namespace w2l {
 
 class Seq2SeqCriterion : public SequenceCriterion {
  public:
   struct DecoderState {
-    Variable alpha;
-    Variable hidden;
-    Variable summary;
+    fl::Variable alpha;
+    fl::Variable hidden;
+    fl::Variable summary;
     int step;
     DecoderState() : step(0) {}
   };
@@ -50,22 +50,23 @@ class Seq2SeqCriterion : public SequenceCriterion {
       double labelSmooth = 0.0,
       bool inputFeeding = false);
 
-  Variable forward(const Variable& input, const Variable& target) override;
+  std::vector<fl::Variable> forward(
+      const std::vector<fl::Variable>& inputs) override;
 
   /* Next step predictions are based on the target at
    * the previous time-step so this function should only
    * be used for training purposes. */
-  std::pair<Variable, Variable> decoder(
-      const Variable& input,
-      const Variable& target);
+  std::pair<fl::Variable, fl::Variable> decoder(
+      const fl::Variable& input,
+      const fl::Variable& target);
 
-  std::pair<Variable, Variable> vectorizedDecoder(
-      const Variable& input,
-      const Variable& target);
+  std::pair<fl::Variable, fl::Variable> vectorizedDecoder(
+      const fl::Variable& input,
+      const fl::Variable& target);
 
   af::array viterbiPath(const af::array& input) override;
 
-  std::pair<af::array, Variable> viterbiPathBase(
+  std::pair<af::array, fl::Variable> viterbiPathBase(
       const af::array& input,
       bool saveAttn);
 
@@ -79,23 +80,23 @@ class Seq2SeqCriterion : public SequenceCriterion {
 
   std::string prettyString() const override;
 
-  std::shared_ptr<Embedding> embedding() {
-    return std::static_pointer_cast<Embedding>(module(0));
+  std::shared_ptr<fl::Embedding> embedding() {
+    return std::static_pointer_cast<fl::Embedding>(module(0));
   }
 
-  std::shared_ptr<RNN> decodeRNN() {
-    return std::static_pointer_cast<RNN>(module(1));
+  std::shared_ptr<fl::RNN> decodeRNN() {
+    return std::static_pointer_cast<fl::RNN>(module(1));
   }
 
-  std::shared_ptr<Linear> linearOut() {
-    return std::static_pointer_cast<Linear>(module(2));
+  std::shared_ptr<fl::Linear> linearOut() {
+    return std::static_pointer_cast<fl::Linear>(module(2));
   }
 
   std::shared_ptr<AttentionBase> attention() {
     return std::static_pointer_cast<AttentionBase>(module(3));
   }
 
-  Variable startEmbedding() {
+  fl::Variable startEmbedding() {
     return params_.back();
   }
 
@@ -124,18 +125,14 @@ class Seq2SeqCriterion : public SequenceCriterion {
 
   Seq2SeqCriterion() = default;
 
-  std::pair<Variable, DecoderState> decodeStep(
-      const Variable& xEncoded,
-      const Variable& y,
+  std::pair<fl::Variable, DecoderState> decodeStep(
+      const fl::Variable& xEncoded,
+      const fl::Variable& y,
       const DecoderState& instate);
 };
 
-} // namespace fl
-
-namespace w2l {
-
-fl::Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx);
+w2l::Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx);
 
 } // namespace w2l
 
-CEREAL_REGISTER_TYPE(fl::Seq2SeqCriterion)
+CEREAL_REGISTER_TYPE(w2l::Seq2SeqCriterion)

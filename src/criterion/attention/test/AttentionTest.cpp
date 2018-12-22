@@ -14,6 +14,7 @@
 #include <criterion/attention/attention.h>
 
 using namespace fl;
+using namespace w2l;
 
 TEST(AttentionTest, NeuralContentAttention) {
   int H = 8, B = 2, T = 10, U = 5;

@@ -8,7 +8,9 @@
 
 #include "ContentAttention.h"
 
-namespace fl {
+using namespace fl;
+
+namespace w2l {
 
 std::pair<Variable, Variable> ContentAttention::forward(
     const Variable& state,
@@ -63,7 +65,7 @@ std::pair<Variable, Variable> NeuralContentAttention::forward(
   auto hidden = tileHx + tileHy;
 
   // [targetlen, seqlen, batchsize]
-  auto nnOut = moddims(module(0)->forward(hidden), {U, T, B});
+  auto nnOut = moddims(module(0)->forward({hidden}).front(), {U, T, B});
 
   if (!attnWeight.isempty()) {
     nnOut = nnOut + log(attnWeight);
@@ -82,4 +84,4 @@ std::string NeuralContentAttention::prettyString() const {
   return "NeuralContentBasedAttention";
 }
 
-} // namespace fl
+} // namespace w2l

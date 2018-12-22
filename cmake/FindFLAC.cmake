@@ -4,7 +4,7 @@
 #  FLAC_INCLUDE_DIRS - where to find FLAC headers.
 #  FLAC_LIBRARIES    - List of libraries when using libFLAC.
 #  FLAC_FOUND        - True if libFLAC found.
-#  FLAC_DEFINITIONS  - FLAC compile definitons 
+#  FLAC_DEFINITIONS  - FLAC compile definitons
 
 if (FLAC_INCLUDE_DIR)
     # Already in cache, be silent

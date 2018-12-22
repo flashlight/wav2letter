@@ -163,7 +163,7 @@ int main(int argc, char** argv) {
 
   /* ===================== Create Network ===================== */
   std::shared_ptr<fl::Module> network;
-  std::shared_ptr<fl::SequenceCriterion> criterion;
+  std::shared_ptr<SequenceCriterion> criterion;
   auto scalemode = getCriterionScaleMode(FLAGS_onorm, FLAGS_sqnorm);
   if (reloadpath.empty()) {
     auto archfile = pathsConcat(FLAGS_archdir, FLAGS_arch);
@@ -173,12 +173,12 @@ int main(int argc, char** argv) {
     network = createW2lSeqModule(archfile, numFeatures, numClasses);
 
     if (FLAGS_criterion == kCtcCriterion) {
-      criterion = std::make_shared<fl::CTCLoss>(scalemode);
+      criterion = std::make_shared<CTCLoss>(scalemode);
     } else if (FLAGS_criterion == kAsgCriterion) {
       criterion =
-          std::make_shared<fl::ASGLoss>(numClasses, scalemode, FLAGS_transdiag);
+          std::make_shared<ASGLoss>(numClasses, scalemode, FLAGS_transdiag);
     } else if (FLAGS_criterion == kSeq2SeqCriterion) {
-      criterion = std::make_shared<fl::Seq2SeqCriterion>(
+      criterion = std::make_shared<Seq2SeqCriterion>(
           buildSeq2Seq(numClasses, dict.getIndex(kEosToken)));
     } else {
       LOG(FATAL) << "unimplemented criterion";
@@ -191,12 +191,12 @@ int main(int argc, char** argv) {
   LOG_MASTER(INFO) << "[Network Params: " << numTotalParams(network) << "]";
   LOG_MASTER(INFO) << "[Criterion] " << criterion->prettyString();
 
-  std::shared_ptr<fl::LinSegCriterion> linseg;
+  std::shared_ptr<LinSegCriterion> linseg;
   if (FLAGS_linseg > 0) {
     if (FLAGS_criterion != kAsgCriterion) {
       LOG(FATAL) << "linseg may only be used with ASG criterion";
     }
-    linseg = std::make_shared<fl::LinSegCriterion>(numClasses, scalemode);
+    linseg = std::make_shared<LinSegCriterion>(numClasses, scalemode);
     linseg->setParams(criterion->param(0), 0);
     LOG_MASTER(INFO) << "[Criterion] " << linseg->prettyString()
                      << " (for first " << FLAGS_linseg << " epochs)";
@@ -348,7 +348,7 @@ int main(int argc, char** argv) {
 
   auto test = [&evalOutput](
                   std::shared_ptr<fl::Module> ntwrk,
-                  std::shared_ptr<fl::Loss> crit,
+                  std::shared_ptr<SequenceCriterion> crit,
                   std::shared_ptr<W2lDataset> testds,
                   EditDistMeters& mtrs) {
     ntwrk->eval();
@@ -357,7 +357,7 @@ int main(int argc, char** argv) {
     mtrs.wordedit.reset();
 
     for (auto& sample : *testds) {
-      auto output = ntwrk->forward(fl::input(sample[kInputIdx]));
+      auto output = ntwrk->forward({fl::input(sample[kInputIdx])}).front();
       evalOutput(output.array(), sample[kTargetIdx], mtrs.edit);
     }
   };
@@ -373,7 +373,7 @@ int main(int argc, char** argv) {
                 gradNorm,
                 startEpoch](
                    std::shared_ptr<fl::Module> ntwrk,
-                   std::shared_ptr<fl::Loss> crit,
+                   std::shared_ptr<SequenceCriterion> crit,
                    std::shared_ptr<W2lDataset> trainset,
                    fl::FirstOrderOptimizer& netopt,
                    fl::FirstOrderOptimizer& critopt,
@@ -455,10 +455,11 @@ int main(int argc, char** argv) {
 
         // forward
         meters.fwdtimer.resume();
-        auto output = ntwrk->forward(fl::input(sample[kInputIdx]));
+        auto output = ntwrk->forward({fl::input(sample[kInputIdx])}).front();
         af::sync();
         meters.critfwdtimer.resume();
-        auto loss = crit->forward(output, fl::noGrad(sample[kTargetIdx]));
+        auto loss =
+            crit->forward({output, fl::noGrad(sample[kTargetIdx])}).front();
         af::sync();
         meters.fwdtimer.stopAndIncUnit();
         meters.critfwdtimer.stopAndIncUnit();

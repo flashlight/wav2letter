@@ -8,7 +8,9 @@
 
 #include "ConnectionistTemporalCriterion.h"
 
-namespace fl {
+using namespace fl;
+
+namespace w2l {
 
 ConnectionistTemporalCriterion::ConnectionistTemporalCriterion(
     w2l::CriterionScaleMode scalemode /* = w2l::CriterionScaleMode::NONE */)
@@ -43,4 +45,4 @@ void ConnectionistTemporalCriterion::validate(
   }
 }
 
-} // namespace fl
+} // namespace w2l

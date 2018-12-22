@@ -1,8 +1,10 @@
 # wav2letter++
 
-wav2letter++ is a fast open source speech processing toolkit from Facebook AI Research.
+wav2letter++ is a fast open source speech processing toolkit from the Speech Team at Facebook AI Research.
 It is written entirely in C++ and uses the [ArrayFire](https://github.com/arrayfire/arrayfire) tensor library and the [flashlight](https://github.com/facebookresearch/flashlight) machine learning library for maximum efficiency.
 Our approach is detailed in this [arXiv paper](https://arxiv.org/abs/1812.07625).
+
+The previous version of wav2letter (written in Lua) can be found in the "wav2letter-lua" branch under the repository.
 
 ## Building wav2letter++
 See [Building Instructions](docs/installation.md) for details.
@@ -11,7 +13,7 @@ See [Building Instructions](docs/installation.md) for details.
 - [Training](docs/train.md)
 - [Testing / Decoding](docs/decoder.md)
 
-We also provide complete recipes for WSJ, Timit and Librispeech and they be found in `recipes` folder.
+We also provide complete recipes for WSJ, Timit and Librispeech and they can be found in `recipes` folder.
 
 # Citation
 

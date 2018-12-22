@@ -49,12 +49,11 @@ int main(int argc, char** argv) {
   std::string reloadpath = argv[1];
   std::string dataset = argv[2];
   std::unordered_map<std::string, std::string> cfg;
-  std::shared_ptr<fl::Module> network;
-  std::shared_ptr<fl::SequenceCriterion> base_criterion;
+  std::shared_ptr<fl::Sequential> network;
+  std::shared_ptr<SequenceCriterion> base_criterion;
 
   W2lSerializer::load(reloadpath, cfg, network, base_criterion);
-  auto criterion =
-      std::dynamic_pointer_cast<fl::Seq2SeqCriterion>(base_criterion);
+  auto criterion = std::dynamic_pointer_cast<Seq2SeqCriterion>(base_criterion);
 
   LOG(INFO) << "Parsing command line flags";
   gflags::ParseCommandLineFlags(&argc, &argv, false);
@@ -114,7 +113,7 @@ int main(int argc, char** argv) {
     af::max(maxv, argmaxid, tfout.array(), 0);
     argmaxid = argmaxid.as(s32);
 
-    auto loss = criterion->forward(output, fl::noGrad(target));
+    auto loss = criterion->forward({output, fl::noGrad(target)}).front();
     auto lossvec = afToVector<float>(loss.array());
     for (int b = 0; b < output.dims(2); ++b) {
       auto tgt = target(af::span, b);

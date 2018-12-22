@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
 
   /* ===================== Create Network ===================== */
   std::shared_ptr<fl::Module> network;
-  std::shared_ptr<fl::SequenceCriterion> criterion;
+  std::shared_ptr<SequenceCriterion> criterion;
   if (!FLAGS_am.empty()) {
     std::unordered_map<std::string, std::string> cfg;
     LOG(INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
@@ -134,7 +134,8 @@ int main(int argc, char** argv) {
 
     int cnt = 0;
     for (auto& sample : *ds) {
-      auto rawEmission = network->forward(fl::input(sample[kInputIdx]));
+      auto rawEmission =
+          network->forward({fl::input(sample[kInputIdx])}).front();
       int N = rawEmission.dims(0);
       int T = rawEmission.dims(1);
 

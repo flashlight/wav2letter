@@ -9,11 +9,17 @@
 #include <criterion/ConnectionistTemporalCriterion.h>
 #include <criterion/CriterionUtils.h>
 
-namespace fl {
+using namespace fl;
 
-Variable ConnectionistTemporalCriterion::forward(
-    const Variable& input,
-    const Variable& target) {
+namespace w2l {
+
+std::vector<Variable> ConnectionistTemporalCriterion::forward(
+    const std::vector<Variable>& inputs) {
+  if (inputs.size() != 2) {
+    throw std::invalid_argument("Invalid inputs size");
+  }
+  const auto& input = inputs[0];
+  const auto& target = inputs[1];
   validate(input, target);
   auto logprobs = logSoftmax(input, 0);
 
@@ -107,17 +113,17 @@ Variable ConnectionistTemporalCriterion::forward(
   auto result = af::array(batchLoss.size(), batchLoss.data());
 
   auto gradFunc = [batchAlphas, batchScales](
-                      std::vector<Variable>& inputs,
+                      std::vector<Variable>& moduleInputs,
                       const Variable& gradOutput) {
-    const int64_t N = inputs[0].dims(0);
-    const int64_t T = inputs[0].dims(1);
-    const int64_t B = inputs[0].dims(2);
-    const int64_t batchL = inputs[1].dims(0);
+    const int64_t N = moduleInputs[0].dims(0);
+    const int64_t T = moduleInputs[0].dims(1);
+    const int64_t B = moduleInputs[0].dims(2);
+    const int64_t batchL = moduleInputs[1].dims(0);
 
-    std::vector<float> batchInGrad(inputs[0].elements(), 0.0);
+    std::vector<float> batchInGrad(moduleInputs[0].elements(), 0.0);
 
-    std::vector<int> batchTargetVec(inputs[1].elements());
-    inputs[1].host(batchTargetVec.data());
+    std::vector<int> batchTargetVec(moduleInputs[1].elements());
+    moduleInputs[1].host(batchTargetVec.data());
 
     std::vector<float> batchOutGrad(gradOutput.elements());
     gradOutput.host(batchOutGrad.data());
@@ -201,9 +207,10 @@ Variable ConnectionistTemporalCriterion::forward(
         }
       }
     }
-    inputs[0].addGrad(Variable(af::array(N, T, B, batchInGrad.data()), false));
+    moduleInputs[0].addGrad(
+        Variable(af::array(N, T, B, batchInGrad.data()), false));
   };
-  return Variable(result, {logprobs, target}, gradFunc);
+  return {Variable(result, {logprobs, target}, gradFunc)};
 }
 
-} // namespace fl
+} // namespace w2l

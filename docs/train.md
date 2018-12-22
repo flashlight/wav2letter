@@ -25,7 +25,7 @@ command line:
 
 ### Modes
 
-Training supports three modes: 
+Training supports three modes:
 
 - `train` : Train a model from scratch on the given training data.
 - `continue` : Continue training a saved model. This can be used for example to

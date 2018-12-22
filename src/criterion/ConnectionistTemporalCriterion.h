@@ -12,14 +12,15 @@
 #include "Defines.h"
 #include "SequenceCriterion.h"
 
-namespace fl {
+namespace w2l {
 
 class ConnectionistTemporalCriterion : public SequenceCriterion {
  public:
   ConnectionistTemporalCriterion(
       w2l::CriterionScaleMode scalemode = w2l::CriterionScaleMode::NONE);
 
-  Variable forward(const Variable& input, const Variable& target) override;
+  std::vector<fl::Variable> forward(
+      const std::vector<fl::Variable>& inputs) override;
 
   af::array viterbiPath(const af::array& input) override;
 
@@ -30,11 +31,11 @@ class ConnectionistTemporalCriterion : public SequenceCriterion {
 
   FL_SAVE_LOAD_WITH_BASE(SequenceCriterion, scaleMode_)
 
-  void validate(const Variable& input, const Variable& target);
+  void validate(const fl::Variable& input, const fl::Variable& target);
 };
 
 typedef ConnectionistTemporalCriterion CTCLoss;
 
-} // namespace fl
+} // namespace w2l
 
-CEREAL_REGISTER_TYPE(fl::ConnectionistTemporalCriterion)
+CEREAL_REGISTER_TYPE(w2l::ConnectionistTemporalCriterion)

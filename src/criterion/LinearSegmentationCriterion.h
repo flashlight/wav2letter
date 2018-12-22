@@ -11,7 +11,7 @@
 #include "AutoSegmentationCriterion.h"
 #include "CriterionUtils.h"
 
-namespace fl {
+namespace w2l {
 
 class LinearSegmentationCriterion : public AutoSegmentationCriterion {
  public:
@@ -20,9 +20,15 @@ class LinearSegmentationCriterion : public AutoSegmentationCriterion {
       w2l::CriterionScaleMode scaleMode = w2l::CriterionScaleMode::NONE)
       : AutoSegmentationCriterion(N, scaleMode) {}
 
-  Variable forward(const Variable& input, const Variable& target) override {
+  std::vector<fl::Variable> forward(
+      const std::vector<fl::Variable>& inputs) override {
+    if (inputs.size() != 2) {
+      throw std::invalid_argument("Invalid inputs size");
+    }
+    const auto& input = inputs[0];
+    const auto& target = inputs[1];
     return AutoSegmentationCriterion::forward(
-        input, w2l::getLinearTarget(target, input.dims(1)));
+        {input, w2l::getLinearTarget(target, input.dims(1))});
   }
 
   std::string prettyString() const override {
@@ -37,6 +43,6 @@ class LinearSegmentationCriterion : public AutoSegmentationCriterion {
 
 using LinSegCriterion = LinearSegmentationCriterion;
 
-} // namespace fl
+} // namespace w2l
 
-CEREAL_REGISTER_TYPE(fl::LinearSegmentationCriterion)
+CEREAL_REGISTER_TYPE(w2l::LinearSegmentationCriterion)

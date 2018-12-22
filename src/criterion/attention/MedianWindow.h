@@ -10,22 +10,22 @@
 
 #include "WindowBase.h"
 
-namespace fl {
+namespace w2l {
 
 class MedianWindow : public WindowBase {
  public:
   MedianWindow();
   MedianWindow(int wL, int wR);
 
-  Variable initialize(int inputSteps, int batchSize);
+  fl::Variable initialize(int inputSteps, int batchSize);
 
-  Variable computeSingleStepWindow(
-      const Variable& prevAttn,
+  fl::Variable computeSingleStepWindow(
+      const fl::Variable& prevAttn,
       int inputSteps,
       int batchSize,
       int step) override;
 
-  Variable computeWindowMask(int targetLen, int inputSteps, int batchSize)
+  fl::Variable computeWindowMask(int targetLen, int inputSteps, int batchSize)
       override;
 
  private:
@@ -35,6 +35,6 @@ class MedianWindow : public WindowBase {
   FL_SAVE_LOAD_WITH_BASE(WindowBase, wL_, wR_)
 };
 
-} // namespace fl
+} // namespace w2l
 
-CEREAL_REGISTER_TYPE(fl::MedianWindow)
+CEREAL_REGISTER_TYPE(w2l::MedianWindow)

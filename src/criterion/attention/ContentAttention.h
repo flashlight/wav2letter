@@ -10,17 +10,17 @@
 
 #include "AttentionBase.h"
 
-namespace fl {
+namespace w2l {
 
 class ContentAttention : public AttentionBase {
  public:
   ContentAttention() {}
 
-  std::pair<Variable, Variable> forward(
-      const Variable& state,
-      const Variable& xEncoded,
-      const Variable& prevAttn,
-      const Variable& attnWeight) override;
+  std::pair<fl::Variable, fl::Variable> forward(
+      const fl::Variable& state,
+      const fl::Variable& xEncoded,
+      const fl::Variable& prevAttn,
+      const fl::Variable& attnWeight) override;
 
   std::string prettyString() const override;
 
@@ -33,11 +33,11 @@ class NeuralContentAttention : public AttentionBase {
   NeuralContentAttention() {}
   explicit NeuralContentAttention(int dim, int layers = 1);
 
-  std::pair<Variable, Variable> forward(
-      const Variable& state,
-      const Variable& xEncoded,
-      const Variable& prevAttn,
-      const Variable& attnWeight) override;
+  std::pair<fl::Variable, fl::Variable> forward(
+      const fl::Variable& state,
+      const fl::Variable& xEncoded,
+      const fl::Variable& prevAttn,
+      const fl::Variable& attnWeight) override;
 
   std::string prettyString() const override;
 
@@ -45,7 +45,7 @@ class NeuralContentAttention : public AttentionBase {
   FL_SAVE_LOAD_WITH_BASE(AttentionBase)
 };
 
-} // namespace fl
+} // namespace w2l
 
-CEREAL_REGISTER_TYPE(fl::ContentAttention)
-CEREAL_REGISTER_TYPE(fl::NeuralContentAttention)
+CEREAL_REGISTER_TYPE(w2l::ContentAttention)
+CEREAL_REGISTER_TYPE(w2l::NeuralContentAttention)

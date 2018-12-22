@@ -57,7 +57,7 @@ TEST(W2lModuleTest, Serialization) {
 
   save(path, model);
 
-  std::shared_ptr<Module> loaded;
+  std::shared_ptr<Sequential> loaded;
   load(path, loaded);
 
   auto outputl = loaded->forward(input);

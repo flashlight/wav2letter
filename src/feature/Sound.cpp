@@ -76,6 +76,8 @@ extern std::vector<T> loadSound(const char* filename) {
   SNDFILE* file;
   SF_INFO info;
 
+  info.format = 0;
+
   if (!filename) {
     LOG(FATAL) << "sndfile: invalid filename";
   }

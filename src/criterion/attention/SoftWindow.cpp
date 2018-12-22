@@ -8,7 +8,9 @@
 
 #include "SoftWindow.h"
 
-namespace fl {
+using namespace fl;
+
+namespace w2l {
 
 SoftWindow::SoftWindow() {}
 SoftWindow::SoftWindow(double std, double avgRate, int offset)
@@ -55,4 +57,4 @@ SoftWindow::computeWindowMask(int targetLen, int inputSteps, int batchSize) {
   return mask;
 }
 
-} // namespace fl
+} // namespace w2l

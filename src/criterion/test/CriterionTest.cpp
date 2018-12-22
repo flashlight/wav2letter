@@ -14,6 +14,7 @@
 #include <criterion/criterion.h>
 
 using namespace fl;
+using namespace w2l;
 
 namespace {
 
@@ -67,11 +68,13 @@ TEST(CriterionTest, CTCEmptyTarget) {
   auto input = Variable(af::array(3, 2, 5), true);
   auto target = Variable(af::array(0, 5), false);
   auto ctc = ConnectionistTemporalCriterion();
-  auto loss = ctc(input, target);
+  auto loss = ctc({input, target}).front();
   loss.backward();
   ASSERT_FALSE(af::anyTrue<bool>(af::isNaN(loss.array())));
 
-  auto func_conv_in = [&](Variable& inp) { return ctc.forward(inp, target); };
+  auto func_conv_in = [&](Variable& inp) {
+    return ctc.forward({inp, target}).front();
+  };
   jacobian_test(func_conv_in, input);
 }
 
@@ -86,7 +89,7 @@ TEST(CriterionTest, CTCCost) {
   auto input1af = Variable(af::array(N1, T1, input1.data()), true);
   auto target1af = Variable(af::array(L1, target1.data()), false);
 
-  auto loss1 = ctc1(input1af, target1af);
+  auto loss1 = ctc1({input1af, target1af}).front();
   ASSERT_NEAR(loss1.scalar<float>(), 0.0, kEpsilon);
 
   // Test case: 2
@@ -97,7 +100,7 @@ TEST(CriterionTest, CTCCost) {
   auto input2af = Variable(af::constant(0.0, N2, T2, f32), true);
   auto target2af = Variable(af::array(L2, target2.data()), false);
 
-  auto loss2 = ctc2(input2af, target2af);
+  auto loss2 = ctc2({input2af, target2af}).front();
   ASSERT_NEAR(loss2.scalar<float>(), -log(0.25 * 0.25 * 0.25 * 5), kEpsilon);
 }
 
@@ -108,7 +111,9 @@ TEST(CriterionTest, CTCJacobian) {
   auto tgt = Variable(t.as(af::dtype::s32), false);
   auto l =
       ConnectionistTemporalCriterion(w2l::CriterionScaleMode::INPUT_SZ_SQRT);
-  auto func_conv_in = [&](Variable& inp) { return l.forward(inp, tgt); };
+  auto func_conv_in = [&](Variable& inp) {
+    return l.forward({inp, tgt}).front();
+  };
   jacobian_test(func_conv_in, in);
 }
 
@@ -126,7 +131,9 @@ TEST(CriterionTest, Batching) {
     auto tgt = Variable(t.as(af::dtype::s32), false);
     auto l =
         ConnectionistTemporalCriterion(w2l::CriterionScaleMode::TARGET_SZ_SQRT);
-    auto func_conv_in = [&](Variable& inp) { return l.forward(inp, tgt); };
+    auto func_conv_in = [&](Variable& inp) {
+      return l.forward({inp, tgt}).front();
+    };
     jacobian_test(func_conv_in, in);
   }
   {
@@ -141,10 +148,10 @@ TEST(CriterionTest, Batching) {
     }
     auto tgt = Variable(t.as(af::dtype::s32), false);
     auto l = ConnectionistTemporalCriterion(w2l::CriterionScaleMode::TARGET_SZ);
-    auto output = l.forward(in, tgt);
+    auto output = l.forward({in, tgt}).front();
 
     for (int i = 0; i < B; ++i) {
-      auto output_i = l.forward(in.slice(i), tgt.col(i));
+      auto output_i = l.forward({in.slice(i), tgt.col(i)}).front();
       checkZero(output.array()(i) - output_i.array(), 1E-6);
     }
   }
@@ -182,7 +189,7 @@ TEST(CriterionTest, CTCCompareTensorflow) {
   auto grad_expected1af =
       Variable(af::array(N1, T1, grad_expected1.data()), false);
 
-  auto loss1 = ctc1(input1af, target1af);
+  auto loss1 = ctc1({input1af, target1af}).front();
   ASSERT_NEAR(loss1.scalar<float>(), loss_expected1, kEpsilon);
 
   loss1.backward();
@@ -217,7 +224,7 @@ TEST(CriterionTest, CTCCompareTensorflow) {
   auto grad_expected2af =
       Variable(af::array(N2, T2, grad_expected2.data()), false);
 
-  auto loss2 = ctc2(input2af, target2af);
+  auto loss2 = ctc2({input2af, target2af}).front();
   ASSERT_NEAR(loss2.scalar<float>(), loss_expected2, kEpsilon);
 
   loss2.backward();
@@ -408,7 +415,7 @@ TEST(CriterionTest, ASGCost) {
   auto target1af = Variable(af::array(L1, B1, target1.data()), false);
   asg1.setParams(Variable(af::array(N1, N1, trans1.data()), true), 0);
 
-  auto loss1 = asg1(input1af, target1af);
+  auto loss1 = asg1({input1af, target1af}).front();
   std::vector<float> loss1_host(B1);
   loss1.host(loss1_host.data());
   ASSERT_NEAR(loss1_host[0], -log(0.5), kEpsilon);
@@ -426,7 +433,7 @@ TEST(CriterionTest, ASGCost) {
   auto target2af = Variable(af::array(L2, target2.data()), false);
   asg2.setParams(Variable(af::array(N2, N2, trans2.data()), true), 0);
 
-  auto loss2 = asg2(input2af, target2af);
+  auto loss2 = asg2({input2af, target2af}).front();
   ASSERT_NEAR(loss2.scalar<float>(), log(32), kEpsilon);
 
   // Test case: 3
@@ -443,7 +450,8 @@ TEST(CriterionTest, ASGCost) {
   asg3.setParams(Variable(af::array(N3, N3, trans3.data()), true), 0);
   // check if target is truncated
   checkZero(
-      asg3(input3af, target3af1).array() - asg3(input3af, target3af2).array(),
+      asg3({input3af, target3af1}).front().array() -
+          asg3({input3af, target3af2}).front().array(),
       1E-5);
 }
 
@@ -456,14 +464,14 @@ TEST(CriterionTest, ASGJacobian) {
       AutoSegmentationCriterion(N, w2l::CriterionScaleMode::TARGET_SZ_SQRT);
 
   // Test case for input
-  auto func_in = [&](Variable& inp) { return l.forward(inp, tgt); };
+  auto func_in = [&](Variable& inp) { return l.forward({inp, tgt}).front(); };
   jacobian_test(func_in, in);
 
   // Test case for transition
   auto transition = Variable(af::randu(N, N), true);
   auto func_trans = [&](Variable& transition_p) {
     l.setParams(transition_p, 0);
-    return l.forward(in, tgt);
+    return l.forward({in, tgt}).front();
   };
   jacobian_test(func_trans, transition);
 }
@@ -477,14 +485,14 @@ TEST(CriterionTest, LinSegJacobian) {
       LinearSegmentationCriterion(N, w2l::CriterionScaleMode::TARGET_SZ_SQRT);
 
   // Test case for input
-  auto func_in = [&](Variable& inp) { return l.forward(inp, tgt); };
+  auto func_in = [&](Variable& inp) { return l.forward({inp, tgt}).front(); };
   jacobian_test(func_in, in);
 
   // Test case for transition
   auto transition = Variable(af::randu(N, N), true);
   auto func_trans = [&](Variable& transition_p) {
     l.setParams(transition_p, 0);
-    return l.forward(in, tgt);
+    return l.forward({in, tgt}).front();
   };
   jacobian_test(func_trans, transition);
 }
@@ -501,10 +509,10 @@ TEST(CriterionTest, ASGBatching) {
   }
   auto tgt = Variable(t.as(af::dtype::s32), false);
   auto l = AutoSegmentationCriterion(N, w2l::CriterionScaleMode::TARGET_SZ);
-  auto output = l.forward(in, tgt);
+  auto output = l.forward({in, tgt}).front();
 
   for (int i = 0; i < B; ++i) {
-    auto output_i = l.forward(in.slice(i), tgt.col(i));
+    auto output_i = l.forward({in.slice(i), tgt.col(i)}).front();
     checkZero(output.array()(i) - output_i.array(), 1E-6);
   }
 }
@@ -578,7 +586,7 @@ TEST(CriterionTest, ASGCompareLua) {
   auto target_af = Variable(af::array(L, B, target.data()), false);
   asg.setParams(constant(0.0, af::dim4(N, N)), 0);
 
-  auto loss = asg(input_af, target_af);
+  auto loss = asg({input_af, target_af}).front();
   std::vector<float> loss_host(B);
   loss.host(loss_host.data());
   for (int i = 0; i < B; i++) {
@@ -665,7 +673,7 @@ TEST(CriterionTest, LinSegCompareLua) {
   };
   // clang-format on
 
-  auto loss = linseg(input_af, target_af);
+  auto loss = linseg({input_af, target_af}).front();
   std::vector<float> loss_host(B);
   loss.host(loss_host.data());
   for (int i = 0; i < B; i++) {

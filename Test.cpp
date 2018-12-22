@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
 
   /* ===================== Create Network ===================== */
   std::shared_ptr<fl::Module> network;
-  std::shared_ptr<fl::SequenceCriterion> criterion;
+  std::shared_ptr<SequenceCriterion> criterion;
   std::unordered_map<std::string, std::string> cfg;
   LOG(INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
   W2lSerializer::load(FLAGS_am, cfg, network, criterion);
@@ -109,7 +109,7 @@ int main(int argc, char** argv) {
   meters.timer.resume();
   int cnt = 1;
   for (auto& sample : ds) {
-    auto rawEmission = network->forward(fl::input(sample[kInputIdx]));
+    auto rawEmission = network->forward({fl::input(sample[kInputIdx])}).front();
     auto emission = afToVector<float>(rawEmission);
     auto ltrTarget = afToVector<int>(sample[kTargetIdx]);
     auto wrdTarget = afToVector<int>(sample[kWordIdx]);

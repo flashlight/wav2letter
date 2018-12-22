@@ -8,7 +8,9 @@
 
 #include "MedianWindow.h"
 
-namespace fl {
+using namespace fl;
+
+namespace w2l {
 
 MedianWindow::MedianWindow() {}
 MedianWindow::MedianWindow(int wL, int wR) : wL_(wL), wR_(wR) {}
@@ -71,4 +73,4 @@ Variable MedianWindow::computeWindowMask(
   throw af::exception("MedianWindow does not support vectorized window mask");
 }
 
-} // namespace fl
+} // namespace w2l

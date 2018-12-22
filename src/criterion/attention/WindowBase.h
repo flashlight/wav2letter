@@ -10,19 +10,19 @@
 
 #include <flashlight/flashlight.h>
 
-namespace fl {
+namespace w2l {
 
 class WindowBase {
  public:
   WindowBase() {}
 
-  virtual Variable computeSingleStepWindow(
-      const Variable& prevAttn,
+  virtual fl::Variable computeSingleStepWindow(
+      const fl::Variable& prevAttn,
       int inputSteps,
       int batchSize,
       int step) = 0;
 
-  virtual Variable
+  virtual fl::Variable
   computeWindowMask(int targetLen, int inputSteps, int batchSize) = 0;
 
   virtual ~WindowBase() {}
@@ -31,4 +31,4 @@ class WindowBase {
   FL_SAVE_LOAD()
 };
 
-} // namespace fl
+} // namespace w2l

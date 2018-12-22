@@ -15,6 +15,7 @@
 #include <criterion/criterion.h>
 
 using namespace fl;
+using namespace w2l;
 
 TEST(Seq2SeqTest, Seq2Seq) {
   int nclass = 40;
@@ -48,7 +49,7 @@ TEST(Seq2SeqTest, Seq2Seq) {
   ASSERT_EQ(attention.dims(1), inputsteps);
   ASSERT_EQ(attention.dims(2), batchsize);
 
-  auto losses = seq2seq(noGrad(input), noGrad(target));
+  auto losses = seq2seq({noGrad(input), noGrad(target)}).front();
   ASSERT_EQ(losses.dims(0), batchsize);
 
   // Backward runs.
@@ -65,7 +66,7 @@ TEST(Seq2SeqTest, Seq2Seq) {
 
   // Check size 1 Target works
   target = target(0, af::span);
-  auto loss = seq2seq(noGrad(input), noGrad(target));
+  auto loss = seq2seq({noGrad(input), noGrad(target)}).front();
 
   // Make sure eval mode is not storing variables.
   seq2seq.eval();

@@ -10,13 +10,17 @@
 
 #include "CriterionUtils.h"
 
-namespace fl {
+using namespace fl;
+
+namespace w2l {
+
 ForceAlignmentCriterion::ForceAlignmentCriterion(
     intl N,
     w2l::CriterionScaleMode scalemode)
     : N_(N), scaleMode_(scalemode) {
   if (N_ <= 0) {
-    throw(af::exception("FAC: Size of transition matrix is less than 0."));
+    throw std::invalid_argument(
+        "FAC: Size of transition matrix is less than 0.");
   }
   auto transition = constant(0.0, af::dim4(N_, N_));
   params_ = {transition};
@@ -30,7 +34,7 @@ Variable ForceAlignmentCriterion::forward(
   const intl B = input.dims(2);
   const intl L = target.dims(0);
   if (N != N_) {
-    throw(af::exception("FAC: N doesn't match with the letter size."));
+    throw std::invalid_argument("FAC: N doesn't match with the letter size.");
   }
 
   /* Forward */
@@ -49,7 +53,7 @@ Variable ForceAlignmentCriterion::forward(
     intl TN = w2l::getTargetSize(targets, L);
     TN = std::min(TN, T);
     if (TN == 0) {
-      throw(af::exception("Target size cannot be empty for FAC"));
+      throw std::invalid_argument("Target size cannot be empty for FAC");
     }
     fwBuf.scale[b] = scaleFn(N, T, TN);
 
@@ -184,4 +188,4 @@ std::string ForceAlignmentCriterion::prettyString() const {
   return "ForceAlignmentCriterion";
 }
 
-} // namespace fl
+} // namespace w2l

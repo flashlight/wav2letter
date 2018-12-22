@@ -18,6 +18,7 @@
 #include <criterion/criterion.h>
 
 using namespace fl;
+using namespace w2l;
 
 void timeBeamSearch() {
   int N = 40, H = 256, T = 200;
@@ -60,7 +61,7 @@ void timeForwardBackward() {
 
   // Warmup
   for (int i = 0; i < 10; ++i) {
-    auto loss = seq2seq(input, target);
+    auto loss = seq2seq({input, target}).front();
     loss.backward();
   }
   af::sync();
@@ -68,7 +69,7 @@ void timeForwardBackward() {
   int iters = 100;
   auto s = af::timer::start();
   for (int i = 0; i < iters; ++i) {
-    auto loss = seq2seq(input, target);
+    auto loss = seq2seq({input, target}).front();
     loss.backward();
   }
   af::sync();

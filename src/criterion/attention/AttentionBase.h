@@ -10,41 +10,55 @@
 
 #include <flashlight/flashlight.h>
 
-namespace fl {
+namespace w2l {
 
-class AttentionBase : public Container {
+class AttentionBase : public fl::Container {
  public:
   AttentionBase() {}
 
-  Variable forward(const Variable& input) {
-    throw af::exception(
-        "Attention module requires three inputs (state, encodex, prevAttn) for forward");
+  std::vector<fl::Variable> forward(
+      const std::vector<fl::Variable>& inputs) override {
+    if (inputs.size() != 3 && inputs.size() != 4) {
+      throw std::invalid_argument("Invalid inputs size");
+    }
+
+    auto attnWeight = inputs.size() == 4 ? inputs[3] : fl::Variable();
+    auto res = forward(inputs[0], inputs[1], inputs[2], attnWeight);
+    return {res.first, res.second};
   }
 
-  std::pair<Variable, Variable> operator()(
-      const Variable& state,
-      const Variable& xEncoded,
-      const Variable& prevAttn) {
+  std::pair<fl::Variable, fl::Variable> operator()(
+      const fl::Variable& state,
+      const fl::Variable& xEncoded,
+      const fl::Variable& prevAttn) {
     return forward(state, xEncoded, prevAttn);
   }
 
-  std::pair<Variable, Variable> forward(
-      const Variable& state,
-      const Variable& xEncoded,
-      const Variable& prevAttn) {
-    return forward(state, xEncoded, prevAttn, Variable() /* attnWeight */);
+  std::pair<fl::Variable, fl::Variable> forward(
+      const fl::Variable& state,
+      const fl::Variable& xEncoded,
+      const fl::Variable& prevAttn) {
+    return forward(state, xEncoded, prevAttn, fl::Variable() /* attnWeight */);
   }
 
-  virtual std::pair<Variable, Variable> forward(
-      const Variable& state,
-      const Variable& xEncoded,
-      const Variable& prevAttn,
-      const Variable& attnWeight) = 0;
+  std::pair<fl::Variable, fl::Variable> operator()(
+      const fl::Variable& state,
+      const fl::Variable& xEncoded,
+      const fl::Variable& prevAttn,
+      const fl::Variable& attnWeight) {
+    return forward(state, xEncoded, prevAttn, attnWeight);
+  }
+
+  virtual std::pair<fl::Variable, fl::Variable> forward(
+      const fl::Variable& state,
+      const fl::Variable& xEncoded,
+      const fl::Variable& prevAttn,
+      const fl::Variable& attnWeight) = 0;
 
  private:
-  FL_SAVE_LOAD_WITH_BASE(Container)
+  FL_SAVE_LOAD_WITH_BASE(fl::Container)
 };
 
-} // namespace fl
+} // namespace w2l
 
-CEREAL_REGISTER_TYPE(fl::AttentionBase)
+CEREAL_REGISTER_TYPE(w2l::AttentionBase)

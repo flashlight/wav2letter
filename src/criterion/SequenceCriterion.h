@@ -10,16 +10,16 @@
 
 #include <flashlight/flashlight.h>
 
-namespace fl {
+namespace w2l {
 
-class SequenceCriterion : public Loss {
+class SequenceCriterion : public fl::Container {
  public:
   virtual af::array viterbiPath(const af::array& input) = 0;
 
  private:
-  FL_SAVE_LOAD_WITH_BASE(Loss)
+  FL_SAVE_LOAD_WITH_BASE(fl::Container)
 };
 
-} // namespace fl
+} // namespace w2l
 
-CEREAL_REGISTER_TYPE(fl::SequenceCriterion)
+CEREAL_REGISTER_TYPE(w2l::SequenceCriterion)

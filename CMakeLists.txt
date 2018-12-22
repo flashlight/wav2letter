@@ -7,10 +7,6 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/")
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# All include directories are based on namespace structure and use ./src
-# as their base directory
-include_directories(${CMAKE_SOURCE_DIR}/src)
-
 # ----------------------------- Configuration -----------------------------
 
 # Build tests
@@ -130,6 +126,7 @@ target_link_libraries(
 target_include_directories(
   wav2letter++
   PUBLIC
+  ${CMAKE_SOURCE_DIR}/src # all includes are based at src/
   ${FLASHLIGHT_INCLUDE_DIRS} # includes are <flashlight/...>
   )
 

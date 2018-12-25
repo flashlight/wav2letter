@@ -16,7 +16,7 @@
 - [FFTW](http://www.fftw.org/) is required for featurization.
 - [KenLM](https://github.com/kpu/kenlm) is required for the decoder. One of
   LZMA, BZip2, or Z is required for LM compression with KenLM.
-- [glags](https://github.com/gflags/gflags) is required.
+- [gflags](https://github.com/gflags/gflags) is required.
 - [glog](https://github.com/google/glog) is required.
 - [Google Test](https://github.com/google/googletest) >= 1.8.0 is required if
   building tests.

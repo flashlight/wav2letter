@@ -5,16 +5,16 @@ All rights reserved.
 This source code is licensed under the BSD-style license found in the
 LICENSE file in the root directory of this source tree.
 
-----------
+---------
 
-Script to package original Librispeech datasets into a form readable in
+Script to package original Mini Librispeech datasets into a form readable in
 wav2letter++ pipelines
 
-Please download all the original datasets in a folder on your own
-1> wget http://www.openslr.org/resources/12/dev-clean.tar.gz
-2> tar xfvz dev-clean.tar.gz
-# Repeat 1 and 2 for train-clean-100, train-clean-360, train-other-500,
-# dev-other, test-clean, test-other
+[If you haven't downloaded the datasets] Please download all the original datasets
+in a folder on your own
+> wget -qO- http://www.openslr.org/resources/12/train-clean-100.tar.gz | tar xvz
+> wget -qO- http://www.openslr.org/resources/12/dev-clean.tar.gz | tar xvz
+> wget -qO- http://www.openslr.org/resources/12/test-clean.tar.gz | tar xvz
 
 Command : prepare_data.py --src [...]/LibriSpeech/ --dst [...]
 
@@ -26,19 +26,52 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import argparse
 import os
 import sys
-from multiprocessing import Pool
 
-import utils
-from tqdm import tqdm
+
+def findtranscriptfiles(dir):
+    files = []
+    for dirpath, _, filenames in os.walk(dir):
+        for filename in filenames:
+            if filename.endswith(".trans.txt"):
+                files.append(os.path.join(dirpath, filename))
+    return files
+
+
+def write_sample(line, idx, dst):
+
+    filename, input, lbl = line.split(" ", 2)
+
+    assert filename and input and lbl
+
+    basepath = os.path.join(dst, "%09d" % idx)
+
+    # flac
+    os.system(
+        "cp {src} {dst}".format(
+            src=os.path.join(os.path.dirname(filename), input + ".flac"),
+            dst=basepath + ".flac",
+        )
+    )
+
+    # wrd
+    words = lbl.strip().lower()
+    with open(basepath + ".wrd", "w") as f:
+        f.write(words)
+
+    # ltr
+    spellings = " | ".join([" ".join(w) for w in words.split()])
+    with open(basepath + ".tkn", "w") as f:
+        f.write(spellings)
+
+    # id
+    with open(basepath + ".id", "w") as f:
+        f.write("file_id\t{fid}".format(fid=idx))
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Librispeech Dataset creation.")
     parser.add_argument("--src", help="source directory")
     parser.add_argument("--dst", help="destination directory", default="./librispeech")
-    parser.add_argument(
-        "-p", "--process", help="# of process for Multiprocessing", default=8, type=int
-    )
 
     args = parser.parse_args()
 
@@ -46,17 +79,7 @@ if __name__ == "__main__":
         str(args.src)
     ), "Librispeech src directory not found - '{d}'".format(d=args.src)
 
-    gender_map = utils.parse_speakers_gender("{src}/SPEAKERS.TXT".format(src=args.src))
-
-    subpaths = {
-        "train-clean-100",
-        "train-clean-360",
-        "train-other-500",
-        "dev-clean",
-        "dev-other",
-        "test-clean",
-        "test-other",
-    }
+    subpaths = ["train-clean-100", "dev-clean", "test-clean"]
 
     os.makedirs(args.dst, exist_ok=True)
 
@@ -72,7 +95,7 @@ if __name__ == "__main__":
 
         sys.stdout.write("analyzing {src}...\n".format(src=src))
         sys.stdout.flush()
-        transcriptfiles = utils.findtranscriptfiles(src)
+        transcriptfiles = findtranscriptfiles(src)
         transcriptfiles.sort()
         sys.stdout.write("writing to {dst}...\n".format(dst=dst))
         sys.stdout.flush()
@@ -84,26 +107,14 @@ if __name__ == "__main__":
                     transcripts.append(tf + " " + line.strip())
 
         n_samples = len(transcripts)
-        with Pool(args.process) as p:
-            r = list(
-                tqdm(
-                    p.imap(
-                        utils.write_sample,
-                        zip(
-                            transcripts,
-                            [gender_map] * n_samples,
-                            range(n_samples),
-                            [dst] * n_samples,
-                        ),
-                    ),
-                    total=n_samples,
-                )
-            )
+        for n in range(n_samples):
+            write_sample(transcripts[n], n, dst)
 
     # create tokens dictionary
-    sys.stdout.write("creating tokens list...\n")
+    tkn_file = os.path.join(args.dst, "data", "tokens.txt")
+    sys.stdout.write("creating tokens file {t}...\n".format(t=tkn_file))
     sys.stdout.flush()
-    with open(os.path.join(dst, "tokens.txt"), "w") as f:
+    with open(tkn_file, "w") as f:
         f.write("|\n")
         f.write("'\n")
         for alphabet in range(ord("a"), ord("z") + 1):

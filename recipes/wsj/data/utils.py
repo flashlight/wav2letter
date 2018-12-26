@@ -151,7 +151,7 @@ def write_sample(sample_data):
         f.write(words)
 
     # ltr
-    with open(out_prefix + ".ltr", "w") as f:
+    with open(out_prefix + ".tkn", "w") as f:
         f.write(spellings)
 
     # id

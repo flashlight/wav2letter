@@ -38,7 +38,7 @@ def write_sample(sample):
             targets.append(phn)
 
     # phn
-    with open(basepath + ".phn", "w") as f:
+    with open(basepath + ".tkn", "w") as f:
         f.write(" ".join(targets))
 
     # id

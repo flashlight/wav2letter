@@ -18,10 +18,9 @@ DEFINE_string(valid, "", "comma-separated list of valid data");
 DEFINE_string(test, "", "comma-separated list of test data");
 DEFINE_int64(batchsize, 1, "batch size (per process in distributed training)");
 DEFINE_string(input, "flac", "input feature");
-DEFINE_string(target, "ltr", "target feature [phn, ltr, wrd]");
 DEFINE_int64(samplerate, 16000, "sample rate (Hz)");
 DEFINE_int64(channels, 1, "number of input channels");
-DEFINE_string(tokens, "letters.txt", "path/to/tokens");
+DEFINE_string(tokens, "tokens.txt", "path/to/tokens");
 DEFINE_int64(
     replabel,
     0,
@@ -226,6 +225,7 @@ DEFINE_string(
     "If empty, uses MPI to initialize.");
 
 // FB SPECIFIC
+DEFINE_string(target, "tkn", "target feature");
 DEFINE_bool(everstoredb, false, "use Everstore db for reading data");
 DEFINE_string(
     targettype,

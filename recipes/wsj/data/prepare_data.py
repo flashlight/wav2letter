@@ -4,9 +4,9 @@ All rights reserved.
 
 This source code is licensed under the BSD-style license found in the
 LICENSE file in the root directory of this source tree.
-"""
 
-"""
+----------
+
 Script to package original WSJ datasets into a form readable in wav2letter++
 pipelines
 
@@ -155,9 +155,9 @@ if __name__ == "__main__":
             )
 
     # create letter dictionary
-    sys.stdout.write("creating letter list...\n")
+    sys.stdout.write("creating tokens list...\n")
     sys.stdout.flush()
-    with open(os.path.join(args.dst, "letters.txt"), "w") as f:
+    with open(os.path.join(args.dst, "data", "tokens.txt"), "w") as f:
         f.write("|\n")
         f.write("'\n")
         for alphabet in range(ord("a"), ord("z") + 1):

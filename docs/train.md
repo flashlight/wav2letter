@@ -44,11 +44,11 @@ can be found [here](../src/common/Defines.cpp).
 The `datadir` flag is the base path to where all the `train` and `valid`
 dataset directories live. Every `train` path will be prefixed by `datadir`.
 Multiple datasets can be passed to `train` and `valid` as a comma-separated
-list.
+list. More details on dataset preparation can be found [here](data_prep.md).
 
 Similarly, the `archdir` and `tokensdir` are (optional) base paths to where the
 `arch` and `token` files live. For example, the complete architecture file path
-will be `<archdir>/<arch>`.
+will be `<archdir>/<arch>`. More details on specifying architecture files can be found [here](arch.md).
 
 The `rundir` flag is the base directory where the model will be saved and the
 `runname` is the subdirectory that will be created to save the model and

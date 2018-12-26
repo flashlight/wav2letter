@@ -55,9 +55,10 @@ int main(int argc, char** argv) {
   /* ===================== Parse Options ===================== */
   LOG(INFO) << "Parsing command line flags";
   gflags::ParseCommandLineFlags(&argc, &argv, false);
-  if (!FLAGS_flagsfile.empty()) {
-    LOG(INFO) << "Reading flags from file " << FLAGS_flagsfile;
-    gflags::ReadFromFlagsFile(FLAGS_flagsfile, argv[0], true);
+  auto flagsfile = FLAGS_flagsfile;
+  if (!flagsfile.empty()) {
+    LOG(INFO) << "Reading flags from file " << flagsfile;
+    gflags::ReadFromFlagsFile(flagsfile, argv[0], true);
   }
 
   /* ===================== Create Network ===================== */
@@ -79,14 +80,19 @@ int main(int argc, char** argv) {
     }
     LOG(INFO) << "[Network] Updating flags from config file: " << FLAGS_am;
     gflags::ReadFlagsFromString(flags->second, gflags::GetArgv0(), true);
+
+    // override with user-specified flags
     gflags::ParseCommandLineFlags(&argc, &argv, false);
+    if (!flagsfile.empty()) {
+      gflags::ReadFromFlagsFile(flagsfile, argv[0], true);
+    }
   }
 
   LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   /* ===================== Create Dictionary ===================== */
 
-  auto tokenDict = createTokenDict(FLAGS_tokens);
+  auto tokenDict = createTokenDict(pathsConcat(FLAGS_tokensdir, FLAGS_tokens));
   int numClasses = tokenDict.indexSize();
   LOG(INFO) << "Number of classes (network): " << numClasses;
 

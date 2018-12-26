@@ -46,13 +46,13 @@ std::pair<std::string, std::string> getStatus(
   insertItem(
       "runtime",
       format("%02d:%02d:%02d", (rt / 60 / 60), (rt / 60) % 60, rt % 60));
-  insertItem("ms(bch)", format("%.2f", meters.timer.value() * 1000));
-  insertItem("ms(smp)", format("%.2f", meters.sampletimer.value() * 1000));
-  insertItem("ms(fwd)", format("%.2f", meters.fwdtimer.value() * 1000));
+  insertItem("bch(ms)", format("%.2f", meters.timer.value() * 1000));
+  insertItem("smp(ms)", format("%.2f", meters.sampletimer.value() * 1000));
+  insertItem("fwd(ms)", format("%.2f", meters.fwdtimer.value() * 1000));
   insertItem(
-      "ms(crit-fwd)", format("%.2f", meters.critfwdtimer.value() * 1000));
-  insertItem("ms(bwd)", format("%.2f", meters.bwdtimer.value() * 1000));
-  insertItem("ms(optim)", format("%.2f", meters.optimtimer.value() * 1000));
+      "crit-fwd(ms)", format("%.2f", meters.critfwdtimer.value() * 1000));
+  insertItem("bwd(ms)", format("%.2f", meters.bwdtimer.value() * 1000));
+  insertItem("optim(ms)", format("%.2f", meters.optimtimer.value() * 1000));
   insertItem("loss", format("%10.5f", meters.loss.value()[0]));
 
   insertItem("train-" + errtype, format("%5.2f", meters.train.edit.value()[0]));

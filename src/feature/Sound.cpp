@@ -55,11 +55,12 @@ SoundInfo loadSoundInfo(const char* filename) {
   info.format = 0;
 
   if (!filename) {
-    LOG(FATAL) << "sndfile: invalid filename";
+    LOG(FATAL) << "sndfile: invalid filename - " << filename;
   }
 
   if (!(file = sf_open(filename, SFM_READ, &info))) {
-    LOG(FATAL) << "sndfile: unknown format or could not open file";
+    LOG(FATAL) << "sndfile: unknown format or could not open file - "
+               << filename;
   }
 
   sf_close(file);
@@ -79,11 +80,12 @@ extern std::vector<T> loadSound(const char* filename) {
   info.format = 0;
 
   if (!filename) {
-    LOG(FATAL) << "sndfile: invalid filename";
+    LOG(FATAL) << "sndfile: invalid filename - " << filename;
   }
 
   if (!(file = sf_open(filename, SFM_READ, &info))) {
-    LOG(FATAL) << "sndfile: unknown format or could not open file";
+    LOG(FATAL) << "sndfile: unknown format or could not open file - "
+               << filename;
   }
 
   std::vector<T> in(info.frames * info.channels);

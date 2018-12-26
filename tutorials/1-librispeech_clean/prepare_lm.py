@@ -9,9 +9,7 @@ LICENSE file in the root directory of this source tree.
 
 Script to create LM data into a form readable in wav2letter++ decoder pipeline
 
-Please install `kenlm` on your own - https://github.com/kpu/kenlm
-
-Command : prepare_lm.py --dst [...] --kenlm [...]/kenlm/
+Command : prepare_lm.py --dst [...]
 """
 
 from __future__ import absolute_import, division, print_function, unicode_literals
@@ -22,18 +20,13 @@ import re
 import sys
 
 
-lm = "4-gram"
+lm = "3-gram"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Librispeech LM data creation.")
     parser.add_argument("--dst", help="destination directory", default="./librispeech")
-    parser.add_argument("--kenlm", help="location to installed kenlm directory")
 
     args = parser.parse_args()
-
-    assert os.path.isdir(str(args.kenlm)), "kenlm directory not found - '{d}'".format(
-        d=args.kenlm
-    )
 
     lm_dir = os.path.join(args.dst, "lm")
     os.makedirs(lm_dir, exist_ok=True)
@@ -49,14 +42,12 @@ if __name__ == "__main__":
     )
 
     # temporary arpa file in lowercase
-    sys.stdout.write("\nSaving ARPA LM file in binary format ...\n\n")
+    sys.stdout.write("\nConverting to lowercase ...\n\n")
     sys.stdout.flush()
     os.system(
         "cat {arpa} | tr '[:upper:]' '[:lower:]' > {arpa}.tmp".format(arpa=arpa_file)
     )
-    binary = os.path.join(args.kenlm, "build", "bin", "build_binary")
-    os.system("{bin} {i}.tmp {o}".format(bin=binary, i=arpa_file, o=arpa_file + ".bin"))
-    os.remove("{arpa}.tmp".format(arpa=arpa_file))
+    os.system("mv {arpa}.tmp {arpa}".format(arpa=arpa_file))
 
     # write words to lexicon.txt file
     dict_file = os.path.join(lm_dir, "lexicon.txt")

@@ -63,7 +63,7 @@ def write_sample(sample):
 
     # ltr
     spellings = " | ".join([" ".join(w) for w in words.split()])
-    with open(basepath + ".ltr", "w") as f:
+    with open(basepath + ".tkn", "w") as f:
         f.write(spellings)
 
     # id

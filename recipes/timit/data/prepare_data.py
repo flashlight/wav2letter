@@ -47,7 +47,7 @@ if __name__ == "__main__":
     sys.stdout.flush()
 
     in_phn_path = os.path.join(curdir, "phones.txt")
-    out_tkn_path = os.path.join(args.dst, "phones.txt")
+    out_tkn_path = os.path.join(args.dst, "data", "tokens.txt")
 
     with open(in_phn_path, "r") as fr:
         with open(out_tkn_path, "w") as fw:

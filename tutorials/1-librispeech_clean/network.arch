@@ -1,0 +1,23 @@
+# 8 Temporal Convolutions followed by 2 Linear layers with ReLU activations.
+# First Conv layer has stride of 2. All Conv layers perform "SAME" padding.
+V -1 1 NFEAT 0
+C2 NFEAT 256 8 1 2 1 -1 -1
+R
+C2 256 256 8 1 1 1 -1 -1
+R
+C2 256 256 8 1 1 1 -1 -1
+R
+C2 256 256 8 1 1 1 -1 -1
+R
+C2 256 256 8 1 1 1 -1 -1
+R
+C2 256 256 8 1 1 1 -1 -1
+R
+C2 256 256 8 1 1 1 -1 -1
+R
+C2 256 256 8 1 1 1 -1 -1
+R
+RO 2 0 3 1
+L 256 512
+R
+L 512 NLABEL

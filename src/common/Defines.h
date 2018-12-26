@@ -71,7 +71,6 @@ DECLARE_string(valid);
 DECLARE_string(test);
 DECLARE_int64(batchsize);
 DECLARE_string(input);
-DECLARE_string(target);
 DECLARE_int64(samplerate);
 DECLARE_int64(channels);
 DECLARE_string(tokens);
@@ -207,6 +206,7 @@ DECLARE_int64(world_size);
 DECLARE_string(rndv_filepath);
 
 /* ========== FB SPECIFIC ========== */
+DECLARE_string(target);
 DECLARE_bool(everstoredb);
 DECLARE_string(targettype);
 

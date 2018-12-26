@@ -152,6 +152,12 @@ int main(int argc, char** argv) {
             afToVector<float>(criterion->param(0).array());
       }
 
+      auto sampleIds = afToVector<int>(sample[kFileIdIdx]);
+      auto sampleIdsStr =
+          getSampleIdStrings(sampleIds, sample[kFileIdIdx].dims());
+      // while decoding we use batchsize 1 and hence ds only has 1 sampleid
+      emissionSet->sampleIds.emplace_back(sampleIdsStr[0]);
+
       ++cnt;
       if (cnt == FLAGS_maxload) {
         break;
@@ -312,6 +318,7 @@ int main(int argc, char** argv) {
         auto emission = emissionSet->emissions[s];
         auto wordTarget = emissionSet->wordTargets[s];
         auto letterTarget = emissionSet->letterTargets[s];
+        auto sampleId = emissionSet->sampleIds[s];
         auto T = emissionSet->emissionT[s];
         auto N = emissionSet->emissionN;
 
@@ -361,7 +368,8 @@ int main(int argc, char** argv) {
             buffer << "|p|: " << tensor2letters(letterPrediction, tokenDict)
                    << std::endl;
           }
-          buffer << "[sample: " << s << ", WER: " << meters.wer.value()[0]
+          buffer << "[sample: " << sampleId
+                 << ", WER: " << meters.wer.value()[0]
                  << "\%, LER: " << meters.ler.value()[0]
                  << "\%, slice WER: " << meters.werSlice.value()[0]
                  << "\%, slice LER: " << meters.lerSlice.value()[0]
@@ -371,7 +379,7 @@ int main(int argc, char** argv) {
 
           std::cout << buffer.str();
           if (!FLAGS_sclite.empty()) {
-            std::string suffix = "(SPEAKER_" + std::to_string(s) + ")\n";
+            std::string suffix = "(" + sampleId + ")\n";
             writeHyp(wordPredictionStr + suffix);
             writeRef(wordTargetStr + suffix);
             writeLog(buffer.str());

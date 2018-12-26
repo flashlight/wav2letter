@@ -107,6 +107,7 @@ struct EmissionSet {
   std::vector<std::vector<float>> emissions;
   std::vector<std::vector<int>> wordTargets;
   std::vector<std::vector<int>> letterTargets;
+  std::vector<std::string> sampleIds;
   std::vector<float> transition;
   std::vector<int> emissionT;
   int emissionN;
@@ -145,6 +146,10 @@ std::vector<int> wrdTensor2tknTensor(
     const Dictionary&,
     const Dictionary&,
     const int);
+
+// Converts array fire vector of sampleIDs into vector of strings.
+std::vector<std::string> getSampleIdStrings(const std::vector<int>&, af::dim4);
+
 } // namespace w2l
 
 #include "Utils-inl.h"

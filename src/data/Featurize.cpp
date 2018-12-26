@@ -202,7 +202,7 @@ W2lFeatureData featurize(
         [](unsigned char c) -> int { return int(c); });
     offset += maxSampleIdLen;
   }
-  feat.sampleIdsDims = af::dim4(batchSz, maxSampleIdLen);
+  feat.sampleIdsDims = af::dim4(maxSampleIdLen, batchSz);
 
   return feat;
 }

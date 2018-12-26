@@ -21,7 +21,7 @@ endif()
 # The SndFile CMake build doesn't correctly export targets for
 # its Vorbis and FLAC dependencies, so they need to be manually found.
 function(findAndCheckSndFileDependency DEP)
-  find_dependency(${DEP} REQUIRED)
+  find_package(${DEP} REQUIRED)
   if (${DEP}_FOUND)
     message(STATUS "Required SndFile dependency ${DEP} found.")
   else()

@@ -4,8 +4,6 @@ This is a step-by-step tutorial on how to build a simple end-to-end speech recog
 We will use "clean" speech subset of [Librispeech](http://www.openslr.org/12) corpus.
 The dataset consits of read English speech (sampled at 16KHz) from public domain audio books.
 
-Before starting this tutorial, we require that you have successfully downloaded and built wav2letter++ using the instruction [here](installation.md).
-
 ### Step 1: Data preparation
 
 Create an experiment path and download the dataset.
@@ -78,7 +76,7 @@ Explore the dataset created
 #
 # 9 directories, 8 files
 ```
-You can find more details about dataset preparation [here](data_prep.md)
+You can find more details about dataset preparation [here](../../docs/data_prep.md)
 
 ### Step 2: Training the Acoustic Model
 
@@ -124,7 +122,7 @@ not concerned about WER performance.
 
 `001_perf` - perf, loss, LER metrics for each epoch
 
-You can find more details about training with wav2letter++ [here](train.md) and specifying the architecture files [here](arch.md).
+You can find more details about training with wav2letter++ [here](../../docs/train.md) and specifying the architecture files [here](../../docs/arch.md).
 
 ### Step 3: Decoding
 During decoding, we use lexicon, acoustic model and language model and tune a set of hyperparameters
@@ -139,7 +137,7 @@ to get the best word transcription for a given audio file using beam search.
 # [Decode data/test-clean (2620 samples) in 199.436s (actual decoding time 0.177s/sample) -- WER: 18.9687, LER: 8.71737]
 ```
 
-We got a WER of 18.96 on test-clean! You can find more details about decoding with wav2letter++ [here](decode.md)
+We got a WER of 18.96 on test-clean! You can find more details about decoding with wav2letter++ [here](../../docs/decode.md)
 
 ### Conclusion
 

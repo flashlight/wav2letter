@@ -16,11 +16,11 @@ See [Building Instructions](docs/installation.md) for details.
 - [Training](docs/train.md)
 - [Testing / Decoding](docs/decoder.md)
 
-Tutorials can be found in `tutorials` folder.
+To get started with wav2letter++, checkout the [tutorials](tutorials) section.
 
-We also provide complete recipes for WSJ, Timit and Librispeech and they can be found in `recipes` folder.
+We also provide complete recipes for WSJ, Timit and Librispeech and they can be found in [recipes](recipes) folder.
 
-# Citation
+## Citation
 
 If you use the code in your paper, then please cite it as:
 

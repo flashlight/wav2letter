@@ -30,6 +30,30 @@ std::vector<T> afToVector(const af::array& arr) {
   return vec;
 }
 
+// Converts an integer array to corresponding ascii representation.
+// "-1"s are ignored.
+template <>
+inline std::vector<std::string> afToVector(const af::array& arr) {
+  auto maxLen = arr.dims(0);
+  auto batchSz = arr.dims(1);
+  auto intVec = afToVector<int>(arr);
+
+  std::vector<std::string> vec(batchSz);
+  std::vector<char> charVec(maxLen);
+  int curLen;
+  for (int b = 0; b < batchSz; ++b) {
+    auto offset = maxLen * b;
+    for (curLen = 0; curLen < maxLen; ++curLen) {
+      if (intVec[offset + curLen] == -1) {
+        break;
+      }
+      charVec[curLen] = static_cast<char>(intVec[offset + curLen]);
+    }
+    vec[b] = std::string(charVec.begin(), charVec.begin() + curLen);
+  }
+  return vec;
+}
+
 template <typename T>
 std::vector<T> afToVector(const fl::Variable& var) {
   return afToVector<T>(var.array());
@@ -146,9 +170,6 @@ std::vector<int> wrdTensor2tknTensor(
     const Dictionary&,
     const Dictionary&,
     const int);
-
-// Converts array fire vector of sampleIDs into vector of strings.
-std::vector<std::string> getSampleIdStrings(const std::vector<int>&, af::dim4);
 
 } // namespace w2l
 

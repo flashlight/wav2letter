@@ -435,23 +435,4 @@ std::vector<int> wrdTensor2tknTensor(
   }
   return ret;
 }
-
-std::vector<std::string> getSampleIdStrings(
-    const std::vector<int>& sampleIds,
-    af::dim4 sampleIdDims) {
-  std::vector<std::string> sampleIdsStr;
-  auto maxLenStr = sampleIdDims.dims[0];
-  for (int i = 0; i < sampleIdDims.dims[1]; i++) {
-    auto offset = maxLenStr * i;
-    std::vector<char> charVec;
-    for (int j = 0; j < maxLenStr; ++j) {
-      if (sampleIds[i * offset + j] == -1) {
-        break;
-      }
-      charVec.emplace_back(char(sampleIds[i * offset + j]));
-    }
-    sampleIdsStr.emplace_back(charVec.begin(), charVec.end());
-  }
-  return sampleIdsStr;
-}
 } // namespace w2l

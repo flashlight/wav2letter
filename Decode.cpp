@@ -152,9 +152,7 @@ int main(int argc, char** argv) {
             afToVector<float>(criterion->param(0).array());
       }
 
-      auto sampleIds = afToVector<int>(sample[kFileIdIdx]);
-      auto sampleIdsStr =
-          getSampleIdStrings(sampleIds, sample[kFileIdIdx].dims());
+      auto sampleIdsStr = afToVector<std::string>(sample[kFileIdIdx]);
       // while decoding we use batchsize 1 and hence ds only has 1 sampleid
       emissionSet->sampleIds.emplace_back(sampleIdsStr[0]);
 

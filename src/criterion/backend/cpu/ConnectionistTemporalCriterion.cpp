@@ -50,7 +50,7 @@ std::vector<Variable> ConnectionistTemporalCriterion::forward(
       const float* inputVec = batchInputVec.data() + b * N * T;
       const int* targetVec = batchTargetVec.data() + b * batchL;
 
-      const int64_t L = w2l::getTargetSize(targetVec, batchL);
+      int64_t L = w2l::getTargetSize(targetVec, batchL);
       const int64_t S = 2 * L + 1;
       int64_t R = w2l::countRepeats(targetVec, L);
 
@@ -133,7 +133,7 @@ std::vector<Variable> ConnectionistTemporalCriterion::forward(
       const int* targetVec = batchTargetVec.data() + b * batchL;
       float* grad = batchInGrad.data() + b * N * T;
 
-      const int64_t L = w2l::getTargetSize(targetVec, batchL);
+      int64_t L = w2l::getTargetSize(targetVec, batchL);
       const int64_t S = 2 * L + 1;
       const int64_t R = w2l::countRepeats(targetVec, L);
 

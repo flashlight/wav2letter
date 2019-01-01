@@ -83,22 +83,31 @@ target_link_libraries(
   flashlight::flashlight
   ${GLOG_LIBRARIES}
   ${cereal_LIBRARIES}
-  ArrayFire::afcuda
-  ${CUDA_LIBRARIES}
-  warpctc # added directly from subdir
   )
 
 target_include_directories(
   criterion
   INTERFACE
-  src
-  src/criterion
   ${GLOG_INCLUDE_DIRS}
   ${cereal_INCLUDE_DIRS}
-  ${CUDA_INCLUDE_DIRS}
-  ${ArrayFire_INCLUDE_DIRS}
-  ${WARPCTC_INCLUDE_DIR}
   )
+
+if (CRIT_BACKEND_USE_CUDA)
+  target_link_libraries(
+    criterion
+    INTERFACE
+    ${CUDA_LIBRARIES}
+    warpctc # added directly from subdir
+    )
+  target_include_directories(
+    criterion
+    INTERFACE
+    ${CUDA_INCLUDE_DIRS}
+    ${WARPCTC_INCLUDE_DIR}
+    )
+elseif (CRIT_BACKEND_USE_CPU)
+  # OpenMP is already linked - see top-level CMakeLists.txt
+endif()
 
 # ---------------------------- Attention/Window -----------------------------
 # Attention

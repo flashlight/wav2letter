@@ -45,7 +45,7 @@ The directories for the dataset is specified using `-datadir`, `-train`, `-valid
 
 Each sample will have 4 corresponding files
 - `.flac/.wav` - audio file. The extension is specified using `-input` flag.
-- `.wrd` - words file constaining the transcription.
+- `.wrd` - words file containing the transcription.
 - `.tkn` - tokens file. The extension is specified using `-target` flag.
 - `.id `- identifiers for the file. Each line is key-value pair separated by tab
 

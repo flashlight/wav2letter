@@ -2,7 +2,7 @@
 
 This is a step-by-step tutorial on how to build a simple end-to-end speech recognition system using wav2letter++.
 We will use "clean" speech subset of [Librispeech](http://www.openslr.org/12) corpus.
-The dataset consits of read English speech (sampled at 16KHz) from public domain audio books.
+The dataset consists of read English speech (sampled at 16KHz) from public domain audio books.
 
 ### Step 1: Data preparation
 
@@ -87,7 +87,7 @@ For the neural network, we will use a 8-layer Temporal Convolution blocks with R
 To start training
 
 ```shell
-# Replace [...] with appopriate paths in train.cfg before starting
+# Replace [...] with appropriate paths in train.cfg before starting
 > [...]/wav2letter/build/Train train --flagsfile [...]/wav2letter/tutorials/librispeech_clean/train.cfg
 # ...
 # ...
@@ -129,7 +129,7 @@ During decoding, we use lexicon, acoustic model and language model and tune a se
 to get the best word transcription for a given audio file using beam search.
 
 ```shell
-# Replace [...] with appopriate paths in decode.cfg before starting
+# Replace [...] with appropriate paths in decode.cfg before starting
 > [...]/wav2letter/build/Decode --flagsfile [...]/wav2letter/tutorials/librispeech_clean/decode.cfg
 # ...
 # ...

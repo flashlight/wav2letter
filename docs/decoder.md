@@ -35,7 +35,7 @@ also have to set the flags `am` and `emission_dir` to the path of the acoustic
 model and the directory where we want to save the emission set. The flags
 `datadir` and `test` are combined to specify the datasets we want to run an
 experiment on.  Note that we can test on more than 1 dataset, they must be in
-the same `datadir` and are specified as a comma-sperated list to `test`.
+the same `datadir` and are specified as a comma-separated list to `test`.
 
 ```
 <test_cpp_binary> \

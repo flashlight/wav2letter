@@ -25,7 +25,7 @@
 - `flashlight` requires CUDA >= 9.2; if building wav2letter++ with the `CUDA`
   criterion backend, CUDA >= 9.2 is required. Using [CUDA 9.2](
   https://developer.nvidia.com/cuda-92-download-archive) is recommended.
-- If building with the `CPU` criteiron backend, wav2letter++ will try to
+- If building with the `CPU` criterion backend, wav2letter++ will try to
   compile with [OpenMP](https://www.openmp.org/), for better performance.
 
 ## Build Options

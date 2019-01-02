@@ -426,6 +426,10 @@ int main(int argc, char** argv) {
     int64_t curEpoch = startEpoch;
     int64_t sampleIdx = 0;
     while (curEpoch < nepochs) {
+      double lrScale = std::pow(FLAGS_gamma, curEpoch / FLAGS_stepsize);
+      netopt.setLr(lrScale * FLAGS_lr);
+      critopt.setLr(lrScale * FLAGS_lrcrit);
+
       ++curEpoch;
       ntwrk->train();
       crit->train();
@@ -516,9 +520,6 @@ int main(int argc, char** argv) {
       if (FLAGS_reportiters == 0) {
         runValAndSaveModel(curEpoch, netopt.getLr(), critopt.getLr());
       }
-      double lrScale = std::pow(FLAGS_gamma, curEpoch / FLAGS_stepsize);
-      netopt.setLr(lrScale * FLAGS_lr);
-      critopt.setLr(lrScale * FLAGS_lrcrit);
     }
   };
 

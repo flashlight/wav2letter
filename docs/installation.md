@@ -18,7 +18,7 @@
   LZMA, BZip2, or Z is required for LM compression with KenLM.
 - [gflags](https://github.com/gflags/gflags) is required.
 - [glog](https://github.com/google/glog) is required.
-- [Google Test](https://github.com/google/googletest) >= 1.8.0 is required if
+- [gtest and gmock](https://github.com/google/googletest) >= 1.8.0 are required if
   building tests.
 
 ### Optional Dependencies

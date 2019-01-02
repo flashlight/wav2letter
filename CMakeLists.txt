@@ -21,14 +21,10 @@ option(BUILD_EXAMPLES "Build examples for wav2letter++" ON)
 
 # ------------------------ Global External Dependencies ------------------------
 # ArrayFire
+# The correct ArrayFire backend target is transitively included by flashlight
 find_package(ArrayFire 3.6.1 REQUIRED)
 if (ArrayFire_FOUND)
   message(STATUS "ArrayFire found (include: ${ArrayFire_INCLUDE_DIRS}, library: ${ArrayFire_LIBRARIES})")
-  if (AFML_USE_UNIFIED)
-    # Set the AF_PATH environment variable to wherever the ArrayFire libs are
-    # located so they can be loaded in the unified backend
-    set(ENV{AF_PATH} ${ArrayFire_LIBRARIES})
-  endif ()
 else()
   message(FATAL_ERROR "ArrayFire not found")
 endif()

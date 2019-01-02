@@ -18,7 +18,6 @@ target_link_libraries(
   INTERFACE
   ${GLOG_LIBRARIES}
   ${GFLAGS_LIBRARIES}
-  ${ArrayFire_LIBRARIES}
   flashlight::flashlight
   )
 

@@ -134,11 +134,13 @@ std::pair<Variable, Variable> Seq2SeqCriterion::vectorizedDecoder(
   if (U > 1) {
     // Slice off eos
     auto y = target(af::seq(0, U - 2), af::span);
-    auto mask =
-        Variable(af::randu(y.dims()) * 100 <= pctTeacherForcing_, false);
-    auto samples =
-        Variable((af::randu(y.dims()) * (nClass_ - 1)).as(s32), false);
-    y = mask * y + (1 - mask) * samples;
+    if (train_) {
+      auto mask =
+          Variable(af::randu(y.dims()) * 100 <= pctTeacherForcing_, false);
+      auto samples =
+          Variable((af::randu(y.dims()) * (nClass_ - 1)).as(s32), false);
+      y = mask * y + (1 - mask) * samples;
+    }
 
     // [hiddendim, targetlen-1, batchsize]
     auto yEmbed = embedding()->forward(y);
@@ -185,8 +187,8 @@ std::pair<Variable, Variable> Seq2SeqCriterion::decoder(
     std::tie(ox, state) = decodeStep(input, y, state);
     outvec.push_back(ox);
     alphaVec.push_back(state.alpha);
-    y = target(u, af::span);
-    if (af::allTrue<bool>(
+    if (!train_ ||
+        af::allTrue<bool>(
             af::randu(1) * 100 <= af::constant(pctTeacherForcing_, 1))) {
       y = target(u, af::span);
     } else {

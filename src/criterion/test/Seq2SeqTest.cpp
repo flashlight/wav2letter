@@ -225,7 +225,12 @@ TEST(Seq2SeqTest, Seq2SeqAttn) {
 }
 
 TEST(Seq2SeqTest, Serialization) {
-  const std::string path = "/tmp/" + std::string(getenv("USER")) + "_test.mdl";
+  char* user = getenv("USER");
+  std::string userstr = "unknown";
+  if (user != nullptr) {
+    userstr = std::string(user);
+  }
+  const std::string path = "/tmp/" + userstr + "_test.mdl";
 
   int N = 5, H = 8, B = 1, T = 10, U = 5, maxoutputlen = 100;
 

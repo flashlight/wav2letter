@@ -689,7 +689,12 @@ TEST(CriterionTest, LinSegCompareLua) {
 }
 
 TEST(CriterionTest, AsgSerialization) {
-  const std::string path = "/tmp/" + std::string(getenv("USER")) + "_test.mdl";
+  char* user = getenv("USER");
+  std::string userstr = "unknown";
+  if (user != nullptr) {
+    userstr = std::string(user);
+  }
+  const std::string path = "/tmp/" + userstr + "_test.mdl";
   int N = 500;
 
   auto asg = std::make_shared<AutoSegmentationCriterion>(N);

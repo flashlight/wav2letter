@@ -46,7 +46,12 @@ TEST(W2lModuleTest, W2lSeqModule) {
 }
 
 TEST(W2lModuleTest, Serialization) {
-  const std::string path = "/tmp/" + std::string(getenv("USER")) + "_test.mdl";
+  char* user = getenv("USER");
+  std::string userstr = "unknown";
+  if (user != nullptr) {
+    userstr = std::string(user);
+  }
+  const std::string path = "/tmp/" + userstr + "_test.mdl";
   const std::string archfile = pathsConcat(archDir, "test_w2l_rnn_arch.txt");
 
   int C = 1, N = 5, B = 1, T = 10;

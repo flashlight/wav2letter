@@ -127,12 +127,12 @@ TEST(DataTest, targetFeaturizer) {
 
 TEST(DataTest, NumberedFilesLoader) {
   NumberedFilesLoader numfilesds(
-      w2l::pathsConcat(loadPath, "switchboard"), "flac", {{kTargetIdx, "ltr"}});
+      w2l::pathsConcat(loadPath, "dataset"), "wav", {{kTargetIdx, "tkn"}});
 
-  ASSERT_EQ(numfilesds.size(), 5);
+  ASSERT_EQ(numfilesds.size(), 3);
 
-  auto sample = numfilesds.get(3);
-  std::vector<std::string> expectedTarget = {"u", "h", "h", "u", "h"};
+  auto sample = numfilesds.get(1);
+  std::vector<std::string> expectedTarget = {"u", "h", "o", "h"};
   ASSERT_EQ(sample.targets[kTargetIdx].size(), expectedTarget.size());
   for (int i = 0; i < expectedTarget.size(); ++i) {
     ASSERT_EQ(sample.targets[kTargetIdx][i], expectedTarget[i]);
@@ -142,12 +142,12 @@ TEST(DataTest, NumberedFilesLoader) {
   // ASSERT_EQ(sample.info.frames, 10054);
   // ASSERT_EQ(sample.info.channels, 1);
 
-  ASSERT_EQ(sample.input.size(), 10826);
+  ASSERT_EQ(sample.input.size(), 24000);
 
-  ASSERT_NEAR(sample.input[0], 0.00024414062, 1E-6);
-  ASSERT_NEAR(sample.input[10], 0, 1E-6);
-  ASSERT_NEAR(sample.input[674], 0, 1E-6);
-  ASSERT_NEAR(sample.input[5000], -0.00024414062, 1E-6);
+  ASSERT_NEAR(sample.input[0], 0.03092256002, 1E-6);
+  ASSERT_NEAR(sample.input[10], -0.49759358, 1E-6);
+  ASSERT_NEAR(sample.input[674], 0.49851027, 1E-6);
+  ASSERT_NEAR(sample.input[5000], 0, 1E-6);
   ASSERT_NEAR(sample.input[10000], 0, 1E-6);
 }
 
@@ -160,28 +160,29 @@ TEST(DataTest, W2lDataset) {
   w2l::FLAGS_replabel = 0;
   w2l::FLAGS_surround = "";
   w2l::FLAGS_dataorder = "none";
+  w2l::FLAGS_input = "wav";
 
   auto dict = getDict();
   DictionaryMap dicts;
   dicts.insert({kTargetIdx, dict});
 
-  W2lNumberedFilesDataset ds(
-      w2l::pathsConcat(loadPath, "switchboard"), dicts, 1);
+  W2lNumberedFilesDataset ds(w2l::pathsConcat(loadPath, "dataset"), dicts, 1);
 
-  auto fields = ds.get(3);
+  auto fields = ds.get(0);
   auto& input = fields[kInputIdx];
   auto& target = fields[kTargetIdx];
-  std::vector<int> expectedTarget = {20, 7, 20, 7}; // Transcript is "uh-huh"
+  std::vector<int> expectedTarget = {20, 7, 20, 7}; // Tokens are "uh-huh"
   ASSERT_EQ(target.dims(), af::dim4(expectedTarget.size()));
   for (int i = 0; i < expectedTarget.size(); ++i) {
     ASSERT_EQ(target(i).scalar<int>(), expectedTarget[i]);
   }
-  ASSERT_EQ(input.dims(), af::dim4(10826));
+  ASSERT_EQ(input.dims(), af::dim4(24000));
 }
 
 TEST(DataTest, W2lDatasetDeterministicSampling) {
+  w2l::FLAGS_input = "wav";
   w2l::FLAGS_target = "phn";
-  std::string hubPaths = "timit/train";
+  std::string hubPaths = "dataset/train";
   auto dict = createTokenDict(w2l::pathsConcat(loadPath, "dict39.phn"));
   DictionaryMap dicts;
   dicts.insert({kTargetIdx, dict});

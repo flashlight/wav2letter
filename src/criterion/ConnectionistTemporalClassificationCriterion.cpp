@@ -6,27 +6,29 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "ConnectionistTemporalCriterion.h"
+#include "ConnectionistTemporalClassificationCriterion.h"
 
 using namespace fl;
 
 namespace w2l {
 
-ConnectionistTemporalCriterion::ConnectionistTemporalCriterion(
-    w2l::CriterionScaleMode scalemode /* = w2l::CriterionScaleMode::NONE */)
+ConnectionistTemporalClassificationCriterion::
+    ConnectionistTemporalClassificationCriterion(
+        w2l::CriterionScaleMode scalemode /* = w2l::CriterionScaleMode::NONE */)
     : scaleMode_(scalemode) {}
 
-af::array ConnectionistTemporalCriterion::viterbiPath(const af::array& input) {
+af::array ConnectionistTemporalClassificationCriterion::viterbiPath(
+    const af::array& input) {
   af::array bestpath, maxvalues;
   af::max(maxvalues, bestpath, input, 0);
   return af::moddims(bestpath, bestpath.dims(1), bestpath.dims(2));
 }
 
-std::string ConnectionistTemporalCriterion::prettyString() const {
-  return "ConnectionistTemporalCriterion";
+std::string ConnectionistTemporalClassificationCriterion::prettyString() const {
+  return "ConnectionistTemporalClassificationCriterion";
 }
 
-void ConnectionistTemporalCriterion::validate(
+void ConnectionistTemporalClassificationCriterion::validate(
     const Variable& input,
     const Variable& target) {
   if (input.isempty()) {

@@ -41,7 +41,7 @@ endif()
 # ----------------------------- Lib -----------------------------
 set(
   CRITERION_SOURCES
-  ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionistTemporalCriterion.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionistTemporalClassificationCriterion.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/CriterionUtils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ForceAlignmentCriterion.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/FullConnectionCriterion.cpp
@@ -52,13 +52,13 @@ if (CRIT_BACKEND_USE_CUDA)
   set(
     CRITERION_SOURCES
     ${CRITERION_SOURCES}
-    ${CMAKE_CURRENT_SOURCE_DIR}/backend/cuda/ConnectionistTemporalCriterion.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/backend/cuda/ConnectionistTemporalClassificationCriterion.cpp
   )
 elseif (CRIT_BACKEND_USE_CPU OR CRIT_BACKEND_USE_OPENCL)
   set(
     CRITERION_SOURCES
     ${CRITERION_SOURCES}
-    ${CMAKE_CURRENT_SOURCE_DIR}/backend/cpu/ConnectionistTemporalCriterion.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/backend/cpu/ConnectionistTemporalClassificationCriterion.cpp
   )
 endif ()
 

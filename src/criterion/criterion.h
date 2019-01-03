@@ -9,7 +9,7 @@
 #pragma once
 
 #include <criterion/AutoSegmentationCriterion.h>
-#include <criterion/ConnectionistTemporalCriterion.h>
+#include <criterion/ConnectionistTemporalClassificationCriterion.h>
 #include <criterion/CriterionUtils.h>
 #include <criterion/Defines.h>
 #include <criterion/ForceAlignmentCriterion.h>

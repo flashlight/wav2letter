@@ -22,7 +22,7 @@ using namespace w2l;
 int main() {
   af::info();
   af::setDevice(1);
-  auto ctc = ConnectionistTemporalCriterion();
+  auto ctc = ConnectionistTemporalClassificationCriterion();
 
   int N = 30, T = 487, L = 34, B = 10;
 

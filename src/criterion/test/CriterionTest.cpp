@@ -67,7 +67,7 @@ TEST(CriterionTest, CTCEmptyTarget) {
   // Non-empty input, Empty target, batchsize > 0
   auto input = Variable(af::array(3, 2, 5), true);
   auto target = Variable(af::array(0, 5), false);
-  auto ctc = ConnectionistTemporalCriterion();
+  auto ctc = ConnectionistTemporalClassificationCriterion();
   auto loss = ctc({input, target}).front();
   loss.backward();
   ASSERT_FALSE(af::anyTrue<bool>(af::isNaN(loss.array())));
@@ -85,7 +85,7 @@ TEST(CriterionTest, CTCCost) {
   std::array<int, 2> target1 = {0, 0};
   const int N1 = 2, L1 = 2, T1 = 3;
 
-  auto ctc1 = ConnectionistTemporalCriterion();
+  auto ctc1 = ConnectionistTemporalClassificationCriterion();
   auto input1af = Variable(af::array(N1, T1, input1.data()), true);
   auto target1af = Variable(af::array(L1, target1.data()), false);
 
@@ -96,7 +96,7 @@ TEST(CriterionTest, CTCCost) {
   std::array<int, 2> target2 = {1, 2};
   int N2 = 4, L2 = 2, T2 = 3;
 
-  auto ctc2 = ConnectionistTemporalCriterion();
+  auto ctc2 = ConnectionistTemporalClassificationCriterion();
   auto input2af = Variable(af::constant(0.0, N2, T2, f32), true);
   auto target2af = Variable(af::array(L2, target2.data()), false);
 
@@ -109,8 +109,8 @@ TEST(CriterionTest, CTCJacobian) {
   auto in = Variable(af::log(af::randu(N, T)), true);
   auto t = af::abs(af::randu(L, af::dtype::s32)) % (N - 2);
   auto tgt = Variable(t.as(af::dtype::s32), false);
-  auto l =
-      ConnectionistTemporalCriterion(w2l::CriterionScaleMode::INPUT_SZ_SQRT);
+  auto l = ConnectionistTemporalClassificationCriterion(
+      w2l::CriterionScaleMode::INPUT_SZ_SQRT);
   auto func_conv_in = [&](Variable& inp) {
     return l.forward({inp, tgt}).front();
   };
@@ -129,8 +129,8 @@ TEST(CriterionTest, Batching) {
       }
     }
     auto tgt = Variable(t.as(af::dtype::s32), false);
-    auto l =
-        ConnectionistTemporalCriterion(w2l::CriterionScaleMode::TARGET_SZ_SQRT);
+    auto l = ConnectionistTemporalClassificationCriterion(
+        w2l::CriterionScaleMode::TARGET_SZ_SQRT);
     auto func_conv_in = [&](Variable& inp) {
       return l.forward({inp, tgt}).front();
     };
@@ -147,7 +147,8 @@ TEST(CriterionTest, Batching) {
       }
     }
     auto tgt = Variable(t.as(af::dtype::s32), false);
-    auto l = ConnectionistTemporalCriterion(w2l::CriterionScaleMode::TARGET_SZ);
+    auto l = ConnectionistTemporalClassificationCriterion(
+        w2l::CriterionScaleMode::TARGET_SZ);
     auto output = l.forward({in, tgt}).front();
 
     for (int i = 0; i < B; ++i) {
@@ -183,7 +184,7 @@ TEST(CriterionTest, CTCCompareTensorflow) {
       0.0663296, -0.356151, 0.280111,  0.00283995, 0.0035545,  0.00331533,
       -0.541765, 0.396634,  0.123377,  0.00648837, 0.00903441, 0.00623107};
 
-  auto ctc1 = ConnectionistTemporalCriterion();
+  auto ctc1 = ConnectionistTemporalClassificationCriterion();
   auto input1af = Variable(af::array(N1, T1, input1.data()), true);
   auto target1af = Variable(af::array(L1, target1.data()), false);
   auto grad_expected1af =
@@ -218,7 +219,7 @@ TEST(CriterionTest, CTCCompareTensorflow) {
       -0.576714, 0.315517,  0.0338439, 0.0393744, 0.0339315, 0.154046,
   };
 
-  auto ctc2 = ConnectionistTemporalCriterion();
+  auto ctc2 = ConnectionistTemporalClassificationCriterion();
   auto input2af = Variable(af::array(N2, T2, input2.data()), true);
   auto target2af = Variable(af::array(L2, target2.data()), false);
   auto grad_expected2af =
@@ -238,7 +239,7 @@ TEST(CriterionTest, ViterbiPath) {
   for (int j = 0; j < 5; ++j) {
     in(expectedpath1[j], j) = 2;
   }
-  ConnectionistTemporalCriterion ctc;
+  ConnectionistTemporalClassificationCriterion ctc;
   auto vpath1Arr = ctc.viterbiPath(in);
   af::array expPath1Arr = af::array(5, expectedpath1.data());
   checkZero(vpath1Arr - expPath1Arr);

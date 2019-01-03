@@ -6,14 +6,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <criterion/ConnectionistTemporalCriterion.h>
+#include <criterion/ConnectionistTemporalClassificationCriterion.h>
 #include <criterion/CriterionUtils.h>
 
 using namespace fl;
 
 namespace w2l {
 
-std::vector<Variable> ConnectionistTemporalCriterion::forward(
+std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
     const std::vector<Variable>& inputs) {
   if (inputs.size() != 2) {
     throw std::invalid_argument("Invalid inputs size");

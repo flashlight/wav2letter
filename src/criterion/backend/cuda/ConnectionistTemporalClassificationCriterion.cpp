@@ -8,7 +8,7 @@
 
 #include <ctc.h>
 
-#include <criterion/ConnectionistTemporalCriterion.h>
+#include <criterion/ConnectionistTemporalClassificationCriterion.h>
 #include <criterion/CriterionUtils.h>
 #include <flashlight/autograd/autograd.h>
 #include <flashlight/common/cuda.h>
@@ -26,7 +26,7 @@ inline void throw_on_error(ctcStatus_t status, const char* message) {
 }
 } // namespace
 
-std::vector<Variable> ConnectionistTemporalCriterion::forward(
+std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
     const std::vector<Variable>& inputs) {
   if (inputs.size() != 2) {
     throw std::invalid_argument("Invalid inputs size");

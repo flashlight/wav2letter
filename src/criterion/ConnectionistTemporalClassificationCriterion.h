@@ -14,9 +14,9 @@
 
 namespace w2l {
 
-class ConnectionistTemporalCriterion : public SequenceCriterion {
+class ConnectionistTemporalClassificationCriterion : public SequenceCriterion {
  public:
-  ConnectionistTemporalCriterion(
+  ConnectionistTemporalClassificationCriterion(
       w2l::CriterionScaleMode scalemode = w2l::CriterionScaleMode::NONE);
 
   std::vector<fl::Variable> forward(
@@ -34,8 +34,8 @@ class ConnectionistTemporalCriterion : public SequenceCriterion {
   void validate(const fl::Variable& input, const fl::Variable& target);
 };
 
-typedef ConnectionistTemporalCriterion CTCLoss;
+typedef ConnectionistTemporalClassificationCriterion CTCLoss;
 
 } // namespace w2l
 
-CEREAL_REGISTER_TYPE(w2l::ConnectionistTemporalCriterion)
+CEREAL_REGISTER_TYPE(w2l::ConnectionistTemporalClassificationCriterion)

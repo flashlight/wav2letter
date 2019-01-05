@@ -8,7 +8,7 @@
 - [flashlight](https://github.com/facebookresearch/flashlight/) is required.
   flashlight _must_ be built with distributed training enabled.
 - [libsndfile](https://github.com/erikd/libsndfile) is required for loading
-  audio. If using wav2letter++ with `flac` files, `libsndfile`
+  audio, and must be built and installed using the provided [CMake build](https://github.com/erikd/libsndfile#the-cmake-build-system). If using wav2letter++ with `flac` files, `libsndfile`
   [must be built](https://github.com/erikd/libsndfile#requirements) with `Ogg`,
   `Vorbis` and `FLAC` libraries.
 - [Intel's Math Kernel Library](https://software.intel.com/en-us/mkl) is

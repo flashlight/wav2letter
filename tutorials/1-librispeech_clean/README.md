@@ -137,7 +137,7 @@ to get the best word transcription for a given audio file using beam search.
 # [Decode data/test-clean (2620 samples) in 199.436s (actual decoding time 0.177s/sample) -- WER: 18.9687, LER: 8.71737]
 ```
 
-We got a WER of 18.96 on test-clean! You can find more details about decoding with wav2letter++ [here](../../docs/decode.md)
+We got a WER of 18.96 on test-clean! You can find more details about decoding with wav2letter++ [here](../../docs/decoder.md)
 
 ### Conclusion
 

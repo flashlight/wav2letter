@@ -16,7 +16,7 @@ Please download all the original datasets in a folder on your own
 # Repeat 1 and 2 for train-clean-100, train-clean-360, train-other-500,
 # dev-other, test-clean, test-other
 
-Command : prepare_data.py --src [...]/LibriSpeech/ --dst [...]
+Command : python3 prepare_data.py --src [...]/LibriSpeech/ --dst [...]
 
 Replace [...] with appropriate paths
 """

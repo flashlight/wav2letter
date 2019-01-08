@@ -63,3 +63,32 @@ cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release -DCRITERION_BACKEND=[backend]
 make -j4 # (or any number of threads)
 ```
+
+### Building/Running with Docker
+
+wav2letter++ and its dependencies can also be built with the provided Dockerfile. Only the CUDA backend is supported with Docker at this time.
+
+To build wav2letter++ with Docker:
+- Install [Docker](https://docs.docker.com/engine/installation/)  and [nvidia-docker](https://github.com/NVIDIA/nvidia-docker/)
+- Run the docker image with CUDA backend in a new container:
+
+  ```
+  sudo docker run --runtime=nvidia --rm -itd --ipc=host --name w2l wav2letter/wav2letter:cuda-latest
+  sudo docker exec -it w2l bash
+  ```
+
+- To run tests inside a container
+
+  ```
+  cd /root/wav2letter/build && make test
+  ```
+
+- Build Docker image from source:
+
+  ```
+  git clone --recursive https://github.com/facebookresearch/wav2letter.git
+  cd wav2letter
+  sudo docker build -f ./Dockerfile-CUDA -t wav2letter .
+  ```
+
+  For logging during training/testing/decoding inside a container use flag `--logtostderr=1`.

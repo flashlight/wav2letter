@@ -4,13 +4,13 @@ All rights reserved.
 
 This source code is licensed under the BSD-style license found in the
 LICENSE file in the root directory of this source tree.
-"""
 
-"""
+----------
+
 Script to package original Timit dataset into a form readable in
 wav2letter++ pipelines
 
-Command : prepare_data.py --src [...] --dst [...]
+Command : python3 prepare_data.py --src [...] --dst [...]
 
 Replace [...] with appropriate paths
 """

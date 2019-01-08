@@ -8,6 +8,7 @@
 
 #include "Seq2SeqCriterion.h"
 #include <glog/logging.h>
+#include <algorithm>
 #include <queue>
 #include "Defines.h"
 
@@ -296,7 +297,11 @@ std::vector<Seq2SeqCriterion::CandidateHypo> Seq2SeqCriterion::beamSearch(
     }
 
     std::partial_sort(
-        newBeam.begin(), newBeam.begin() + 2 * beamSize, newBeam.end(), cmpfn);
+        newBeam.begin(),
+        newBeam.begin() +
+            std::min(2 * beamSize, static_cast<int>(newBeam.size())),
+        newBeam.end(),
+        cmpfn);
 
     beam.resize(0);
     for (int idx = 0; idx < newBeam.size(); idx++) {

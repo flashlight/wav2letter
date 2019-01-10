@@ -37,6 +37,7 @@ using namespace w2l;
 
 int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
+  google::InstallFailureSignalHandler();
   std::string exec(argv[0]);
   std::vector<std::string> argvs;
   for (int i = 0; i < argc; i++) {

@@ -27,9 +27,9 @@ class Mfsc : public PowerSpectrum<T> {
 
   // input - input speech signal (T)
   // Returns - MFSC feature (Col Major : FEAT X FRAMESZ)
-  virtual std::vector<T> apply(const std::vector<T>& input) override;
+  std::vector<T> apply(const std::vector<T>& input) override;
 
-  virtual int64_t outputSize(int64_t inputSz) override;
+  int64_t outputSize(int64_t inputSz) override;
 
  protected:
   // Helper function which takes input as signal after dividing the signal into

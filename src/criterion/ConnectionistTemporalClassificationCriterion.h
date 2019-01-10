@@ -24,7 +24,7 @@ class ConnectionistTemporalClassificationCriterion : public SequenceCriterion {
 
   af::array viterbiPath(const af::array& input) override;
 
-  virtual std::string prettyString() const override;
+  std::string prettyString() const override;
 
  private:
   w2l::CriterionScaleMode scaleMode_;

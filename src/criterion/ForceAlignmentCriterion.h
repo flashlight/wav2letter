@@ -23,7 +23,7 @@ class ForceAlignmentCriterion : public fl::BinaryModule {
   fl::Variable forward(const fl::Variable& input, const fl::Variable& target)
       override;
 
-  virtual std::string prettyString() const override;
+  std::string prettyString() const override;
 
  private:
   friend class AutoSegmentationCriterion;

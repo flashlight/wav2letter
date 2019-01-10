@@ -27,12 +27,12 @@ class W2lDataset : public fl::Dataset {
       int worldrank = 0,
       int worldsize = 1);
 
-  virtual int64_t size() const override;
+  int64_t size() const override;
 
   // NB: get() is thread-hostile if FLAGS_nthread > 0: it must be called
   // from only one thread. In this case, it also expects calls to be sequential,
   // or else samples will be loaded into cache unnecessarily and discarded.
-  virtual std::vector<af::array> get(const int64_t idx) const override;
+  std::vector<af::array> get(const int64_t idx) const override;
 
   virtual std::vector<W2lLoaderData> getLoaderData(const int64_t idx) const = 0;
 

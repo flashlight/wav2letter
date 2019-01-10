@@ -59,9 +59,9 @@ class Mfcc : public Mfsc<T> {
 
   // input - input speech signal (T)
   // Returns - MFCC features (Col Major : FEAT X FRAMESZ)
-  virtual std::vector<T> apply(const std::vector<T>& input) override;
+  std::vector<T> apply(const std::vector<T>& input) override;
 
-  virtual int64_t outputSize(int64_t inputSz) override;
+  int64_t outputSize(int64_t inputSz) override;
 
  private:
   // The following classes are defined in the order they are applied

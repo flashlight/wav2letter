@@ -39,9 +39,7 @@ int64_t W2lDataset::size() const {
 }
 
 std::vector<af::array> W2lDataset::get(const int64_t idx) const {
-  if (idx < 0 || idx >= size()) {
-    LOG(FATAL) << "Invalid idx value - '" << idx << "', must be in [0, size())";
-  }
+  checkIndexBounds(idx);
 
   W2lFeatureData feat;
   if (FLAGS_nthread > 0) {

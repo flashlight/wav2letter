@@ -69,8 +69,8 @@ NumberedFilesLoader::NumberedFilesLoader(
 }
 
 W2lLoaderData NumberedFilesLoader::get(const int64_t idx) const {
-  if (idx < 0 || idx >= size()) {
-    LOG(FATAL) << "Invalid idx value - '" << idx << "', must be in [0, size())";
+  if (!(idx >= 0 && idx < size())) {
+    throw std::out_of_range("NumberedFilesLoader idx out of range");
   }
   W2lLoaderData data;
   auto inputpath = filename(idx, inputExtension_);

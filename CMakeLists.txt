@@ -61,7 +61,7 @@ endif()
 # ------------------------ flashlight ------------------------
 find_package(flashlight REQUIRED)
 if (flashlight_FOUND)
-  message("flashlight found (include: ${FLASHLIGHT_INCLUDE_DIRS} lib: flashlight::flashlight )")
+  message(STATUS "flashlight found (include: ${FLASHLIGHT_INCLUDE_DIRS} lib: flashlight::flashlight )")
   if (NOT TARGET flashlight::Distributed)
     message(FATAL_ERROR "flashlight must be build in distributed mode or wav2letter++")
   else ()

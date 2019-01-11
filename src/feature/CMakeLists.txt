@@ -18,12 +18,16 @@ else()
 endif()
 
 # Sndfile
-# The SndFile CMake build doesn't correctly export targets for
+# The SndFile build/library doesn't correctly link targets for
 # its Vorbis and FLAC dependencies, so they need to be manually found.
+set(SNDFILE_DEP_LIBRARIES "")
+set(SNDFILE_DEP_INCLUDE_DIRS "")
 function(findAndCheckSndFileDependency DEP)
   find_package(${DEP} REQUIRED)
   if (${DEP}_FOUND)
     message(STATUS "Required SndFile dependency ${DEP} found.")
+    set(SNDFILE_DEP_LIBRARIES ${SNDFILE_DEP_LIBRARIES} ${${DEP}_LIBRARIES})
+    set(SNDFILE_DEP_INCLUDE_DIRS ${SNDFILE_DEP_INCLUDE_DIRS} ${${DEP}_INCLUDE_DIRS})
   else()
     message(FATAL_ERROR "Required SndFile dependency ${DEP} not found.")
   endif()
@@ -33,7 +37,12 @@ findAndCheckSndFileDependency(Vorbis REQUIRED)
 findAndCheckSndFileDependency(VorbisEnc REQUIRED)
 findAndCheckSndFileDependency(FLAC REQUIRED)
 # Sndfile uses imported targets
-find_package(SndFile REQUIRED)
+find_package(SNDFILE REQUIRED)
+if (SNDFILE_FOUND)
+  message(STATUS "libsndfile found.")
+else ()
+  message(FATAL_ERROR "Required dependency libsndfile not found.")
+endif ()
 
 # ----------------------------- Lib -----------------------------
 add_library(
@@ -64,8 +73,8 @@ target_link_libraries(
   common
   ${MKL_LIBRARIES}
   ${FFTW_LIBRARIES}
-  SndFile::sndfile # imported target
-  # ${SNDFILE_LIBRARIES}
+  ${SNDFILE_LIBRARIES}
+  ${SNDFILE_DEP_LIBRARIES}
   ${GLOG_LIBRARIES}
   )
 
@@ -74,4 +83,6 @@ target_include_directories(
   INTERFACE
   src/feature
   ${MKL_INCLUDE_DIR}
+  ${SNDFILE_INCLUDE_DIRS}
+  ${SNDFILE_DEP_INCLUDE_DIRS}
   )

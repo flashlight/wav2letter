@@ -57,6 +57,10 @@ W2lNumberedFilesDataset::W2lNumberedFilesDataset(
   LOG(INFO) << "Total batches (i.e. iters): " << sampleBatches_.size();
 }
 
+W2lNumberedFilesDataset::~W2lNumberedFilesDataset() {
+  threadpool_ = nullptr; // join all threads
+}
+
 std::vector<W2lLoaderData> W2lNumberedFilesDataset::getLoaderData(
     const int64_t idx) const {
   std::vector<W2lLoaderData> data;

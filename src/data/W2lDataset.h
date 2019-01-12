@@ -55,7 +55,7 @@ class W2lDataset : public fl::Dataset {
   int64_t worldSize_; // Total number of parallel GPUs/ CPUs used in training
 
   // used if FLAGS_nthread > 1
-  std::shared_ptr<fl::ThreadPool> threadpool_;
+  std::unique_ptr<fl::ThreadPool> threadpool_;
   mutable std::unordered_map<int64_t, std::future<W2lFeatureData>>
       prefetchCache_;
 

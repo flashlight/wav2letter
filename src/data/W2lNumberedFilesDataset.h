@@ -24,7 +24,7 @@ class W2lNumberedFilesDataset : public W2lDataset {
       int worldsize = 1,
       const std::string& rootdir = "");
 
-  virtual ~W2lNumberedFilesDataset() {}
+  ~W2lNumberedFilesDataset() override;
 
   virtual std::vector<W2lLoaderData> getLoaderData(
       const int64_t idx) const override;

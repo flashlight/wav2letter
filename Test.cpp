@@ -176,7 +176,9 @@ int main(int argc, char** argv) {
             << "\%, time: " << meters.timer.value() << "s]" << std::endl;
 
   /* ====== Serialize emission and targets for decoding ====== */
-  std::string savePath = pathsConcat(FLAGS_emission_dir, FLAGS_test + ".bin");
+  std::string cleanedTestPath = cleanFilepath(FLAGS_test);
+  std::string savePath =
+      pathsConcat(FLAGS_emission_dir, cleanedTestPath + ".bin");
   LOG(INFO) << "[Serialization] Saving into file: " << savePath;
   W2lSerializer::save(savePath, emissionSet);
 

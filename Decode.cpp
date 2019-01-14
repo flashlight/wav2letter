@@ -165,7 +165,9 @@ int main(int argc, char** argv) {
   }
   /* Using existing emissions */
   else {
-    std::string loadPath = pathsConcat(FLAGS_emission_dir, FLAGS_test + ".bin");
+    std::string cleanedTestPath = cleanFilepath(FLAGS_test);
+    std::string loadPath =
+        pathsConcat(FLAGS_emission_dir, cleanedTestPath + ".bin");
     LOG(INFO) << "[Serialization] Loading file: " << loadPath;
     W2lSerializer::load(loadPath, emissionSet);
   }

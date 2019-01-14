@@ -180,7 +180,7 @@ class Decoder {
       std::vector<DecoderNode>& nextHyp,
       const bool isSort);
 
-  void MergeNodes(DecoderNode& oldNode, DecoderNode& newNode, int logAdd);
+  void mergeNodes(DecoderNode* oldNode, const DecoderNode* newNode, int logAdd);
 };
 
 } // namespace w2l

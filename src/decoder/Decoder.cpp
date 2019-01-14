@@ -48,17 +48,17 @@ void Decoder::candidatesAdd(
   }
 }
 
-void Decoder::MergeNodes(
-    DecoderNode& oldNode,
-    DecoderNode& newNode,
+void Decoder::mergeNodes(
+    DecoderNode* oldNode,
+    const DecoderNode* newNode,
     int logAdd) {
-  float maxScore = std::max(oldNode.score_, newNode.score_);
+  float maxScore = std::max(oldNode->score_, newNode->score_);
   if (logAdd) {
-    oldNode.score_ = maxScore +
-        std::log(std::exp(oldNode.score_ - maxScore) +
-                 std::exp(newNode.score_ - maxScore));
+    oldNode->score_ = maxScore +
+        std::log(std::exp(oldNode->score_ - maxScore) +
+                 std::exp(newNode->score_ - maxScore));
   } else {
-    oldNode.score_ = maxScore;
+    oldNode->score_ = maxScore;
   }
 }
 
@@ -69,22 +69,22 @@ void Decoder::candidatesStore(
   if (nCandidates_ == 0) {
     return;
   }
-  int distinctHyp = 0;
+  int nHypBeforeMerging = 0, nHypAfterMerging = 1;
 
   /* Select valid candidates */
   for (int i = 0; i < nCandidates_; i++) {
     if (candidates_[i].score_ >= candidatesBestScore_ - opt.beamScore_) {
-      if (candidatePtrs_.size() == distinctHyp) {
+      if (candidatePtrs_.size() == nHypBeforeMerging) {
         candidatePtrs_.resize(candidatePtrs_.size() + kBufferBucketSize);
       }
-      candidatePtrs_[distinctHyp] = &candidates_[i];
-      ++distinctHyp;
+      candidatePtrs_[nHypBeforeMerging] = &candidates_[i];
+      ++nHypBeforeMerging;
     }
   }
 
   /* Sort by (LmState, lex, score) and copy into next hypothesis */
-  auto DecoderCompareNodesShortList = [&](const DecoderNode* node1,
-                                          const DecoderNode* node2) {
+  auto compareNodesShortList = [&](const DecoderNode* node1,
+                                   const DecoderNode* node2) {
     int lmCmp = lm_->compareState(node1->lmState_, node2->lmState_);
     if (lmCmp != 0) {
       return lmCmp > 0;
@@ -98,54 +98,57 @@ void Decoder::candidatesStore(
   };
   std::sort(
       candidatePtrs_.begin(),
-      candidatePtrs_.begin() + distinctHyp,
-      DecoderCompareNodesShortList);
-
-  if (distinctHyp > nextHyp.size()) {
-    nextHyp.resize(distinctHyp);
-  }
-  for (int i = 0; i < distinctHyp; i++) {
-    nextHyp[i] = std::move(*candidatePtrs_[i]);
-  }
-  if (distinctHyp < nextHyp.size()) {
-    nextHyp.resize(distinctHyp);
-  }
+      candidatePtrs_.begin() + nHypBeforeMerging,
+      compareNodesShortList);
 
   /* Merge decoder nodes with same (LmState, lex) */
-  distinctHyp = 1;
-  for (int i = 1; i < nextHyp.size(); i++) {
+  for (int i = 1; i < nHypBeforeMerging; i++) {
     if (lm_->compareState(
-            nextHyp[i].lmState_, nextHyp[distinctHyp - 1].lmState_) ||
-        nextHyp[i].lex_ != nextHyp[distinctHyp - 1].lex_) {
-      nextHyp[distinctHyp] = std::move(nextHyp[i]);
-      distinctHyp++;
+            candidatePtrs_[i]->lmState_,
+            candidatePtrs_[nHypAfterMerging - 1]->lmState_) ||
+        candidatePtrs_[i]->lex_ != candidatePtrs_[nHypAfterMerging - 1]->lex_) {
+      candidatePtrs_[nHypAfterMerging] = candidatePtrs_[i];
+      nHypAfterMerging++;
     } else {
-      MergeNodes(nextHyp[distinctHyp - 1], nextHyp[i], opt.logAdd_);
+      mergeNodes(
+          candidatePtrs_[nHypAfterMerging - 1], candidatePtrs_[i], opt.logAdd_);
     }
   }
-  nextHyp.resize(distinctHyp);
 
   /* Sort hypothesis and select top-K */
-  auto DecoderCompareNodesScore = [](const DecoderNode& node1,
-                                     const DecoderNode& node2) {
-    return node1.score_ > node2.score_;
+  auto compareNodesScore = [](const DecoderNode* node1,
+                              const DecoderNode* node2) {
+    return node1->score_ > node2->score_;
   };
 
-  if (distinctHyp <= opt.beamSize_) {
+  if (nHypAfterMerging <= opt.beamSize_) {
     if (isSort) {
-      std::sort(nextHyp.begin(), nextHyp.end(), DecoderCompareNodesScore);
+      std::sort(
+          candidatePtrs_.begin(),
+          candidatePtrs_.begin() + nHypAfterMerging,
+          compareNodesScore);
+    }
+    nextHyp.resize(nHypAfterMerging);
+    for (int i = 0; i < nHypAfterMerging; i++) {
+      nextHyp[i] = std::move(*candidatePtrs_[i]);
     }
   } else {
     if (!isSort) {
       std::nth_element(
-          nextHyp.begin(),
-          nextHyp.begin() + opt.beamSize_ - 1,
-          nextHyp.end(),
-          DecoderCompareNodesScore);
+          candidatePtrs_.begin(),
+          candidatePtrs_.begin() + opt.beamSize_ - 1,
+          candidatePtrs_.begin() + nHypAfterMerging,
+          compareNodesScore);
     } else {
-      std::sort(nextHyp.begin(), nextHyp.end(), DecoderCompareNodesScore);
+      std::sort(
+          candidatePtrs_.begin(),
+          candidatePtrs_.begin() + nHypAfterMerging,
+          compareNodesScore);
     }
     nextHyp.resize(opt.beamSize_);
+    for (int i = 0; i < opt.beamSize_; i++) {
+      nextHyp[i] = std::move(*candidatePtrs_[i]);
+    }
   }
 }
 

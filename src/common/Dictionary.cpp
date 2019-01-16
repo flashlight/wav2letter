@@ -29,7 +29,7 @@ void Dictionary::addToken(const std::string& token) {
   int idx = idx2token_.size();
   // Find first available index.
   while (idx2token_.find(idx) != idx2token_.end()) {
-    idx++;
+    ++idx;
   }
   addToken(token, idx);
 }
@@ -88,6 +88,7 @@ bool Dictionary::isContiguous() const {
 std::vector<int> Dictionary::mapTokensToIndices(
     const std::vector<std::string>& tokens) const {
   std::vector<int> indices;
+  indices.reserve(tokens.size());
   for (const auto& tkn : tokens) {
     indices.emplace_back(getIndex(tkn));
   }
@@ -97,6 +98,7 @@ std::vector<int> Dictionary::mapTokensToIndices(
 std::vector<std::string> Dictionary::mapIndicesToTokens(
     const std::vector<int>& indices) const {
   std::vector<std::string> tokens;
+  tokens.reserve(indices.size());
   for (const auto& idx : indices) {
     tokens.emplace_back(getToken(idx));
   }

@@ -29,7 +29,7 @@ void Dictionary::addToken(const std::string& token) {
   int idx = idx2token_.size();
   // Find first available index.
   while (idx2token_.find(idx) != idx2token_.end()) {
-    idx++;
+    ++idx;
   }
   addToken(token, idx);
 }

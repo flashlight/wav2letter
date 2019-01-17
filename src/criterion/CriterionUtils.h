@@ -88,4 +88,16 @@ af::array viterbiPath(const af::array& input, const af::array& trans);
 
 fl::Variable getLinearTarget(const fl::Variable& target, intl T);
 
+// workaround for https://github.com/arrayfire/arrayfire/issues/2273
+// use as a drop-in replacement for af::reorder
+inline af::array reorder(
+    const af::array& in,
+    const unsigned x,
+    const unsigned y = 1,
+    const unsigned z = 2,
+    const unsigned w = 3) {
+  const af::array& result = af::reorder(in, x, y, z, w);
+  return moddims(result, result.dims());
+}
+
 } // namespace w2l

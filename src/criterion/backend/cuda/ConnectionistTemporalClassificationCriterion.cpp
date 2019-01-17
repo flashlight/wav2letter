@@ -123,7 +123,7 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
         1,
         in.dims(1));
     moduleInputs[0].addGrad(
-        Variable(reorder(grad * gradScales, 0, 2, 1), false));
+        Variable(af::reorder(grad * gradScales, 0, 2, 1), false));
   };
 
   return {Variable(result, {input, target}, gradFunc)};

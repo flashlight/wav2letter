@@ -250,20 +250,37 @@ TEST(CriterionTest, ViterbiPath) {
   checkZero(vpath1bArr - af::tile(expPath1Arr, 1, 2));
 
   // Test case: 2
-  std::array<float, 6> input = {1.0, 0.0, 0.0, 1.0, 1.0, 0.0};
-  af::array inputAf = af::array(2, 3, input.data());
-  std::array<float, 4> transition = {1.0, 0.0, 0.0, 1.0};
-  std::array<int, 3> expectedpath2 = {0, 0, 0};
-  AutoSegmentationCriterion asg(2);
-  asg.param(0).array() = af::array(2, 2, transition.data());
-  auto vpath2Arr = asg.viterbiPath(inputAf);
-  af::array expectedpath2Arr = af::array(3, expectedpath2.data());
-  checkZero(vpath2Arr - expectedpath2Arr);
+  constexpr int T2 = 4, N2 = 3;
 
-  // test batch input
-  auto inputtile = af::tile(inputAf, 1, 1, 2);
-  auto vpath2bArr = asg.viterbiPath(inputtile);
-  checkZero(vpath2bArr - af::tile(expectedpath2Arr, 1, 2));
+  // clang-format off
+  std::array<float, (T2 * N2)> input2Vec = {
+    0, 0, 7,
+    5, 4, 3,
+    5, 8, 5,
+    5, 4, 3,
+  };
+  std::array<float, (N2 * N2)> trans2Vec = {
+    0, 2, 0,
+    0, 0, 2,
+    2, 0, 0,
+  };
+  std::array<int, T2> expectedPath2Vec = {2, 1, 1, 0};
+  // clang-format on
+
+  af::array input2(N2, T2, input2Vec.data());
+  af::array trans2(N2, N2, trans2Vec.data());
+  af::array expectedPath2(T2, expectedPath2Vec.data());
+
+  AutoSegmentationCriterion asg(N2);
+  asg.setParams(Variable(trans2, true), 0);
+  auto path2 = asg.viterbiPath(input2);
+  checkZero(path2 - expectedPath2);
+
+  // Test case: 2b (batching)
+  auto input2b = af::tile(input2, 1, 1, 77);
+  auto expectedPath2b = af::tile(expectedPath2, 1, 77);
+  auto path2b = asg.viterbiPath(input2b);
+  checkZero(path2b - expectedPath2b);
 
   // If trasition probablities are same, CTC and ASG viterbi paths should match
   AutoSegmentationCriterion asg2(30);

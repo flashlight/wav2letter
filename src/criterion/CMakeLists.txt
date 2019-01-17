@@ -17,18 +17,6 @@ else ()
 endif ()
 
 # ----------------------------- Dependencies -----------------------------
-# Only the CUDA criterion backend has distinct external dependencies
-# CUDA
-find_package(CUDA 9.2 QUIET) # CUDA 9.2 is required for >= ArrayFire 3.6.1
-if (CUDA_FOUND)
-  message(STATUS "CUDA found (library: ${CUDA_LIBRARIES} include: ${CUDA_INCLUDE_DIRS})")
-else()
-  message(STATUS "CUDA not found")
-  if (AFML_USE_CUDA)
-    message(FATAL_ERROR "CUDA required to build CUDA criterion backend")
-  endif ()
-endif()
-
 # Warp CTC
 if (CRIT_BACKEND_USE_CUDA)
   # Build warpctc included in wav2letter/src/third_party/warpctc
@@ -36,6 +24,8 @@ if (CRIT_BACKEND_USE_CUDA)
   message(STATUS "Adding warpctc:")
   add_subdirectory(${WARPCTC_DIR} ${WARPCTC_DIR}/build)
   set(WARPCTC_INCLUDE_DIR ${WARPCTC_DIR}/include)
+  # Download CUB for CUDA kernel primitives
+  include(${CMAKE_MODULE_PATH}/BuildCUB.cmake)
 endif()
 
 # ----------------------------- Lib -----------------------------
@@ -44,25 +34,50 @@ set(
   ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionistTemporalClassificationCriterion.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/CriterionUtils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ForceAlignmentCriterion.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/FullConnectionCriterion.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Seq2SeqCriterion.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/FullConnectionCriterion.cpp
 )
 
-if (CRIT_BACKEND_USE_CUDA)
+if (CRIT_BACKEND_USE_CUDA)  
   set(
     CRITERION_SOURCES
     ${CRITERION_SOURCES}
     ${CMAKE_CURRENT_SOURCE_DIR}/backend/cuda/ConnectionistTemporalClassificationCriterion.cpp
-  )
+    ${CMAKE_CURRENT_SOURCE_DIR}/backend/cuda/FullConnectionCriterion.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/backend/cuda/ViterbiPath.cpp
+    )
+
+  # Compile CUDA kernels
+  include(${CMAKE_MODULE_PATH}/CUDAUtils.cmake)
+  # Setup
+  set_cuda_cxx_compile_flags()
+  set_cuda_arch_nvcc_flags()
+
+  cuda_add_library(
+    w2lCriterionCudaKernels
+    ${CMAKE_CURRENT_SOURCE_DIR}/backend/cuda/kernels/ViterbiPath.cu
+    ${CMAKE_CURRENT_SOURCE_DIR}/backend/cuda/kernels/FullConnectionCriterion.cu
+    )
+
+  target_include_directories(
+    w2lCriterionCudaKernels
+    PRIVATE
+    ${CUB_INCLUDE_DIRS}
+    )
+  
+  # Make sure CUB headers are present before building
+  add_dependencies(w2lCriterionCudaKernels CUB)
 elseif (CRIT_BACKEND_USE_CPU OR CRIT_BACKEND_USE_OPENCL)
   set(
     CRITERION_SOURCES
     ${CRITERION_SOURCES}
     ${CMAKE_CURRENT_SOURCE_DIR}/backend/cpu/ConnectionistTemporalClassificationCriterion.cpp
-  )
+    ${CMAKE_CURRENT_SOURCE_DIR}/backend/cpu/FullConnectionCriterion.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/backend/cpu/ViterbiPath.cpp
+    )
 endif ()
 
-# Criterion main
+# Main library
 add_library(
   criterion
   INTERFACE
@@ -98,7 +113,9 @@ if (CRIT_BACKEND_USE_CUDA)
     INTERFACE
     ${CUDA_LIBRARIES}
     warpctc # added directly from subdir
+    w2lCriterionCudaKernels # cuda lib
     )
+  
   target_include_directories(
     criterion
     INTERFACE

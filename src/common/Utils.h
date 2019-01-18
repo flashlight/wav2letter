@@ -134,15 +134,19 @@ struct EmissionSet {
   std::vector<std::string> sampleIds;
   std::vector<float> transition;
   std::vector<int> emissionT;
-  int emissionN;
+  int emissionN; // Assume alphabet size to be identical for all the samples
+
+  std::string gflags; // Saving all the flags used in model training
 
   FL_SAVE_LOAD(
       emissions,
       wordTargets,
       letterTargets,
+      sampleIds,
       transition,
       emissionT,
-      emissionN)
+      emissionN,
+      gflags)
 };
 
 LexiconMap loadWords(const std::string& fn, const int64_t maxNumWords);

@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
   /* ===================== Test ===================== */
   TestMeters meters;
 
-  auto emissionSet = std::make_shared<EmissionSet>();
+  EmissionSet emissionSet;
   meters.timer.resume();
   int cnt = 1;
   for (auto& sample : ds) {
@@ -161,20 +161,22 @@ int main(int argc, char** argv) {
     /* Save emission and targets */
     int N = rawEmission.dims(0);
     int T = rawEmission.dims(1);
-    emissionSet->emissions.emplace_back(emission);
-    emissionSet->letterTargets.emplace_back(ltrTarget);
-    emissionSet->wordTargets.emplace_back(wrdTarget);
+    emissionSet.emissions.emplace_back(emission);
+    emissionSet.letterTargets.emplace_back(ltrTarget);
+    emissionSet.wordTargets.emplace_back(wrdTarget);
 
     // while testing we use batchsize 1 and hence ds only has 1 sampleid
-    emissionSet->sampleIds.emplace_back(
+    emissionSet.sampleIds.emplace_back(
         afToVector<std::string>(sample[kFileIdIdx]).front());
 
-    emissionSet->emissionT.emplace_back(T);
-    emissionSet->emissionN = N;
+    emissionSet.emissionT.emplace_back(T);
+    emissionSet.emissionN = N;
   }
   if (FLAGS_criterion == kAsgCriterion) {
-    emissionSet->transition = afToVector<float>(criterion->param(0).array());
+    emissionSet.transition = afToVector<float>(criterion->param(0).array());
   }
+  emissionSet.gflags = serializeGflags();
+
   meters.timer.stop();
   std::cout << "---\n[total WER: " << meters.werSlice.value()[0]
             << "\%, total LER: " << meters.lerSlice.value()[0]

@@ -63,6 +63,13 @@ int main(int argc, char** argv) {
   }
 
   /* ===================== Create Network ===================== */
+  if (!(FLAGS_am.empty() ^ FLAGS_emission_dir.empty())) {
+    LOG(FATAL)
+        << "One and only one of flag -am and -emission_dir should be set.";
+  }
+  EmissionSet emissionSet;
+
+  /* Using acoustic model */
   std::shared_ptr<fl::Module> network;
   std::shared_ptr<SequenceCriterion> criterion;
   if (!FLAGS_am.empty()) {
@@ -81,12 +88,21 @@ int main(int argc, char** argv) {
     }
     LOG(INFO) << "[Network] Updating flags from config file: " << FLAGS_am;
     gflags::ReadFlagsFromString(flags->second, gflags::GetArgv0(), true);
+  }
+  /* Using existing emissions */
+  else {
+    std::string cleanedTestPath = cleanFilepath(FLAGS_test);
+    std::string loadPath =
+        pathsConcat(FLAGS_emission_dir, cleanedTestPath + ".bin");
+    LOG(INFO) << "[Serialization] Loading file: " << loadPath;
+    W2lSerializer::load(loadPath, emissionSet);
+    gflags::ReadFlagsFromString(emissionSet.gflags, gflags::GetArgv0(), true);
+  }
 
-    // override with user-specified flags
-    gflags::ParseCommandLineFlags(&argc, &argv, false);
-    if (!flagsfile.empty()) {
-      gflags::ReadFromFlagsFile(flagsfile, argv[0], true);
-    }
+  // override with user-specified flags
+  gflags::ParseCommandLineFlags(&argc, &argv, false);
+  if (!flagsfile.empty()) {
+    gflags::ReadFromFlagsFile(flagsfile, argv[0], true);
   }
 
   LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
@@ -104,14 +120,6 @@ int main(int argc, char** argv) {
   DictionaryMap dicts = {{kTargetIdx, tokenDict}, {kWordIdx, wordDict}};
 
   /* ===================== Create Dataset ===================== */
-  if (!(FLAGS_am.empty() ^ FLAGS_emission_dir.empty())) {
-    LOG(FATAL)
-        << "One and only one of flag -am and -emission_dir should be set.";
-  }
-
-  auto emissionSet = std::make_shared<EmissionSet>();
-
-  /* Using acoustic model */
   if (!FLAGS_am.empty()) {
     // Load dataset
     int worldRank = 0;
@@ -143,18 +151,17 @@ int main(int argc, char** argv) {
       auto emission = afToVector<float>(rawEmission);
       auto ltrTarget = afToVector<int>(sample[kTargetIdx]);
       auto wrdTarget = afToVector<int>(sample[kWordIdx]);
-      emissionSet->emissions.emplace_back(emission);
-      emissionSet->wordTargets.emplace_back(wrdTarget);
-      emissionSet->letterTargets.emplace_back(ltrTarget);
-      emissionSet->emissionT.emplace_back(T);
-      emissionSet->emissionN = N;
+      emissionSet.emissions.emplace_back(emission);
+      emissionSet.wordTargets.emplace_back(wrdTarget);
+      emissionSet.letterTargets.emplace_back(ltrTarget);
+      emissionSet.emissionT.emplace_back(T);
+      emissionSet.emissionN = N;
       if (FLAGS_criterion == kAsgCriterion) {
-        emissionSet->transition =
-            afToVector<float>(criterion->param(0).array());
+        emissionSet.transition = afToVector<float>(criterion->param(0).array());
       }
 
       // while decoding we use batchsize 1 and hence ds only has 1 sampleid
-      emissionSet->sampleIds.emplace_back(
+      emissionSet.sampleIds.emplace_back(
           afToVector<std::string>(sample[kFileIdIdx]).front());
 
       ++cnt;
@@ -163,16 +170,8 @@ int main(int argc, char** argv) {
       }
     }
   }
-  /* Using existing emissions */
-  else {
-    std::string cleanedTestPath = cleanFilepath(FLAGS_test);
-    std::string loadPath =
-        pathsConcat(FLAGS_emission_dir, cleanedTestPath + ".bin");
-    LOG(INFO) << "[Serialization] Loading file: " << loadPath;
-    W2lSerializer::load(loadPath, emissionSet);
-  }
 
-  int nSample = emissionSet->emissions.size();
+  int nSample = emissionSet.emissions.size();
   nSample = FLAGS_maxload > 0 ? std::min(nSample, FLAGS_maxload) : nSample;
   int nSamplePerThread =
       std::ceil(nSample / static_cast<float>(FLAGS_nthread_decoder));
@@ -195,7 +194,7 @@ int main(int argc, char** argv) {
     LOG(FATAL) << "[Decoder] Invalid model type: " << FLAGS_criterion;
   }
 
-  const auto& transition = emissionSet->transition;
+  const auto& transition = emissionSet.transition;
 
   // Prepare decoder options
   DecoderOptions decoderOpt(
@@ -316,12 +315,12 @@ int main(int argc, char** argv) {
       int sliceSize = end - start;
       meters.timer.resume();
       for (int s = start; s < end; s++) {
-        auto emission = emissionSet->emissions[s];
-        auto wordTarget = emissionSet->wordTargets[s];
-        auto letterTarget = emissionSet->letterTargets[s];
-        auto sampleId = emissionSet->sampleIds[s];
-        auto T = emissionSet->emissionT[s];
-        auto N = emissionSet->emissionN;
+        auto emission = emissionSet.emissions[s];
+        auto wordTarget = emissionSet.wordTargets[s];
+        auto letterTarget = emissionSet.letterTargets[s];
+        auto sampleId = emissionSet.sampleIds[s];
+        auto T = emissionSet.emissionT[s];
+        auto N = emissionSet.emissionN;
 
         std::vector<float> score;
         std::vector<std::vector<int>> wordPredictions;

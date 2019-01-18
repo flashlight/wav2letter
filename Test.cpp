@@ -164,6 +164,11 @@ int main(int argc, char** argv) {
     emissionSet->emissions.emplace_back(emission);
     emissionSet->letterTargets.emplace_back(ltrTarget);
     emissionSet->wordTargets.emplace_back(wrdTarget);
+
+    // while testing we use batchsize 1 and hence ds only has 1 sampleid
+    emissionSet->sampleIds.emplace_back(
+        afToVector<std::string>(sample[kFileIdIdx]).front());
+
     emissionSet->emissionT.emplace_back(T);
     emissionSet->emissionN = N;
   }

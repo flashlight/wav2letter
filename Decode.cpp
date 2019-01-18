@@ -153,9 +153,9 @@ int main(int argc, char** argv) {
             afToVector<float>(criterion->param(0).array());
       }
 
-      auto sampleIdsStr = afToVector<std::string>(sample[kFileIdIdx]);
       // while decoding we use batchsize 1 and hence ds only has 1 sampleid
-      emissionSet->sampleIds.emplace_back(sampleIdsStr[0]);
+      emissionSet->sampleIds.emplace_back(
+          afToVector<std::string>(sample[kFileIdIdx]).front());
 
       ++cnt;
       if (cnt == FLAGS_maxload) {

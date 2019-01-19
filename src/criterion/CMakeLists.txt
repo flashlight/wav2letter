@@ -53,18 +53,17 @@ if (CRIT_BACKEND_USE_CUDA)
   set_cuda_cxx_compile_flags()
   set_cuda_arch_nvcc_flags()
 
+  cuda_include_directories(
+    ${CUB_INCLUDE_DIRS}
+    ${CMAKE_SOURCE_DIR}/src
+    )
+
   cuda_add_library(
     w2lCriterionCudaKernels
     ${CMAKE_CURRENT_SOURCE_DIR}/backend/cuda/kernels/ViterbiPath.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/backend/cuda/kernels/FullConnectionCriterion.cu
     )
 
-  target_include_directories(
-    w2lCriterionCudaKernels
-    PRIVATE
-    ${CUB_INCLUDE_DIRS}
-    )
-  
   # Make sure CUB headers are present before building
   add_dependencies(w2lCriterionCudaKernels CUB)
 elseif (CRIT_BACKEND_USE_CPU OR CRIT_BACKEND_USE_OPENCL)

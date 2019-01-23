@@ -103,7 +103,7 @@ if __name__ == "__main__":
     # create tokens dictionary
     sys.stdout.write("creating tokens list...\n")
     sys.stdout.flush()
-    with open(os.path.join(dst, "tokens.txt"), "w") as f:
+    with open(os.path.join(args.dst, "tokens.txt"), "w") as f:
         f.write("|\n")
         f.write("'\n")
         for alphabet in range(ord("a"), ord("z") + 1):

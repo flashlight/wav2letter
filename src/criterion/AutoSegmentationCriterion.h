@@ -19,7 +19,7 @@ namespace w2l {
 class AutoSegmentationCriterion : public SequenceCriterion {
  public:
   explicit AutoSegmentationCriterion(
-      intl N,
+      int N,
       w2l::CriterionScaleMode scalemode = w2l::CriterionScaleMode::NONE,
       double transdiag = 0.0)
       : N_(N),
@@ -65,12 +65,17 @@ class AutoSegmentationCriterion : public SequenceCriterion {
   }
 
  private:
-  intl N_;
+  int N_;
   w2l::CriterionScaleMode scaleMode_;
   ForceAlignmentCriterion fac_;
   FullConnectionCriterion fcc_;
 
-  FL_SAVE_LOAD_WITH_BASE(SequenceCriterion, N_, scaleMode_, fac_, fcc_)
+  FL_SAVE_LOAD_WITH_BASE(
+      SequenceCriterion,
+      fl::serializeAs<int64_t>(N_),
+      scaleMode_,
+      fac_,
+      fcc_)
 };
 
 using ASGLoss = AutoSegmentationCriterion;

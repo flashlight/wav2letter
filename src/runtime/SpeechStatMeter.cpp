@@ -19,8 +19,8 @@ void SpeechStatMeter::reset() {
 }
 
 void SpeechStatMeter::add(const af::array& input, const af::array& target) {
-  intl curInputSz = static_cast<intl>(input.dims(0));
-  intl curTargetSz = static_cast<intl>(target.dims(0));
+  int64_t curInputSz = input.dims(0);
+  int64_t curTargetSz = target.dims(0);
 
   stats_.totalInputSz_ += curInputSz;
   stats_.totalTargetSz_ += curTargetSz;
@@ -41,7 +41,7 @@ void SpeechStatMeter::add(const SpeechStats& stats) {
   stats_.numSamples_ += stats.numSamples_;
 }
 
-std::vector<intl> SpeechStatMeter::value() {
+std::vector<int64_t> SpeechStatMeter::value() {
   return stats_.toArray();
 }
 
@@ -57,8 +57,8 @@ void SpeechStats::reset() {
   numSamples_ = 0;
 }
 
-std::vector<intl> SpeechStats::toArray() {
-  std::vector<intl> arr(5);
+std::vector<int64_t> SpeechStats::toArray() {
+  std::vector<int64_t> arr(5);
   arr[0] = totalInputSz_;
   arr[1] = totalTargetSz_;
   arr[2] = maxInputSz_;

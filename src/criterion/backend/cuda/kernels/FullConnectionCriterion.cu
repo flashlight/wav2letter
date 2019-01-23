@@ -123,7 +123,7 @@ namespace cuda {
 /**
  * original arrayfire code for FCC forward:
  *
- * for (intl t = 1; t < T; t++) {
+ * for (int t = 1; t < T; t++) {
  *   const auto& fccacc_tp = fccacc(span, span, t - 1); // [N, B, 1]
  *   const auto& transtmp = tile(trans, 1, 1, B) +
  *       tile(moddims(fccacc_tp, N, 1, B), 1, N); // [N, N, B]
@@ -167,7 +167,7 @@ err_1:
 /**
  * original arrayfire code for FCC backward:
  *
- * for (intl t = T - 1; t > 0; t--) {
+ * for (int t = T - 1; t > 0; t--) {
  *   const auto& fccacc_tp = fccacc(span, span, t - 1); // [N, B]
  *   const auto& transtmp = tile(trans, 1, 1, B) +
  *       tile(moddims(fccacc_tp, N, 1, B), 1, N); // [N, N, B]

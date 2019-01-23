@@ -49,7 +49,7 @@ namespace cuda {
    array maxvals;
    array maxidxs;
 
-   for (intl t = 1; t < T; ++t) {
+   for (int t = 1; t < T; ++t) {
      max(maxvals, maxidxs, trans + tile(_alpha(span, t - 1), 1, N), 0);
      _alpha(span, t) += moddims(maxvals, N);
      _beta(span, t) = moddims(maxidxs, N);

@@ -15,10 +15,10 @@ namespace w2l {
 static void backward(
     std::vector<fl::Variable>& inputs,
     const fl::Variable& grad_output,
-    intl BB,
-    intl B,
-    intl N,
-    intl T,
+    int BB,
+    int B,
+    int N,
+    int T,
     const array& filter_idxs,
     const array& fccacc,
     const array& scale) {
@@ -64,10 +64,10 @@ static void backward(
 fl::Variable FullConnectionCriterion::forward(
     const fl::Variable& input,
     const fl::Variable& target) {
-  const intl N = input.dims(0);
-  const intl T = input.dims(1);
-  const intl BB = input.dims(2);
-  const intl L = target.dims(0);
+  int N = input.dims(0);
+  int T = input.dims(1);
+  int BB = input.dims(2);
+  int L = target.dims(0);
 
   const auto& transitions = param(0);
   if (N != transitions.dims(0)) {
@@ -81,9 +81,9 @@ fl::Variable FullConnectionCriterion::forward(
   std::vector<int> filter_idxs_host;
 
   target.host(target_host.data());
-  for (intl b = 0; b < BB; b++) {
+  for (int b = 0; b < BB; b++) {
     const auto target_p = target_host.data() + b * L;
-    intl TN = getTargetSize(target_p, L);
+    int TN = getTargetSize(target_p, L);
     if (TN > T || TN == 0) {
       continue;
     }
@@ -91,7 +91,7 @@ fl::Variable FullConnectionCriterion::forward(
     scale_host.push_back(scaleFn(N, T, TN));
   }
 
-  const intl B = filter_idxs_host.size();
+  int B = filter_idxs_host.size();
   if (B == 0) {
     auto grad_func =
         [BB, N, T](std::vector<fl::Variable>& inputs, const fl::Variable&) {

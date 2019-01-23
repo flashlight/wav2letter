@@ -61,7 +61,7 @@ std::pair<std::string, std::string> getStatus(
         v.first + "-" + errtype, format("%5.2f", v.second.edit.value()[0]));
   }
   auto stats = meters.stats.value();
-  auto numsamples = std::max(stats[4], static_cast<intl>(1));
+  auto numsamples = std::max<int64_t>(stats[4], 1);
   auto isztotal = stats[0];
   auto tsztotal = stats[1];
   auto tszmax = stats[3];
@@ -116,7 +116,8 @@ af::array allreduceGet(fl::EditDistanceMeter& mtr) {
 }
 
 af::array allreduceGet(SpeechStatMeter& mtr) {
-  auto mtrVal = mtr.value();
+  auto mtrVal0 = mtr.value();
+  std::vector<long long> mtrVal(mtrVal0.begin(), mtrVal0.end());
   // Caveat: maxInputSz_, maxTargetSz_ would be approximate
   mtrVal[2] *= mtrVal[4];
   mtrVal[3] *= mtrVal[4];
@@ -124,7 +125,8 @@ af::array allreduceGet(SpeechStatMeter& mtr) {
 }
 
 af::array allreduceGet(fl::CountMeter& mtr) {
-  auto mtrVal = mtr.value();
+  auto mtrVal0 = mtr.value();
+  std::vector<long long> mtrVal(mtrVal0.begin(), mtrVal0.end());
   return af::array(mtrVal.size(), mtrVal.data());
 }
 
@@ -154,9 +156,9 @@ void allreduceSet(fl::EditDistanceMeter& mtr, af::array& val) {
 void allreduceSet(SpeechStatMeter& mtr, af::array& val) {
   mtr.reset();
   // Caveat: maxInputSz_, maxTargetSz_ would be approximate
-  auto valVec = afToVector<intl>(val);
+  auto valVec = afToVector<int64_t>(val);
   SpeechStats stats;
-  intl denom = (valVec[4] == 0) ? 1 : valVec[4];
+  auto denom = (valVec[4] == 0) ? 1 : valVec[4];
   stats.totalInputSz_ = valVec[0];
   stats.totalTargetSz_ = valVec[1];
   stats.maxInputSz_ = valVec[2] / denom;
@@ -167,7 +169,7 @@ void allreduceSet(SpeechStatMeter& mtr, af::array& val) {
 
 void allreduceSet(fl::CountMeter& mtr, af::array& val) {
   mtr.reset();
-  auto valVec = afToVector<intl>(val);
+  auto valVec = afToVector<long long>(val);
   for (size_t i = 0; i < valVec.size(); ++i) {
     mtr.add(i, valVec[i]);
   }

@@ -8,15 +8,16 @@
 
 #include "FullConnectionCriterion.h"
 
+#include <cmath>
+
 #include "CriterionUtils.h"
-#include "math.h"
 
 using namespace fl;
 
 namespace w2l {
 
 FullConnectionCriterion::FullConnectionCriterion(
-    intl N,
+    int N,
     w2l::CriterionScaleMode scalemode)
     : N_(N), scaleMode_(scalemode) {
   if (N_ <= 0) {

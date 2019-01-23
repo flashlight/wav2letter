@@ -17,7 +17,7 @@ namespace w2l {
 class FullConnectionCriterion : public fl::BinaryModule {
  public:
   explicit FullConnectionCriterion(
-      intl N,
+      int N,
       w2l::CriterionScaleMode scalemode = w2l::CriterionScaleMode::NONE);
 
   fl::Variable forward(const fl::Variable& input, const fl::Variable& target)
@@ -29,10 +29,13 @@ class FullConnectionCriterion : public fl::BinaryModule {
   friend class AutoSegmentationCriterion;
   FullConnectionCriterion() = default;
 
-  intl N_;
+  int N_;
   w2l::CriterionScaleMode scaleMode_;
 
-  FL_SAVE_LOAD_WITH_BASE(fl::BinaryModule, N_, scaleMode_)
+  FL_SAVE_LOAD_WITH_BASE(
+      fl::BinaryModule,
+      fl::serializeAs<int64_t>(N_),
+      scaleMode_)
 
   struct fwParams {
     std::vector<int> targetsRaw;
@@ -40,7 +43,7 @@ class FullConnectionCriterion : public fl::BinaryModule {
 
     std::vector<float> res;
     std::vector<double> alpha;
-    std::vector<intl> alphaIndex;
+    std::vector<int> alphaIndex;
 
     fwParams(int n, int t, int b, int l) {
       targetsRaw.resize(l * b);

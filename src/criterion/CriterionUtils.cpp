@@ -15,9 +15,9 @@ using fl::Variable;
 
 namespace w2l {
 
-int64_t countRepeats(const int* labels, int64_t len) {
-  int64_t r = 0;
-  for (int64_t i = 1; i < len; ++i) {
+int countRepeats(const int* labels, int len) {
+  int r = 0;
+  for (int i = 1; i < len; ++i) {
     if (labels[i] == labels[i - 1]) {
       ++r;
     }
@@ -25,7 +25,7 @@ int64_t countRepeats(const int* labels, int64_t len) {
   return r;
 }
 
-int64_t getTargetSize(const int* labels, int64_t len) {
+int getTargetSize(const int* labels, int len) {
   while (len > 0 && labels[len - 1] < 0) {
     --len;
   }
@@ -80,26 +80,25 @@ CriterionScaleFn getCriterionScaleFn(CriterionScaleMode scale) {
       // return so that compiler doesn't compain
   }
 }
-
-Variable getLinearTarget(const Variable& targetVar, intl T) {
-  intl L = targetVar.dims(0);
-  intl B = targetVar.dims(1);
+Variable getLinearTarget(const Variable& targetVar, int T) {
+  int L = targetVar.dims(0);
+  int B = targetVar.dims(1);
 
   std::vector<int> target(B * L);
   std::vector<int> newTarget(B * T);
 
   targetVar.host(target.data());
-  for (intl b = 0; b < B; ++b) {
+  for (int b = 0; b < B; ++b) {
     const auto pTarget = target.data() + b * L;
     auto pNewTarget = newTarget.data() + b * T;
 
-    intl TN = w2l::getTargetSize(pTarget, L);
+    int TN = w2l::getTargetSize(pTarget, L);
     if (TN > T || TN == 0) {
       // hacky way to indicate that LinSeg should output NAN,
       // make ASG think TN == 0.
       std::fill(pNewTarget, pNewTarget + T, -1);
     } else {
-      for (intl t = 0; t < T; ++t) {
+      for (int t = 0; t < T; ++t) {
         pNewTarget[t] = pTarget[t * TN / T];
       }
     }

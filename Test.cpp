@@ -26,6 +26,10 @@
 #include "runtime/Logger.h"
 #include "runtime/Serial.h"
 
+#ifdef BUILD_FB_DEPENDENCIES
+#include "fb/W2lEverstoreDataset.h"
+#endif
+
 using namespace w2l;
 
 int main(int argc, char** argv) {
@@ -92,12 +96,25 @@ int main(int argc, char** argv) {
   DictionaryMap dicts = {{kTargetIdx, tokenDict}, {kWordIdx, wordDict}};
 
   /* ===================== Create Dataset ===================== */
+  // Load dataset
   int worldRank = 0;
   int worldSize = 1;
-  W2lNumberedFilesDataset ds(
-      FLAGS_test, dicts, 1, worldRank, worldSize, FLAGS_datadir);
-  ds.shuffle(3);
-  int nSamples = ds.size();
+  std::unique_ptr<W2lDataset> ds;
+  if (FLAGS_everstoredb) {
+#ifdef BUILD_FB_DEPENDENCIES
+    W2lEverstoreDataset::init(); // Required for everstore client
+    ds = std::unique_ptr<W2lEverstoreDataset>(new W2lEverstoreDataset(
+        FLAGS_test, dicts, 1, worldRank, worldSize, FLAGS_targettype));
+#else
+    LOG(FATAL) << "W2lEverstoreDataset not supported: "
+               << "build with -DBUILD_FB_DEPENDENCIES";
+#endif
+  } else {
+    ds = std::unique_ptr<W2lNumberedFilesDataset>(new W2lNumberedFilesDataset(
+        FLAGS_test, dicts, 1, worldRank, worldSize, FLAGS_datadir));
+  }
+  ds->shuffle(3);
+  int nSamples = ds->size();
   if (FLAGS_maxload > 0) {
     nSamples = std::min(nSamples, FLAGS_maxload);
   }
@@ -109,7 +126,7 @@ int main(int argc, char** argv) {
   EmissionSet emissionSet;
   meters.timer.resume();
   int cnt = 1;
-  for (auto& sample : ds) {
+  for (auto& sample : *ds) {
     auto rawEmission = network->forward({fl::input(sample[kInputIdx])}).front();
     auto emission = afToVector<float>(rawEmission);
     auto ltrTarget = afToVector<int>(sample[kTargetIdx]);

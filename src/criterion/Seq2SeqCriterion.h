@@ -15,25 +15,26 @@
 #include "criterion/attention/window.h"
 
 namespace w2l {
+struct Seq2SeqState {
+  fl::Variable alpha;
+  fl::Variable hidden;
+  fl::Variable summary;
+  int step;
+  Seq2SeqState() : step(0) {}
+};
+
+typedef std::shared_ptr<Seq2SeqState> Seq2SeqStatePtr;
 
 class Seq2SeqCriterion : public SequenceCriterion {
  public:
-  struct DecoderState {
-    fl::Variable alpha;
-    fl::Variable hidden;
-    fl::Variable summary;
-    int step;
-    DecoderState() : step(0) {}
-  };
-
   struct CandidateHypo {
     float score;
     std::vector<int> path;
-    DecoderState state;
+    Seq2SeqState state;
     explicit CandidateHypo() : score(0.0) {
       path.resize(0);
     };
-    CandidateHypo(float score_, std::vector<int> path_, DecoderState state_)
+    CandidateHypo(float score_, std::vector<int> path_, Seq2SeqState state_)
         : score(score_), path(path_), state(state_) {}
   };
 
@@ -80,25 +81,36 @@ class Seq2SeqCriterion : public SequenceCriterion {
 
   std::string prettyString() const override;
 
-  std::shared_ptr<fl::Embedding> embedding() {
+  std::shared_ptr<fl::Embedding> embedding() const {
     return std::static_pointer_cast<fl::Embedding>(module(0));
   }
 
-  std::shared_ptr<fl::RNN> decodeRNN() {
+  std::shared_ptr<fl::RNN> decodeRNN() const {
     return std::static_pointer_cast<fl::RNN>(module(1));
   }
 
-  std::shared_ptr<fl::Linear> linearOut() {
+  std::shared_ptr<fl::Linear> linearOut() const {
     return std::static_pointer_cast<fl::Linear>(module(2));
   }
 
-  std::shared_ptr<AttentionBase> attention() {
+  std::shared_ptr<AttentionBase> attention() const {
     return std::static_pointer_cast<AttentionBase>(module(3));
   }
 
-  fl::Variable startEmbedding() {
+  fl::Variable startEmbedding() const {
     return params_.back();
   }
+
+  std::pair<std::vector<std::vector<float>>, std::vector<Seq2SeqStatePtr>>
+  decodeBatchStep(
+      const fl::Variable& encodedx,
+      std::vector<fl::Variable>& ys,
+      const std::vector<Seq2SeqStatePtr>& instates) const;
+
+  std::pair<fl::Variable, Seq2SeqState> decodeStep(
+      const fl::Variable& xEncoded,
+      const fl::Variable& y,
+      const Seq2SeqState& instate) const;
 
  private:
   int eos_;
@@ -124,11 +136,6 @@ class Seq2SeqCriterion : public SequenceCriterion {
       nClass_)
 
   Seq2SeqCriterion() = default;
-
-  std::pair<fl::Variable, DecoderState> decodeStep(
-      const fl::Variable& xEncoded,
-      const fl::Variable& y,
-      const DecoderState& instate);
 };
 
 w2l::Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx);

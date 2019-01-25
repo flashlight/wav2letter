@@ -382,7 +382,7 @@ std::string tensor2words(
   return ret;
 }
 
-void validateWords(std::vector<int>& input, const int unkIdx) {
+void validateTokens(std::vector<int>& input, const int unkIdx) {
   int newSize = 0;
   for (int i = 0; i < input.size(); i++) {
     if (input[i] >= 0 and input[i] != unkIdx) {

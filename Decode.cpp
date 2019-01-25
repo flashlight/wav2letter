@@ -78,8 +78,11 @@ int main(int argc, char** argv) {
 
     W2lSerializer::load(FLAGS_am, cfg, network, criterion);
     network->eval();
-
     LOG(INFO) << "[Network] " << network->prettyString();
+    if (criterion) {
+      criterion->eval();
+      LOG(INFO) << "[Network] " << criterion->prettyString();
+    }
     LOG(INFO) << "[Network] Number of params: " << numTotalParams(network);
 
     auto flags = cfg.find(kGflags);
@@ -344,7 +347,7 @@ int main(int argc, char** argv) {
         }
         remapLabels(letterTarget, tokenDict);
         remapLabels(letterPrediction, tokenDict);
-        validateWords(wordPrediction, wordDict.getIndex(kUnkToken));
+        validateTokens(wordPrediction, wordDict.getIndex(kUnkToken));
 
         // Update meters & print out predictions
         meters.werSlice.add(wordPrediction, wordTarget);

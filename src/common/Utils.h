@@ -161,7 +161,7 @@ std::string tensor2letters(const std::vector<int>&, const Dictionary&);
 
 std::string tensor2words(const std::vector<int>&, const Dictionary&);
 
-void validateWords(std::vector<int>&, const int);
+void validateTokens(std::vector<int>&, const int);
 
 std::vector<int> tknTensor2wrdTensor(
     const std::vector<int>&,

@@ -263,6 +263,61 @@ TEST(Seq2SeqTest, Serialization) {
   ASSERT_TRUE(allClose(attentionl, attention));
 }
 
+TEST(Seq2SeqTest, BatchedDecoderStep) {
+  int N = 5, H = 8, B = 10, T = 20, maxoutputlen = 100;
+  std::vector<Seq2SeqCriterion> criterions{
+      Seq2SeqCriterion(
+          N, H, N - 1, maxoutputlen, std::make_shared<ContentAttention>()),
+      Seq2SeqCriterion(
+          N,
+          H,
+          N - 1,
+          maxoutputlen,
+          std::make_shared<NeuralContentAttention>(H))};
+
+  for (auto& seq2seq : criterions) {
+    seq2seq.eval();
+    std::vector<Variable> ys;
+    std::vector<Seq2SeqStatePtr> instates;
+
+    auto input = noGrad(af::randn(H, T, 1, f32));
+    for (int i = 0; i < B; i++) {
+      Variable y = constant(i % N, 1, s32, false);
+      ys.push_back(y);
+
+      Seq2SeqStatePtr instate = std::make_shared<Seq2SeqState>();
+      instate->alpha = noGrad(af::randn(1, T, 1, f32));
+      instate->hidden = noGrad(af::randn(H, 1, 1, f32));
+      instate->summary = noGrad(af::randn(H, 1, 1, f32));
+      instates.push_back(instate);
+    }
+
+    std::vector<std::vector<float>> single_scores(B);
+    std::vector<std::vector<float>> batched_scores;
+
+    // Single forward
+    for (int i = 0; i < B; i++) {
+      Seq2SeqState outstate;
+      Variable ox;
+      std::tie(ox, outstate) = seq2seq.decodeStep(input, ys[i], *instates[i]);
+      ox = logSoftmax(ox, 0);
+      single_scores[i] = w2l::afToVector<float>(ox);
+    }
+
+    // Batched forward
+    std::vector<Seq2SeqStatePtr> outstates;
+    std::tie(batched_scores, outstates) =
+        seq2seq.decodeBatchStep(input, ys, instates);
+
+    // Check
+    for (int i = 0; i < B; i++) {
+      for (int j = 0; j < N; j++) {
+        ASSERT_NEAR(single_scores[i][j], batched_scores[i][j], 1e-5);
+      }
+    }
+  }
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

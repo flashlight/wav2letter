@@ -181,7 +181,7 @@ std::pair<Variable, Variable> Seq2SeqCriterion::decoder(
 
   std::vector<Variable> outvec;
   std::vector<Variable> alphaVec;
-  DecoderState state;
+  Seq2SeqState state;
   Variable y;
   for (int u = 0; u < U; u++) {
     Variable ox;
@@ -221,7 +221,7 @@ std::pair<af::array, Variable> Seq2SeqCriterion::viterbiPathBase(
   std::vector<int> maxPath;
   std::vector<Variable> alphaVec;
   Variable alpha;
-  DecoderState state;
+  Seq2SeqState state;
   Variable y, ox;
   af::array maxIdx, maxValues;
   int pred;
@@ -285,7 +285,7 @@ std::vector<Seq2SeqCriterion::CandidateHypo> Seq2SeqCriterion::beamSearch(
       }
 
       Variable ox;
-      DecoderState state;
+      Seq2SeqState state;
       std::tie(ox, state) = decodeStep(Variable(input, false), y, hypo.state);
       ox = logSoftmax(ox, 0);
       auto oxVector = w2l::afToVector<float>(ox.array());
@@ -339,11 +339,10 @@ std::vector<Seq2SeqCriterion::CandidateHypo> Seq2SeqCriterion::beamSearch(
   return complete.empty() ? beam : complete;
 }
 
-std::pair<Variable, Seq2SeqCriterion::DecoderState>
-Seq2SeqCriterion::decodeStep(
+std::pair<Variable, Seq2SeqState> Seq2SeqCriterion::decodeStep(
     const Variable& xEncoded,
     const Variable& y,
-    const DecoderState& inState) {
+    const Seq2SeqState& inState) const {
   // xEncoded is shape [hiddendim, seqlen, batchsize]
   // y (if not empty) is shape [1, batchsize]
   size_t stepSize = af::getMemStepSize();
@@ -361,7 +360,7 @@ Seq2SeqCriterion::decodeStep(
   // [hiddendim, batchsize]
   hy = moddims(hy, {hy.dims(0), -1});
 
-  DecoderState outState;
+  Seq2SeqState outState;
   outState.step = inState.step + 1;
   std::tie(hy, outState.hidden) = decodeRNN()->forward(hy, inState.hidden);
 
@@ -381,6 +380,83 @@ Seq2SeqCriterion::decodeStep(
   auto out = linearOut()->forward(outState.summary);
   af::setMemStepSize(stepSize);
   return std::make_pair(out, outState);
+}
+
+std::pair<std::vector<std::vector<float>>, std::vector<Seq2SeqStatePtr>>
+Seq2SeqCriterion::decodeBatchStep(
+    const Variable& xEncoded,
+    std::vector<Variable>& ys,
+    const std::vector<Seq2SeqStatePtr>& inStates) const {
+  // xEncoded is shape [hiddendim, seqlen, batchsize]
+  // y (if not empty) is shape [1, batchsize]
+  size_t stepSize = af::getMemStepSize();
+  af::setMemStepSize(10 * (1 << 10));
+  int batchSize = ys.size();
+  std::vector<Variable> statesVector(batchSize);
+
+  // Batch Ys
+  for (int i = 0; i < batchSize; i++) {
+    if (ys[i].isempty()) {
+      ys[i] = startEmbedding();
+    } else {
+      ys[i] = embedding()->forward(ys[i]);
+      if (inputFeeding_) {
+        ys[i] = ys[i] + moddims(inStates[i]->summary, ys[i].dims());
+      }
+    }
+    ys[i] = moddims(ys[i], {ys[i].dims(0), -1});
+  }
+  // yBatched [hiddendim, batchsize]
+  Variable yBatched = concatenate(ys, 1);
+
+  // Batch inState
+  for (int i = 0; i < batchSize; i++) {
+    statesVector[i] = inStates[i]->hidden;
+  }
+  Variable inStateHiddenBatched = concatenate(statesVector, 1);
+
+  /* (1) RNN forward */
+  Variable outStateBatched;
+  std::tie(yBatched, outStateBatched) =
+      decodeRNN()->forward(yBatched, inStateHiddenBatched);
+
+  std::vector<Seq2SeqStatePtr> outstates(batchSize);
+  for (int i = 0; i < batchSize; i++) {
+    outstates[i] = std::make_shared<Seq2SeqState>();
+    outstates[i]->step = inStates[i]->step + 1;
+    outstates[i]->hidden = outStateBatched.col(i);
+  }
+
+  /* (2) Attention forward */
+  if (window_ && (!train_ || trainWithWindow_)) {
+    LOG(FATAL) << "Batched decoding does not support window models";
+  } else {
+    Variable alphaBatched;
+    // DEBUG: Third Variable is set to empty since no attention use it.
+    std::tie(alphaBatched, outStateBatched) =
+        attention()->forward(yBatched, xEncoded, Variable(), Variable());
+    // alphaBatched [T, 1, batchSize]
+    alphaBatched = reorder(alphaBatched, 1, 2, 0);
+    // outStateBatched [hidden_dim, 1, batchSize]
+    outStateBatched = moddims(
+        outStateBatched, {outStateBatched.dims(0), 1, outStateBatched.dims(1)});
+    for (int i = 0; i < batchSize; i++) {
+      outstates[i]->alpha = alphaBatched(af::span, af::span, i);
+      outstates[i]->summary = outStateBatched(af::span, af::span, i);
+    }
+  }
+
+  /* (3) Linear forward */
+  // outBatched [nclass, 1, batchsize]
+  auto outBatched = linearOut()->forward(outStateBatched);
+  outBatched = logSoftmax(outBatched, 0);
+  std::vector<std::vector<float>> out(batchSize);
+  for (int i = 0; i < batchSize; i++) {
+    out[i] = w2l::afToVector<float>(outBatched(af::span, af::span, i));
+  }
+
+  af::setMemStepSize(stepSize);
+  return std::make_pair(out, outstates);
 }
 
 std::string Seq2SeqCriterion::prettyString() const {

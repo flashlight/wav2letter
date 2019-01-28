@@ -11,7 +11,7 @@
 #include <arrayfire.h>
 #include <array>
 
-#include <criterion/criterion.h>
+#include "criterion/criterion.h"
 
 using namespace fl;
 using namespace w2l;

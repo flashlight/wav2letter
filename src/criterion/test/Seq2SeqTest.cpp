@@ -11,8 +11,8 @@
 #include <arrayfire.h>
 #include <flashlight/flashlight.h>
 
-#include <criterion/attention/attention.h>
-#include <criterion/criterion.h>
+#include "criterion/attention/attention.h"
+#include "criterion/criterion.h"
 
 using namespace fl;
 using namespace w2l;

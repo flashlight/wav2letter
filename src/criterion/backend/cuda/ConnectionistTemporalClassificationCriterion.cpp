@@ -6,12 +6,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <ctc.h>
+#include <ctc.h> // warpctc
 
-#include <criterion/ConnectionistTemporalClassificationCriterion.h>
-#include <criterion/CriterionUtils.h>
 #include <flashlight/autograd/autograd.h>
 #include <flashlight/common/cuda.h>
+
+#include "criterion/ConnectionistTemporalClassificationCriterion.h"
+#include "criterion/CriterionUtils.h"
 
 using namespace fl;
 

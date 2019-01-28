@@ -6,13 +6,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "Distributed.h"
-
 #include <cstdlib>
 #include <unordered_map>
 
-#include <common/Defines.h>
 #include <flashlight/distributed/distributed.h>
+
+#include "Distributed.h"
+#include "common/Defines.h"
 
 namespace w2l {
 

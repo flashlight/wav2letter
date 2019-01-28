@@ -6,14 +6,17 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <flashlight/flashlight.h>
-#include <gtest/gtest.h>
-#include <module/module.h>
-#include <runtime/Serial.h>
-#include <runtime/SpeechStatMeter.h>
 #include <stdint.h>
 #include <unordered_map>
-#include "gmock/gmock.h"
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
+#include <flashlight/flashlight.h>
+
+#include "module/module.h"
+#include "runtime/Serial.h"
+#include "runtime/SpeechStatMeter.h"
 
 using namespace w2l;
 

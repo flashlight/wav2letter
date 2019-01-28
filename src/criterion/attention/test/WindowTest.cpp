@@ -11,7 +11,7 @@
 #include <arrayfire.h>
 #include <flashlight/flashlight.h>
 
-#include <criterion/attention/window.h>
+#include "criterion/attention/window.h"
 
 using namespace fl;
 using namespace w2l;

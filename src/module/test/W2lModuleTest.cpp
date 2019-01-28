@@ -11,8 +11,8 @@
 #include <arrayfire.h>
 #include <flashlight/flashlight.h>
 
-#include <common/Utils.h>
-#include <module/module.h>
+#include "common/Utils.h"
+#include "module/module.h"
 
 using namespace fl;
 using namespace w2l;

@@ -6,8 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <criterion/ConnectionistTemporalClassificationCriterion.h>
-#include <criterion/CriterionUtils.h>
+#include "criterion/ConnectionistTemporalClassificationCriterion.h"
+#include "criterion/CriterionUtils.h"
 
 using namespace fl;
 

@@ -8,6 +8,6 @@
 
 #pragma once
 
-#include <criterion/attention/AttentionBase.h>
-#include <criterion/attention/ContentAttention.h>
-#include <criterion/attention/Defines.h>
+#include "criterion/attention/AttentionBase.h"
+#include "criterion/attention/ContentAttention.h"
+#include "criterion/attention/Defines.h"

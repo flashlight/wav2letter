@@ -28,7 +28,5 @@ target_link_libraries(
 target_include_directories(
   data
   INTERFACE
-  src/data
-  src/flashlight
   ${MKL_INCLUDE_DIR}
   )

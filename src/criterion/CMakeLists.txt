@@ -1,16 +1,16 @@
 cmake_minimum_required(VERSION 3.5.1)
 # ----------------------------- Configuration -----------------------------
 # Criterion backend - default to the AFML backend
-set(CRITERION_BACKEND "CUDA" CACHE STRING "Backend with which to build criterion")
+set(W2L_CRITERION_BACKEND "CUDA" CACHE STRING "Backend with which to build criterion")
 # Select from exactly one backend
-set_property(CACHE CRITERION_BACKEND PROPERTY STRINGS CPU CUDA)
+set_property(CACHE W2L_CRITERION_BACKEND PROPERTY STRINGS CPU CUDA)
 set(CRIT_BACKEND_USE_CPU OFF)
 set(CRIT_BACKEND_USE_CUDA OFF)
-if (CRITERION_BACKEND STREQUAL "CPU")
+if (W2L_CRITERION_BACKEND STREQUAL "CPU")
   set(CRIT_BACKEND_USE_CPU ON)
-elseif (CRITERION_BACKEND STREQUAL "CUDA")
+elseif (W2L_CRITERION_BACKEND STREQUAL "CUDA")
   set(CRIT_BACKEND_USE_CUDA ON)
-elseif (CRITERION_BACKEND STREQUAL "OPENCL")
+elseif (W2L_CRITERION_BACKEND STREQUAL "OPENCL")
   set(CRIT_BACKEND_USE_OPENCL ON)
 else ()
   message(FATAL_ERROR "Invalid criterion backend specified.")

@@ -148,5 +148,5 @@ COPY . /root/wav2letter
 # ------------------------------------------------------------------
 RUN export MKLROOT=/opt/intel/mkl && export KENLM_ROOT_DIR=/root/kenlm && \
     cd /root/wav2letter && mkdir -p build && \
-    cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DCRITERION_BACKEND=CUDA && \
+    cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DW2L_CRITERION_BACKEND=CUDA && \
     make -j8

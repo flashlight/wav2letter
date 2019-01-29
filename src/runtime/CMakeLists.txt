@@ -28,5 +28,4 @@ target_include_directories(
   INTERFACE
   ${GLOG_INCLUDE_DIRS}
   ${cereal_INCLUDE_DIRS}
-  src/flashlight
   )

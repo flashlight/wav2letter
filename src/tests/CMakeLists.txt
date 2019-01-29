@@ -6,7 +6,7 @@ if (GTest_FOUND)
   message(STATUS "GTest found (library: ${GTEST_LIBRARIES} include: ${GTEST_INCLUDE_DIRS})")
 else()
   message(STATUS "GTest not found")
-  if (BUILD_TESTS)
+  if (W2L_BUILD_TESTS)
     message(FATAL_ERROR "GTest required to build tests")
   endif ()
 endif()
@@ -32,7 +32,7 @@ function(build_test SRCFILE)
   add_test(${target} ${target})
 endfunction(build_test)
 
-if (BUILD_TESTS)
+if (W2L_BUILD_TESTS)
   # Common
   build_test(${CMAKE_SOURCE_DIR}/src/common/test/W2lCommonTest.cpp)
   # Criterion

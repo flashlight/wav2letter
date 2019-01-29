@@ -29,11 +29,11 @@
   compile with [OpenMP](https://www.openmp.org/), for better performance.
 
 ## Build Options
-| Options           | Configuration     | Default Value |
-|-------------------|-------------------|---------------|
-| CRITERION_BACKEND | CUDA, CPU         | CUDA          |
-| BUILD_TESTS       | ON, OFF           | ON            |
-| CMAKE_BUILD_TYPE  | CMake build types | Debug         |
+| Options               | Configuration     | Default Value |
+|-----------------------|-------------------|---------------|
+| W2L_CRITERION_BACKEND | CUDA, CPU         | CUDA          |
+| W2L_BUILD_TESTS       | ON, OFF           | ON            |
+| CMAKE_BUILD_TYPE      | CMake build types | Debug         |
 
 ## General Build Instructions
 First, clone the repository:
@@ -54,22 +54,52 @@ produces three binaries in the `build` directory:
 ### Building on Linux
 wav2letter++ has been tested on Ubuntu 16.04 and CentOS 7.5.
 
-Building on Linux is simple. Once you've downloaded wav2letter++ and built and
-installed the required dependencies:
+Assuming you have [ArrayFire](https://github.com/arrayfire/arrayfire/wiki/Build-Instructions-for-Linux), [flashlight](https://fl.readthedocs.io/en/latest/installation.html), [libsndfile](https://github.com/erikd/libsndfile#hacking), and [KenLM](https://github.com/kpu/kenlm#compiling) built/installed, install the below dependencies with `apt` (or your distribution's package manager):
+```
+sudo apt-get update
+sudo apt-get install \
+    # Audio encoding libs for libsndfile \
+    libasound2-dev \
+    libflac-dev \
+    libogg-dev \
+    libtool \
+    libvorbis-dev \
+    # FFTW for Fourier transforms \
+    libfftw3-dev \
+    # Compression libraries for KenLM \
+    zlib1g-dev \
+    libbz2-dev \
+    liblzma-dev \
+    libboost-all-dev \
+    # gflags \
+    libgflags-dev \
+    libgflags2v5 \
+    # glog \
+    libgoogle-glog-dev \
+    libgoogle-glog0v5 \
+```
+
+MKL and KenLM aren't easily discovered by CMake by default; export environment variables to make sure they're found. On most Linux-based systems, MKL is installed in `/opt/intel/mkl`. Since KenLM doesn't support an install step, [after building KenLM](https://github.com/kpu/kenlm#compiling), point CMake to wherever you downloaded and built KenLM:
+```
+export MKLROOT=/opt/intel/mkl # or path to MKL
+export KENLM_ROOT_DIR=[path to KenLM]
+```
+
+Once you've downloaded wav2letter++ and built and installed the required dependencies:
 ```
 # in your wav2letter++ directory
 mkdir -p build
 cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DCRITERION_BACKEND=[backend]
+cmake .. -DCMAKE_BUILD_TYPE=Release -DW2L_CRITERION_BACKEND=[backend] # Replace backend with CUDA or CPU
 make -j4 # (or any number of threads)
 ```
 
 ### Building/Running with Docker
 
-wav2letter++ and its dependencies can also be built with the provided Dockerfile. Both CUDA and CPU backends are supported with Docker at this time.
+wav2letter++ and its dependencies can also be built with the provided Dockerfile. Both CUDA and CPU backends are supported with Docker
 
 To build wav2letter++ with Docker:
-- Install [Docker](https://docs.docker.com/engine/installation/)  and [nvidia-docker](https://github.com/NVIDIA/nvidia-docker/)
+- Install [Docker](https://docs.docker.com/engine/installation/) and, if using the CUDA backend, [nvidia-docker](https://github.com/NVIDIA/nvidia-docker/)
 - Run the docker image with CUDA/CPU backend in a new container:
 
   ```
@@ -97,4 +127,4 @@ To build wav2letter++ with Docker:
   sudo docker build -f ./Dockerfile-CPU -t wav2letter .
   ```
 
-  For logging during training/testing/decoding inside a container use flag `--logtostderr=1`.
+  For logging during training/testing/decoding inside a container, use the `--logtostderr=1` flag.

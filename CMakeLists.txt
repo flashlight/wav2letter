@@ -10,14 +10,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # ----------------------------- Configuration -----------------------------
 
 # Build tests
-option(BUILD_TESTS "Build tests for wav2letter++" ON)
-if (BUILD_TESTS)
+option(W2L_BUILD_TESTS "Build tests for wav2letter++" ON)
+if (W2L_BUILD_TESTS)
   enable_testing()
   add_subdirectory(${CMAKE_SOURCE_DIR}/src/tests)
 endif ()
 
 # Build examples
-option(BUILD_EXAMPLES "Build examples for wav2letter++" ON)
+option(W2L_BUILD_EXAMPLES "Build examples for wav2letter++" ON)
 
 # ------------------------ Global External Dependencies ------------------------
 # ArrayFire
@@ -63,7 +63,7 @@ find_package(flashlight REQUIRED)
 if (flashlight_FOUND)
   message(STATUS "flashlight found (include: ${FLASHLIGHT_INCLUDE_DIRS} lib: flashlight::flashlight )")
   if (NOT TARGET flashlight::Distributed)
-    message(FATAL_ERROR "flashlight must be build in distributed mode or wav2letter++")
+    message(FATAL_ERROR "flashlight must be build in distributed mode for wav2letter++")
   else ()
     message(STATUS "flashlight built in distributed mode.")
   endif ()

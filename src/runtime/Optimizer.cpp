@@ -33,6 +33,9 @@ std::shared_ptr<fl::FirstOrderOptimizer> initOptimizer(
   } else if (optimizer == kRMSPropOptimizer) {
     opt = std::make_shared<fl::RMSPropOptimizer>(
         net->params(), lr, FLAGS_optimrho, FLAGS_optimepsilon, weightdecay);
+  } else if (optimizer == kAdadeltaOptimizer) {
+    opt = std::make_shared<fl::AdadeltaOptimizer>(
+        net->params(), 1.0, FLAGS_optimrho, FLAGS_optimepsilon, weightdecay);
   } else {
     LOG(FATAL) << "Optimizer option " << optimizer << " not implemented";
   }

@@ -49,35 +49,36 @@ int main(int argc, char** argv) {
       " fork [directory/model] [flags]");
 
   /* ===================== Parse Options ===================== */
-  int runidx = 1; // current #runs in this path
-  std::string runpath; // current experiment path
-  std::string reloadpath; // path to model to reload
+  int runIdx = 1; // current #runs in this path
+  std::string runPath; // current experiment path
+  std::string reloadPath; // path to model to reload
+  std::string runStatus = argv[1];
   int startEpoch = 0;
   if (argc <= 1) {
     LOG(FATAL) << gflags::ProgramUsage();
   }
-  if (strcmp(argv[1], "train") == 0) {
+  if (runStatus == "train") {
     LOG(INFO) << "Parsing command line flags";
     gflags::ParseCommandLineFlags(&argc, &argv, false);
     if (!FLAGS_flagsfile.empty()) {
       LOG(INFO) << "Reading flags from file " << FLAGS_flagsfile;
       gflags::ReadFromFlagsFile(FLAGS_flagsfile, argv[0], true);
     }
-    runpath = newRunPath(FLAGS_rundir, FLAGS_runname, FLAGS_tag);
-  } else if (strcmp(argv[1], "continue") == 0) {
-    runpath = argv[2];
-    while (fileExists(getRunFile("model_last.bin", runidx, runpath))) {
-      ++runidx;
+    runPath = newRunPath(FLAGS_rundir, FLAGS_runname, FLAGS_tag);
+  } else if (runStatus == "continue") {
+    runPath = argv[2];
+    while (fileExists(getRunFile("model_last.bin", runIdx, runPath))) {
+      ++runIdx;
     }
-    reloadpath = getRunFile("model_last.bin", runidx - 1, runpath);
-    LOG(INFO) << "reload path is " << reloadpath;
+    reloadPath = getRunFile("model_last.bin", runIdx - 1, runPath);
+    LOG(INFO) << "reload path is " << reloadPath;
     std::unordered_map<std::string, std::string> cfg;
-    W2lSerializer::load(reloadpath, cfg);
+    W2lSerializer::load(reloadPath, cfg);
     auto flags = cfg.find(kGflags);
     if (flags == cfg.end()) {
-      LOG(FATAL) << "Invalid config loaded from " << reloadpath;
+      LOG(FATAL) << "Invalid config loaded from " << reloadPath;
     }
-    LOG(INFO) << "Reading flags from config file " << reloadpath;
+    LOG(INFO) << "Reading flags from config file " << reloadPath;
     gflags::ReadFlagsFromString(flags->second, gflags::GetArgv0(), true);
     if (argc > 3) {
       LOG(INFO) << "Parsing command line flags";
@@ -94,16 +95,16 @@ int main(int argc, char** argv) {
     } else {
       startEpoch = std::stoi(epoch->second);
     }
-  } else if (strcmp(argv[1], "fork") == 0) {
-    reloadpath = argv[2];
+  } else if (runStatus == "fork") {
+    reloadPath = argv[2];
     std::unordered_map<std::string, std::string> cfg;
-    W2lSerializer::load(reloadpath, cfg);
+    W2lSerializer::load(reloadPath, cfg);
     auto flags = cfg.find(kGflags);
     if (flags == cfg.end()) {
-      LOG(FATAL) << "Invalid config loaded from " << reloadpath;
+      LOG(FATAL) << "Invalid config loaded from " << reloadPath;
     }
 
-    LOG(INFO) << "Reading flags from config file " << reloadpath;
+    LOG(INFO) << "Reading flags from config file " << reloadPath;
     gflags::ReadFlagsFromString(flags->second, gflags::GetArgv0(), true);
 
     if (argc > 3) {
@@ -116,7 +117,7 @@ int main(int argc, char** argv) {
       LOG(INFO) << "Reading flags from file" << FLAGS_flagsfile;
       gflags::ReadFromFlagsFile(FLAGS_flagsfile, argv[0], true);
     }
-    runpath = newRunPath(FLAGS_rundir, FLAGS_runname, FLAGS_tag);
+    runPath = newRunPath(FLAGS_rundir, FLAGS_runname, FLAGS_tag);
   } else {
     LOG(FATAL) << gflags::ProgramUsage();
   }
@@ -138,8 +139,8 @@ int main(int argc, char** argv) {
 
   LOG_MASTER(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
-  LOG_MASTER(INFO) << "Experiment path: " << runpath;
-  LOG_MASTER(INFO) << "Experiment runidx: " << runidx;
+  LOG_MASTER(INFO) << "Experiment path: " << runPath;
+  LOG_MASTER(INFO) << "Experiment runidx: " << runIdx;
 
   std::unordered_map<std::string, std::string> config = {
       {kProgramName, exec},
@@ -149,8 +150,8 @@ int main(int argc, char** argv) {
       {kUserName, getEnvVar("USER")},
       {kHostName, getEnvVar("HOSTNAME")},
       {kTimestamp, getCurrentDate() + ", " + getCurrentDate()},
-      {kRunIdx, std::to_string(runidx)},
-      {kRunPath, runpath}};
+      {kRunIdx, std::to_string(runIdx)},
+      {kRunPath, runPath}};
 
   auto validsets = split(',', trim(FLAGS_valid));
 
@@ -162,11 +163,14 @@ int main(int argc, char** argv) {
   DictionaryMap dicts;
   dicts.insert({kTargetIdx, dict});
 
-  /* ===================== Create Network ===================== */
+  /* =========== Create Network & Optimizers / Reload Snapshot ============ */
   std::shared_ptr<fl::Module> network;
   std::shared_ptr<SequenceCriterion> criterion;
+  std::shared_ptr<fl::FirstOrderOptimizer> netoptim;
+  std::shared_ptr<fl::FirstOrderOptimizer> critoptim;
+
   auto scalemode = getCriterionScaleMode(FLAGS_onorm, FLAGS_sqnorm);
-  if (reloadpath.empty()) {
+  if (runStatus == "train") {
     auto archfile = pathsConcat(FLAGS_archdir, FLAGS_arch);
     LOG_MASTER(INFO) << "Loading architecture file from " << archfile;
     auto numFeatures = getSpeechFeatureSize();
@@ -186,21 +190,53 @@ int main(int argc, char** argv) {
     }
   } else {
     std::unordered_map<std::string, std::string> cfg; // unused
-    W2lSerializer::load(reloadpath, cfg, network, criterion);
+    W2lSerializer::load(
+        reloadPath, cfg, network, criterion, netoptim, critoptim);
   }
   LOG_MASTER(INFO) << "[Network] " << network->prettyString();
   LOG_MASTER(INFO) << "[Network Params: " << numTotalParams(network) << "]";
   LOG_MASTER(INFO) << "[Criterion] " << criterion->prettyString();
 
+  if (runStatus == "train" || runStatus == "fork") {
+    netoptim = initOptimizer(
+        network, FLAGS_netoptim, FLAGS_lr, FLAGS_momentum, FLAGS_weightdecay);
+    critoptim =
+        initOptimizer(criterion, FLAGS_critoptim, FLAGS_lrcrit, 0.0, 0.0);
+  }
+  LOG_MASTER(INFO) << "[Network Optimizer] " << netoptim->prettyString();
+  LOG_MASTER(INFO) << "[Criterion Optimizer] " << critoptim->prettyString();
+
+  double initLinNetlr = FLAGS_linlr >= 0.0 ? FLAGS_linlr : FLAGS_lr;
+  double initLinCritlr =
+      FLAGS_linlrcrit >= 0.0 ? FLAGS_linlrcrit : FLAGS_lrcrit;
   std::shared_ptr<LinSegCriterion> linseg;
-  if (FLAGS_linseg > 0) {
+  std::shared_ptr<fl::FirstOrderOptimizer> linNetoptim;
+  std::shared_ptr<fl::FirstOrderOptimizer> linCritoptim;
+  if (FLAGS_linseg > startEpoch) {
     if (FLAGS_criterion != kAsgCriterion) {
       LOG(FATAL) << "linseg may only be used with ASG criterion";
     }
     linseg = std::make_shared<LinSegCriterion>(numClasses, scalemode);
     linseg->setParams(criterion->param(0), 0);
     LOG_MASTER(INFO) << "[Criterion] " << linseg->prettyString()
-                     << " (for first " << FLAGS_linseg << " epochs)";
+                     << " (for first " << FLAGS_linseg - startEpoch
+                     << " epochs)";
+
+    linNetoptim = initOptimizer(
+        network,
+        FLAGS_netoptim,
+        initLinNetlr,
+        FLAGS_momentum,
+        FLAGS_weightdecay);
+    linCritoptim =
+        initOptimizer(linseg, FLAGS_critoptim, initLinCritlr, 0.0, 0.0);
+
+    LOG_MASTER(INFO) << "[Network Optimizer] " << linNetoptim->prettyString()
+                     << " (for first " << FLAGS_linseg - startEpoch
+                     << " epochs)";
+    LOG_MASTER(INFO) << "[Criterion Optimizer] " << linCritoptim->prettyString()
+                     << " (for first " << FLAGS_linseg - startEpoch
+                     << " epochs)";
   }
 
   /* ===================== Meters ===================== */
@@ -218,15 +254,15 @@ int main(int argc, char** argv) {
   /* ===================== Logging ===================== */
   std::ofstream perfile, logfile;
   if (isMaster) {
-    dirCreate(runpath);
-    perfile.open(getRunFile("perf", runidx, runpath), std::ios::out);
-    logfile.open(getRunFile("log", runidx, runpath), std::ios::out);
+    dirCreate(runPath);
+    perfile.open(getRunFile("perf", runIdx, runPath), std::ios::out);
+    logfile.open(getRunFile("log", runIdx, runPath), std::ios::out);
 
     // write header to perfile
     auto msgp = getStatus(meters, 0, 0, 0, false, true, "\t").first;
     print2file(perfile, "# " + msgp);
     // write config
-    std::ofstream cfgfile(getRunFile("config", runidx, runpath));
+    std::ofstream cfgfile(getRunFile("config", runIdx, runPath));
     cereal::JSONOutputArchive ar(cfgfile);
     ar(CEREAL_NVP(config));
   }
@@ -254,12 +290,13 @@ int main(int argc, char** argv) {
       std::string filename;
       if (FLAGS_itersave) {
         filename =
-            getRunFile(format("model_iter_%03d.bin", iter), runidx, runpath);
+            getRunFile(format("model_iter_%03d.bin", iter), runIdx, runPath);
       } else {
-        filename = getRunFile("model_last.bin", runidx, runpath);
+        filename = getRunFile("model_last.bin", runIdx, runPath);
       }
       // save last model
-      W2lSerializer::save(filename, config, network, criterion);
+      W2lSerializer::save(
+          filename, config, network, criterion, netoptim, critoptim);
 
       // save if better than ever for one valid
       for (const auto& v : validminerrs) {
@@ -268,8 +305,9 @@ int main(int argc, char** argv) {
           validminerrs[v.first] = verr;
           std::string cleaned_v = cleanFilepath(v.first);
           std::string vfname =
-              getRunFile("model_" + cleaned_v + ".bin", runidx, runpath);
-          W2lSerializer::save(vfname, config, network, criterion);
+              getRunFile("model_" + cleaned_v + ".bin", runIdx, runPath);
+          W2lSerializer::save(
+              vfname, config, network, criterion, netoptim, critoptim);
         }
       }
     }
@@ -372,12 +410,14 @@ int main(int argc, char** argv) {
                 &evalOutput,
                 &validds,
                 gradNorm,
-                startEpoch](
+                &startEpoch](
                    std::shared_ptr<fl::Module> ntwrk,
                    std::shared_ptr<SequenceCriterion> crit,
                    std::shared_ptr<W2lDataset> trainset,
-                   fl::FirstOrderOptimizer& netopt,
-                   fl::FirstOrderOptimizer& critopt,
+                   std::shared_ptr<fl::FirstOrderOptimizer> netopt,
+                   std::shared_ptr<fl::FirstOrderOptimizer> critopt,
+                   double initlr,
+                   double initcritlr,
                    bool clampCrit,
                    int nepochs) {
     fl::distributeModuleGrads(ntwrk, gradNorm);
@@ -428,8 +468,8 @@ int main(int argc, char** argv) {
     int64_t sampleIdx = 0;
     while (curEpoch < nepochs) {
       double lrScale = std::pow(FLAGS_gamma, curEpoch / FLAGS_stepsize);
-      netopt.setLr(lrScale * FLAGS_lr);
-      critopt.setLr(lrScale * FLAGS_lrcrit);
+      netopt->setLr(lrScale * initlr);
+      critopt->setLr(lrScale * initcritlr);
 
       ++curEpoch;
       ntwrk->train();
@@ -485,8 +525,8 @@ int main(int argc, char** argv) {
 
         // backward
         meters.bwdtimer.resume();
-        netopt.zeroGrad();
-        critopt.zeroGrad();
+        netopt->zeroGrad();
+        critopt->zeroGrad();
         loss.backward();
 
         af::sync();
@@ -501,14 +541,14 @@ int main(int argc, char** argv) {
           }
           fl::clipGradNorm(params, FLAGS_maxgradnorm);
         }
-        critopt.step();
-        netopt.step();
+        critopt->step();
+        netopt->step();
         af::sync();
         meters.optimtimer.stopAndIncUnit();
         meters.sampletimer.resume();
 
         if (FLAGS_reportiters > 0 && sampleIdx % FLAGS_reportiters == 0) {
-          runValAndSaveModel(curEpoch, netopt.getLr(), critopt.getLr());
+          runValAndSaveModel(curEpoch, netopt->getLr(), critopt->getLr());
           resetTimeStatMeters();
           ntwrk->train();
           crit->train();
@@ -519,35 +559,27 @@ int main(int argc, char** argv) {
       }
       af::sync();
       if (FLAGS_reportiters == 0) {
-        runValAndSaveModel(curEpoch, netopt.getLr(), critopt.getLr());
+        runValAndSaveModel(curEpoch, netopt->getLr(), critopt->getLr());
       }
     }
   };
 
   /* ===================== Train ===================== */
-  if (FLAGS_linseg > 0) {
-    auto linlr = FLAGS_linlr >= 0.0 ? FLAGS_linlr : FLAGS_lr;
-    auto linlrcrit = FLAGS_linlrcrit >= 0.0 ? FLAGS_linlrcrit : FLAGS_lrcrit;
-
-    auto linNetoptim = fl::SGDOptimizer(
-        network->params(), linlr, FLAGS_momentum, FLAGS_weightdecay);
-    auto linCritoptim = fl::SGDOptimizer(linseg->params(), linlrcrit, 0.0, 0.0);
-
+  if (FLAGS_linseg - startEpoch > 0) {
     train(
         network,
         linseg,
         trainds,
         linNetoptim,
         linCritoptim,
+        initLinNetlr,
+        initLinCritlr,
         false /* clampCrit */,
-        FLAGS_linseg);
-  }
+        FLAGS_linseg - startEpoch);
 
-  // TODO - add support for other optimizers
-  auto netoptim = fl::SGDOptimizer(
-      network->params(), FLAGS_lr, FLAGS_momentum, FLAGS_weightdecay);
-  auto critoptim =
-      fl::SGDOptimizer(criterion->params(), FLAGS_lrcrit, 0.0, 0.0);
+    startEpoch = FLAGS_linseg;
+    LOG_MASTER(INFO) << "Finished LinSeg";
+  }
 
   train(
       network,
@@ -555,6 +587,8 @@ int main(int argc, char** argv) {
       trainds,
       netoptim,
       critoptim,
+      FLAGS_lr,
+      FLAGS_lrcrit,
       true /* clampCrit */,
       FLAGS_iter);
 

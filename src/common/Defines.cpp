@@ -68,6 +68,10 @@ DEFINE_double(momentum, 0.0, "momentum factor");
 DEFINE_double(weightdecay, 0.0, "weight decay (L2 penalty)");
 DEFINE_double(lrcrit, 0, "criterion learning rate");
 DEFINE_double(maxgradnorm, 0, "Clip gradients at value (0 = no clipping)");
+DEFINE_double(adambeta1, 0.9, "beta1 in the Adam optimizer");
+DEFINE_double(adambeta2, 0.999, "beta2 in the Adam optimizer");
+DEFINE_double(optimrho, 0.9, "rho in the optimizer");
+DEFINE_double(optimepsilon, 1e-8, "epsilon in the optimizer");
 
 // LR-SCHEDULER OPTIONS
 DEFINE_int64(
@@ -75,6 +79,10 @@ DEFINE_int64(
     1000000,
     "We multiply LR by gamma every stepsize epochs");
 DEFINE_double(gamma, 1.0, "the LR annealing multiplier");
+
+// OPTIMIZER OPTIONS
+DEFINE_string(netoptim, kSGDoptimizer, "optimizer for the network");
+DEFINE_string(critoptim, kSGDoptimizer, "optimizer for the criterion");
 
 // MFCC OPTIONS
 DEFINE_bool(mfcc, false, "use standard htk mfcc features as input");
@@ -115,7 +123,7 @@ DEFINE_int64(
 
 // ARCHITECTURE OPTIONS
 DEFINE_string(arch, "default", "network architecture");
-DEFINE_string(criterion, "asg", "training criterion");
+DEFINE_string(criterion, kAsgCriterion, "training criterion");
 DEFINE_bool(garbage, false, "add a garbage between each target label");
 DEFINE_int64(encoderdim, 0, "Dimension of encoded hidden state.");
 

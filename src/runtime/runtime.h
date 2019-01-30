@@ -10,4 +10,5 @@
 
 #include "runtime/Distributed.h"
 #include "runtime/Logger.h"
+#include "runtime/Optimizer.h"
 #include "runtime/Serial.h"

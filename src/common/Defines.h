@@ -32,10 +32,13 @@ constexpr const char* kCommandLine = "commandline";
 constexpr const char* kUserName = "username";
 constexpr const char* kHostName = "hostname";
 constexpr const char* kTimestamp = "timestamp";
-constexpr const char* kRunIdx = "runidx";
-constexpr const char* kRunPath = "runpath";
+constexpr const char* kRunIdx = "runIdx";
+constexpr const char* kRunPath = "runPath";
 constexpr const char* kProgramName = "programname";
 constexpr const char* kEpoch = "epoch";
+constexpr const char* kSGDoptimizer = "sgd";
+constexpr const char* kAdamOptimizer = "adam";
+constexpr const char* kRMSPropOptimizer = "rmsprop";
 constexpr const char* kCtcCriterion = "ctc";
 constexpr const char* kAsgCriterion = "asg";
 constexpr const char* kSeq2SeqCriterion = "seq2seq";
@@ -107,11 +110,19 @@ DECLARE_double(weightdecay);
 DECLARE_bool(sqnorm);
 DECLARE_double(lrcrit);
 DECLARE_double(maxgradnorm);
+DECLARE_double(adambeta1);
+DECLARE_double(adambeta2);
+DECLARE_double(optimrho);
+DECLARE_double(optimepsilon);
 
 /* ========== LR-SCHEDULER OPTIONS ========== */
 
 DECLARE_int64(stepsize);
 DECLARE_double(gamma);
+
+/* ========== OPTIMIZER OPTIONS ========== */
+DECLARE_string(netoptim);
+DECLARE_string(critoptim);
 
 /* ========== MFCC OPTIONS ========== */
 

@@ -7,6 +7,7 @@
  */
 
 #include <gmock/gmock.h>
+
 #include <fstream>
 #include <functional>
 

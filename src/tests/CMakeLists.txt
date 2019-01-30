@@ -1,33 +1,26 @@
 cmake_minimum_required(VERSION 3.5.1)
 
-# Find GTest
-find_package(GTest)
-if (GTest_FOUND)
-  message(STATUS "GTest found (library: ${GTEST_LIBRARIES} include: ${GTEST_INCLUDE_DIRS})")
-else()
-  message(STATUS "GTest not found")
-  if (W2L_BUILD_TESTS)
-    message(FATAL_ERROR "GTest required to build tests")
-  endif ()
-endif()
+# Download and build googletest
+include(${CMAKE_MODULE_PATH}/BuildGoogleTest.cmake)
 
-# TODO: figure out a nice way to add linking and definitions
-# add linking in a 
 function(build_test SRCFILE)
   get_filename_component(src_name ${SRCFILE} NAME_WE)
   set(target "${src_name}")
   add_executable(${target} ${SRCFILE})
+  add_dependencies(${target} gtest) # make sure gtest is built first
   target_link_libraries(
     ${target}
     PRIVATE
     wav2letter++
-    GTest::GTest
-    GTest::Main
+    ${GTEST_LIBRARIES}
+    ${GMOCK_LIBRARIES}
     )
   target_include_directories(
     ${target}
     PRIVATE
     ${CMAKE_SOURCE_DIR}/..
+    ${GTEST_INCLUDE_DIR}
+    ${GMOCK_INCLUDE_DIR}
     )
   add_test(${target} ${target})
 endfunction(build_test)

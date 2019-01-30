@@ -9,7 +9,6 @@
 # MKLDNN           4bdffc2      (git)
 # Gloo             b7e0906      (git)
 # flashlight       master       (git, CPU backend)
-# GoogleTest       2fe3bd9      (git)
 # libsndfile       bef2abc      (git)
 # FFTW             latest       (apt)
 # KenLM            e47088d      (git)
@@ -129,15 +128,6 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     cd flashlight && mkdir -p build && cd build && \
     cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CPU && \
     make -j8 && make install && \
-# ==================================================================
-# GoogleTest https://github.com/google/googletest/
-# ------------------------------------------------------------------
-    cd /tmp && git clone --recursive https://github.com/google/googletest && \
-    cd googletest && git checkout 2fe3bd9 && \
-    mkdir build && cd build && \
-    cmake .. && \
-    make -j8 && \
-    make install && \
 # ==================================================================
 # libsndfile https://github.com/erikd/libsndfile.git
 # ------------------------------------------------------------------

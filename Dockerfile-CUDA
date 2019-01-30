@@ -8,7 +8,6 @@
 # OpenMPI          latest       (apt)
 # flashlight       master       (git, CUDA backend)
 # python           3.6          (apt)
-# GoogleTest       2fe3bd9      (git)
 # libsndfile       bef2abc      (git)
 # MKL              2018.4.057   (apt)
 # FFTW             latest       (apt)
@@ -100,15 +99,6 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     cd /root/flashlight && mkdir -p build && \
     cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CUDA && \
     make -j8 && make install && \
-# ==================================================================
-# GoogleTest https://github.com/google/googletest/
-# ------------------------------------------------------------------
-    cd /tmp && git clone --recursive https://github.com/google/googletest && \
-    cd googletest && git checkout 2fe3bd9 && \
-    mkdir build && cd build && \
-    cmake .. && \
-    make -j8 && \
-    make install && \
 # ==================================================================
 # libsndfile https://github.com/erikd/libsndfile.git
 # ------------------------------------------------------------------

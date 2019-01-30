@@ -18,15 +18,15 @@
   LZMA, BZip2, or Z is required for LM compression with KenLM.
 - [gflags](https://github.com/gflags/gflags) is required.
 - [glog](https://github.com/google/glog) is required.
-- [gtest and gmock](https://github.com/google/googletest) >= 1.8.0 are required if
+
+The following dependencies are automatically downloaded/built on build:
+- [gtest and gmock](https://github.com/google/googletest) 1.8.1 is built if
   building tests.
+- If using the CUDA criterion backend (see below), [NVIDIA cub](https://github.com/NVlabs/cub) 1.8.0 is downloaded and linked to criterion CUDA kernels.
 
 ### Optional Dependencies
-- `flashlight` requires CUDA >= 9.2; if building wav2letter++ with the `CUDA`
-  criterion backend, CUDA >= 9.2 is required. Using [CUDA 9.2](
-  https://developer.nvidia.com/cuda-92-download-archive) is recommended.
-- If building with the `CPU` criterion backend, wav2letter++ will try to
-  compile with [OpenMP](https://www.openmp.org/), for better performance.
+- `flashlight` requires CUDA >= 9.2; if building wav2letter++ with the `CUDA` criterion backend, CUDA >= 9.2 is required. Using [CUDA 9.2](https://developer.nvidia.com/cuda-92-download-archive) is recommended.
+- If building with the `CPU` criterion backend, wav2letter++ will try to compile with [OpenMP](https://www.openmp.org/), for better performance.
 
 ## Build Options
 | Options               | Configuration     | Default Value |

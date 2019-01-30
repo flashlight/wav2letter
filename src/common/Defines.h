@@ -39,6 +39,7 @@ constexpr const char* kEpoch = "epoch";
 constexpr const char* kSGDoptimizer = "sgd";
 constexpr const char* kAdamOptimizer = "adam";
 constexpr const char* kRMSPropOptimizer = "rmsprop";
+constexpr const char* kAdadeltaOptimizer = "adadelta";
 constexpr const char* kCtcCriterion = "ctc";
 constexpr const char* kAsgCriterion = "asg";
 constexpr const char* kSeq2SeqCriterion = "seq2seq";

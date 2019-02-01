@@ -103,15 +103,15 @@ int main(int argc, char** argv) {
   if (FLAGS_everstoredb) {
 #ifdef BUILD_FB_DEPENDENCIES
     W2lEverstoreDataset::init(); // Required for everstore client
-    ds = std::unique_ptr<W2lEverstoreDataset>(new W2lEverstoreDataset(
-        FLAGS_test, dicts, 1, worldRank, worldSize, FLAGS_targettype));
+    ds = cpp::make_unique<W2lEverstoreDataset>(
+        FLAGS_test, dicts, 1, worldRank, worldSize, FLAGS_targettype);
 #else
     LOG(FATAL) << "W2lEverstoreDataset not supported: "
                << "build with -DBUILD_FB_DEPENDENCIES";
 #endif
   } else {
-    ds = std::unique_ptr<W2lNumberedFilesDataset>(new W2lNumberedFilesDataset(
-        FLAGS_test, dicts, 1, worldRank, worldSize, FLAGS_datadir));
+    ds = cpp::make_unique<W2lNumberedFilesDataset>(
+        FLAGS_test, dicts, 1, worldRank, worldSize, FLAGS_datadir);
   }
   ds->shuffle(3);
   int nSamples = ds->size();

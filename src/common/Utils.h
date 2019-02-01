@@ -99,9 +99,9 @@ std::string getCurrentTime();
 
 template <
     typename FwdIt,
-    typename = typename std::enable_if<std::is_same<
-        typename std::decay<decltype(*std::declval<FwdIt>())>::type,
-        std::string>::value>::type>
+    typename = cpp::enable_if_t<std::is_same<
+        cpp::decay_t<decltype(*std::declval<FwdIt>())>,
+        std::string>::value>>
 std::string join(const std::string& delim, FwdIt begin, FwdIt end);
 
 std::string join(const std::string& delim, const std::vector<std::string>& vec);

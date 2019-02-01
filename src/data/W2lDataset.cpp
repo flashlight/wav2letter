@@ -27,7 +27,7 @@ W2lDataset::W2lDataset(
       batchSize_(batchsize),
       worldRank_(worldrank),
       worldSize_(worldsize),
-      threadpool_(new fl::ThreadPool(FLAGS_nthread)) {
+      threadpool_(cpp::make_unique<fl::ThreadPool>(FLAGS_nthread)) {
   if (batchSize_ < 1 || worldRank_ < 0 || worldSize_ < 1 ||
       worldRank_ >= worldSize_) {
     LOG(FATAL) << "Invalid arguments!";

@@ -18,6 +18,8 @@
 
 namespace w2l {
 
+namespace cpp = fl::cpp;
+
 // Dataset indices
 // If a new field is added, `kNumDataIdx` should be modified accordingly.
 constexpr const size_t kInputIdx = 0;

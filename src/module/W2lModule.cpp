@@ -14,6 +14,10 @@
 
 #include "common/Utils.h"
 
+#ifdef BUILD_FB_DEPENDENCIES
+#include "experimental/frontend/Frontend.h"
+#endif
+
 using namespace fl;
 
 namespace {
@@ -230,6 +234,45 @@ std::shared_ptr<Module> parseLine(const std::string& line) {
     LOG_IF(FATAL, params.size() < 3) << "Failed parsing - " << line;
     return rnnLayer(params, RnnMode::LSTM);
   }
+
+  /* ========== Trainable frontend ========== */
+#ifdef BUILD_FB_DEPENDENCIES
+  if (params[0] == "SL2P") {
+    return std::make_shared<w2l::SqL2Pooling>();
+  }
+
+  if (params[0] == "LC") {
+    LOG_IF(FATAL, params.size() < 2) << "Failed parsing - " << line;
+    double k = std::stod(params[1]);
+    return std::make_shared<w2l::LogCompression>(k);
+  }
+
+  if (params[0] == "LPF") {
+    LOG_IF(FATAL, params.size() < 5) << "Failed parsing - " << line;
+
+    int nin = std::stoi(params[1]);
+    int kw = std::stoi(params[2]);
+    int dw = std::stoi(params[3]);
+    w2l::LPFMode learn = w2l::LPFMode::FIXED;
+    if (params[4] == "L") {
+      learn = w2l::LPFMode::LEARN;
+    }
+    return std::make_shared<w2l::Lowpass>(nin, kw, dw, learn);
+  }
+
+  if (params[0] == "WF") {
+    LOG_IF(FATAL, params.size() < 3) << "Failed parsing - " << line;
+
+    std::string weightsFile = params[1];
+    std::string childStr = w2l::join(" ", params.begin() + 2, params.end());
+
+    auto conv = parseLine(childStr);
+    auto weights = conv->param(0);
+    w2l::initializeWeights(weightsFile, weights);
+    conv->setParams(weights, 0);
+    return conv;
+  }
+#endif
 
   LOG(FATAL) << "Failed parsing - " << line;
   return nullptr;

@@ -237,6 +237,6 @@ DEFINE_string(target, "tkn", "target feature");
 DEFINE_bool(everstoredb, false, "use Everstore db for reading data");
 DEFINE_string(
     targettype,
-    "video",
+    "word",
     "determines target parser type when using everstore db");
 } // namespace w2l

@@ -116,15 +116,15 @@ To build wav2letter++ with Docker:
   cd /root/wav2letter/build && make test
   ```
 
-- Build Docker image from source:
+- Build Docker image from the source (using `--no-cache` will provide the latest version of `flashlight` inside the image if you have built the image previously for earlier versions of `wav2letter`):
 
   ```
   git clone --recursive https://github.com/facebookresearch/wav2letter.git
   cd wav2letter
   # for CUDA backend
-  sudo docker build -f ./Dockerfile-CUDA -t wav2letter .
+  sudo docker build --no-cache -f ./Dockerfile-CUDA -t wav2letter .
   # for CPU backend
-  sudo docker build -f ./Dockerfile-CPU -t wav2letter .
+  sudo docker build --no-cache -f ./Dockerfile-CPU -t wav2letter .
   ```
 
   For logging during training/testing/decoding inside a container, use the `--logtostderr=1` flag.

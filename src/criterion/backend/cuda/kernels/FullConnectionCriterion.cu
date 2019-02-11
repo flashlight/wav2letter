@@ -140,15 +140,9 @@ cudaError_t fullConnectionCriterionForward(
     int N,
     const float* input,
     const float* trans,
+    double* transtmp,
     double* fccacc,
     cudaStream_t stream) {
-  auto retval = cudaSuccess;
-  double* transtmp;
-
-  if ((retval = cudaMalloc(&transtmp, B * N * N * sizeof(double)))) {
-    goto err_1;
-  }
-
   for (int t = 1; t < T; ++t) {
     forwardStep<<<B * N, kBlockSize, 0, stream>>>(
         N,
@@ -158,10 +152,7 @@ cudaError_t fullConnectionCriterionForward(
         trans,
         transtmp);
   }
-
-  cudaFree(transtmp);
-err_1:
-  return retval;
+  return cudaSuccess;
 }
 
 /**
@@ -187,17 +178,11 @@ cudaError_t fullConnectionCriterionBackward(
     int B,
     int N,
     const float* trans,
+    double* transtmp,
     const double* fccacc,
     double* fccgacc,
     double* gtrans,
     cudaStream_t stream) {
-  auto retval = cudaSuccess;
-  double* transtmp;
-
-  if ((retval = cudaMalloc(&transtmp, B * N * N * sizeof(double)))) {
-    goto err_1;
-  }
-
   for (int t = T - 1; t > 0; --t) {
     backwardStep1<<<B * N, kBlockSize, 0, stream>>>(
         N,
@@ -209,10 +194,7 @@ cudaError_t fullConnectionCriterionBackward(
     computeSums1<<<B * N, kBlockSize, 0, stream>>>(
         N, N, transtmp, fccgacc + (t - 1) * B * N);
   }
-
-  cudaFree(transtmp);
-err_1:
-  return retval;
+  return cudaSuccess;
 }
 
 } // namespace cuda

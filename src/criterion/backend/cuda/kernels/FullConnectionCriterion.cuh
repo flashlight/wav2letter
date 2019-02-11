@@ -11,6 +11,7 @@ cudaError_t fullConnectionCriterionForward(
     int N,
     const float* input,
     const float* trans,
+    double* transtmp,
     double* fccacc,
     cudaStream_t stream);
 
@@ -19,6 +20,7 @@ cudaError_t fullConnectionCriterionBackward(
     int B,
     int N,
     const float* trans,
+    double* transtmp,
     const double* fccacc,
     double* fccgacc,
     double* gtrans,

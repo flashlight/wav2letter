@@ -25,6 +25,7 @@ static void backward(
   assert(inputs.size() == 2);
   const auto& gscale = scale * grad_output.array()(filter_idxs); // [B]
   const auto& trans = inputs[1].array(); // [N, N]
+  array transtmp(N, N, B, f64);
   array fccgacc(N, B, T, f64);
   auto gtrans = constant(0, N, N, B, f64);
 
@@ -37,6 +38,7 @@ static void backward(
   {
     fl::DevicePtr trans_raw(trans);
     fl::DevicePtr fccacc_raw(fccacc);
+    fl::DevicePtr transtmp_raw(transtmp);
     fl::DevicePtr fccgacc_raw(fccgacc);
     fl::DevicePtr gtrans_raw(gtrans);
 
@@ -45,6 +47,7 @@ static void backward(
         B,
         N,
         static_cast<const float*>(trans_raw.get()),
+        static_cast<double*>(transtmp_raw.get()),
         static_cast<const double*>(fccacc_raw.get()),
         static_cast<double*>(fccgacc_raw.get()),
         static_cast<double*>(gtrans_raw.get()),
@@ -105,12 +108,14 @@ fl::Variable FullConnectionCriterion::forward(
   array scale(B, scale_host.data());
   array inp(w2l::reorder(input.array(), 0, 2, 1)(
       span, filter_idxs, span)); // [N, B, T]
+  array transtmp(N, N, B, f64);
   array fccacc(N, B, T, f64);
   fccacc(span, span, 0) = inp(span, span, 0);
 
   {
     fl::DevicePtr inp_raw(inp);
     fl::DevicePtr trans_raw(transitions.array());
+    fl::DevicePtr transtmp_raw(transtmp);
     fl::DevicePtr fccacc_raw(fccacc);
 
     FL_CUDA_CHECK(w2l::cuda::fullConnectionCriterionForward(
@@ -119,6 +124,7 @@ fl::Variable FullConnectionCriterion::forward(
         N,
         static_cast<const float*>(inp_raw.get()),
         static_cast<const float*>(trans_raw.get()),
+        static_cast<double*>(transtmp_raw.get()),
         static_cast<double*>(fccacc_raw.get()),
         fl::cuda::getActiveStream()));
   }

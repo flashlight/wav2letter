@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include <arrayfire.h>
-#include <flashlight/flashlight.h>
 #include <gflags/gflags.h>
 #include <functional>
 #include <unordered_map>
@@ -17,8 +15,6 @@
 #define W2L_VERSION "0.1"
 
 namespace w2l {
-
-namespace cpp = fl::cpp;
 
 // Dataset indices
 // If a new field is added, `kNumDataIdx` should be modified accordingly.

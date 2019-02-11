@@ -14,6 +14,8 @@
 namespace w2l {
 
 const int kBufferBucketSize = 65536;
+const float kNegativeInfinity = -std::numeric_limits<float>::infinity();
+const int kHypExtensionSize = 500;
 
 enum class ModelType { ASG = 0, CTC = 1 };
 
@@ -60,6 +62,8 @@ struct DecoderOptions {
         logAdd_(logAdd),
         silWeight_(silWeight),
         modelType_(modelType) {}
+
+  DecoderOptions() {}
 };
 
 /**
@@ -109,6 +113,23 @@ struct DecoderNode {
   }
 };
 
+/**
+ * Decoder support two typical use cases:
+ * Offline manner:
+ *  decoder.decode(someData) [returns all hypothesis (transcription)]
+ *
+ * Online manner:
+ *  decoder.decodeBegin() [called only at the beginning of the stream]
+ *  while (stream)
+ *    decoder.decodeContinue(someData) [one or more calls]
+ *    decoder.getBestHypothesis() [returns the best hypothesis (transcription)]
+ *    decoder.prune() [prunes the hypothesis space]
+ *  decoder.decodeEnd() [called only at the end of the stream]
+ *
+ * Note: function decoder.prune() deletes hypothesis up until time when called
+ * to supports online decoding. It will also add a offset to the scores in beam
+ * to avoid underflow/overflow.
+ */
 class Decoder {
  public:
   Decoder(
@@ -126,6 +147,17 @@ class Decoder {
     candidates_.reserve(kBufferBucketSize);
   }
 
+  void decodeBegin();
+
+  void decodeContinue(
+      const DecoderOptions& opt,
+      const float* transitions,
+      const float* emissions,
+      int T,
+      int N);
+
+  void decodeEnd(const DecoderOptions& opt);
+
   std::tuple<
       std::vector<float>,
       std::vector<std::vector<int>>,
@@ -137,7 +169,17 @@ class Decoder {
       int T,
       int N);
 
- private:
+  int numHypothesis() const;
+
+  int lengthHypothesis() const;
+
+  // Prune the hypothesis space.
+  void prune(int lookBack = 0);
+
+  std::tuple<float, std::vector<int>, std::vector<int>> getBestHypothesis(
+      int lookBack = 0) const;
+
+ protected:
   TriePtr lexicon_;
   LMPtr lm_;
   std::vector<DecoderNode>
@@ -157,12 +199,8 @@ class Decoder {
                     // candidates is not always equal to candidates_.size()
                     // since we do not refresh the buffer for candidates_ in
                     // memory through out the whole decoding process.
-
-  std::tuple<
-      std::vector<float>,
-      std::vector<std::vector<int>>,
-      std::vector<std::vector<int>>>
-  storeHypothesis(int T) const;
+  int nDecodedFrames_; // Total number of decoded frames.
+  int nPrunedFrames_; // Total number of pruned frames from hyp_.
 
   void candidatesReset();
 
@@ -181,6 +219,14 @@ class Decoder {
       const bool isSort);
 
   void mergeNodes(DecoderNode* oldNode, const DecoderNode* newNode, int logAdd);
+
+  std::tuple<
+      std::vector<float>,
+      std::vector<std::vector<int>>,
+      std::vector<std::vector<int>>>
+  storeAllFinalHypothesis() const;
+
+  const DecoderNode* findBestAncestor(int& lookBack) const;
 };
 
 } // namespace w2l

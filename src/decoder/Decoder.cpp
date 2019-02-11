@@ -13,12 +13,11 @@
 #include <algorithm>
 #include <cmath>
 #include <functional>
+#include <unordered_map>
 
 #include "Decoder.hpp"
 
 namespace w2l {
-
-const float kNegativeInfinity = -std::numeric_limits<float>::infinity();
 
 void Decoder::candidatesReset() {
   nCandidates_ = 0;
@@ -152,34 +151,33 @@ void Decoder::candidatesStore(
   }
 }
 
-std::tuple<
-    std::vector<float>,
-    std::vector<std::vector<int>>,
-    std::vector<std::vector<int>>>
-Decoder::decode(
+void Decoder::decodeBegin() {
+  hyp_.resize(kHypExtensionSize);
+
+  /* note: the lm reset itself with :start() */
+  hyp_.front().clear();
+  DecoderNode startNode =
+      DecoderNode(lm_->start(0), lexicon_->getRoot(), nullptr, 0.0, nullptr);
+  hyp_.front().emplace_back(startNode);
+  nDecodedFrames_ = 0;
+  nPrunedFrames_ = 0;
+}
+
+void Decoder::decodeContinue(
     const DecoderOptions& opt,
     const float* transitions,
     const float* emissions,
     int T,
     int N) {
-  if (T + 3 > hyp_.size()) {
-    hyp_.resize(T + 3);
+  int startFrame = nDecodedFrames_ - nPrunedFrames_;
+  // Extend hyp_ buffer
+  if (hyp_.size() < startFrame + T + 1) {
+    hyp_.resize(startFrame + T + kHypExtensionSize);
   }
 
-  /* note: the lm reset itself with :start() */
-  hyp_[0].clear();
-  DecoderNode start_node =
-      DecoderNode(lm_->start(0), lexicon_->getRoot(), nullptr, 0.0, nullptr);
-  hyp_[0].emplace_back(start_node);
-
-  /**
-   * Main decoding loop:
-   *  - adding hypothesis in candidates_ for each frame
-   *  - truncate candidates_ into beam size and save them in hyp_
-   */
   for (int t = 0; t < T; t++) {
     candidatesReset();
-    for (const DecoderNode& prevHyp : hyp_[t]) {
+    for (const DecoderNode& prevHyp : hyp_[startFrame + t]) {
       const TrieNodePtr& prevLex = prevHyp.lex_;
       const int prevIdx = prevLex->idx_;
       const float lexMaxScore =
@@ -188,7 +186,7 @@ Decoder::decode(
 
       for (int n = 0; n < N; n++) {
         float score = prevHyp.score_ + emissions[t * N + n];
-        if (t > 0 && opt.modelType_ == ModelType::ASG) {
+        if (nDecodedFrames_ + t > 0 && opt.modelType_ == ModelType::ASG) {
           score += transitions[n * N + prevIdx];
         }
 
@@ -198,7 +196,7 @@ Decoder::decode(
           /* If we got a true word */
           for (int i = 0; i < prevLex->nLabel_; i++) {
             float lmScore;
-            const LMStatePtr& newLmState =
+            const LMStatePtr newLmState =
                 lm_->score(prevLmState, prevLex->label_[i]->lm_, lmScore);
             candidatesAdd(
                 newLmState,
@@ -227,7 +225,7 @@ Decoder::decode(
             );
           }
           /* Allow starting with a sil */
-          if (t == 0) {
+          if (nDecodedFrames_ + t == 0) {
             candidatesAdd(
                 prevLmState,
                 prevLex,
@@ -241,7 +239,7 @@ Decoder::decode(
         }
 
         /* same place in lexicon (or sil) */
-        if ((n == prevIdx && t > 0) && !prevHyp.prevBlank_) {
+        if ((n == prevIdx && nDecodedFrames_ + t > 0) && !prevHyp.prevBlank_) {
           candidatesAdd(
               prevLmState,
               prevLex,
@@ -281,22 +279,22 @@ Decoder::decode(
         }
       }
     }
-
-    candidatesStore(opt, hyp_[t + 1], false);
+    candidatesStore(opt, hyp_[startFrame + t + 1], false);
   }
+  nDecodedFrames_ += T;
+}
 
-  /* finish up */
+void Decoder::decodeEnd(const DecoderOptions& opt) {
   candidatesReset();
-  for (const DecoderNode& prevHyp : hyp_[T]) {
+  for (const DecoderNode& prevHyp : hyp_[nDecodedFrames_ - nPrunedFrames_]) {
     const TrieNodePtr prevLex = prevHyp.lex_;
     const int prevIdx = prevLex->idx_;
     const float lexMaxScore =
         prevLex == lexicon_->getRoot() ? 0 : prevLex->maxScore_;
     const LMStatePtr prevLmState = prevHyp.lmState_;
 
-    /* emit a word only if silence (... or here for end of sentence!!) */
-    /* one could ignore this guy and force to finish in a sil (if sil is
-     * provided) */
+    // emit a word only if silence (... or here for end of sentence!!)
+    // one could ignore this and force to finish in a sil (if sil is provided)
     for (int i = 0; i < prevLex->nLabel_; i++) { /* true word? */
       float lmScore;
       float lmScoreEnd;
@@ -334,36 +332,196 @@ Decoder::decode(
       );
     }
   }
-  candidatesStore(opt, hyp_[T + 1], true);
-
-  return storeHypothesis(T);
+  candidatesStore(opt, hyp_[nDecodedFrames_ - nPrunedFrames_ + 1], true);
+  ++nDecodedFrames_;
 }
 
 std::tuple<
     std::vector<float>,
     std::vector<std::vector<int>>,
     std::vector<std::vector<int>>>
-Decoder::storeHypothesis(int T) const {
-  int nHyp = hyp_[T + 1].size();
+Decoder::decode(
+    const DecoderOptions& opt,
+    const float* transitions,
+    const float* emissions,
+    int T,
+    int N) {
+  decodeBegin();
+  decodeContinue(opt, transitions, emissions, T, N);
+  decodeEnd(opt);
+  return storeAllFinalHypothesis();
+}
+
+std::tuple<
+    std::vector<float>,
+    std::vector<std::vector<int>>,
+    std::vector<std::vector<int>>>
+Decoder::storeAllFinalHypothesis() const {
+  int finalFrame = nDecodedFrames_ - nPrunedFrames_;
+  int nHyp = hyp_[finalFrame].size();
   std::vector<float> scores(nHyp);
   std::vector<std::vector<int>> wordPredictions(
-      nHyp, std::vector<int>(T + 2, -1));
+      nHyp, std::vector<int>(finalFrame + 1, -1));
   std::vector<std::vector<int>> letterPredictions(
-      nHyp, std::vector<int>(T + 2, -1));
+      nHyp, std::vector<int>(finalFrame + 1, -1));
 
   for (int r = 0; r < nHyp; r++) {
-    const DecoderNode* node = &hyp_[T + 1][r];
+    const DecoderNode* node = &hyp_[finalFrame][r];
     scores[r] = node->score_;
     int i = 0;
     while (node) {
-      wordPredictions[r][T + 1 - i] = (node->label_ ? node->label_->usr_ : -1);
-      letterPredictions[r][T + 1 - i] = node->lex_->idx_;
+      wordPredictions[r][finalFrame - i] =
+          (node->label_ ? node->label_->usr_ : -1);
+      letterPredictions[r][finalFrame - i] = node->lex_->idx_;
       node = node->parent_;
       i++;
     }
   }
 
   return std::tie(scores, wordPredictions, letterPredictions);
+}
+
+std::tuple<float, std::vector<int>, std::vector<int>>
+Decoder::getBestHypothesis(int lookBack) const {
+  int nHyp = numHypothesis();
+  if (nHyp == 0) {
+    return std::make_tuple(0.0, std::vector<int>{}, std::vector<int>{});
+  }
+
+  // Search for the best hypothesis
+  const DecoderNode* bestNode = findBestAncestor(lookBack);
+  if (!bestNode) {
+    return std::make_tuple(0.0, std::vector<int>{}, std::vector<int>{});
+  }
+  float score = bestNode->score_;
+
+  // Store the letter and word prediction for the best hypothesis
+  int finalFrame = nDecodedFrames_ - nPrunedFrames_ - lookBack;
+  std::vector<int> wordPrediction(finalFrame + 1, -1);
+  std::vector<int> letterPrediction(finalFrame + 1, -1);
+  int i = 0;
+  while (bestNode) {
+    wordPrediction[finalFrame - i] =
+        (bestNode->label_ ? bestNode->label_->usr_ : -1);
+    letterPrediction[finalFrame - i] = bestNode->lex_->idx_;
+    bestNode = bestNode->parent_;
+    i++;
+  }
+
+  return std::make_tuple(score, wordPrediction, letterPrediction);
+}
+
+int Decoder::numHypothesis() const {
+  int finalFrame = nDecodedFrames_ - nPrunedFrames_;
+  return hyp_[finalFrame].size();
+}
+
+int Decoder::lengthHypothesis() const {
+  return nDecodedFrames_ - nPrunedFrames_ + 1;
+}
+
+const DecoderNode* Decoder::findBestAncestor(int& lookBack) const {
+  // (1) Find the best hypothesis / best path
+  int nHyp = numHypothesis();
+  if (nHyp == 0) {
+    return nullptr;
+  }
+
+  int finalFrame = nDecodedFrames_ - nPrunedFrames_;
+  float bestScore = hyp_[finalFrame].front().score_;
+  const DecoderNode* bestNode = &hyp_[finalFrame].front();
+  for (int r = 1; r < nHyp; r++) {
+    const DecoderNode* node = &hyp_[finalFrame][r];
+    if (node->score_ > bestScore) {
+      bestScore = node->score_;
+      bestNode = node;
+    }
+  }
+
+  // (2) Search for the last emitted word in the best path
+  int n = 0;
+  while (bestNode && n < lookBack) {
+    n++;
+    bestNode = bestNode->parent_;
+  }
+
+  const int maxLookBack = lookBack + 100;
+  while (bestNode) {
+    // Check for first emitted word.
+    if (bestNode->label_) {
+      break;
+    }
+
+    n++;
+    bestNode = bestNode->parent_;
+
+    if (n == maxLookBack) {
+      break;
+    }
+  }
+
+  lookBack = n;
+  return bestNode;
+}
+
+void Decoder::prune(int lookBack) {
+  if (nDecodedFrames_ - nPrunedFrames_ - lookBack < 1) {
+    return; // Not enough decoded frames to prune
+  }
+
+  // (1) Find the last emitted word in the best path
+  const DecoderNode* node = findBestAncestor(lookBack);
+  if (!node) {
+    return; // Not enough decoded frames to prune
+  }
+  const LMStatePtr bestLmState = node->lmState_;
+
+  // (2) Move things from back of hyp_ to front.
+  int startFrame = nDecodedFrames_ - nPrunedFrames_ - lookBack;
+  if (startFrame < 1) {
+    return; // Not enough decoded frames to prune
+  }
+
+  std::unordered_map<const DecoderNode*, DecoderNode*> nodeMap;
+
+  hyp_.front().clear();
+  hyp_.front().reserve(hyp_[startFrame].size());
+  for (const DecoderNode& hyp : hyp_[startFrame]) {
+    if (lm_->compareState(bestLmState, hyp.lmState_) == 0) {
+      hyp_.front().push_back(hyp);
+      hyp_.front().back().parent_ = nullptr;
+      hyp_.front().back().label_ = nullptr;
+      nodeMap.insert({&hyp, &hyp_.front().back()});
+    }
+  }
+
+  for (int r = 1; r <= lookBack; r++) {
+    hyp_[r].clear();
+    hyp_[r].reserve(hyp_[startFrame + r].size());
+    for (const DecoderNode& hyp : hyp_[startFrame + r]) {
+      if (nodeMap.find(hyp.parent_) == nodeMap.end()) {
+        continue;
+      }
+      hyp_[r].push_back(hyp);
+      hyp_[r].back().parent_ = nodeMap[hyp.parent_];
+      nodeMap.insert({&hyp, &hyp_[r].back()});
+    }
+  }
+
+  nPrunedFrames_ = nDecodedFrames_ - lookBack;
+
+  // (3) For the last frame hyp_[lookBack], subtract the largest score for each
+  // hypothesis in it so as to avoid underflow/overflow.
+  float largestScore = hyp_[lookBack].front().score_;
+  for (int i = 1; i < hyp_[lookBack].size(); i++) {
+    if (largestScore < hyp_[lookBack][i].score_) {
+      largestScore = hyp_[lookBack][i].score_;
+    }
+  }
+
+  for (int i = 0; i < hyp_[lookBack].size(); i++) {
+    hyp_[lookBack][i].score_ -= largestScore;
+  }
 }
 
 } // namespace w2l

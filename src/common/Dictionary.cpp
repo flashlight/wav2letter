@@ -11,8 +11,6 @@
 #include <glog/logging.h>
 #include <fstream>
 
-#include "Utils.h"
-
 namespace w2l {
 
 void Dictionary::addToken(const std::string& token, int idx) {

@@ -39,17 +39,16 @@ static void backward(
     fl::DevicePtr fccacc_raw(fccacc);
     fl::DevicePtr fccgacc_raw(fccgacc);
     fl::DevicePtr gtrans_raw(gtrans);
-    if (w2l::cuda::fullConnectionCriterionBackward(
-            T,
-            B,
-            N,
-            static_cast<const float*>(trans_raw.get()),
-            static_cast<const double*>(fccacc_raw.get()),
-            static_cast<double*>(fccgacc_raw.get()),
-            static_cast<double*>(gtrans_raw.get()),
-            fl::cuda::getActiveStream())) {
-      throw std::runtime_error("FCC: Backward pass failed");
-    }
+
+    FL_CUDA_CHECK(w2l::cuda::fullConnectionCriterionBackward(
+        T,
+        B,
+        N,
+        static_cast<const float*>(trans_raw.get()),
+        static_cast<const double*>(fccacc_raw.get()),
+        static_cast<double*>(fccgacc_raw.get()),
+        static_cast<double*>(gtrans_raw.get()),
+        fl::cuda::getActiveStream()));
   }
 
   const auto& gem = fccgacc * tile(moddims(gscale, 1, B), N, 1, T); // [N, B, T]
@@ -113,16 +112,15 @@ fl::Variable FullConnectionCriterion::forward(
     fl::DevicePtr inp_raw(inp);
     fl::DevicePtr trans_raw(transitions.array());
     fl::DevicePtr fccacc_raw(fccacc);
-    if (w2l::cuda::fullConnectionCriterionForward(
-            T,
-            B,
-            N,
-            static_cast<const float*>(inp_raw.get()),
-            static_cast<const float*>(trans_raw.get()),
-            static_cast<double*>(fccacc_raw.get()),
-            fl::cuda::getActiveStream())) {
-      throw std::runtime_error("FCC: Forward pass failed");
-    }
+
+    FL_CUDA_CHECK(w2l::cuda::fullConnectionCriterionForward(
+        T,
+        B,
+        N,
+        static_cast<const float*>(inp_raw.get()),
+        static_cast<const float*>(trans_raw.get()),
+        static_cast<double*>(fccacc_raw.get()),
+        fl::cuda::getActiveStream()));
   }
 
   const auto& final_em = fccacc(span, span, T - 1); // [N, B]

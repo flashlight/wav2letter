@@ -56,7 +56,7 @@ namespace cuda {
    }
  */
 
-int viterbiPath(
+cudaError_t viterbiPath(
     int T,
     int B,
     int N,
@@ -68,7 +68,7 @@ int viterbiPath(
     viterbiStep<<<B * N, kBlockSize, 0, stream>>>(
         N, trans, alpha + (t - 1) * B * N, alpha + t * B * N, beta + t * B * N);
   }
-  return 0;
+  return cudaSuccess;
 }
 
 } // namespace cuda

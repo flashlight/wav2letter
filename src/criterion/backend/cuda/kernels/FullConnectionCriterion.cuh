@@ -5,7 +5,7 @@
 namespace w2l {
 namespace cuda {
 
-int fullConnectionCriterionForward(
+cudaError_t fullConnectionCriterionForward(
     int T,
     int B,
     int N,
@@ -14,7 +14,7 @@ int fullConnectionCriterionForward(
     double* fccacc,
     cudaStream_t stream);
 
-int fullConnectionCriterionBackward(
+cudaError_t fullConnectionCriterionBackward(
     int T,
     int B,
     int N,

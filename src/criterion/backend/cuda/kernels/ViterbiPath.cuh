@@ -5,7 +5,7 @@
 namespace w2l {
 namespace cuda {
 
-int viterbiPath(
+cudaError_t viterbiPath(
     int T,
     int B,
     int N,

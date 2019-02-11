@@ -134,7 +134,7 @@ namespace cuda {
  * }
  */
 
-int fullConnectionCriterionForward(
+cudaError_t fullConnectionCriterionForward(
     int T,
     int B,
     int N,
@@ -142,7 +142,7 @@ int fullConnectionCriterionForward(
     const float* trans,
     double* fccacc,
     cudaStream_t stream) {
-  int retval = 0;
+  auto retval = cudaSuccess;
   double* transtmp;
 
   if ((retval = cudaMalloc(&transtmp, B * N * N * sizeof(double)))) {
@@ -182,7 +182,7 @@ err_1:
  * }
  */
 
-int fullConnectionCriterionBackward(
+cudaError_t fullConnectionCriterionBackward(
     int T,
     int B,
     int N,
@@ -191,7 +191,7 @@ int fullConnectionCriterionBackward(
     double* fccgacc,
     double* gtrans,
     cudaStream_t stream) {
-  int retval = 0;
+  auto retval = cudaSuccess;
   double* transtmp;
 
   if ((retval = cudaMalloc(&transtmp, B * N * N * sizeof(double)))) {

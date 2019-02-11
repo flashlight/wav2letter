@@ -24,16 +24,14 @@ af::array viterbiPath(const af::array& input, const af::array& trans) {
     fl::DevicePtr alpha_raw(alpha);
     fl::DevicePtr beta_raw(beta);
 
-    if (w2l::cuda::viterbiPath(
-            T,
-            B,
-            N,
-            static_cast<const float*>(trans_raw.get()),
-            static_cast<float*>(alpha_raw.get()),
-            static_cast<int*>(beta_raw.get()),
-            fl::cuda::getActiveStream())) {
-      throw std::runtime_error("viterbiPath failed");
-    }
+    FL_CUDA_CHECK(w2l::cuda::viterbiPath(
+        T,
+        B,
+        N,
+        static_cast<const float*>(trans_raw.get()),
+        static_cast<float*>(alpha_raw.get()),
+        static_cast<int*>(beta_raw.get()),
+        fl::cuda::getActiveStream()));
   }
 
   alpha = w2l::reorder(alpha, 0, 2, 1); // [N, T, B]

@@ -4,9 +4,9 @@ This is a step-by-step tutorial on how to build a simple end-to-end speech recog
 We will use "clean" speech subset of [Librispeech](http://www.openslr.org/12) corpus.
 The dataset consists of read English speech (sampled at 16KHz) from public domain audio books.
 
-### Step 1: Data preparation
+### Step 1: Data Preparation
 
-Create an experiment path and download the dataset.
+For a speech recognition dataset, we usually have access to a set of audio files and their transcriptions. Create an experiment path and download the dataset.
 
 ```shell
 > W2LDIR=/home/$USER/w2l # or any other path where you want to keep the data
@@ -44,7 +44,9 @@ their transcripts for train, validation  and test sets respectively.
 # `***.trans.txt` in each folder has the transcripts for all the `.flac` audio files present.
 ```
 
-Now, we will preprocess this dataset into a format which wav2letter++ pipelines can process.
+Before preparing the dataset, we need to decide the sub-word units to be used for training the acoustic model (mode details on acoustic model later). These could be [phonemes](https://en.wikipedia.org/wiki/Phoneme), [graphemes](https://en.wikipedia.org/wiki/Grapheme), word-pieces etc. Each word is represented as a sequence of these chosen sub-word units. In this tutorial, we will use graphemes as the sub-word unit.
+
+Now, we will preprocess this dataset into a format which wav2letter++ pipelines can process. Given training, validation and test sets, we will keep each set in a separate folder within our main dataset directory. We require four different files for each sample – an audio file (`.wav/.flac/...`), its transcription (`.wrd`), a transcription written in sub-word units (`.tkn`), and an identifier file (`.id`) which can be used to represent speaker id and/or speaker gender and/or fileid etc. You can find more details about dataset preparation [here](../../docs/data_prep.md).
 
 ```shell
 > wav2letter/tutorials/librispeech_clean/prepare_data.py --src $W2LDIR/LibriSpeech/ --dst $W2LDIR
@@ -76,15 +78,52 @@ Explore the dataset created
 #
 # 9 directories, 8 files
 ```
-You can find more details about dataset preparation [here](../../docs/data_prep.md)
 
 ### Step 2: Training the Acoustic Model
 
 During [acoustic model](https://en.wikipedia.org/wiki/Acoustic_model) training, we will train a neural network which learns the relationship between the graphemes and input audio.
-We will use Mfsc (a.k.a. logMel) features with 40 filterbanks for this experiment and [Connectionist Temporal Classification](https://distill.pub/2017/ctc/) Loss.
-For the neural network, we will use a 8-layer Temporal Convolution blocks with ReLU activations followed by 2 Linear blocks.
 
-To start training
+![alt text](acoustic_model.png)
+
+##### Feature Extraction
+wav2letter++ currently supports multiple audio file formats (e.g. wav, flac... / mono, stereo / int, float) and several feature types including the raw audio, a linearly scaled power spectrum , log-Mels (MFSC) and MFCCs. The features are computed on the fly prior to each network evaluation. For this tutorial, we will use [MFCC features](http://practicalcryptography.com/miscellaneous/machine-learning/guide-mel-frequency-cepstral-coefficients-mfccs/) which can be specified using the gflag `-mfcc`.
+
+##### Defining the Neural Network
+wav2letter++ provides an easy way to define `fl::Sequential` module using `-arch` and `-archdir` flags. This makes it easier to explore different network architectures with a single binary. It is also possible plugin your own custom network by defining new `fl::Module`. More details on specifying the architecture files [here](../../docs/arch.md).
+
+For this tutorial, we will use the following neural network with 8 Temporal Convolutions followed by 2 Linear layers with ReLU activations.
+
+```
+# network.arch
+# Input Shape - TIMEFRAMES x NFEAT x NCHANNEL x BATCHSIZE
+V -1 1 NFEAT 0   		# fl::View layer to convert input to appropriate shape for temporal convolution. NFEAT is replaced with appropriate feature dimension size at runtime.
+C2 NFEAT 256 8 1 2 1 -1 -1      # Temporal Convolution with output channels = 256, filter size = 8, stride = 2 and “SAME” padding
+R
+C2 256 256 8 1 1 1 -1 -1
+R
+C2 256 256 8 1 1 1 -1 -1
+R
+C2 256 256 8 1 1 1 -1 -1
+R
+C2 256 256 8 1 1 1 -1 -1
+R
+C2 256 256 8 1 1 1 -1 -1
+R
+C2 256 256 8 1 1 1 -1 -1
+R
+C2 256 256 8 1 1 1 -1 -1
+R
+RO 2 0 3 1			# fl::Reorder Layer to convert input to appropriate shape for Linear layer
+L 256 512			# fl::Linear Layer with 256 input channels and 512 output channels.
+R
+L 512 NLABEL			# NLABEL is replaced with appropriate token size at runtime.
+```
+
+##### Choosing the Loss Criterion
+wav2letter++ supports many end-to-end sequence models such as ConnectionistTemporalClassification, AutoSegmentationCriterion and Sequence-to-Sequence models with attention. For this tutorial, we will use [Connectionist Temporal Classification](https://distill.pub/2017/ctc/)  Loss which is specified using `-ctc` flag.
+
+##### Training the Model
+Documentation on training the models with wav2letter++  can be found [here](../../docs/train.md). To start training
 
 ```shell
 # Replace [...] with appropriate paths in train.cfg before starting
@@ -122,11 +161,24 @@ not concerned about WER performance.
 
 `001_perf` - perf, loss, LER metrics for each epoch
 
-You can find more details about training with wav2letter++ [here](../../docs/train.md) and specifying the architecture files [here](../../docs/arch.md).
 
 ### Step 3: Decoding
-During decoding, we use lexicon, acoustic model and language model and tune a set of hyperparameters
-to get the best word transcription for a given audio file using beam search.
+
+During decoding, we use lexicon, acoustic model and language model and tune a set of hyperparameters.
+
+##### Language Models
+wav2letter++ currently supports decoding using n-gram Language Models.
+We have abstracted away the logic for LM integration so that it is easy to plugin ConvLM, RNNLM etc.. and we plan to support them soon.  
+
+Since librispeech dataset we are using comes with [trained language models](http://www.openslr.org/11/), we will use the 3-gram language model
+downloaded in the data preparation stage and skip training a new language model.
+Otherwise, [KenLM](https://github.com/kpu/kenlm) can be used to train an n-gram LM on the dataset.
+
+##### Beam-search decoding
+wav2letter++ uses beam-search decoder to find the best transcription for the given utterance.
+It supports tuning of hyperparameters like beamsize, beamscore, silweight, wordscore, lmweight etc.
+Typically, one should a grid search on these to find the hyperparameters on the validation set and use it for testing.
+You can find more details about decoding with wav2letter++ [here](../../docs/decoder.md).
 
 ```shell
 # Replace [...] with appropriate paths in decode.cfg before starting
@@ -137,13 +189,13 @@ to get the best word transcription for a given audio file using beam search.
 # [Decode data/test-clean (2620 samples) in 199.436s (actual decoding time 0.177s/sample) -- WER: 18.9687, LER: 8.71737]
 ```
 
-We got a WER of 18.96 on test-clean! You can find more details about decoding with wav2letter++ [here](../../docs/decoder.md)
+We got a WER of 18.96 on test-clean!
 
 ### Conclusion
 
 In this tutorial, we have trained an end-2-end speech recognition system on "clean" subset of Librispeech dataset.
 Here are a few things you can try to explore wav2letter++ further
- - Try 4-gram LM for decoding. Convert the LM from .arpa to [binary format](https://github.com/kpu/kenlm#querying) for faster loading.
+ - Try [4-gram LM](http://www.openslr.org/11/) for decoding. Convert the LM from .arpa to [binary format](https://github.com/kpu/kenlm#querying) for faster loading.
  - Tune hyperparams of decoder like beamsize, lmweight etc to get better WER.
  - Use ASG criterion instead of CTC for training the acoustic model.
  - Increase neural network parameters and add dropout to train a better acoustic model.

@@ -81,25 +81,25 @@ CriterionScaleFn getCriterionScaleFn(CriterionScaleMode scale) {
   }
 }
 Variable getLinearTarget(const Variable& targetVar, int T) {
-  int L = targetVar.dims(0);
+  int batchL = targetVar.dims(0);
   int B = targetVar.dims(1);
 
-  std::vector<int> target(B * L);
+  std::vector<int> target(B * batchL);
   std::vector<int> newTarget(B * T);
 
   targetVar.host(target.data());
   for (int b = 0; b < B; ++b) {
-    const auto pTarget = target.data() + b * L;
+    const auto pTarget = target.data() + b * batchL;
     auto pNewTarget = newTarget.data() + b * T;
 
-    int TN = w2l::getTargetSize(pTarget, L);
-    if (TN > T || TN == 0) {
-      // hacky way to indicate that LinSeg should output NAN,
-      // make ASG think TN == 0.
+    int L = w2l::getTargetSize(pTarget, batchL);
+    L = std::min(L, T);
+    if (L == 0) {
+      // hacky way to make ASG think L == 0.
       std::fill(pNewTarget, pNewTarget + T, -1);
     } else {
       for (int t = 0; t < T; ++t) {
-        pNewTarget[t] = pTarget[t * TN / T];
+        pNewTarget[t] = pTarget[t * L / T];
       }
     }
   }

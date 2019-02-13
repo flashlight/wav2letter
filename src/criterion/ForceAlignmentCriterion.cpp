@@ -32,13 +32,13 @@ Variable ForceAlignmentCriterion::forward(
   int N = input.dims(0);
   int T = input.dims(1);
   int B = input.dims(2);
-  int L = target.dims(0);
+  int batchL = target.dims(0);
   if (N != N_) {
     throw std::invalid_argument("FAC: N doesn't match with the letter size.");
   }
 
   /* Forward */
-  auto fwBuf = fwParams(N, T, B, L);
+  auto fwBuf = fwParams(N, T, B, batchL);
   target.host(fwBuf.targetsRaw.data());
   input.host(fwBuf.inputsRaw.data());
   params_[0].host(fwBuf.transRaw.data());
@@ -48,33 +48,33 @@ Variable ForceAlignmentCriterion::forward(
 #pragma omp parallel for num_threads(B)
   for (int b = 0; b < B; b++) {
     float* inputs = fwBuf.inputsRaw.data() + b * N * T;
-    double* alpha = fwBuf.alpha.data() + b * L * T;
-    auto targets = fwBuf.targetsRaw.data() + b * L;
-    int TN = w2l::getTargetSize(targets, L);
-    TN = std::min(TN, T);
-    if (TN == 0) {
+    double* alpha = fwBuf.alpha.data() + b * batchL * T;
+    auto targets = fwBuf.targetsRaw.data() + b * batchL;
+    int L = w2l::getTargetSize(targets, batchL);
+    L = std::min(L, T);
+    if (L == 0) {
       throw std::invalid_argument("Target size cannot be empty for FAC");
     }
-    fwBuf.scale[b] = scaleFn(N, T, TN);
+    fwBuf.scale[b] = scaleFn(N, T, L);
 
     alpha[0] = inputs[targets[0]];
 
-    double* transBuf1 = fwBuf.transBuf1.data() + b * L;
-    double* transBuf2 = fwBuf.transBuf2.data() + b * L;
+    double* transBuf1 = fwBuf.transBuf1.data() + b * batchL;
+    double* transBuf2 = fwBuf.transBuf2.data() + b * batchL;
 
-    for (int i = 0; i < TN; i++) {
+    for (int i = 0; i < L; i++) {
       transBuf1[i] = fwBuf.transRaw[N * (targets[i]) + targets[i]];
       transBuf2[i] =
           i > 0 ? fwBuf.transRaw[N * (targets[i]) + targets[i - 1]] : 0;
     }
     for (int t = 1; t < T; t++) {
-      double* alphaPrevFramep = alpha + (t - 1) * TN;
-      double* alphaCurFrame = alpha + t * TN;
+      double* alphaPrevFramep = alpha + (t - 1) * L;
+      double* alphaCurFrame = alpha + t * L;
       const float* inputsCurFrame = inputs + t * N;
-      int high = t < TN ? t : TN;
-      int low = T - t < TN ? TN - (T - t) : 1;
+      int high = t < L ? t : L;
+      int low = T - t < L ? L - (T - t) : 1;
 
-      if (T - t >= TN) {
+      if (T - t >= L) {
         alphaCurFrame[0] =
             transBuf1[0] + alphaPrevFramep[0] + inputsCurFrame[targets[0]];
       }
@@ -83,62 +83,62 @@ Variable ForceAlignmentCriterion::forward(
         double s2 = transBuf2[i] + alphaPrevFramep[i - 1];
         alphaCurFrame[i] = w2l::logSumExp(s1, s2) + inputsCurFrame[targets[i]];
       }
-      if (high < TN) {
+      if (high < L) {
         alphaCurFrame[high] = transBuf2[high] + alphaPrevFramep[high - 1] +
             inputsCurFrame[targets[high]];
       }
     }
 
-    fwBuf.res[b] = static_cast<float>(alpha[T * TN - 1] * fwBuf.scale[b]);
+    fwBuf.res[b] = static_cast<float>(alpha[T * L - 1] * fwBuf.scale[b]);
   }
 
   auto result = af::array(B, fwBuf.res.data());
 
   /* Backward */
-  auto gradFunc = [B, N, T, L, fwBuf](
+  auto gradFunc = [B, N, T, batchL, fwBuf](
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
-    auto bwBuf = bwParams(N, T, B, L);
+    auto bwBuf = bwParams(N, T, B, batchL);
     gradOutput.host(bwBuf.outputsGrad.data());
 
 #pragma omp parallel for num_threads(B)
     for (int b = 0; b < B; b++) {
       const float grad = fwBuf.scale[b] * bwBuf.outputsGrad[b];
       float* inputsGrad = bwBuf.inputsGrad.data() + b * N * T;
-      double* alphaGrad = bwBuf.alphaGrad.data() + b * L * T;
+      double* alphaGrad = bwBuf.alphaGrad.data() + b * batchL * T;
       double* transGrad = bwBuf.transGrad.data() + b * N * N;
-      const double* alpha = fwBuf.alpha.data() + b * L * T;
-      auto targets = fwBuf.targetsRaw.data() + b * L;
-      int TN = w2l::getTargetSize(targets, L);
-      TN = std::min(TN, T);
-      if (TN == 0) {
+      const double* alpha = fwBuf.alpha.data() + b * batchL * T;
+      auto targets = fwBuf.targetsRaw.data() + b * batchL;
+      int L = w2l::getTargetSize(targets, batchL);
+      L = std::min(L, T);
+      if (L == 0) {
         throw(af::exception("Target size cannot be empty for FAC"));
       }
 
-      double* fwTransBuf1 = bwBuf.fwTransBuf1.data() + b * L;
-      double* fwTransBuf2 = bwBuf.fwTransBuf2.data() + b * L;
-      double* transBuf1 = bwBuf.transBuf1.data() + b * L;
-      double* transBuf2 = bwBuf.transBuf2.data() + b * L;
+      double* fwTransBuf1 = bwBuf.fwTransBuf1.data() + b * batchL;
+      double* fwTransBuf2 = bwBuf.fwTransBuf2.data() + b * batchL;
+      double* transBuf1 = bwBuf.transBuf1.data() + b * batchL;
+      double* transBuf2 = bwBuf.transBuf2.data() + b * batchL;
 
-      for (int i = 0; i < TN; i++) {
+      for (int i = 0; i < L; i++) {
         fwTransBuf1[i] = fwBuf.transRaw[N * targets[i] + targets[i]];
         fwTransBuf2[i] =
             i > 0 ? fwBuf.transRaw[N * targets[i] + targets[i - 1]] : 0;
       }
       // bw
-      alphaGrad[T * TN - 1] = 1;
+      alphaGrad[T * L - 1] = 1;
       for (int t = T - 1; t > 0; t--) {
         float* inputsCurFrame = inputsGrad + t * N;
-        const double* alphaPrevFramep = alpha + (t - 1) * TN;
-        double* alphaGradCurFrame = alphaGrad + t * TN;
-        double* alphaGradPrevFrame = alphaGrad + (t - 1) * TN;
-        int high = t < TN ? t + 1 : TN;
-        int low = T - t < TN ? TN - (T - t) : 0;
+        const double* alphaPrevFramep = alpha + (t - 1) * L;
+        double* alphaGradCurFrame = alphaGrad + t * L;
+        double* alphaGradPrevFrame = alphaGrad + (t - 1) * L;
+        int high = t < L ? t + 1 : L;
+        int low = T - t < L ? L - (T - t) : 0;
 
         for (int i = low; i < high; i++) {
           inputsCurFrame[targets[i]] += grad * alphaGradCurFrame[i];
 
-          if ((high < TN || t == TN - 1) && i == high - 1 && i > 0) {
+          if ((high < L || t == L - 1) && i == high - 1 && i > 0) {
             alphaGradPrevFrame[i - 1] += alphaGradCurFrame[i];
             transBuf2[i] += alphaGradCurFrame[i];
           } else if (i == 0) {
@@ -160,7 +160,7 @@ Variable ForceAlignmentCriterion::forward(
       }
 
       inputsGrad[targets[0]] += alphaGrad[0] * grad;
-      for (int i = 0; i < TN; i++) {
+      for (int i = 0; i < L; i++) {
         transGrad[(targets[i] * N + targets[i])] += transBuf1[i] * grad;
         if (i > 0) {
           transGrad[(targets[i] * N + targets[i - 1])] += transBuf2[i] * grad;

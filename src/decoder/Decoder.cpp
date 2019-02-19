@@ -171,7 +171,7 @@ void Decoder::decodeContinue(
     int N) {
   int startFrame = nDecodedFrames_ - nPrunedFrames_;
   // Extend hyp_ buffer
-  if (hyp_.size() < startFrame + T + 1) {
+  if (hyp_.size() <= startFrame + T + 1) {
     hyp_.resize(startFrame + T + kHypExtensionSize);
   }
 

@@ -126,9 +126,16 @@ struct DecoderNode {
  *    decoder.prune() [prunes the hypothesis space]
  *  decoder.decodeEnd() [called only at the end of the stream]
  *
+ * TODO: If you want to call decodeContinue() multiple times before calling
+ * prune(), I would suggest to enlarge `kHypExtensionSize` as well, so as not to
+ * resize `hyp_` again. This is because resize() will move the whole hyp_ buffer
+ * to somewhere else in the memory, which will ruin the absolute `parent_`
+ * pointers kept in each `DecoderNode`.
+ *
  * Note: function decoder.prune() deletes hypothesis up until time when called
  * to supports online decoding. It will also add a offset to the scores in beam
  * to avoid underflow/overflow.
+ *
  */
 class Decoder {
  public:

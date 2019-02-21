@@ -15,15 +15,13 @@ namespace w2l {
 static void backward(
     std::vector<fl::Variable>& inputs,
     const fl::Variable& grad_output,
-    int BB,
     int B,
     int N,
     int T,
-    const array& filter_idxs,
     const array& fccacc,
     const array& scale) {
   assert(inputs.size() == 2);
-  const auto& gscale = scale * grad_output.array()(filter_idxs); // [B]
+  const auto& gscale = scale * grad_output.array(); // [B]
   const auto& trans = inputs[1].array(); // [N, N]
   array transtmp(N, N, B, f64);
   array fccgacc(N, B, T, f64);
@@ -55,8 +53,7 @@ static void backward(
   }
 
   const auto& gem = fccgacc * tile(moddims(gscale, 1, B), N, 1, T); // [N, B, T]
-  auto gem_r = constant(0, N, T, BB, f32);
-  gem_r(span, span, filter_idxs) = w2l::reorder(gem, 0, 2, 1).as(f32);
+  auto gem_r = w2l::reorder(gem, 0, 2, 1).as(f32);
   auto gtrans_r = sum(gtrans * tile(moddims(gscale, 1, 1, B), N, N), 2).as(f32);
 
   inputs[0].addGrad(fl::Variable(gem_r, false));
@@ -68,7 +65,7 @@ fl::Variable FullConnectionCriterion::forward(
     const fl::Variable& target) {
   int N = input.dims(0);
   int T = input.dims(1);
-  int BB = input.dims(2);
+  int B = input.dims(2);
   int L = target.dims(0);
 
   const auto& transitions = param(0);
@@ -78,36 +75,22 @@ fl::Variable FullConnectionCriterion::forward(
 
   auto scaleFn = getCriterionScaleFn(scaleMode_);
 
-  std::vector<int> target_host(BB * L);
+  std::vector<int> target_host(B * L);
   std::vector<double> scale_host;
-  std::vector<int> filter_idxs_host;
 
   target.host(target_host.data());
-  for (int b = 0; b < BB; b++) {
+  for (int b = 0; b < B; b++) {
     const auto target_p = target_host.data() + b * L;
     int TN = getTargetSize(target_p, L);
-    if (TN > T || TN == 0) {
-      continue;
+    TN = std::min(TN, T);
+    if (TN == 0) {
+      throw std::invalid_argument("Target size cannot be empty for FCC");
     }
-    filter_idxs_host.push_back(b);
     scale_host.push_back(scaleFn(N, T, TN));
   }
 
-  int B = filter_idxs_host.size();
-  if (B == 0) {
-    auto grad_func =
-        [BB, N, T](std::vector<fl::Variable>& inputs, const fl::Variable&) {
-          inputs[0].addGrad(fl::constant(0, dim4(N, T, BB), f32, false));
-          inputs[1].addGrad(fl::constant(0, dim4(N, N), f32, false));
-        };
-    return fl::Variable(
-        constant(NAN, BB, f32), {input, transitions}, grad_func);
-  }
-
-  array filter_idxs(B, filter_idxs_host.data());
   array scale(B, scale_host.data());
-  array inp(w2l::reorder(input.array(), 0, 2, 1)(
-      span, filter_idxs, span)); // [N, B, T]
+  array inp(w2l::reorder(input.array(), 0, 2, 1)); // [N, B, T]
   array transtmp(N, N, B, f64);
   array fccacc(N, B, T, f64);
   fccacc(span, span, 0) = inp(span, span, 0);
@@ -138,15 +121,13 @@ fl::Variable FullConnectionCriterion::forward(
   if (anyTrue<bool>(isNaN(fcc))) {
     throw std::runtime_error("Loss is NaN value");
   }
-  auto fcc_r = constant(NAN, BB, f32);
-  fcc_r(filter_idxs) = fcc.as(f32);
 
-  auto grad_func = [BB, B, N, T, filter_idxs, fccacc, scale](
+  auto grad_func = [B, N, T, fccacc, scale](
                        std::vector<fl::Variable>& inputs,
                        const fl::Variable& grad_output) {
-    backward(inputs, grad_output, BB, B, N, T, filter_idxs, fccacc, scale);
+    backward(inputs, grad_output, B, N, T, fccacc, scale);
   };
-  return fl::Variable(fcc_r, {input, transitions}, grad_func);
+  return fl::Variable(fcc.as(f32), {input, transitions}, grad_func);
 }
 
 } // namespace w2l

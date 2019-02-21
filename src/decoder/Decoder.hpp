@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include <unordered_map>
+
 #include "LM.hpp"
 #include "Trie.hpp"
 
@@ -15,7 +17,6 @@ namespace w2l {
 
 const int kBufferBucketSize = 65536;
 const float kNegativeInfinity = -std::numeric_limits<float>::infinity();
-const int kHypExtensionSize = 500;
 
 enum class ModelType { ASG = 0, CTC = 1 };
 
@@ -126,12 +127,6 @@ struct DecoderNode {
  *    decoder.prune() [prunes the hypothesis space]
  *  decoder.decodeEnd() [called only at the end of the stream]
  *
- * TODO: If you want to call decodeContinue() multiple times before calling
- * prune(), I would suggest to enlarge `kHypExtensionSize` as well, so as not to
- * resize `hyp_` again. This is because resize() will move the whole hyp_ buffer
- * to somewhere else in the memory, which will ruin the absolute `parent_`
- * pointers kept in each `DecoderNode`.
- *
  * Note: function decoder.prune() deletes hypothesis up until time when called
  * to supports online decoding. It will also add a offset to the scores in beam
  * to avoid underflow/overflow.
@@ -200,7 +195,7 @@ class Decoder {
   int sil_; // Index of silence label
   int blank_; // Index of blank label (for CTC)
   TrieLabelPtr unk_; // Trie label for unknown word
-  std::vector<std::vector<DecoderNode>>
+  std::unordered_map<int, std::vector<DecoderNode>>
       hyp_; // Vector of hypothesis for all the frames so far
   int nCandidates_; // Total number of candidates in candidates_. Note that
                     // candidates is not always equal to candidates_.size()

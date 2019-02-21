@@ -152,13 +152,12 @@ void Decoder::candidatesStore(
 }
 
 void Decoder::decodeBegin() {
-  hyp_.resize(kHypExtensionSize);
+  hyp_.clear();
+  hyp_.insert({0, std::vector<DecoderNode>()});
 
   /* note: the lm reset itself with :start() */
-  hyp_.front().clear();
-  DecoderNode startNode =
-      DecoderNode(lm_->start(0), lexicon_->getRoot(), nullptr, 0.0, nullptr);
-  hyp_.front().emplace_back(startNode);
+  hyp_[0].emplace_back(
+      lm_->start(0), lexicon_->getRoot(), nullptr, 0.0, nullptr);
   nDecodedFrames_ = 0;
   nPrunedFrames_ = 0;
 }
@@ -171,8 +170,10 @@ void Decoder::decodeContinue(
     int N) {
   int startFrame = nDecodedFrames_ - nPrunedFrames_;
   // Extend hyp_ buffer
-  if (hyp_.size() <= startFrame + T + 1) {
-    hyp_.resize(startFrame + T + kHypExtensionSize);
+  if (hyp_.size() < startFrame + T + 2) {
+    for (int i = hyp_.size(); i < startFrame + T + 2; i++) {
+      hyp_.insert({i, std::vector<DecoderNode>()});
+    }
   }
 
   for (int t = 0; t < T; t++) {
@@ -358,7 +359,9 @@ std::tuple<
     std::vector<std::vector<int>>>
 Decoder::storeAllFinalHypothesis() const {
   int finalFrame = nDecodedFrames_ - nPrunedFrames_;
-  int nHyp = hyp_[finalFrame].size();
+  const std::vector<DecoderNode>& finalHyps = hyp_.find(finalFrame)->second;
+  int nHyp = finalHyps.size();
+
   std::vector<float> scores(nHyp);
   std::vector<std::vector<int>> wordPredictions(
       nHyp, std::vector<int>(finalFrame + 1, -1));
@@ -366,7 +369,7 @@ Decoder::storeAllFinalHypothesis() const {
       nHyp, std::vector<int>(finalFrame + 1, -1));
 
   for (int r = 0; r < nHyp; r++) {
-    const DecoderNode* node = &hyp_[finalFrame][r];
+    const DecoderNode* node = &finalHyps[r];
     scores[r] = node->score_;
     int i = 0;
     while (node) {
@@ -413,7 +416,7 @@ Decoder::getBestHypothesis(int lookBack) const {
 
 int Decoder::numHypothesis() const {
   int finalFrame = nDecodedFrames_ - nPrunedFrames_;
-  return hyp_[finalFrame].size();
+  return hyp_.find(finalFrame)->second.size();
 }
 
 int Decoder::lengthHypothesis() const {
@@ -428,10 +431,11 @@ const DecoderNode* Decoder::findBestAncestor(int& lookBack) const {
   }
 
   int finalFrame = nDecodedFrames_ - nPrunedFrames_;
-  float bestScore = hyp_[finalFrame].front().score_;
-  const DecoderNode* bestNode = &hyp_[finalFrame].front();
+  const std::vector<DecoderNode>& finalHyps = hyp_.find(finalFrame)->second;
+  float bestScore = finalHyps.front().score_;
+  const DecoderNode* bestNode = finalHyps.data();
   for (int r = 1; r < nHyp; r++) {
-    const DecoderNode* node = &hyp_[finalFrame][r];
+    const DecoderNode* node = &finalHyps[r];
     if (node->score_ > bestScore) {
       bestScore = node->score_;
       bestNode = node;
@@ -469,43 +473,26 @@ void Decoder::prune(int lookBack) {
     return; // Not enough decoded frames to prune
   }
 
-  // (1) Find the last emitted word in the best path
+  /* (1) Find the last emitted word in the best path */
   const DecoderNode* node = findBestAncestor(lookBack);
   if (!node) {
     return; // Not enough decoded frames to prune
   }
   const LMStatePtr bestLmState = node->lmState_;
 
-  // (2) Move things from back of hyp_ to front.
+  /* (2) Move things from back of hyp_ to front. */
   int startFrame = nDecodedFrames_ - nPrunedFrames_ - lookBack;
   if (startFrame < 1) {
     return; // Not enough decoded frames to prune
   }
 
-  std::unordered_map<const DecoderNode*, DecoderNode*> nodeMap;
-
-  hyp_.front().clear();
-  hyp_.front().reserve(hyp_[startFrame].size());
-  for (const DecoderNode& hyp : hyp_[startFrame]) {
-    if (lm_->compareState(bestLmState, hyp.lmState_) == 0) {
-      hyp_.front().push_back(hyp);
-      hyp_.front().back().parent_ = nullptr;
-      hyp_.front().back().label_ = nullptr;
-      nodeMap.insert({&hyp, &hyp_.front().back()});
-    }
+  for (int i = 0; i <= lookBack; i++) {
+    std::swap(hyp_[i], hyp_[i + startFrame]);
   }
 
-  for (int r = 1; r <= lookBack; r++) {
-    hyp_[r].clear();
-    hyp_[r].reserve(hyp_[startFrame + r].size());
-    for (const DecoderNode& hyp : hyp_[startFrame + r]) {
-      if (nodeMap.find(hyp.parent_) == nodeMap.end()) {
-        continue;
-      }
-      hyp_[r].push_back(hyp);
-      hyp_[r].back().parent_ = nodeMap[hyp.parent_];
-      nodeMap.insert({&hyp, &hyp_[r].back()});
-    }
+  for (DecoderNode& hyp : hyp_[0]) {
+    hyp.parent_ = nullptr;
+    hyp.label_ = nullptr;
   }
 
   nPrunedFrames_ = nDecodedFrames_ - lookBack;

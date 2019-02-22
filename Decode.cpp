@@ -123,7 +123,7 @@ int main(int argc, char** argv) {
   DictionaryMap dicts = {{kTargetIdx, tokenDict}, {kWordIdx, wordDict}};
 
   /* ===================== Create Dataset ===================== */
-  if (!FLAGS_am.empty()) {
+  if (FLAGS_emission_dir.empty()) {
     // Load dataset
     int worldRank = 0;
     int worldSize = 1;
@@ -246,67 +246,66 @@ int main(int argc, char** argv) {
     logStream << logStr;
   };
 
+  // Build Language Model
+  std::shared_ptr<LM> lm;
+  if (FLAGS_lmtype == "kenlm") {
+    lm = std::make_shared<KenLM>(FLAGS_lm);
+    if (!lm) {
+      LOG(FATAL) << "[LM constructing] Failed to load LM: " << FLAGS_lm;
+    }
+  } else {
+    LOG(FATAL) << "[LM constructing] Invalid LM Type: " << FLAGS_lmtype;
+  }
+  LOG(INFO) << "[Decoder] LM constructed.\n";
+
+  // Build Trie
+  if (std::strlen(kSilToken) != 1) {
+    LOG(FATAL) << "[Decoder] Invalid unknown_symbol: " << kSilToken;
+  }
+  if (std::strlen(kBlankToken) != 1) {
+    LOG(FATAL) << "[Decoder] Invalid unknown_symbol: " << kBlankToken;
+  }
+  int silIdx = tokenDict.getIndex(kSilToken);
+  int blankIdx =
+      FLAGS_criterion == kCtcCriterion ? tokenDict.getIndex(kBlankToken) : -1;
+  int unkIdx = lm->index(kUnkToken);
+  std::shared_ptr<Trie> trie =
+      std::make_shared<Trie>(tokenDict.indexSize(), silIdx);
+  auto start_state = lm->start(false);
+
+  for (auto& it : lexicon) {
+    std::string word = it.first;
+    int lmIdx = lm->index(word);
+    if (lmIdx == unkIdx) { // We don't insert unknown words
+      continue;
+    }
+    float score;
+    auto dummyState = lm->score(start_state, lmIdx, score);
+    for (auto& tokens : it.second) {
+      auto tokensTensor = tokens2Tensor(tokens, tokenDict);
+      trie->insert(
+          tokensTensor,
+          std::make_shared<TrieLabel>(lmIdx, wordDict.getIndex(word)),
+          score);
+    }
+  }
+  LOG(INFO) << "[Decoder] Trie planted.\n";
+
+  // Smearing
+  SmearingMode smear_mode = SmearingMode::NONE;
+  if (FLAGS_smearing == "logadd") {
+    smear_mode = SmearingMode::LOGADD;
+  } else if (FLAGS_smearing == "max") {
+    smear_mode = SmearingMode::MAX;
+  } else if (FLAGS_smearing != "none") {
+    LOG(FATAL) << "[Decoder] Invalid smearing mode: " << FLAGS_smearing;
+  }
+  trie->smear(smear_mode);
+  LOG(INFO) << "[Decoder] Trie smeared.\n";
+
   // Decoding
   auto runDecoder = [&](int tid, int start, int end) {
     try {
-      // Build Language Model
-      std::shared_ptr<LM> lm;
-      if (FLAGS_lmtype == "kenlm") {
-        lm = std::make_shared<KenLM>(FLAGS_lm);
-        if (!lm) {
-          LOG(FATAL) << "[LM constructing] Failed to load LM: " << FLAGS_lm;
-        }
-      } else {
-        LOG(FATAL) << "[LM constructing] Invalid LM Type: " << FLAGS_lmtype;
-      }
-      LOG(INFO) << "[Decoder] LM constructed.\n";
-
-      // Build Trie
-      if (std::strlen(kSilToken) != 1) {
-        LOG(FATAL) << "[Decoder] Invalid unknown_symbol: " << kSilToken;
-      }
-      if (std::strlen(kBlankToken) != 1) {
-        LOG(FATAL) << "[Decoder] Invalid unknown_symbol: " << kBlankToken;
-      }
-      int silIdx = tokenDict.getIndex(kSilToken);
-      int blankIdx = FLAGS_criterion == kCtcCriterion
-          ? tokenDict.getIndex(kBlankToken)
-          : -1;
-      int unkIdx = lm->index(kUnkToken);
-      std::shared_ptr<Trie> trie =
-          std::make_shared<Trie>(tokenDict.indexSize(), silIdx);
-      auto start_state = lm->start(false);
-
-      for (auto& it : lexicon) {
-        std::string word = it.first;
-        int lmIdx = lm->index(word);
-        if (lmIdx == unkIdx) { // We don't insert unknown words
-          continue;
-        }
-        float score;
-        auto dummyState = lm->score(start_state, lmIdx, score);
-        for (auto& tokens : it.second) {
-          auto tokensTensor = tokens2Tensor(tokens, tokenDict);
-          trie->insert(
-              tokensTensor,
-              std::make_shared<TrieLabel>(lmIdx, wordDict.getIndex(word)),
-              score);
-        }
-      }
-      LOG(INFO) << "[Decoder] Trie planted.\n";
-
-      // Smearing
-      SmearingMode smear_mode = SmearingMode::NONE;
-      if (FLAGS_smearing == "logadd") {
-        smear_mode = SmearingMode::LOGADD;
-      } else if (FLAGS_smearing == "max") {
-        smear_mode = SmearingMode::MAX;
-      } else if (FLAGS_smearing != "none") {
-        LOG(FATAL) << "[Decoder] Invalid smearing mode: " << FLAGS_smearing;
-      }
-      trie->smear(smear_mode);
-      LOG(INFO) << "[Decoder] Trie smeared.\n";
-
       // Build Decoder
       std::shared_ptr<TrieLabel> unk =
           std::make_shared<TrieLabel>(unkIdx, wordDict.getIndex(kUnkToken));

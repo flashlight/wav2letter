@@ -83,6 +83,8 @@ DECLARE_bool(eostoken);
 DECLARE_string(dataorder);
 DECLARE_int64(inputbinsize);
 DECLARE_int64(outputbinsize);
+DECLARE_bool(listdata);
+DECLARE_string(wordseparator);
 
 /* ========== FILTERING OPTIONS ========== */
 

@@ -15,6 +15,7 @@
 #include "common/Utils.h"
 #include "data/Featurize.h"
 #include "data/NumberedFilesLoader.h"
+#include "data/W2lListFilesDataset.h"
 #include "data/W2lNumberedFilesDataset.h"
 
 using namespace w2l;
@@ -36,6 +37,14 @@ Dictionary getDict() {
   dict.addToken("L", dict.getIndex("|"));
   dict.addToken("N", dict.getIndex("|"));
   return dict;
+}
+
+LexiconMap getLexicon() {
+  LexiconMap lexicon;
+  lexicon["uh"].push_back({"u", "h"});
+  lexicon["oh"].push_back({"o", "h"});
+  lexicon[kUnkToken] = {};
+  return lexicon;
 }
 } // namespace
 
@@ -171,7 +180,36 @@ TEST(DataTest, W2lDataset) {
   auto fields = ds.get(0);
   auto& input = fields[kInputIdx];
   auto& target = fields[kTargetIdx];
-  std::vector<int> expectedTarget = {20, 7, 20, 7}; // Tokens are "uh-huh"
+  std::vector<int> expectedTarget = {20, 7, 20, 7}; // Tokens are "uh-uh"
+  ASSERT_EQ(target.dims(), af::dim4(expectedTarget.size()));
+  for (int i = 0; i < expectedTarget.size(); ++i) {
+    ASSERT_EQ(target(i).scalar<int>(), expectedTarget[i]);
+  }
+  ASSERT_EQ(input.dims(), af::dim4(24000));
+}
+
+TEST(DataTest, W2lListDataset) {
+  gflags::FlagSaver flagsaver;
+  w2l::FLAGS_mfcc = false;
+  w2l::FLAGS_mfsc = false;
+  w2l::FLAGS_pow = false;
+  w2l::FLAGS_nthread = 6;
+  w2l::FLAGS_replabel = 0;
+  w2l::FLAGS_surround = "";
+  w2l::FLAGS_dataorder = "none";
+
+  auto dict = getDict();
+  auto lexicon = getLexicon();
+  DictionaryMap dicts;
+  dicts.insert({kTargetIdx, dict});
+
+  W2lListFilesDataset ds(
+      w2l::pathsConcat(loadPath, "filelist.txt"), dicts, lexicon, 1);
+
+  auto fields = ds.get(0);
+  auto& input = fields[kInputIdx];
+  auto& target = fields[kTargetIdx];
+  std::vector<int> expectedTarget = {20, 7, 26, 20, 7}; // "u h | u h"
   ASSERT_EQ(target.dims(), af::dim4(expectedTarget.size()));
   for (int i = 0; i < expectedTarget.size(); ++i) {
     ASSERT_EQ(target(i).scalar<int>(), expectedTarget[i]);

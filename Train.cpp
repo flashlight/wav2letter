@@ -25,6 +25,7 @@
 #include "criterion/criterion.h"
 #include "data/Featurize.h"
 #include "data/W2lDataset.h"
+#include "data/W2lListFilesDataset.h"
 #include "data/W2lNumberedFilesDataset.h"
 #include "module/module.h"
 #include "runtime/runtime.h"
@@ -153,7 +154,17 @@ int main(int argc, char** argv) {
       {kRunIdx, std::to_string(runIdx)},
       {kRunPath, runPath}};
 
-  auto validsets = split(',', trim(FLAGS_valid));
+  auto validSets = split(',', trim(FLAGS_valid));
+  std::vector<std::pair<std::string, std::string>> validTagSets;
+  for (const auto& s : validSets) {
+    // assume the format is tag:filepath
+    auto ts = splitOnAnyOf(":", s);
+    if (ts.size() == 1) {
+      validTagSets.emplace_back(std::make_pair(s, s));
+    } else {
+      validTagSets.emplace_back(std::make_pair(ts[0], ts[1]));
+    }
+  }
 
   /* ===================== Create Dictionary ===================== */
   Dictionary dict = createTokenDict();
@@ -241,14 +252,14 @@ int main(int argc, char** argv) {
 
   /* ===================== Meters ===================== */
   TrainMeters meters;
-  for (const auto& s : validsets) {
-    meters.valid[s] = EditDistMeters();
+  for (const auto& s : validTagSets) {
+    meters.valid[s.first] = EditDistMeters();
   }
 
   // best perf so far on valid datasets
   std::unordered_map<std::string, double> validminerrs;
-  for (const auto& s : validsets) {
-    validminerrs[s] = DBL_MAX;
+  for (const auto& s : validTagSets) {
+    validminerrs[s.first] = DBL_MAX;
   }
 
   /* ===================== Logging ===================== */
@@ -314,7 +325,10 @@ int main(int argc, char** argv) {
   };
 
   /* ===================== Create Dataset ===================== */
-  auto createDataset = [worldRank, worldSize, &dicts](const std::string& path) {
+  auto createDataset = [worldRank, worldSize, &dicts](
+                           const std::string& path,
+                           bool fallback2Ltr,
+                           bool skipUnk) {
     std::shared_ptr<W2lDataset> ds;
     if (FLAGS_everstoredb) {
 #ifdef BUILD_FB_DEPENDENCIES
@@ -325,6 +339,18 @@ int main(int argc, char** argv) {
       LOG(FATAL) << "W2lEverstoreDataset not supported: "
                  << "build with -DBUILD_FB_DEPENDENCIES";
 #endif
+    } else if (FLAGS_listdata) {
+      auto lexicon = loadWords(FLAGS_lexicon, FLAGS_maxword);
+
+      ds = std::make_shared<W2lListFilesDataset>(
+          path,
+          dicts,
+          lexicon,
+          FLAGS_batchsize,
+          worldRank,
+          worldSize,
+          fallback2Ltr,
+          skipUnk);
     } else {
       ds = std::make_shared<W2lNumberedFilesDataset>(
           path, dicts, FLAGS_batchsize, worldRank, worldSize, FLAGS_datadir);
@@ -332,7 +358,7 @@ int main(int argc, char** argv) {
     return ds;
   };
 
-  auto trainds = createDataset(FLAGS_train);
+  auto trainds = createDataset(FLAGS_train, true, true);
 
   if (FLAGS_noresample) {
     LOG_MASTER(INFO) << "Shuffling trainset";
@@ -340,8 +366,8 @@ int main(int argc, char** argv) {
   }
 
   std::unordered_map<std::string, std::shared_ptr<W2lDataset>> validds;
-  for (const auto& s : validsets) {
-    validds[s] = createDataset(s);
+  for (const auto& s : validTagSets) {
+    validds[s.first] = createDataset(s.second, true, true);
   }
 
   /* ===================== Hooks ===================== */

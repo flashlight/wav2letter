@@ -43,6 +43,48 @@ class SpeechSampleMetaInfo {
   }
 };
 
+// Helper class used to store data in W2lListFilesDataset
+class SpeechSample {
+ private:
+  std::string sampleId_; // utterance id
+  std::string audioFilePath_; // full path to audio file
+  std::vector<std::string> transcript_; // word transcripts
+
+ public:
+  SpeechSample() {}
+
+  SpeechSample(
+      std::string sampleId,
+      std::string audioFile,
+      std::vector<std::string> trans)
+      : sampleId_(sampleId),
+        audioFilePath_(audioFile),
+        transcript_(std::move(trans)) {}
+
+  std::string getSampleId() const {
+    return sampleId_;
+  }
+
+  std::string getAudioFile() const {
+    return audioFilePath_;
+  }
+
+  int64_t numWords() const {
+    return transcript_.size();
+  }
+
+  std::vector<std::string> getTranscript() const {
+    return transcript_;
+  }
+
+  std::string getTranscript(int64_t id) const {
+    if (id >= transcript_.size()) {
+      throw std::out_of_range("getTranscript idx out of range");
+    }
+    return transcript_[id];
+  }
+};
+
 std::vector<int64_t> sortSamples(
     const std::vector<SpeechSampleMetaInfo>& samples,
     const std::string& dataorder,

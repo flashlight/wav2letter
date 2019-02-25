@@ -74,6 +74,20 @@ Dictionary createTokenDict();
 
 Dictionary createWordDict(const LexiconMap& lexicon);
 
+std::vector<std::string> wrd2Target(
+    const std::string& word,
+    const LexiconMap& lexicon,
+    const DictionaryMap& dicts,
+    bool fallback2Ltr = false,
+    bool skipUnk = false);
+
+std::vector<std::string> wrd2Target(
+    const std::vector<std::string>& words,
+    const LexiconMap& lexicon,
+    const DictionaryMap& dicts,
+    bool fallback2Ltr = false,
+    bool skipUnk = false);
+
 /************** Decoder helpers **************/
 LexiconMap loadWords(const std::string& fn, const int64_t maxNumWords);
 

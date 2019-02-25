@@ -17,7 +17,6 @@
 #include <functional>
 #include <regex>
 
-// #include "common/Defines.h"
 #include "common/Transforms.h"
 #include "common/Utils-base.h"
 
@@ -282,6 +281,70 @@ std::vector<std::string> getFileContent(const std::string& file) {
 
 bool startsWith(const std::string& input, const std::string& pattern) {
   return (input.find(pattern) == 0);
+}
+
+std::vector<std::string> wrd2Target(
+    const std::string& word,
+    const LexiconMap& lexicon,
+    const DictionaryMap& dicts,
+    bool fallback2Ltr /* = false */,
+    bool skipUnk /* = false */) {
+  auto lit = lexicon.find(word);
+  if (lit != lexicon.end()) {
+    // TODO: support sampling on different targets for a word,
+    // e.g. different pronunciations, word pieces
+    return lit->second[0];
+  }
+
+  std::vector<std::string> res;
+  if (fallback2Ltr) {
+    auto dit = dicts.find(kTargetIdx);
+    if (dit == dicts.end()) {
+      LOG(FATAL) << "Target dictionary does not exist";
+    }
+    for (auto& c : word) {
+      if (dit->second.contains(std::string(1, c))) {
+        res.push_back(std::string(1, c));
+      } else if (skipUnk) {
+        LOG(INFO)
+            << "Skipping unknown character '" << c
+            << "' when falling back to letter target for the unknown word '"
+            << word << "'";
+      } else {
+        LOG(FATAL)
+            << "Unknown character '" << c
+            << "' when falling back to letter target for the unknown word '"
+            << word << "'";
+      }
+    }
+  } else if (skipUnk) {
+    LOG(INFO) << "Skipping unknown word '" << word
+              << "' when generating target";
+  } else {
+    LOG(FATAL) << "Unknown word '" << word << "' in the lexicon";
+  }
+  return res;
+}
+
+std::vector<std::string> wrd2Target(
+    const std::vector<std::string>& words,
+    const LexiconMap& lexicon,
+    const DictionaryMap& dicts,
+    bool fallback2Ltr /* = false */,
+    bool skipUnk /* = false */) {
+  std::vector<std::string> res;
+  for (auto w : words) {
+    auto t = wrd2Target(w, lexicon, dicts, fallback2Ltr, skipUnk);
+    res.insert(res.end(), t.begin(), t.end());
+    if (!FLAGS_wordseparator.empty()) {
+      res.emplace_back(FLAGS_wordseparator);
+    }
+  }
+
+  if (!FLAGS_wordseparator.empty() && !res.empty()) {
+    res.pop_back();
+  }
+  return res;
 }
 
 /************** Decoder helpers **************/

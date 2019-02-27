@@ -93,7 +93,7 @@ void appendToLog(std::ofstream& logfile, const std::string& logstr) {
       throw std::runtime_error("appending to log failed");
     }
   };
-  retryWithBackoff(write, std::chrono::seconds(1), 1.0, 6);
+  retryWithBackoff(std::chrono::seconds(1), 1.0, 6, write);
 }
 
 af::array allreduceGet(fl::AverageValueMeter& mtr) {

@@ -64,16 +64,17 @@ std::vector<T> afToVector(const fl::Variable& var) {
 }
 
 /**
- * Calls `f()` at most `maxIters` times, retrying if an exception is thrown.
+ * Calls `f(args...)` repeatedly, retrying if an exception is thrown.
  * Supports sleeps between retries, with duration starting at `initial` and
- * multiplying by `factor` each retry.
+ * multiplying by `factor` each retry. At most `maxIters` calls are made.
  */
-template <class Fn, class T = decltype(std::declval<Fn>()())>
-T retryWithBackoff(
-    Fn&& f,
+template <class Fn, class... Args>
+fl::cpp::result_of_t<Fn(Args...)> retryWithBackoff(
     std::chrono::duration<double> initial,
     double factor,
-    int64_t maxIters);
+    int64_t maxIters,
+    Fn&& f,
+    Args&&... args);
 
 template <
     typename FwdIt,

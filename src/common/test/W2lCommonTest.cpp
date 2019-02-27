@@ -122,20 +122,18 @@ static std::function<int(void)> makeSucceedsAfterMs(double ms) {
   };
 }
 
-template <class Fn, class T = decltype(std::declval<Fn>()())>
-std::future<T> retryAsync(
-    Fn&& f,
+template <class Fn>
+std::future<fl::cpp::result_of_t<Fn()>> retryAsync(
     std::chrono::duration<double> initial,
     double factor,
-    int64_t iters) {
+    int64_t iters,
+    Fn f) {
   return std::async(std::launch::async, [=]() {
-    return retryWithBackoff(f, initial, factor, iters);
+    return retryWithBackoff(initial, factor, iters, f);
   });
 }
 
 TEST(W2lCommonTest, RetryWithBackoff) {
-  using namespace std::chrono_literals;
-
   auto alwaysSucceeds = []() { return 42; };
   auto alwaysFails = []() -> int { throw std::runtime_error("bleh"); };
 
@@ -143,26 +141,29 @@ TEST(W2lCommonTest, RetryWithBackoff) {
   std::vector<std::future<int>> bads;
   std::vector<std::future<int>> invalids;
 
-  goods.push_back(retryAsync(alwaysSucceeds, 0ms, 1.0, 5));
-  goods.push_back(retryAsync(alwaysSucceeds, 50ms, 2.0, 5));
+  auto ms0 = std::chrono::milliseconds(0);
+  auto ms50 = std::chrono::milliseconds(50);
 
-  bads.push_back(retryAsync(alwaysFails, 0ms, 1.0, 5));
-  bads.push_back(retryAsync(alwaysFails, 50ms, 2.0, 5));
+  goods.push_back(retryAsync(ms0, 1.0, 5, alwaysSucceeds));
+  goods.push_back(retryAsync(ms50, 2.0, 5, alwaysSucceeds));
 
-  bads.push_back(retryAsync(makeSucceedsAfterIters(6), 0ms, 1.0, 5));
-  bads.push_back(retryAsync(makeSucceedsAfterIters(6), 50ms, 2.0, 5));
-  goods.push_back(retryAsync(makeSucceedsAfterIters(5), 0ms, 1.0, 5));
-  goods.push_back(retryAsync(makeSucceedsAfterIters(5), 50ms, 2.0, 5));
+  bads.push_back(retryAsync(ms0, 1.0, 5, alwaysFails));
+  bads.push_back(retryAsync(ms50, 2.0, 5, alwaysFails));
 
-  bads.push_back(retryAsync(makeSucceedsAfterMs(999), 0ms, 1.0, 5));
-  bads.push_back(retryAsync(makeSucceedsAfterMs(999), 50ms, 2.0, 5));
-  bads.push_back(retryAsync(makeSucceedsAfterMs(500), 0ms, 1.0, 5));
-  goods.push_back(retryAsync(makeSucceedsAfterMs(500), 50ms, 2.0, 5));
+  bads.push_back(retryAsync(ms0, 1.0, 5, makeSucceedsAfterIters(6)));
+  bads.push_back(retryAsync(ms50, 2.0, 5, makeSucceedsAfterIters(6)));
+  goods.push_back(retryAsync(ms0, 1.0, 5, makeSucceedsAfterIters(5)));
+  goods.push_back(retryAsync(ms50, 2.0, 5, makeSucceedsAfterIters(5)));
 
-  invalids.push_back(retryAsync(alwaysSucceeds, -50ms, 2.0, 5));
-  invalids.push_back(retryAsync(alwaysSucceeds, 50ms, -1.0, 5));
-  invalids.push_back(retryAsync(alwaysSucceeds, 50ms, 2.0, 0));
-  invalids.push_back(retryAsync(alwaysSucceeds, 50ms, 2.0, -1));
+  bads.push_back(retryAsync(ms0, 1.0, 5, makeSucceedsAfterMs(999)));
+  bads.push_back(retryAsync(ms50, 2.0, 5, makeSucceedsAfterMs(999)));
+  bads.push_back(retryAsync(ms0, 1.0, 5, makeSucceedsAfterMs(500)));
+  goods.push_back(retryAsync(ms50, 2.0, 5, makeSucceedsAfterMs(500)));
+
+  invalids.push_back(retryAsync(-ms50, 2.0, 5, alwaysSucceeds));
+  invalids.push_back(retryAsync(ms50, -1.0, 5, alwaysSucceeds));
+  invalids.push_back(retryAsync(ms50, 2.0, 0, alwaysSucceeds));
+  invalids.push_back(retryAsync(ms50, 2.0, -1, alwaysSucceeds));
 
   for (auto& fut : goods) {
     ASSERT_EQ(fut.get(), 42);
@@ -178,9 +179,9 @@ TEST(W2lCommonTest, RetryWithBackoff) {
   auto alwaysSucceedsVoid = []() -> void {};
   auto alwaysFailsVoid = []() -> void { throw std::runtime_error("bleh"); };
 
-  retryAsync(alwaysSucceedsVoid, 0ms, 1.0, 5).get();
+  retryAsync(ms0, 1.0, 5, alwaysSucceedsVoid).get();
   ASSERT_THROW(
-      retryAsync(alwaysFailsVoid, 0ms, 1.0, 5).get(), std::runtime_error);
+      retryAsync(ms0, 1.0, 5, alwaysFailsVoid).get(), std::runtime_error);
 }
 
 TEST(W2lCommonTest, Replabel) {

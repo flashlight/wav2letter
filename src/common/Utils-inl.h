@@ -56,12 +56,13 @@ std::string join(const std::string& delim, FwdIt begin, FwdIt end) {
   return result;
 }
 
-template <class Fn, class T>
-T retryWithBackoff(
-    Fn&& f,
+template <class Fn, class... Args>
+fl::cpp::result_of_t<Fn(Args...)> retryWithBackoff(
     std::chrono::duration<double> initial,
     double factor,
-    int64_t maxIters) {
+    int64_t maxIters,
+    Fn&& f,
+    Args&&... args) {
   if (!(initial.count() >= 0.0)) {
     throw std::invalid_argument("retryWithBackoff: bad initial");
   } else if (!(factor >= 0.0)) {
@@ -72,7 +73,7 @@ T retryWithBackoff(
   auto sleepSecs = initial.count();
   for (int64_t i = 0; i < maxIters; ++i) {
     try {
-      return f();
+      return f(std::forward<Args>(args)...);
     } catch (...) {
       if (i >= maxIters - 1) {
         throw;

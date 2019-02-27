@@ -54,7 +54,7 @@ std::pair<std::string, std::string> getStatus(
     bool date = false,
     const std::string& separator = " ");
 
-void print2file(std::ofstream& fs, const std::string& logstr);
+void appendToLog(std::ofstream& logfile, const std::string& logstr);
 
 af::array allreduceGet(fl::AverageValueMeter& mtr);
 af::array allreduceGet(fl::EditDistanceMeter& mtr);

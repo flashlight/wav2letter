@@ -8,8 +8,13 @@
 
 #pragma once
 
+#include <cassert>
 #include <cerrno>
+#include <cstdio>
 #include <cstring>
+#include <limits>
+#include <stdexcept>
+#include <thread>
 
 namespace w2l {
 
@@ -49,6 +54,38 @@ std::string join(const std::string& delim, FwdIt begin, FwdIt end) {
     result.append(*it);
   }
   return result;
+}
+
+template <class Fn, class T>
+T retryWithBackoff(
+    Fn&& f,
+    std::chrono::duration<double> initial,
+    double factor,
+    int64_t maxIters) {
+  if (!(initial.count() >= 0.0)) {
+    throw std::invalid_argument("retryWithBackoff: bad initial");
+  } else if (!(factor >= 0.0)) {
+    throw std::invalid_argument("retryWithBackoff: bad factor");
+  } else if (maxIters <= 0) {
+    throw std::invalid_argument("retryWithBackoff: bad maxIters");
+  }
+  auto sleepSecs = initial.count();
+  for (int64_t i = 0; i < maxIters; ++i) {
+    try {
+      return f();
+    } catch (...) {
+      if (i >= maxIters - 1) {
+        throw;
+      }
+    }
+    if (sleepSecs > 0.0) {
+      /* sleep override */
+      std::this_thread::sleep_for(
+          std::chrono::duration<double>(std::min(1e7, sleepSecs)));
+    }
+    sleepSecs *= factor;
+  }
+  throw std::logic_error("retryWithBackoff: hit unreachable");
 }
 
 } // namespace w2l

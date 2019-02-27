@@ -8,9 +8,14 @@
 
 #pragma once
 
+#include <chrono>
+#include <cstdint>
 #include <functional>
+#include <memory>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include <arrayfire.h>
@@ -57,6 +62,18 @@ template <typename T>
 std::vector<T> afToVector(const fl::Variable& var) {
   return afToVector<T>(var.array());
 }
+
+/**
+ * Calls `f()` at most `maxIters` times, retrying if an exception is thrown.
+ * Supports sleeps between retries, with duration starting at `initial` and
+ * multiplying by `factor` each retry.
+ */
+template <class Fn, class T = decltype(std::declval<Fn>()())>
+T retryWithBackoff(
+    Fn&& f,
+    std::chrono::duration<double> initial,
+    double factor,
+    int64_t maxIters);
 
 template <
     typename FwdIt,

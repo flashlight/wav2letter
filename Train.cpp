@@ -6,9 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <fstream>
-#include <regex>
 #include <string>
 #include <vector>
 
@@ -263,33 +262,38 @@ int main(int argc, char** argv) {
   }
 
   /* ===================== Logging ===================== */
-  std::ofstream perfile, logfile;
+  std::ofstream logFile, perfFile;
   if (isMaster) {
     dirCreate(runPath);
-    perfile.open(getRunFile("perf", runIdx, runPath), std::ios::out);
-    logfile.open(getRunFile("log", runIdx, runPath), std::ios::out);
-
-    // write header to perfile
-    auto msgp = getStatus(meters, 0, 0, 0, false, true, "\t").first;
-    print2file(perfile, "# " + msgp);
+    logFile.open(getRunFile("log", runIdx, runPath));
+    if (!logFile.is_open()) {
+      LOG(FATAL) << "failed to open log file for writing";
+    }
+    perfFile.open(getRunFile("perf", runIdx, runPath));
+    if (!perfFile.is_open()) {
+      LOG(FATAL) << "failed to open perf file for writing";
+    }
+    // write perf header
+    auto perfMsg = getStatus(meters, 0, 0, 0, false, true, "\t").first;
+    appendToLog(perfFile, "# " + perfMsg);
     // write config
-    std::ofstream cfgfile(getRunFile("config", runIdx, runPath));
-    cereal::JSONOutputArchive ar(cfgfile);
+    std::ofstream configFile(getRunFile("config", runIdx, runPath));
+    cereal::JSONOutputArchive ar(configFile);
     ar(CEREAL_NVP(config));
   }
 
   auto logStatus =
-      [&perfile, &logfile, isMaster](
+      [&perfFile, &logFile, isMaster](
           TrainMeters& mtrs, int64_t epoch, double lr, double lrcrit) {
         syncMeter(mtrs);
 
         if (isMaster) {
-          auto msgl =
+          auto logMsg =
               getStatus(mtrs, epoch, lr, lrcrit, true, false, " | ").second;
-          auto msgp = getStatus(mtrs, epoch, lr, lrcrit, false, true).second;
-          LOG_MASTER(INFO) << msgl;
-          print2file(logfile, msgl);
-          print2file(perfile, msgp);
+          auto perfMsg = getStatus(mtrs, epoch, lr, lrcrit, false, true).second;
+          LOG_MASTER(INFO) << logMsg;
+          appendToLog(logFile, logMsg);
+          appendToLog(perfFile, perfMsg);
         }
       };
 
@@ -305,6 +309,7 @@ int main(int argc, char** argv) {
       } else {
         filename = getRunFile("model_last.bin", runIdx, runPath);
       }
+
       // save last model
       W2lSerializer::save(
           filename, config, network, criterion, netoptim, critoptim);
@@ -481,9 +486,17 @@ int main(int argc, char** argv) {
       }
 
       // print status
-      logStatus(meters, epoch, lr, lrcrit);
+      try {
+        logStatus(meters, epoch, lr, lrcrit);
+      } catch (const std::exception& ex) {
+        LOG(ERROR) << "Error while writing logs: " << ex.what();
+      }
       // save last and best models
-      saveModels(epoch);
+      try {
+        saveModels(epoch);
+      } catch (const std::exception& ex) {
+        LOG(FATAL) << "Error while saving models: " << ex.what();
+      }
       // reset meters for next readings
       meters.loss.reset();
       meters.train.edit.reset();
@@ -619,9 +632,5 @@ int main(int argc, char** argv) {
       FLAGS_iter);
 
   LOG_MASTER(INFO) << "Finished training";
-
-  perfile.close();
-  logfile.close();
-
   return 0;
 }

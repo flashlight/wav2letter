@@ -85,18 +85,15 @@ std::pair<std::string, std::string> getStatus(
   return {header, status};
 }
 
-void print2file(std::ofstream& fs, const std::string& logstr) {
-  auto attempsLeft = kTryCatchAttempts;
-  do {
-    try {
-      fs << logstr << std::endl;
-      break;
-    } catch (...) {
-      --attempsLeft;
-      LOG_IF(ERROR, attempsLeft <= 0) << "Error while logging to file !";
-      std::this_thread::sleep_for(std::chrono::seconds(kTryCatchWaitSec));
+void appendToLog(std::ofstream& logfile, const std::string& logstr) {
+  auto write = [&]() {
+    logfile.clear(); // reset flags
+    logfile << logstr << std::endl;
+    if (!logfile) {
+      throw std::runtime_error("appending to log failed");
     }
-  } while (attempsLeft > 0);
+  };
+  retryWithBackoff(write, std::chrono::seconds(1), 1.0, 6);
 }
 
 af::array allreduceGet(fl::AverageValueMeter& mtr) {

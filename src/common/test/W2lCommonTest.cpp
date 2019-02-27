@@ -10,6 +10,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <future>
 #include <memory>
 
 #include "common/Dictionary.h"
@@ -92,6 +93,94 @@ TEST(W2lCommonTest, PathsConcat) {
   auto path2 = pathsConcat("/tmp", "test.wav");
   ASSERT_EQ(path1, "/tmp/test.wav");
   ASSERT_EQ(path2, "/tmp/test.wav");
+}
+
+static std::function<int(void)> makeSucceedsAfterIters(int iters) {
+  auto state = std::make_shared<int>(0);
+  return [state, iters]() {
+    if (++*state >= iters) {
+      return 42;
+    } else {
+      throw std::runtime_error("bleh");
+    }
+  };
+}
+
+static std::function<int(void)> makeSucceedsAfterMs(double ms) {
+  using namespace std::chrono;
+  auto state = std::make_shared<time_point<steady_clock>>();
+  return [state, ms]() {
+    auto now = steady_clock::now();
+    if (state->time_since_epoch().count() == 0) {
+      *state = now;
+    }
+    if (now - *state >= duration<double, std::milli>(ms)) {
+      return 42;
+    } else {
+      throw std::runtime_error("bleh");
+    }
+  };
+}
+
+template <class Fn, class T = decltype(std::declval<Fn>()())>
+std::future<T> retryAsync(
+    Fn&& f,
+    std::chrono::duration<double> initial,
+    double factor,
+    int64_t iters) {
+  return std::async(std::launch::async, [=]() {
+    return retryWithBackoff(f, initial, factor, iters);
+  });
+}
+
+TEST(W2lCommonTest, RetryWithBackoff) {
+  using namespace std::chrono_literals;
+
+  auto alwaysSucceeds = []() { return 42; };
+  auto alwaysFails = []() -> int { throw std::runtime_error("bleh"); };
+
+  std::vector<std::future<int>> goods;
+  std::vector<std::future<int>> bads;
+  std::vector<std::future<int>> invalids;
+
+  goods.push_back(retryAsync(alwaysSucceeds, 0ms, 1.0, 5));
+  goods.push_back(retryAsync(alwaysSucceeds, 50ms, 2.0, 5));
+
+  bads.push_back(retryAsync(alwaysFails, 0ms, 1.0, 5));
+  bads.push_back(retryAsync(alwaysFails, 50ms, 2.0, 5));
+
+  bads.push_back(retryAsync(makeSucceedsAfterIters(6), 0ms, 1.0, 5));
+  bads.push_back(retryAsync(makeSucceedsAfterIters(6), 50ms, 2.0, 5));
+  goods.push_back(retryAsync(makeSucceedsAfterIters(5), 0ms, 1.0, 5));
+  goods.push_back(retryAsync(makeSucceedsAfterIters(5), 50ms, 2.0, 5));
+
+  bads.push_back(retryAsync(makeSucceedsAfterMs(999), 0ms, 1.0, 5));
+  bads.push_back(retryAsync(makeSucceedsAfterMs(999), 50ms, 2.0, 5));
+  bads.push_back(retryAsync(makeSucceedsAfterMs(500), 0ms, 1.0, 5));
+  goods.push_back(retryAsync(makeSucceedsAfterMs(500), 50ms, 2.0, 5));
+
+  invalids.push_back(retryAsync(alwaysSucceeds, -50ms, 2.0, 5));
+  invalids.push_back(retryAsync(alwaysSucceeds, 50ms, -1.0, 5));
+  invalids.push_back(retryAsync(alwaysSucceeds, 50ms, 2.0, 0));
+  invalids.push_back(retryAsync(alwaysSucceeds, 50ms, 2.0, -1));
+
+  for (auto& fut : goods) {
+    ASSERT_EQ(fut.get(), 42);
+  }
+  for (auto& fut : bads) {
+    ASSERT_THROW(fut.get(), std::runtime_error);
+  }
+  for (auto& fut : invalids) {
+    ASSERT_THROW(fut.get(), std::invalid_argument);
+  }
+
+  // check special case promise<void> / future<void>
+  auto alwaysSucceedsVoid = []() -> void {};
+  auto alwaysFailsVoid = []() -> void { throw std::runtime_error("bleh"); };
+
+  retryAsync(alwaysSucceedsVoid, 0ms, 1.0, 5).get();
+  ASSERT_THROW(
+      retryAsync(alwaysFailsVoid, 0ms, 1.0, 5).get(), std::runtime_error);
 }
 
 TEST(W2lCommonTest, Replabel) {

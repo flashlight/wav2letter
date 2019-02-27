@@ -45,8 +45,6 @@ constexpr const char* kEosToken = "$";
 constexpr const char* kBlankToken = "#";
 constexpr const char* kSilToken = "|";
 constexpr const char* kUnkToken = "<unk>";
-constexpr const int kTryCatchAttempts = 5;
-constexpr const int kTryCatchWaitSec = 5;
 constexpr const int kTargetPadValue = -1;
 constexpr const int kMaxDevicePerNode = 8;
 

@@ -54,6 +54,33 @@ void replaceReplabels(
   in.resize(ptr0);
 }
 
+std::vector<int> toSingleLtr(
+    const std::vector<int>& labels,
+    const Dictionary& d) {
+  std::vector<int> result;
+  for (auto id : labels) {
+    auto token = d.getToken(id);
+    if (token.length() == 1) {
+      result.emplace_back(id);
+    } else {
+      for (auto c : token) {
+        result.emplace_back(d.getIndex(std::string(1, c)));
+      }
+    }
+  }
+
+  if (result.size() > 0 && !FLAGS_wordseparator.empty()) {
+    if (result[0] == d.getIndex(FLAGS_wordseparator)) {
+      result.erase(result.begin());
+    }
+    if (result.back() == d.getIndex(FLAGS_wordseparator)) {
+      result.pop_back();
+    }
+  }
+
+  return result;
+}
+
 af::array pad(
     const af::array& in,
     const int size,

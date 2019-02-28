@@ -74,6 +74,7 @@ DECLARE_string(input);
 DECLARE_int64(samplerate);
 DECLARE_int64(channels);
 DECLARE_string(tokens);
+DECLARE_bool(usewordpiece);
 DECLARE_int64(replabel);
 DECLARE_string(surround);
 DECLARE_bool(noresample);

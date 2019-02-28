@@ -21,6 +21,7 @@ DEFINE_string(input, "flac", "input feature");
 DEFINE_int64(samplerate, 16000, "sample rate (Hz)");
 DEFINE_int64(channels, 1, "number of input channels");
 DEFINE_string(tokens, "tokens.txt", "path/to/tokens");
+DEFINE_bool(usewordpiece, false, "use word piece as target");
 DEFINE_int64(
     replabel,
     0,

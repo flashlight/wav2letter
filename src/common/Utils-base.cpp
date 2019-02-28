@@ -286,7 +286,7 @@ bool startsWith(const std::string& input, const std::string& pattern) {
 std::vector<std::string> wrd2Target(
     const std::string& word,
     const LexiconMap& lexicon,
-    const DictionaryMap& dicts,
+    const Dictionary& dict,
     bool fallback2Ltr /* = false */,
     bool skipUnk /* = false */) {
   auto lit = lexicon.find(word);
@@ -298,12 +298,8 @@ std::vector<std::string> wrd2Target(
 
   std::vector<std::string> res;
   if (fallback2Ltr) {
-    auto dit = dicts.find(kTargetIdx);
-    if (dit == dicts.end()) {
-      LOG(FATAL) << "Target dictionary does not exist";
-    }
     for (auto& c : word) {
-      if (dit->second.contains(std::string(1, c))) {
+      if (dict.contains(std::string(1, c))) {
         res.push_back(std::string(1, c));
       } else if (skipUnk) {
         LOG(INFO)
@@ -329,19 +325,38 @@ std::vector<std::string> wrd2Target(
 std::vector<std::string> wrd2Target(
     const std::vector<std::string>& words,
     const LexiconMap& lexicon,
-    const DictionaryMap& dicts,
+    const Dictionary& dict,
     bool fallback2Ltr /* = false */,
     bool skipUnk /* = false */) {
   std::vector<std::string> res;
   for (auto w : words) {
-    auto t = wrd2Target(w, lexicon, dicts, fallback2Ltr, skipUnk);
+    auto t = wrd2Target(w, lexicon, dict, fallback2Ltr, skipUnk);
+
+    if (t.size() == 0) {
+      continue;
+    }
+
+    // remove duplicate word separators in the beginning of each target token
+    if (res.size() > 0 && !FLAGS_wordseparator.empty() &&
+        t[0].length() >= FLAGS_wordseparator.length() &&
+        t[0].compare(0, FLAGS_wordseparator.length(), FLAGS_wordseparator) ==
+            0) {
+      res.pop_back();
+    }
+
     res.insert(res.end(), t.begin(), t.end());
-    if (!FLAGS_wordseparator.empty()) {
+
+    if (!FLAGS_wordseparator.empty() &&
+        !(res.back().length() >= FLAGS_wordseparator.length() &&
+          res.back().compare(
+              res.back().length() - FLAGS_wordseparator.length(),
+              FLAGS_wordseparator.length(),
+              FLAGS_wordseparator) == 0)) {
       res.emplace_back(FLAGS_wordseparator);
     }
   }
 
-  if (!FLAGS_wordseparator.empty() && !res.empty()) {
+  if (res.size() > 0 && res.back() == FLAGS_wordseparator) {
     res.pop_back();
   }
   return res;

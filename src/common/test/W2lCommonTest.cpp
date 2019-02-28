@@ -361,6 +361,86 @@ TEST(W2lCommonTest, AfToVectorString) {
   ASSERT_EQ(stringVec[2], "letter");
 }
 
+TEST(W2lCommonTest, WrdToTarget) {
+  gflags::FlagSaver flagsaver;
+  w2l::FLAGS_wordseparator = "_";
+
+  LexiconMap lexicon;
+  // word pieces with word separator in the end
+  lexicon["123"].push_back({"1", "23_"});
+  lexicon["456"].push_back({"456_"});
+  // word pieces with word separator in the beginning
+  lexicon["789"].push_back({"_7", "89"});
+  lexicon["010"].push_back({"_0", "10"});
+  // word pieces without word separators
+  lexicon["105"].push_back({"10", "5"});
+  lexicon["2100"].push_back({"2", "1", "00"});
+  // letters
+  lexicon["888"].push_back({"8", "8", "8"});
+  lexicon["12"].push_back({"1", "2"});
+  lexicon[kUnkToken] = {};
+
+  Dictionary dict;
+  for (auto l : lexicon) {
+    for (auto p : l.second) {
+      for (auto c : p) {
+        if (!dict.contains(c)) {
+          dict.addToken(c);
+        }
+      }
+    }
+  }
+  dict.addToken("_");
+
+  std::vector<std::string> words = {"123", "456"};
+  auto target = wrd2Target(words, lexicon, dict);
+  ASSERT_THAT(target, ::testing::ElementsAreArray({"1", "23_", "456_"}));
+
+  std::vector<std::string> words1 = {"789", "010"};
+  auto target1 = wrd2Target(words1, lexicon, dict);
+  ASSERT_THAT(target1, ::testing::ElementsAreArray({"_7", "89", "_0", "10"}));
+
+  std::vector<std::string> words2 = {"105", "2100"};
+  auto target2 = wrd2Target(words2, lexicon, dict);
+  ASSERT_THAT(
+      target2, ::testing::ElementsAreArray({"10", "5", "_", "2", "1", "00"}));
+
+  std::vector<std::string> words3 = {"12", "888", "12"};
+  auto target3 = wrd2Target(words3, lexicon, dict);
+  ASSERT_THAT(
+      target3,
+      ::testing::ElementsAreArray(
+          {"1", "2", "_", "8", "8", "8", "_", "1", "2"}));
+
+  // unknown words "111", "199"
+  std::vector<std::string> words4 = {"111", "789", "199"};
+  // fall back to letters and skip unknown
+  auto target4 = wrd2Target(words4, lexicon, dict, true, true);
+  ASSERT_THAT(
+      target4,
+      ::testing::ElementsAreArray({"1", "1", "1", "_7", "89", "_", "1"}));
+  // skip unknown
+  target4 = wrd2Target(words4, lexicon, dict, false, true);
+  ASSERT_THAT(target4, ::testing::ElementsAreArray({"_7", "89"}));
+}
+
+TEST(W2lCommonTest, TargetToSingleLtr) {
+  gflags::FlagSaver flagsaver;
+  w2l::FLAGS_wordseparator = "_";
+
+  Dictionary dict;
+  for (int i = 0; i < 10; ++i) {
+    dict.addToken(std::to_string(i), i);
+  }
+  dict.addToken("_", 10);
+  dict.addToken("23_", 230);
+  dict.addToken("456_", 4560);
+
+  std::vector<int> words = {1, 230, 4560};
+  auto target = toSingleLtr(words, dict);
+  ASSERT_THAT(target, ::testing::ElementsAreArray({1, 2, 3, 10, 4, 5, 6}));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

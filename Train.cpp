@@ -378,6 +378,13 @@ int main(int argc, char** argv) {
       remapLabels(viterbipath, tgtDict);
       remapLabels(tgtraw, tgtDict);
 
+      // break down word pieces into letters for evaluation,
+      // assume all letters exist in the dictionary
+      if (FLAGS_usewordpiece) {
+        viterbipath = toSingleLtr(viterbipath, tgtDict);
+        tgtraw = toSingleLtr(tgtraw, tgtDict);
+      }
+
       mtr.add(
           viterbipath.data(), tgtraw.data(), viterbipath.size(), tgtraw.size());
     }

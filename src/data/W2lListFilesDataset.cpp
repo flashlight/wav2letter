@@ -30,6 +30,9 @@ W2lListFilesDataset::W2lListFilesDataset(
       skipUnk_(skipUnk) {
   includeWrd_ = (dicts.find(kWordIdx) != dicts.end());
 
+  LOG_IF(FATAL, dicts.find(kTargetIdx) == dicts.end())
+      << "Target dictionary does not exist";
+
   auto filesVec = split(',', filenames);
   std::vector<SpeechSampleMetaInfo> speechSamplesMetaInfo;
   for (const auto& f : filesVec) {
@@ -75,7 +78,11 @@ std::vector<W2lLoaderData> W2lListFilesDataset::getLoaderData(
     data[id].sampleId = data_[i].getSampleId();
     data[id].input = speech::loadSound<float>(data_[i].getAudioFile().c_str());
     data[id].targets[kTargetIdx] = wrd2Target(
-        data_[i].getTranscript(), lexicon_, dicts_, fallback2Ltr_, skipUnk_);
+        data_[i].getTranscript(),
+        lexicon_,
+        dicts_.at(kTargetIdx),
+        fallback2Ltr_,
+        skipUnk_);
 
     if (includeWrd_) {
       data[id].targets[kWordIdx] = data_[i].getTranscript();
@@ -87,9 +94,8 @@ std::vector<W2lLoaderData> W2lListFilesDataset::getLoaderData(
 std::vector<SpeechSampleMetaInfo> W2lListFilesDataset::loadListFile(
     const std::string& filename) {
   std::ifstream infile(filename);
-  if (!infile) {
-    LOG(FATAL) << "Could not read file '" << filename << "'";
-  }
+
+  LOG_IF(FATAL, !infile) << "Could not read file '" << filename << "'";
 
   // The format of the list: columns should be space-separated
   // [utterance id] [audio file (full path)] [audio length] [word transcripts]
@@ -114,7 +120,7 @@ std::vector<SpeechSampleMetaInfo> W2lListFilesDataset::loadListFile(
     auto targets = wrd2Target(
         data_.back().getTranscript(),
         lexicon_,
-        dicts_,
+        dicts_.at(kTargetIdx),
         fallback2Ltr_,
         skipUnk_);
 

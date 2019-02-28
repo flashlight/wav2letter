@@ -113,7 +113,6 @@ target_link_libraries(
   PUBLIC
   common
   criterion
-  data
   decoder
   module
   runtime
@@ -125,7 +124,7 @@ target_include_directories(
   ${CMAKE_SOURCE_DIR}/src # all includes are based at src/
   ${FLASHLIGHT_INCLUDE_DIRS} # includes are <flashlight/...>
   )
-  
+
 # ----------------------------- Train -----------------------------
 add_executable(
   Train

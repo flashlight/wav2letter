@@ -8,6 +8,7 @@ add_library(
 target_sources(
   runtime
   INTERFACE
+  ${CMAKE_CURRENT_SOURCE_DIR}/Data.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Logger.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Serial.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SpeechStatMeter.cpp
@@ -19,6 +20,7 @@ target_link_libraries(
   runtime
   INTERFACE
   common
+  data
   flashlight::flashlight
   ${GLOG_LIBRARIES}
   ${cereal_LIBRARIES}

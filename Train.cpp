@@ -23,15 +23,8 @@
 #include "common/Utils.h"
 #include "criterion/criterion.h"
 #include "data/Featurize.h"
-#include "data/W2lDataset.h"
-#include "data/W2lListFilesDataset.h"
-#include "data/W2lNumberedFilesDataset.h"
 #include "module/module.h"
 #include "runtime/runtime.h"
-
-#ifdef BUILD_FB_DEPENDENCIES
-#include "fb/W2lEverstoreDataset.h"
-#endif
 
 using namespace w2l;
 
@@ -165,13 +158,18 @@ int main(int argc, char** argv) {
     }
   }
 
-  /* ===================== Create Dictionary ===================== */
+  /* ===================== Create Dictionary & Lexicon ===================== */
   Dictionary dict = createTokenDict();
   int numClasses = dict.indexSize();
   LOG_MASTER(INFO) << "Number of classes (network) = " << numClasses;
 
   DictionaryMap dicts;
   dicts.insert({kTargetIdx, dict});
+
+  LexiconMap lexicon;
+  if (FLAGS_listdata) {
+    lexicon = loadWords(FLAGS_lexicon, FLAGS_maxword);
+  }
 
   /* =========== Create Network & Optimizers / Reload Snapshot ============ */
   std::shared_ptr<fl::Module> network;
@@ -330,40 +328,8 @@ int main(int argc, char** argv) {
   };
 
   /* ===================== Create Dataset ===================== */
-  auto createDataset = [worldRank, worldSize, &dicts](
-                           const std::string& path,
-                           bool fallback2Ltr,
-                           bool skipUnk) {
-    std::shared_ptr<W2lDataset> ds;
-    if (FLAGS_everstoredb) {
-#ifdef BUILD_FB_DEPENDENCIES
-      W2lEverstoreDataset::init(); // Required for everstore client
-      ds = std::make_shared<W2lEverstoreDataset>(
-          path, dicts, FLAGS_batchsize, worldRank, worldSize, FLAGS_targettype);
-#else
-      LOG(FATAL) << "W2lEverstoreDataset not supported: "
-                 << "build with -DBUILD_FB_DEPENDENCIES";
-#endif
-    } else if (FLAGS_listdata) {
-      auto lexicon = loadWords(FLAGS_lexicon, FLAGS_maxword);
-
-      ds = std::make_shared<W2lListFilesDataset>(
-          path,
-          dicts,
-          lexicon,
-          FLAGS_batchsize,
-          worldRank,
-          worldSize,
-          fallback2Ltr,
-          skipUnk);
-    } else {
-      ds = std::make_shared<W2lNumberedFilesDataset>(
-          path, dicts, FLAGS_batchsize, worldRank, worldSize, FLAGS_datadir);
-    }
-    return ds;
-  };
-
-  auto trainds = createDataset(FLAGS_train, true, true);
+  auto trainds = createDataset(
+      FLAGS_train, dicts, lexicon, FLAGS_batchsize, worldRank, worldSize);
 
   if (FLAGS_noresample) {
     LOG_MASTER(INFO) << "Shuffling trainset";
@@ -372,7 +338,8 @@ int main(int argc, char** argv) {
 
   std::unordered_map<std::string, std::shared_ptr<W2lDataset>> validds;
   for (const auto& s : validTagSets) {
-    validds[s.first] = createDataset(s.second, true, true);
+    validds[s.first] = createDataset(
+        s.second, dicts, lexicon, FLAGS_batchsize, worldRank, worldSize);
   }
 
   /* ===================== Hooks ===================== */

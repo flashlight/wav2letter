@@ -24,18 +24,13 @@
 #include "common/Utils.h"
 #include "criterion/criterion.h"
 #include "data/Featurize.h"
-#include "data/W2lDataset.h"
-#include "data/W2lNumberedFilesDataset.h"
 #include "decoder/Decoder.hpp"
 #include "decoder/KenLM.hpp"
 #include "decoder/Trie.hpp"
 #include "module/module.h"
+#include "runtime/Data.h"
 #include "runtime/Logger.h"
 #include "runtime/Serial.h"
-
-#ifdef BUILD_FB_DEPENDENCIES
-#include "fb/W2lEverstoreDataset.h"
-#endif
 
 using namespace w2l;
 
@@ -127,20 +122,9 @@ int main(int argc, char** argv) {
     // Load dataset
     int worldRank = 0;
     int worldSize = 1;
-    std::unique_ptr<W2lDataset> ds;
-    if (FLAGS_everstoredb) {
-#ifdef BUILD_FB_DEPENDENCIES
-      W2lEverstoreDataset::init(); // Required for everstore client
-      ds = fl::cpp::make_unique<W2lEverstoreDataset>(
-          FLAGS_test, dicts, 1, worldRank, worldSize, FLAGS_targettype);
-#else
-      LOG(FATAL) << "W2lEverstoreDataset not supported: "
-                 << "build with -DBUILD_FB_DEPENDENCIES";
-#endif
-    } else {
-      ds = fl::cpp::make_unique<W2lNumberedFilesDataset>(
-          FLAGS_test, dicts, 1, worldRank, worldSize, FLAGS_datadir);
-    }
+    auto ds =
+        createDataset(FLAGS_test, dicts, lexicon, 1, worldRank, worldSize);
+
     ds->shuffle(3);
     LOG(INFO) << "[Serialization] Running forward pass ...";
 

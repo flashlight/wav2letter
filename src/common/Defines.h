@@ -9,8 +9,6 @@
 #pragma once
 
 #include <gflags/gflags.h>
-#include <functional>
-#include <unordered_map>
 
 #define W2L_VERSION "0.1"
 
@@ -18,11 +16,11 @@ namespace w2l {
 
 // Dataset indices
 // If a new field is added, `kNumDataIdx` should be modified accordingly.
-constexpr const size_t kInputIdx = 0;
-constexpr const size_t kTargetIdx = 1;
-constexpr const size_t kWordIdx = 2;
-constexpr const size_t kFileIdIdx = 3;
-constexpr const size_t kNumDataIdx = 4; // total number of dataset indices
+constexpr size_t kInputIdx = 0;
+constexpr size_t kTargetIdx = 1;
+constexpr size_t kWordIdx = 2;
+constexpr size_t kFileIdIdx = 3;
+constexpr size_t kNumDataIdx = 4; // total number of dataset indices
 
 // Various constants used in w2l
 constexpr const char* kGflags = "gflags";
@@ -45,24 +43,14 @@ constexpr const char* kEosToken = "$";
 constexpr const char* kBlankToken = "#";
 constexpr const char* kSilToken = "|";
 constexpr const char* kUnkToken = "<unk>";
-constexpr const int kTargetPadValue = -1;
-constexpr const int kMaxDevicePerNode = 8;
+constexpr int kTargetPadValue = -1;
+constexpr int kMaxDevicePerNode = 8;
 
 // Feature params
-constexpr const int kFrameSizeMs = 25;
-constexpr const int kFrameStrideMs = 10;
-constexpr const int kLifterParam = 22;
-constexpr const int kPrefetchSize = 2;
-
-template <class A, class B, class C>
-std::function<C(A)> compose(std::function<B(A)> f, std::function<C(B)> g) {
-  return [=](A a) -> C { return g(f(a)); };
-}
-
-template <class A, class B, class C>
-std::function<C(A)> compose(std::function<B(A)> f, std::function<C(B&&)> g) {
-  return [=](A a) -> C { return g(f(a)); };
-}
+constexpr int kFrameSizeMs = 25;
+constexpr int kFrameStrideMs = 10;
+constexpr int kLifterParam = 22;
+constexpr int kPrefetchSize = 2;
 
 /* ========== DATA OPTIONS ========== */
 

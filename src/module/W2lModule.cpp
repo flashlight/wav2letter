@@ -87,17 +87,19 @@ std::shared_ptr<Module> parseLine(const std::string& line) {
   /* ========== CONVOLUTIONS ========== */
 
   if (params[0] == "C" || params[0] == "C1") {
-    LOG_IF(FATAL, !inRange(5, params.size(), 6)) << "Failed parsing - " << line;
+    LOG_IF(FATAL, !inRange(5, params.size(), 7)) << "Failed parsing - " << line;
     int cisz = std::stoi(params[1]);
     int cosz = std::stoi(params[2]);
     int cwx = std::stoi(params[3]);
     int csx = std::stoi(params[4]);
-    int cpx = (params.size() == 6) ? std::stoi(params[5]) : 0;
-    return std::make_shared<Conv2D>(cisz, cosz, cwx, 1, csx, 1, cpx, 0);
+    int cpx = (params.size() >= 6) ? std::stoi(params[5]) : 0;
+    int cdx = (params.size() >= 7) ? std::stoi(params[6]) : 1;
+    return std::make_shared<Conv2D>(cisz, cosz, cwx, 1, csx, 1, cpx, 0, cdx, 1);
   }
 
   if (params[0] == "C2") {
-    LOG_IF(FATAL, !inRange(7, params.size(), 9)) << "Failed parsing - " << line;
+    LOG_IF(FATAL, !inRange(7, params.size(), 11))
+        << "Failed parsing - " << line;
     int cisz = std::stoi(params[1]);
     int cosz = std::stoi(params[2]);
     int cwx = std::stoi(params[3]);
@@ -106,7 +108,10 @@ std::shared_ptr<Module> parseLine(const std::string& line) {
     int csy = std::stoi(params[6]);
     int cpx = (params.size() >= 8) ? std::stoi(params[7]) : 0;
     int cpy = (params.size() >= 9) ? std::stoi(params[8]) : 0;
-    return std::make_shared<Conv2D>(cisz, cosz, cwx, cwy, csx, csy, cpx, cpy);
+    int cdx = (params.size() >= 10) ? std::stoi(params[9]) : 1;
+    int cdy = (params.size() >= 11) ? std::stoi(params[10]) : 1;
+    return std::make_shared<Conv2D>(
+        cisz, cosz, cwx, cwy, csx, csy, cpx, cpy, cdx, cdy);
   }
 
   /* ========== LINEAR ========== */

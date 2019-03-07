@@ -20,7 +20,7 @@ The first token in each line represents a specific flashlight module followed by
 
 Here, we describe how to specify different flashlight modules in the architecture files.
 
-**fl::Conv2D** `C2 [inputChannels] [outputChannels] [xFilterSz] [yFilterSz] [xStride] [yStride] [xPadding] [yPadding]`
+**fl::Conv2D** `C2 [inputChannels] [outputChannels] [xFilterSz] [yFilterSz] [xStride] [yStride] [xPadding] [yPadding] [xDilation] [yDilation]`
 
 *(Use padding `= -1` for `fl::PaddingMode::SAME`)* <br/>
 

@@ -7,6 +7,7 @@
  */
 
 #include "W2lModule.h"
+#include "module/Residual.h"
 
 #include <string>
 
@@ -22,7 +23,12 @@ using namespace fl;
 
 namespace {
 std::shared_ptr<Module> parseLine(const std::string& line);
-}
+
+std::shared_ptr<Module> parseLines(
+    const std::vector<std::string>& lines,
+    const int lineIdx,
+    int& numLinesParsed);
+} // namespace
 
 namespace w2l {
 
@@ -32,7 +38,10 @@ std::shared_ptr<Sequential> createW2lSeqModule(
     int64_t nClasses) {
   auto net = std::make_shared<Sequential>();
   auto layers = getFileContent(archfile);
+  int numLinesParsed = 0;
 
+  // preprocess
+  std::vector<std::string> processedLayers;
   for (auto& l : layers) {
     std::string lrepl = trim(l);
     replaceAll(lrepl, "NFEAT", std::to_string(nFeatures));
@@ -40,10 +49,16 @@ std::shared_ptr<Sequential> createW2lSeqModule(
 
     if (lrepl.empty() || startsWith(lrepl, "#")) {
       continue; // ignore empty lines / comments
-    } else {
-      net->add(parseLine(lrepl));
     }
+    processedLayers.emplace_back(lrepl);
   }
+
+  int lid = 0;
+  while (lid < processedLayers.size()) {
+    net->add(parseLines(processedLayers, lid, numLinesParsed));
+    lid += (numLinesParsed + 1);
+  }
+
   return net;
 }
 
@@ -51,6 +66,16 @@ std::shared_ptr<Sequential> createW2lSeqModule(
 
 namespace {
 std::shared_ptr<Module> parseLine(const std::string& line) {
+  int dummy;
+  return parseLines({line}, 0, dummy);
+}
+
+std::shared_ptr<Module> parseLines(
+    const std::vector<std::string>& lines,
+    const int lineIdx,
+    int& numLinesParsed) {
+  auto line = lines[lineIdx];
+  numLinesParsed = 0;
   auto params = w2l::splitOnWhitespace(line, true);
 
   auto inRange = [&](const int a, const int b, const int c) {
@@ -238,6 +263,43 @@ std::shared_ptr<Module> parseLine(const std::string& line) {
   if (params[0] == "LSTM") {
     LOG_IF(FATAL, params.size() < 3) << "Failed parsing - " << line;
     return rnnLayer(params, RnnMode::LSTM);
+  }
+
+  /* ========== Residual block ========== */
+  if (params[0] == "RES") {
+    LOG_IF(FATAL, params.size() <= 2) << "Failed parsing - " << line;
+
+    auto residualBlock = [&](const std::vector<std::string>& prms,
+                             int& numResLayers) {
+      numResLayers = std::stoi(prms[1]);
+      std::shared_ptr<w2l::Residual> resPtr =
+          std::make_shared<w2l::Residual>(numResLayers);
+      for (int i = 2; i + 1 < prms.size(); i += 2) {
+        resPtr->addShortcut(std::stoi(prms[i]), std::stoi(prms[i + 1]));
+      }
+
+      for (int i = 1; i <= numResLayers; ++i) {
+        LOG_IF(FATAL, lineIdx + i >= lines.size())
+            << "Failed parsing Residual block";
+        resPtr->add(parseLine(lines[lineIdx + i]));
+      }
+
+      return resPtr;
+    };
+
+    auto numBlocks = params.size() % 2 == 1 ? std::stoi(params.back()) : 1;
+    LOG_IF(FATAL, numBlocks <= 0)
+        << "Invalid number of residual blocks: " << numBlocks;
+
+    if (numBlocks > 1) {
+      auto res = std::make_shared<Sequential>();
+      for (int n = 0; n < numBlocks; ++n) {
+        res->add(residualBlock(params, numLinesParsed));
+      }
+      return res;
+    } else {
+      return residualBlock(params, numLinesParsed);
+    }
   }
 
   /* ========== Trainable frontend ========== */

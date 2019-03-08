@@ -8,4 +8,5 @@
 
 #pragma once
 
+#include "module/Residual.h"
 #include "module/W2lModule.h"

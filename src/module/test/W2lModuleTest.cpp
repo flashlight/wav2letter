@@ -38,7 +38,6 @@ TEST(W2lModuleTest, W2lSeqModule) {
 
   ASSERT_EQ(output.dims(), af::dim4(nclass, inputsteps, batchsize));
 
-  // batchsize = 1
   batchsize = 1;
   input = af::randn(inputsteps, 1, nchannel, batchsize, f32);
   output = model->forward(noGrad(input));

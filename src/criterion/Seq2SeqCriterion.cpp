@@ -27,6 +27,8 @@ Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx) {
   std::shared_ptr<AttentionBase> attention;
   if (FLAGS_attention == w2l::kContentAttention) {
     attention = std::make_shared<ContentAttention>();
+  } else if (FLAGS_attention == w2l::kKeyValueAttention) {
+    attention = std::make_shared<ContentAttention>(true);
   } else if (FLAGS_attention == w2l::kNeuralContentAttention) {
     attention = std::make_shared<NeuralContentAttention>(FLAGS_encoderdim);
   } else {

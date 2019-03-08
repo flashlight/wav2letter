@@ -14,6 +14,7 @@ namespace w2l {
 
 // attention
 const std::string kContentAttention = "content";
+const std::string kKeyValueAttention = "keyvalue";
 const std::string kNeuralContentAttention = "neural";
 // window
 const std::string kMedianWindow = "median";

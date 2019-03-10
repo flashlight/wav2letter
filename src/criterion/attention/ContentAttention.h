@@ -50,4 +50,5 @@ class NeuralContentAttention : public AttentionBase {
 } // namespace w2l
 
 CEREAL_REGISTER_TYPE(w2l::ContentAttention)
+CEREAL_CLASS_VERSION(w2l::ContentAttention, 1)
 CEREAL_REGISTER_TYPE(w2l::NeuralContentAttention)

@@ -43,6 +43,10 @@ DEFINE_string(
     wordseparator,
     kSilToken,
     "extra word boundaries to be inserted during target generation");
+DEFINE_double(
+    sampletarget,
+    0.0,
+    "probability [0.0, 1.0] for randomly sampling targets from a lexicon if there are multiple mappings from a word");
 
 // FILTERING OPTIONS
 DEFINE_bool(skipoov, false, "skip everstore samples if letter is oov");

@@ -318,6 +318,73 @@ TEST(Seq2SeqTest, BatchedDecoderStep) {
   }
 }
 
+TEST(Seq2SeqTest, Seq2SeqSampling) {
+  int N = 5, H = 8, B = 1, T = 10, U = 5, maxoutputlen = 100;
+  auto input = noGrad(af::randn(H, T, B, f32));
+  auto target = noGrad((af::randu(U, B, f32) * 0.99 * N).as(s32));
+
+  std::vector<std::string> samplingStrategy(
+      {w2l::kRandSampling, w2l::kModelSampling});
+
+  for (const auto& ss : samplingStrategy) {
+    Seq2SeqCriterion seq2seq(
+        N,
+        H,
+        N - 1,
+        maxoutputlen,
+        std::make_shared<ContentAttention>(),
+        nullptr,
+        false,
+        0,
+        true,
+        0.05,
+        false,
+        ss);
+    seq2seq.train();
+
+    Variable output, attention;
+    std::tie(output, attention) = seq2seq.decoder(input, target);
+    ASSERT_EQ(attention.dims(), af::dim4({U, T, B}));
+    ASSERT_EQ(output.dims(), af::dim4({N, U, B, 1}));
+  }
+
+  Seq2SeqCriterion seq2seq1(
+      N,
+      H,
+      N - 1,
+      maxoutputlen,
+      std::make_shared<ContentAttention>(),
+      nullptr,
+      false,
+      60,
+      false,
+      0.05,
+      false,
+      w2l::kRandSampling);
+  seq2seq1.train();
+
+  Variable output, attention;
+  std::tie(output, attention) = seq2seq1.vectorizedDecoder(input, target);
+  ASSERT_EQ(attention.dims(), af::dim4({U, T, B}));
+  ASSERT_EQ(output.dims(), af::dim4({N, U, B, 1}));
+
+  Seq2SeqCriterion seq2seq2(
+      N,
+      H,
+      N - 1,
+      maxoutputlen,
+      std::make_shared<ContentAttention>(),
+      nullptr,
+      false,
+      60,
+      false,
+      0.05,
+      false,
+      w2l::kModelSampling);
+  seq2seq2.train();
+  ASSERT_THROW(seq2seq2.vectorizedDecoder(input, target), std::logic_error);
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

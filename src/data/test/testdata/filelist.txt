@@ -1,3 +1,0 @@
-000000000 deeplearning/projects/wav2letter/src/data/test/testdata/dataset/000000000.wav 3000 uh uh
-000000001 deeplearning/projects/wav2letter/src/data/test/testdata/dataset/000000001.wav 3000 uh oh
-000000002 deeplearning/projects/wav2letter/src/data/test/testdata/dataset/000000002.wav 3000 oh uh

@@ -198,13 +198,47 @@ TEST(DataTest, W2lListDataset) {
   w2l::FLAGS_surround = "";
   w2l::FLAGS_dataorder = "none";
 
+  // generate the file list
+  char* user = getenv("USER");
+  std::string userstr = "unknown";
+  if (user != nullptr) {
+    userstr = std::string(user);
+  }
+  auto fileList = "/tmp/" + userstr + "_filelist.txt";
+
+  std::ofstream fs(fileList, std::ofstream::out);
+  if (!fs.is_open()) {
+    throw std::runtime_error("failed to write to " + fileList);
+  }
+
+  for (int64_t idx = 0; idx < 3; idx++) {
+    std::array<char, 20> fchar;
+    snprintf(fchar.data(), fchar.size(), "%09ld.", idx);
+    auto audioFile =
+        pathsConcat(loadPath, "dataset/" + std::string(fchar.data()) + "wav");
+    auto wordFile =
+        pathsConcat(loadPath, "dataset/" + std::string(fchar.data()) + "wrd");
+
+    auto info = speech::loadSoundInfo(audioFile.c_str());
+    auto durationMs =
+        (static_cast<double>(info.frames) / info.samplerate) * 1e3;
+
+    auto targets = loadTarget(wordFile);
+
+    fs << idx << " " << audioFile << " " << durationMs;
+    for (auto t : targets) {
+      fs << " " << t;
+    }
+    fs << std::endl;
+  }
+  fs.close();
+
   auto dict = getDict();
   auto lexicon = getLexicon();
   DictionaryMap dicts;
   dicts.insert({kTargetIdx, dict});
 
-  W2lListFilesDataset ds(
-      w2l::pathsConcat(loadPath, "filelist.txt"), dicts, lexicon, 1);
+  W2lListFilesDataset ds(fileList, dicts, lexicon, 1);
 
   auto fields = ds.get(0);
   auto& input = fields[kInputIdx];

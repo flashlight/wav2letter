@@ -291,9 +291,13 @@ std::vector<std::string> wrd2Target(
     bool skipUnk /* = false */) {
   auto lit = lexicon.find(word);
   if (lit != lexicon.end()) {
-    // TODO: support sampling on different targets for a word,
-    // e.g. different pronunciations, word pieces
-    return lit->second[0];
+    if (lit->second.size() > 1 &&
+        FLAGS_sampletarget >
+            static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX)) {
+      return lit->second[std::rand() % lit->second.size()];
+    } else {
+      return lit->second[0];
+    }
   }
 
   std::vector<std::string> res;

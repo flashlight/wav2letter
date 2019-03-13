@@ -45,7 +45,7 @@ TEST(RuntimeTest, LoadAndSave) {
   model.add(fl::Conv2D(4, 6, 2, 1));
   model.add(fl::GatedLinearUnit(2));
   model.add(fl::Dropout(0.2));
-  model.add(fl::Conv2D(3, 4, 3, 1, 1, 1, 0, 0, false));
+  model.add(fl::Conv2D(3, 4, 3, 1, 1, 1, 0, 0, 1, 1, false));
   model.add(fl::GatedLinearUnit(2));
   model.add(fl::Dropout(0.214));
 

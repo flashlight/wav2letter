@@ -72,6 +72,7 @@ DECLARE_int64(inputbinsize);
 DECLARE_int64(outputbinsize);
 DECLARE_bool(listdata);
 DECLARE_string(wordseparator);
+DECLARE_double(sampletarget);
 
 /* ========== FILTERING OPTIONS ========== */
 

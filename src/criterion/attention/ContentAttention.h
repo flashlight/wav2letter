@@ -14,7 +14,7 @@ namespace w2l {
 
 class ContentAttention : public AttentionBase {
  public:
-  ContentAttention() {}
+  ContentAttention(bool keyValue = false) : keyValue_(keyValue) {}
 
   std::pair<fl::Variable, fl::Variable> forward(
       const fl::Variable& state,
@@ -25,7 +25,9 @@ class ContentAttention : public AttentionBase {
   std::string prettyString() const override;
 
  private:
-  FL_SAVE_LOAD_WITH_BASE(AttentionBase)
+  bool keyValue_;
+
+  FL_SAVE_LOAD_WITH_BASE(AttentionBase, fl::versioned(keyValue_, 1))
 };
 
 class NeuralContentAttention : public AttentionBase {
@@ -48,4 +50,5 @@ class NeuralContentAttention : public AttentionBase {
 } // namespace w2l
 
 CEREAL_REGISTER_TYPE(w2l::ContentAttention)
+CEREAL_CLASS_VERSION(w2l::ContentAttention, 1)
 CEREAL_REGISTER_TYPE(w2l::NeuralContentAttention)

@@ -10,7 +10,6 @@
 #include <glog/logging.h>
 #include <algorithm>
 #include <queue>
-#include "Defines.h"
 
 using namespace fl;
 
@@ -27,6 +26,8 @@ Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx) {
   std::shared_ptr<AttentionBase> attention;
   if (FLAGS_attention == w2l::kContentAttention) {
     attention = std::make_shared<ContentAttention>();
+  } else if (FLAGS_attention == w2l::kKeyValueAttention) {
+    attention = std::make_shared<ContentAttention>(true);
   } else if (FLAGS_attention == w2l::kNeuralContentAttention) {
     attention = std::make_shared<NeuralContentAttention>(FLAGS_encoderdim);
   } else {
@@ -63,7 +64,8 @@ Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx) {
       FLAGS_pctteacherforcing,
       useSequentialDecoder,
       FLAGS_labelsmooth,
-      FLAGS_inputfeeding);
+      FLAGS_inputfeeding,
+      FLAGS_samplingstrategy);
 }
 
 Seq2SeqCriterion::Seq2SeqCriterion(
@@ -77,7 +79,8 @@ Seq2SeqCriterion::Seq2SeqCriterion(
     int pctTeacherForcing /* = 100 */,
     bool useSequentialDecoder /* = false */,
     double labelSmooth /* = 0.0 */,
-    bool inputFeeding /* = false */)
+    bool inputFeeding /* = false */,
+    std::string samplingStrategy /* = w2l::kRandSampling */)
     : eos_(eos),
       maxDecoderOutputLen_(maxDecoderOutputLen),
       window_(window),
@@ -86,7 +89,8 @@ Seq2SeqCriterion::Seq2SeqCriterion(
       useSequentialDecoder_(useSequentialDecoder),
       labelSmooth_(labelSmooth),
       inputFeeding_(inputFeeding),
-      nClass_(nClass) {
+      nClass_(nClass),
+      samplingStrategy_(samplingStrategy) {
   add(std::make_shared<Embedding>(hiddenDim, nClass_));
   add(std::make_shared<RNN>(hiddenDim, hiddenDim, 1, RnnMode::GRU, false, 0.0));
   add(std::make_shared<Linear>(hiddenDim, nClass_));
@@ -136,11 +140,16 @@ std::pair<Variable, Variable> Seq2SeqCriterion::vectorizedDecoder(
     // Slice off eos
     auto y = target(af::seq(0, U - 2), af::span);
     if (train_) {
-      auto mask =
-          Variable(af::randu(y.dims()) * 100 <= pctTeacherForcing_, false);
-      auto samples =
-          Variable((af::randu(y.dims()) * (nClass_ - 1)).as(s32), false);
-      y = mask * y + (1 - mask) * samples;
+      if (samplingStrategy_ == w2l::kModelSampling) {
+        throw std::logic_error(
+            "vectorizedDecoder does not support model sampling");
+      } else if (samplingStrategy_ == w2l::kRandSampling) {
+        auto mask =
+            Variable(af::randu(y.dims()) * 100 <= pctTeacherForcing_, false);
+        auto samples =
+            Variable((af::randu(y.dims()) * (nClass_ - 1)).as(s32), false);
+        y = mask * y + (1 - mask) * samples;
+      }
     }
 
     // [hiddendim, targetlen-1, batchsize]
@@ -192,10 +201,16 @@ std::pair<Variable, Variable> Seq2SeqCriterion::decoder(
         af::allTrue<bool>(
             af::randu(1) * 100 <= af::constant(pctTeacherForcing_, 1))) {
       y = target(u, af::span);
-    } else {
+    } else if (samplingStrategy_ == w2l::kModelSampling) {
       af::array maxIdx, maxValues;
       max(maxValues, maxIdx, ox.array());
       y = Variable(maxIdx, false);
+    } else if (samplingStrategy_ == w2l::kRandSampling) {
+      y = Variable(
+          (af::randu(af::dim4{1, target.dims(1)}) * (nClass_ - 1)).as(s32),
+          false);
+    } else {
+      throw std::invalid_argument("Invalid sampling strategy");
     }
   }
 

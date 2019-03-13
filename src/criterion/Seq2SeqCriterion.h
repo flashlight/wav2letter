@@ -11,6 +11,7 @@
 #include <memory>
 #include "SequenceCriterion.h"
 #include "common/Utils.h"
+#include "criterion/Defines.h"
 #include "criterion/attention/attention.h"
 #include "criterion/attention/window.h"
 
@@ -49,7 +50,8 @@ class Seq2SeqCriterion : public SequenceCriterion {
       int pctTeacherForcing = 100,
       bool useSequentialDecoder = false,
       double labelSmooth = 0.0,
-      bool inputFeeding = false);
+      bool inputFeeding = false,
+      std::string samplingStrategy = w2l::kRandSampling);
 
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs) override;
@@ -122,6 +124,7 @@ class Seq2SeqCriterion : public SequenceCriterion {
   double labelSmooth_;
   bool inputFeeding_;
   int nClass_;
+  std::string samplingStrategy_;
 
   FL_SAVE_LOAD_WITH_BASE(
       SequenceCriterion,
@@ -133,7 +136,8 @@ class Seq2SeqCriterion : public SequenceCriterion {
       useSequentialDecoder_,
       labelSmooth_,
       inputFeeding_,
-      nClass_)
+      nClass_,
+      fl::versioned(samplingStrategy_, 1))
 
   Seq2SeqCriterion() = default;
 };
@@ -143,3 +147,4 @@ w2l::Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx);
 } // namespace w2l
 
 CEREAL_REGISTER_TYPE(w2l::Seq2SeqCriterion)
+CEREAL_CLASS_VERSION(w2l::Seq2SeqCriterion, 1)

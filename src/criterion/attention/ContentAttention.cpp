@@ -17,8 +17,16 @@ std::pair<Variable, Variable> ContentAttention::forward(
     const Variable& xEncoded,
     const Variable& /* unused */,
     const Variable& attnWeight) {
+  int dim = xEncoded.dims(0);
+  if (dim != (1 + keyValue_) * state.dims(0)) {
+    throw std::invalid_argument("Invalid dimension for content attention");
+  }
+
+  auto keys = keyValue_ ? xEncoded(af::seq(0, dim / 2 - 1)) : xEncoded;
+  auto values = keyValue_ ? xEncoded(af::seq(dim / 2, dim - 1)) : xEncoded;
+
   // [targetlen, seqlen, batchsize]
-  auto innerProd = matmulTN(state, xEncoded);
+  auto innerProd = matmulTN(state, keys);
 
   if (!attnWeight.isempty()) {
     innerProd = innerProd + log(attnWeight);
@@ -28,7 +36,7 @@ std::pair<Variable, Variable> ContentAttention::forward(
   auto attention = softmax(innerProd, 1);
 
   // [hiddendim, targetlen, batchsize]
-  auto summaries = matmulNT(xEncoded, attention);
+  auto summaries = matmulNT(values, attention);
 
   return std::make_pair(attention, summaries);
 }
@@ -40,7 +48,7 @@ std::string ContentAttention::prettyString() const {
 NeuralContentAttention::NeuralContentAttention(int dim, int layers /* = 1 */) {
   Sequential net;
   net.add(ReLU());
-  for (int i = 0; i < layers; i++) {
+  for (int i = 1; i < layers; i++) {
     net.add(Linear(dim, dim));
     net.add(ReLU());
   }

@@ -8,7 +8,7 @@
 
 namespace {
 
-constexpr int kBlockSize = 128;
+constexpr int kBlockSize = 32;
 
 __global__ void forwardStep(
     int N,

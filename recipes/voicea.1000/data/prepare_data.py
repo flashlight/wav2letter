@@ -1,22 +1,13 @@
 """
-Copyright (c) Facebook, Inc. and its affiliates.
+Copyright (c) Voicea, Inc. and its affiliates.
 All rights reserved.
-
-This source code is licensed under the BSD-style license found in the
-LICENSE file in the root directory of this source tree.
 
 ----------
 
-Script to package original Librispeech datasets into a form readable in
+Script to package original Voicea.1000 datasets into a form readable in
 wav2letter++ pipelines
 
-Please download all the original datasets in a folder on your own
-1> wget http://www.openslr.org/resources/12/dev-clean.tar.gz
-2> tar xfvz dev-clean.tar.gz
-# Repeat 1 and 2 for train-clean-100, train-clean-360, train-other-500,
-# dev-other, test-clean, test-other
-
-Command : python3 prepare_data.py --src [...]/LibriSpeech/ --dst [...]
+Command : python3 prepare_data.py --src [...]/Voicea.1000/ --dst [...]
 
 Replace [...] with appropriate paths
 """
@@ -26,16 +17,18 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import argparse
 import os
 import sys
+import ntpath
+
 from multiprocessing import Pool
 
 import utils
 from tqdm import tqdm
-
+from os.path import basename
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Librispeech Dataset creation.")
+    parser = argparse.ArgumentParser(description="Voicea.1000 Clean Dataset creation.")
     parser.add_argument("--src", help="source directory")
-    parser.add_argument("--dst", help="destination directory", default="./librispeech")
+    parser.add_argument("--dst", help="destination directory", default="./Voicea.1000")
     parser.add_argument(
         "-p", "--process", help="# of process for Multiprocessing", default=8, type=int
     )
@@ -44,18 +37,15 @@ if __name__ == "__main__":
 
     assert os.path.isdir(
         str(args.src)
-    ), "Librispeech src directory not found - '{d}'".format(d=args.src)
+    ), "Voicea.1000 src directory not found - '{d}'".format(d=args.src)
 
     gender_map = utils.parse_speakers_gender("{src}/SPEAKERS.TXT".format(src=args.src))
+    #gender_map = {}
 
     subpaths = {
-        "train-clean-100",
-        "train-clean-360",
-        "train-other-500",
-        "dev-clean",
-        "dev-other",
-        "test-clean",
-        "test-other",
+        "clean-trn",
+        "clean-tst",
+        "clean-tst.stratified",
     }
 
     os.makedirs(args.dst, exist_ok=True)
@@ -73,6 +63,7 @@ if __name__ == "__main__":
         sys.stdout.write("analyzing {src}...\n".format(src=src))
         sys.stdout.flush()
         transcriptfiles = utils.findtranscriptfiles(src)
+        sys.stdout.write("Found {cnt} examples...\n".format(cnt=len(transcriptfiles)))
         transcriptfiles.sort()
         sys.stdout.write("writing to {dst}...\n".format(dst=dst))
         sys.stdout.flush()
@@ -80,8 +71,14 @@ if __name__ == "__main__":
         transcripts = []
         for tf in transcriptfiles:
             with open(tf, "r") as f:
+                # strip path
+                # get id of file by removing extension
+                id = basename(tf)
+                if id.endswith('.trans.txt'):
+                    id = id[:-10]
+                    
                 for line in f:
-                    transcripts.append(tf + " " + line.strip())
+                    transcripts.append(tf + " " + id + " " + line.strip())
 
         n_samples = len(transcripts)
         with Pool(args.process) as p:

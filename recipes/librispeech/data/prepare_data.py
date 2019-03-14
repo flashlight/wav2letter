@@ -50,12 +50,8 @@ if __name__ == "__main__":
 
     subpaths = {
         "train-clean-100",
-        "train-clean-360",
-        "train-other-500",
         "dev-clean",
-        "dev-other",
         "test-clean",
-        "test-other",
     }
 
     os.makedirs(args.dst, exist_ok=True)

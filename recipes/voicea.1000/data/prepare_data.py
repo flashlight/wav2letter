@@ -43,7 +43,7 @@ if __name__ == "__main__":
     #gender_map = {}
 
     subpaths = {
-        "clean-trn",
+        #"clean-trn",
         "clean-tst",
         "clean-tst.stratified",
     }

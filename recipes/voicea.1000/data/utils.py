@@ -68,8 +68,7 @@ def write_sample(sample):
 
     # id
     _, spkr_id, _ = srcpath.strip(os.sep).rsplit(os.sep, 2)
-    gender = gender_map[spkr_id]
     with open(basepath + ".id", "w") as f:
         f.write("file_id\t{fid}".format(fid=idx))
-        f.write("\ngender\t{g}".format(g=gender))
-        f.write("\nspeaker_id\t{g}".format(g=spkr_id))
+        f.write("\ngender\tM")
+        f.write("\nspeaker_id\t1")

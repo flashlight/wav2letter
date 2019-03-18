@@ -1,0 +1,22 @@
+# Training config for Voicea using Gated ConvNets
+--datadir=/home/ahmad/Voicea.1000/data
+--tokensdir=/home/ahmad/Voicea.1000
+--archdir=/home/ahmad/git/wav2letter/recipes/voicea.1000/config/conv_glu/
+--train=clean-trn.30
+--valid=clean-tst,clean-tst.stratified
+--arch=network.arch.0
+--tokens=tokens.txt
+--criterion=ctc
+--lr=0.05
+--maxgradnorm=1.0
+--replabel=2
+--surround=|
+--onorm=target
+--sqnorm=true
+--mfsc=true
+--filterbanks=40
+--nthread=4
+--batchsize=4
+--runname=clean-trn-run.0
+--iter=1000
+

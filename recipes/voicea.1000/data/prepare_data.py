@@ -43,14 +43,19 @@ if __name__ == "__main__":
     #gender_map = {}
 
     subpaths = {
-        #"clean-trn",
-        "clean-tst",
-        "clean-tst.stratified",
+        "clean-trn",
+        #"clean-tst",
+        #"clean-tst.stratified",
     }
 
     os.makedirs(args.dst, exist_ok=True)
 
+    max_words = 110;
+    
     for subpath in subpaths:
+        if (subpath == "clean-trn"):
+            max_words = 90
+            
         src = os.path.join(args.src, subpath)
         dst = os.path.join(args.dst, "data", subpath)
         os.makedirs(dst, exist_ok=True)
@@ -78,9 +83,15 @@ if __name__ == "__main__":
                     id = id[:-10]
                     
                 for line in f:
-                    transcripts.append(tf + " " + id + " " + line.strip())
+                    # count words in transcript
+                    # only add transcript less than 110 words
+                    words = line.split(' ')
+                    if (len(words) <= max_words):
+                        transcripts.append(tf + " " + id + " " + line.strip())
 
         n_samples = len(transcripts)
+        sys.stdout.write("Filtered to {cnt} examples...\n".format(cnt=n_samples))
+        
         with Pool(args.process) as p:
             r = list(
                 tqdm(

@@ -1,11 +1,11 @@
 """
-Copyright (c) Facebook, Inc. and its affiliates.
+Copyright (c) Voicea, Inc. and its affiliates.
 All rights reserved.
 
-This source code is licensed under the BSD-style license found in the
-LICENSE file in the root directory of this source tree.
-
 ----------
+
+Script to package original Voicea.1000 datasets into a form readable in
+wav2letter++ pipelines
 
 Script to create LM data into a form readable in wav2letter++ decoder pipeline
 
@@ -25,10 +25,11 @@ import sys
 lm = "4-gram"
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Librispeech LM data creation.")
-    parser.add_argument("--dst", help="destination directory", default="./librispeech")
+    parser = argparse.ArgumentParser(description="Voicea.1000 LM data creation.")
+    parser.add_argument("--dst", help="destination directory")
     parser.add_argument("--kenlm", help="location to installed kenlm directory")
-
+    parser.add_argument("--arpa", help="path of arpa lm")
+  
     args = parser.parse_args()
 
     assert os.path.isdir(str(args.kenlm)), "kenlm directory not found - '{d}'".format(
@@ -38,15 +39,8 @@ if __name__ == "__main__":
     lm_dir = os.path.join(args.dst, "lm")
     os.makedirs(lm_dir, exist_ok=True)
 
-    # download LM
-    sys.stdout.write("\nDownloading Librispeech LM - {lm}...\n\n".format(lm=lm))
-    sys.stdout.flush()
-
-    arpa_file = os.path.join(lm_dir, lm + ".arpa")
-    os.system(
-        "wget -O - http://www.openslr.org/resources/11/{lm}.arpa.gz | "
-        "gunzip  -c > {o}".format(lm=lm, o=arpa_file)
-    )
+    # locate arpa
+    arpa_file = args.arpa 
 
     # temporary arpa file in lowercase
     sys.stdout.write("\nSaving ARPA LM file in binary format ...\n\n")
@@ -73,7 +67,10 @@ if __name__ == "__main__":
                 word = word.strip().lower()
                 if word == "<unk>" or word == "<s>" or word == "</s>":
                     continue
-                assert re.match("^[a-z']+$", word), "invalid word - {w}".format(w=word)
-                f.write("{w}\t{s}\n".format(w=word, s=" ".join(word)))
-
+                
+                # only write valid words
+                if (re.match(
+                    "^[a-z']+$", word), "invalid word - {w}\n".format(w=word)):
+                    f.write("{w}\t{s}\n".format(w=word, s=" ".join(word)))
+                
     sys.stdout.write("Done !\n")

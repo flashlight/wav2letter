@@ -143,7 +143,7 @@ GpuCTC<ProbT>::setup_gpu_metadata(const int* const flat_labels,
     int Lmax = 0;
     int total_label_length = 0;
 
-    constexpr int cpu_buffer_size = 64;
+    constexpr int cpu_buffer_size = 32;
     int repeats[cpu_buffer_size];
     int label_offsets[cpu_buffer_size];
 
@@ -155,6 +155,9 @@ GpuCTC<ProbT>::setup_gpu_metadata(const int* const flat_labels,
 
         const int start_idx = pass * cpu_buffer_size;
         const int end_idx = std::min(minibatch_, (pass+1) * cpu_buffer_size);
+
+        //printf("start_idx:%d, end_idx:%d, num_passes:%d\n",
+        //		start_idx, end_idx, num_passes);
 
         for (int j = start_idx; j < end_idx; ++j) {
             const int L = label_lengths[j];
@@ -171,6 +174,9 @@ GpuCTC<ProbT>::setup_gpu_metadata(const int* const flat_labels,
 
             repeats[j % cpu_buffer_size] = repeat_counter;
             const bool valid_label = ((L + repeat_counter) <= local_T);
+
+            //printf("idx:%d, L:%d, local_T:%d\n", j,
+            //		label_lengths[j], input_lengths[j]);
 
             // Only update S and T if label is valid
             S_ = (valid_label) ? std::max(S_, L) : S_;
@@ -196,6 +202,8 @@ GpuCTC<ProbT>::setup_gpu_metadata(const int* const flat_labels,
 
     S_ = 2 * S_ + 1;
     const int Smax = 2 * Lmax + 1;
+
+    //printf("S_:%d, T_:%d\n", S_, T_);
 
     activation_cols_ = minibatch_ * Tmax;
 
@@ -303,7 +311,10 @@ GpuCTC<ProbT>::create_metadata_and_choose_config(const int* const flat_labels,
     // Setup the metadata for GPU
     ctcStatus_t status = setup_gpu_metadata(flat_labels, label_lengths, input_lengths);
     if (status != CTC_STATUS_SUCCESS)
-        return status;
+    {
+    	//printf("bad setup_gpu_metadata1!\n");
+			return status;
+    }
 
     constexpr int num_configs = 12;
 
@@ -314,7 +325,11 @@ GpuCTC<ProbT>::create_metadata_and_choose_config(const int* const flat_labels,
 
     best_config = 0;
 
-    for (int i = 0; i < num_configs; ++i) {
+    for (int i = 0; i < num_configs; ++i)
+    {
+    	//printf("Config %d: config_NT[i]=%d, config_VT[i]=%d, S_=%d\n",
+    	//		i, config_NT[i], config_VT[i], S_);
+
         if ((config_NT[i]* config_VT[i]) >= S_)
             break;
         else
@@ -322,7 +337,10 @@ GpuCTC<ProbT>::create_metadata_and_choose_config(const int* const flat_labels,
     }
 
     if (best_config >= num_configs)
-        return CTC_STATUS_UNKNOWN_ERROR;
+    {
+    	//printf("bad setup_gpu_metadata2!\n");
+			return CTC_STATUS_UNKNOWN_ERROR;
+    }
 
     return CTC_STATUS_SUCCESS;
 }
@@ -415,11 +433,17 @@ GpuCTC<ProbT>::compute_cost_and_score(const ProbT* const activations,
                                                            input_lengths,
                                                            best_config);
     if (status != CTC_STATUS_SUCCESS)
+    {
+    		//printf("bad create_metadata_and_choose_config status!\n");
         return status;
+    }
 
     status = compute_probs(activations);
     if (status != CTC_STATUS_SUCCESS)
+    {
+    		//printf("bad compute_probs status!\n");
         return status;
+    }
 
     launch_gpu_kernels(probs_, grads, best_config,
                        compute_alpha, compute_betas_and_grad);
@@ -430,7 +454,10 @@ GpuCTC<ProbT>::compute_cost_and_score(const ProbT* const activations,
                                       cudaMemcpyDeviceToHost, stream_);
     cuda_status_sync = cudaStreamSynchronize(stream_);
     if (cuda_status_mem != cudaSuccess || cuda_status_sync != cudaSuccess)
+    {
+    		//printf("bad cudaStreamSynchronize status!\n");
         return CTC_STATUS_MEMOPS_FAILED;
+    }
 
     return CTC_STATUS_SUCCESS;
 }
@@ -449,7 +476,10 @@ GpuCTC<ProbT>::cost_and_grad(const ProbT* const activations,
         label_lengths == nullptr ||
         input_lengths == nullptr
         )
+    {
+    		//printf("bad cost_and_grad status!\n");
         return CTC_STATUS_INVALID_VALUE;
+    }
 
     return compute_cost_and_score(activations, grads, costs, flat_labels,
                                   label_lengths, input_lengths, true, true);

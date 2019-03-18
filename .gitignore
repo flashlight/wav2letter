@@ -4,3 +4,4 @@ scripts
 src/fb
 src/experimental
 TARGETS
+/debugBuild/

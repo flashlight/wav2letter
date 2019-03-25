@@ -29,6 +29,7 @@ if __name__ == "__main__":
     parser.add_argument("--dst", help="destination directory")
     parser.add_argument("--kenlm", help="location to installed kenlm directory")
     parser.add_argument("--arpa", help="path of arpa lm")
+    parser.add_argument("--lex", help="path of arpa lm")
   
     args = parser.parse_args()
 
@@ -53,7 +54,7 @@ if __name__ == "__main__":
     os.remove("{arpa}.tmp".format(arpa=arpa_file))
 
     # write words to lexicon.txt file
-    dict_file = os.path.join(lm_dir, "lexicon.txt")
+    dict_file = os.path.join(lm_dir, args.lex)
     sys.stdout.write("\nWriting Lexicon file - {d}...\n\n".format(d=dict_file))
     sys.stdout.flush()
     with open(dict_file, "w") as f:

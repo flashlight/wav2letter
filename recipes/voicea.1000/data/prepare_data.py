@@ -43,7 +43,8 @@ if __name__ == "__main__":
     #gender_map = {}
 
     subpaths = {
-        "clean-trn",
+        "train-other-500"
+        #"clean-trn",
         #"clean-tst",
         #"clean-tst.stratified",
     }
@@ -87,6 +88,7 @@ if __name__ == "__main__":
                     # only add transcript less than 110 words
                     words = line.split(' ')
                     if (len(words) <= max_words):
+                        #transcripts.append(tf + " " + line.strip())
                         transcripts.append(tf + " " + id + " " + line.strip())
 
         n_samples = len(transcripts)

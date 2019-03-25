@@ -4,7 +4,7 @@
 --archdir=/home/ahmad/git/wav2letter/recipes/voicea.1000/config/conv_glu/
 --train=clean-trn.90,train-other-500,train-clean-100
 --valid=clean-tst,clean-tst.stratified
---arch=network.arch.2
+--arch=network.arch.4
 --tokens=tokens.txt
 --criterion=ctc
 --lr=0.01
@@ -14,9 +14,9 @@
 --onorm=target
 --sqnorm=true
 --mfsc=true
---filterbanks=40
+--filterbanks=60
 --nthread=4
 --batchsize=4
---runname=clean-trn-run.2
+--runname=clean-trn-run.4
 --iter=1000
 

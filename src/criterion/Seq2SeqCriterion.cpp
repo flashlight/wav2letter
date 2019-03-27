@@ -178,7 +178,7 @@ std::pair<Variable, Variable> Seq2SeqCriterion::vectorizedDecoder(
       windowWeight);
 
   // [nClass, targetlen, batchsize]
-  auto out = linearOut()->forward(summaries);
+  auto out = linearOut()->forward(summaries + hy);
 
   return std::make_pair(out, alpha);
 }
@@ -392,7 +392,7 @@ std::pair<Variable, Seq2SeqState> Seq2SeqCriterion::decodeStep(
       attention()->forward(hy, xEncoded, inState.alpha, windowWeight);
 
   // [nClass, 1, batchsize]
-  auto out = linearOut()->forward(outState.summary);
+  auto out = linearOut()->forward(outState.summary + hy);
   af::setMemStepSize(stepSize);
   return std::make_pair(out, outState);
 }
@@ -463,7 +463,8 @@ Seq2SeqCriterion::decodeBatchStep(
 
   /* (3) Linear forward */
   // outBatched [nclass, 1, batchsize]
-  auto outBatched = linearOut()->forward(outStateBatched);
+  yBatched = moddims(yBatched, {yBatched.dims(0), 1, yBatched.dims(1)});
+  auto outBatched = linearOut()->forward(outStateBatched + yBatched);
   outBatched = logSoftmax(outBatched, 0);
   std::vector<std::vector<float>> out(batchSize);
   for (int i = 0; i < batchSize; i++) {

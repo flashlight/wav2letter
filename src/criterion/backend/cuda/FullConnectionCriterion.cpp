@@ -23,8 +23,8 @@ static void backward(
   assert(inputs.size() == 2);
   const auto& gscale = scale * grad_output.array(); // [B]
   const auto& trans = inputs[1].array(); // [N, N]
-  array transtmp(N, N, B, f64);
-  array fccgacc(N, B, T, f64);
+  array transtmp = constant(0, N, N, B, f64);
+  array fccgacc = constant(0, N, B, T, f64);
   auto gtrans = constant(0, N, N, B, f64);
 
   const auto& final_em = fccacc(span, span, T - 1); // [N, B]

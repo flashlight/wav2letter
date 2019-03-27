@@ -7,6 +7,7 @@
  */
 
 #include "ContentAttention.h"
+#include <cmath>
 
 using namespace fl;
 
@@ -26,7 +27,7 @@ std::pair<Variable, Variable> ContentAttention::forward(
   auto values = keyValue_ ? xEncoded(af::seq(dim / 2, dim - 1)) : xEncoded;
 
   // [targetlen, seqlen, batchsize]
-  auto innerProd = matmulTN(state, keys);
+  auto innerProd = matmulTN(state, keys) / std::sqrt(state.dims(0));
 
   if (!attnWeight.isempty()) {
     innerProd = innerProd + log(attnWeight);

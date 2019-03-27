@@ -77,3 +77,8 @@ RES [numLayers (N)] [skipStart1] [skipEnd1] ... [numBlocks  <OPTIONAL>]
 ```
 
 *(Use skipStart `= 0` for a skip connection from input, skipEnd `= N+1` for a skip connection to output, and skipStart/skipEnd `= K` for a skip connection from/to LayerK.)*
+
+**w2l::TDSBlock**
+```
+TDS [kernel width] [input width] [channels] [drop prob]
+```

@@ -9,4 +9,5 @@
 #pragma once
 
 #include "module/Residual.h"
+#include "module/TDSBlock.h"
 #include "module/W2lModule.h"

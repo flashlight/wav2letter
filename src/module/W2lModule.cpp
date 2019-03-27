@@ -8,6 +8,7 @@
 
 #include "W2lModule.h"
 #include "module/Residual.h"
+#include "module/TDSBlock.h"
 
 #include <string>
 
@@ -120,6 +121,15 @@ std::shared_ptr<Module> parseLines(
     int cpx = (params.size() >= 6) ? std::stoi(params[5]) : 0;
     int cdx = (params.size() >= 7) ? std::stoi(params[6]) : 1;
     return std::make_shared<Conv2D>(cisz, cosz, cwx, 1, csx, 1, cpx, 0, cdx, 1);
+  }
+
+  if (params[0] == "TDS") {
+    LOG_IF(FATAL, !inRange(4, params.size(), 5)) << "Failed parsing - " << line;
+    int cisz = std::stoi(params[1]);
+    int cwx = std::stoi(params[2]);
+    int freqdim = std::stoi(params[3]);
+    double dropprob = (params.size() >= 5) ? std::stod(params[4]) : 0;
+    return std::make_shared<w2l::TDSBlock>(cisz, cwx, freqdim, dropprob);
   }
 
   if (params[0] == "C2") {

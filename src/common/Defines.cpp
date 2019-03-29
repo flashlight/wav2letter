@@ -225,6 +225,10 @@ DEFINE_double(
     5,
     "std for the soft window shape (=exp(-(t - center)^2 / (2 * std^2)))");
 DEFINE_bool(trainWithWindow, false, "use window in training");
+DEFINE_int64(
+    pretrainWindow,
+    0,
+    "use window in training for pretrainWindow epochs");
 
 // DISTRIBUTED TRAINING
 DEFINE_bool(enable_distributed, false, "enable distributed training");

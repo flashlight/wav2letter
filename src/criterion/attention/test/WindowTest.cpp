@@ -139,6 +139,31 @@ TEST(WindowTest, SoftWindow) {
   ASSERT_EQ(mask_v.dims(), af::dim4(targetlen, inputsteps, batchsize));
 }
 
+TEST(WindowTest, SoftPretrainWindow) {
+  int inputsteps = 32;
+  int targetlen = 8;
+  int batchsize = 4;
+  double std = 5.0;
+
+  Variable input_attn;
+  SoftPretrainWindow window(std);
+
+  // check initialization
+  auto mask = window.computeSingleStepWindow(
+      input_attn, inputsteps, batchsize, 0 /* step */);
+  ASSERT_TRUE(
+      allClose(mask.array(), af::constant(0, {1, inputsteps, batchsize})));
+
+  auto mask_v = window.computeWindowMask(targetlen, inputsteps, batchsize);
+  ASSERT_EQ(mask_v.dims(), af::dim4(targetlen, inputsteps, batchsize));
+
+  std::vector<unsigned int> peaks = {0, 4, 8, 12, 16, 20, 24, 28};
+
+  af::array maxv, maxid;
+  max(maxv, maxid, mask_v.array()(af::span, af::span, 0), 1);
+  ASSERT_TRUE(allClose(maxid, af::array(8, peaks.data())));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

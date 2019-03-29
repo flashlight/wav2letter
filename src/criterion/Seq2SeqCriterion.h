@@ -114,6 +114,11 @@ class Seq2SeqCriterion : public SequenceCriterion {
       const fl::Variable& y,
       const Seq2SeqState& instate) const;
 
+  void clearWindow() {
+    trainWithWindow_ = false;
+    window_ = nullptr;
+  }
+
  private:
   int eos_;
   int maxDecoderOutputLen_;

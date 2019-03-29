@@ -594,6 +594,25 @@ int main(int argc, char** argv) {
     LOG_MASTER(INFO) << "Finished LinSeg";
   }
 
+  if (FLAGS_pretrainWindow - startEpoch > 0) {
+    auto s2s = std::dynamic_pointer_cast<Seq2SeqCriterion>(criterion);
+    if (!s2s) {
+      LOG(FATAL) << "Window pretraining only allowed for seq2seq.";
+    }
+    train(
+        network,
+        criterion,
+        trainds,
+        netoptim,
+        critoptim,
+        FLAGS_lr,
+        FLAGS_lrcrit,
+        true /* clampCrit */,
+        FLAGS_pretrainWindow);
+    s2s->clearWindow();
+    startEpoch = FLAGS_pretrainWindow;
+  }
+
   train(
       network,
       criterion,

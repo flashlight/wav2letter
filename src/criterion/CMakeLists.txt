@@ -38,7 +38,7 @@ set(
   ${CMAKE_CURRENT_SOURCE_DIR}/FullConnectionCriterion.cpp
 )
 
-if (CRIT_BACKEND_USE_CUDA)  
+if (CRIT_BACKEND_USE_CUDA)
   set(
     CRITERION_SOURCES
     ${CRITERION_SOURCES}
@@ -114,7 +114,7 @@ if (CRIT_BACKEND_USE_CUDA)
     warpctc # added directly from subdir
     w2lCriterionCudaKernels # cuda lib
     )
-  
+
   target_include_directories(
     criterion
     INTERFACE
@@ -164,6 +164,7 @@ target_sources(
   window
   INTERFACE
   ${CMAKE_CURRENT_SOURCE_DIR}/attention/MedianWindow.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/attention/SoftPretrainWindow.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/attention/SoftWindow.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/attention/StepWindow.cpp
   )

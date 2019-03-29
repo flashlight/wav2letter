@@ -49,6 +49,8 @@ Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx) {
   } else if (FLAGS_attnWindow == w2l::kSoftWindow) {
     window = std::make_shared<SoftWindow>(
         FLAGS_softwstd, FLAGS_softwrate, FLAGS_softwoffset);
+  } else if (FLAGS_attnWindow == w2l::kSoftPretrainWindow) {
+    window = std::make_shared<SoftPretrainWindow>(FLAGS_softwstd);
   } else {
     LOG(FATAL) << "unimplemented window";
   }

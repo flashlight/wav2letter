@@ -12,10 +12,9 @@
 
 namespace w2l {
 
-class SoftWindow : public WindowBase {
+class SoftPretrainWindow : public WindowBase {
  public:
-  SoftWindow();
-  SoftWindow(double std, double avgRate, int offset);
+  explicit SoftPretrainWindow(double std);
 
   fl::Variable computeSingleStepWindow(
       const fl::Variable& prevAttn,
@@ -27,15 +26,13 @@ class SoftWindow : public WindowBase {
       override;
 
  private:
-  int getCenter(int step, int inputSteps);
+  SoftPretrainWindow() = default;
 
   double std_;
-  double avgRate_;
-  int offset_;
 
-  FL_SAVE_LOAD_WITH_BASE(WindowBase, std_, avgRate_, offset_)
+  FL_SAVE_LOAD_WITH_BASE(WindowBase, std_)
 };
 
 } // namespace w2l
 
-CEREAL_REGISTER_TYPE(w2l::SoftWindow)
+CEREAL_REGISTER_TYPE(w2l::SoftPretrainWindow)

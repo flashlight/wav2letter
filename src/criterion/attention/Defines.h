@@ -20,6 +20,7 @@ const std::string kNeuralContentAttention = "neural";
 const std::string kMedianWindow = "median";
 const std::string kNoWindow = "no";
 const std::string kSoftWindow = "soft";
+const std::string kSoftPretrainWindow = "softPretrain";
 const std::string kStepWindow = "step";
 
 } // namespace w2l

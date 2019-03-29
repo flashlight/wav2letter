@@ -198,6 +198,7 @@ DECLARE_int64(softwoffset);
 DECLARE_double(softwrate);
 DECLARE_double(softwstd);
 DECLARE_bool(trainWithWindow);
+DECLARE_int64(pretrainWindow);
 
 /* ========== DISTRIBUTED TRAINING ========== */
 DECLARE_bool(enable_distributed);

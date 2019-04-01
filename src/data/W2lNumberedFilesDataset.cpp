@@ -26,7 +26,7 @@ W2lNumberedFilesDataset::W2lNumberedFilesDataset(
     const std::string& rootdir /* = "" */)
     : W2lDataset(dicts, batchsize, worldrank, worldsize),
       cumulativeSizes_({0}) {
-  auto paths_vec = split(',', paths);
+  auto pathsVec = split(',', paths);
   TargetExtMap targetExts;
   targetExts.insert({kTargetIdx, FLAGS_target});
   if (!FLAGS_lexicon.empty()) {
@@ -34,7 +34,7 @@ W2lNumberedFilesDataset::W2lNumberedFilesDataset(
   }
 
   int64_t curSize = 0;
-  for (const auto& p : paths_vec) {
+  for (const auto& p : pathsVec) {
     loaders_.emplace_back(
         pathsConcat(rootdir, trim(p)), FLAGS_input, targetExts);
     curSize += loaders_.back().size();

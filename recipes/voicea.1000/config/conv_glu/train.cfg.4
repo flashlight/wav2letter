@@ -2,7 +2,7 @@
 --datadir=/home/ahmad/Voicea.1000/data
 --tokensdir=/home/ahmad/Voicea.1000
 --archdir=/home/ahmad/git/wav2letter/recipes/voicea.1000/config/conv_glu/
---train=clean-trn.90,train-other-500,train-clean-100
+--train=clean-trn.90
 --valid=clean-tst,clean-tst.stratified
 --arch=network.arch.4
 --tokens=tokens.txt
@@ -16,7 +16,7 @@
 --mfsc=true
 --filterbanks=60
 --nthread=4
---batchsize=4
+--batchsize=8
 --runname=clean-trn-run.4
 --iter=1000
 

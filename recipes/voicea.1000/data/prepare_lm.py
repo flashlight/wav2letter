@@ -29,7 +29,7 @@ if __name__ == "__main__":
     parser.add_argument("--dst", help="destination directory")
     parser.add_argument("--kenlm", help="location to installed kenlm directory")
     parser.add_argument("--arpa", help="path of arpa lm")
-    parser.add_argument("--lex", help="path of arpa lm")
+    parser.add_argument("--lex", help="path of lexicon")
   
     args = parser.parse_args()
 

@@ -7,7 +7,7 @@ Requirements to run scripts:
 - python 3
 - [`sox`](https://pypi.org/project/sox/) and [`tqdm`](https://pypi.org/project/tqdm/) libraries, available through `pip`.
 
-Each dataset contains `prepare_data.py` which prepares the Dataset and Tokens file and `prepare_lm.py` which prepares Lexicon and Language Model data. Each file in the directory has instruction on how to run the python script.
+In general, each dataset contains `prepare_data.py` which prepares the Dataset and Tokens file and `prepare_lm.py` which prepares Lexicon and Language Model data. See `README.md` under each dataset directory for extra dataset-specific setups. Each file in the directory has instruction on how to run the python script.
 
 > [...]/prepare_data.py [OPTIONS ...]
 

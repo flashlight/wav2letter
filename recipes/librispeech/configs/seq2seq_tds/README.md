@@ -1,0 +1,1 @@
+The parameters and settings in `train.cfg` are for running experiments on a single node with 8 GPUs (`--enable_distributed=true`). Distributed jobs can be launched using [Open MPI](https://www.open-mpi.org/).

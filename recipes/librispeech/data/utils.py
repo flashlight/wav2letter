@@ -22,13 +22,6 @@ def findtranscriptfiles(dir):
     return files
 
 
-def copytoflac(src, dst):
-    assert sox.file_info.duration(src) > 0
-    sox_tfm = sox.Transformer()
-    sox_tfm.set_output_format(file_type="flac", encoding="signed-integer", bits=16)
-    sox_tfm.build(src, dst)
-
-
 def parse_speakers_gender(spk_file):
     ret = {}
     with open(spk_file, "r") as f:
@@ -40,36 +33,25 @@ def parse_speakers_gender(spk_file):
     return ret
 
 
-def write_sample(sample):
+def transcript_to_list(file):
+    audio_path = os.path.dirname(file)
+    ret = []
+    with open(file, "r") as f:
+        for line in f:
+            file_id, trans = line.strip().split(" ", 1)
+            audio_file = os.path.abspath(os.path.join(audio_path, file_id + ".flac"))
+            duration = sox.file_info.duration(audio_file) * 1000  # miliseconds
+            ret.append([file_id, audio_file, str(duration), trans.lower()])
 
-    line, gender_map, idx, dst = sample
-    filename, input, lbl = line.split(" ", 2)
+    return ret
 
-    assert filename and input and lbl
 
-    srcpath = os.path.dirname(filename)
+def read_list(src, files):
+    ret = []
+    for file in files:
+        with open(os.path.join(src, file + ".lst"), "r") as f:
+            for line in f:
+                _, _, _, trans = line.strip().split(" ", 3)
+                ret.append(trans)
 
-    basepath = os.path.join(dst, "%09d" % idx)
-
-    # flac
-    copytoflac(
-        os.path.join(os.path.dirname(filename), input + ".flac"), basepath + ".flac"
-    )
-
-    # wrd
-    words = lbl.strip().lower()
-    with open(basepath + ".wrd", "w") as f:
-        f.write(words)
-
-    # ltr
-    spellings = " | ".join([" ".join(w) for w in words.split()])
-    with open(basepath + ".tkn", "w") as f:
-        f.write(spellings)
-
-    # id
-    _, spkr_id, _ = srcpath.strip(os.sep).rsplit(os.sep, 2)
-    gender = gender_map[spkr_id]
-    with open(basepath + ".id", "w") as f:
-        f.write("file_id\t{fid}".format(fid=idx))
-        f.write("\ngender\t{g}".format(g=gender))
-        f.write("\nspeaker_id\t{g}".format(g=spkr_id))
+    return ret

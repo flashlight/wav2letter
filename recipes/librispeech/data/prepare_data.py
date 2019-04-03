@@ -46,59 +46,60 @@ if __name__ == "__main__":
         str(args.src)
     ), "Librispeech src directory not found - '{d}'".format(d=args.src)
 
-    gender_map = utils.parse_speakers_gender("{src}/SPEAKERS.TXT".format(src=args.src))
-
     subpaths = {
-        "train-clean-100",
-        "train-clean-360",
-        "train-other-500",
-        "dev-clean",
-        "dev-other",
-        "test-clean",
-        "test-other",
+        "train": [
+            "train-clean-100",
+            "train-clean-360",
+            "train-other-500"
+        ],
+        "dev": [
+            "dev-clean",
+            "dev-other"
+        ],
+        "test": [
+            "test-clean",
+            "test-other"
+        ]
     }
 
     os.makedirs(args.dst, exist_ok=True)
 
-    for subpath in subpaths:
-        src = os.path.join(args.src, subpath)
-        dst = os.path.join(args.dst, "data", subpath)
-        os.makedirs(dst, exist_ok=True)
-
-        transcripts = []
-        assert os.path.exists(src), "Unable to find the directory - '{src}'".format(
-            src=src
-        )
-
-        sys.stdout.write("analyzing {src}...\n".format(src=src))
-        sys.stdout.flush()
-        transcriptfiles = utils.findtranscriptfiles(src)
-        transcriptfiles.sort()
-        sys.stdout.write("writing to {dst}...\n".format(dst=dst))
-        sys.stdout.flush()
-
-        transcripts = []
-        for tf in transcriptfiles:
-            with open(tf, "r") as f:
-                for line in f:
-                    transcripts.append(tf + " " + line.strip())
-
-        n_samples = len(transcripts)
-        with Pool(args.process) as p:
-            r = list(
-                tqdm(
-                    p.imap(
-                        utils.write_sample,
-                        zip(
-                            transcripts,
-                            [gender_map] * n_samples,
-                            range(n_samples),
-                            [dst] * n_samples,
-                        ),
-                    ),
-                    total=n_samples,
-                )
+    word_dict = {}
+    for subpath_type in subpaths.keys():
+        word_dict[subpath_type] = set()
+        for subpath in subpaths[subpath_type]:
+            src = os.path.join(args.src, subpath)
+            assert os.path.exists(src), "Unable to find the directory - '{src}'".format(
+                src=src
             )
+
+            dst = os.path.join(args.dst, subpath + ".lst")
+
+            sys.stdout.write("analyzing {src}...\n".format(src=src))
+            sys.stdout.flush()
+            transcriptfiles = utils.findtranscriptfiles(src)
+            transcriptfiles.sort()
+
+            sys.stdout.write("writing to {dst}...\n".format(dst=dst))
+            sys.stdout.flush()
+            with Pool(args.process) as p:
+                samples = list(
+                    tqdm(
+                        p.imap(
+                            utils.transcript_to_list,
+                            transcriptfiles,
+                        ),
+                        total=len(transcriptfiles),
+                    )
+                )
+
+            with open(dst, "w") as o:
+                for sp in samples:
+                    for s in sp:
+                        word_dict[subpath_type].update(s[-1].split(" "))
+                        s[0] = subpath + "-" + s[0]
+                        o.write(" ".join(s))
+                        o.write("\n")
 
     # create tokens dictionary
     sys.stdout.write("creating tokens list...\n")
@@ -108,5 +109,13 @@ if __name__ == "__main__":
         f.write("'\n")
         for alphabet in range(ord("a"), ord("z") + 1):
             f.write(chr(alphabet) + "\n")
+
+    # word -> tokens lexicon for loading targets
+    sys.stdout.write("creating word -> tokens lexicon...\n")
+    sys.stdout.flush()
+    output_word_dict = sorted(word_dict["train"] | word_dict["dev"])
+    with open(os.path.join(args.dst, "librispeech-train+dev-tokens.dict"), "w") as f:
+        for w in output_word_dict:
+            f.write("{word} {tokens}\n".format(word=w, tokens=" ".join(list(w))))
 
     sys.stdout.write("Done !\n")

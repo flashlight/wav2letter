@@ -14,15 +14,19 @@ namespace w2l {
 
 SoftPretrainWindow::SoftPretrainWindow(double std) : std_(std) {}
 
-/* The pretrain window can only be used during training. This function returns
- * zeros and is a no-op.*/
+/* The pretrain window should only be used during training, since it requires
+ * users set the length of the targets using setBatchStat() in advance.*/
 Variable SoftPretrainWindow::computeSingleStepWindow(
     const Variable& /* unused */,
     int inputSteps,
     int batchSize,
-    int /* unused */) {
+    int step) {
+  auto ts = af::range(af::dim4(1, inputSteps), 1);
+  double vratio = (double)inputSteps / (double)targetLen_;
+  auto maskArray = exp(-pow(ts - vratio * step, 2) / (2 * std_ * std_));
+
   // [1, inputSteps, batchSize]
-  return Variable(af::constant(0, {1, inputSteps, batchSize}), false);
+  return Variable(tile(maskArray, {1, 1, batchSize}), false);
 }
 
 Variable SoftPretrainWindow::computeWindowMask(
@@ -35,8 +39,7 @@ Variable SoftPretrainWindow::computeWindowMask(
   auto maskArray = exp(-pow(ts - vratio * us, 2) / (2 * std_ * std_));
 
   // [targetLen, inputSteps, batchSize]
-  auto mask = Variable(tile(maskArray, {1, 1, batchSize}), false);
-  return mask;
+  return Variable(tile(maskArray, {1, 1, batchSize}), false);
 }
 
 } // namespace w2l

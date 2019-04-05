@@ -194,6 +194,12 @@ DEFINE_double(
 DEFINE_bool(inputfeeding, false, "feed encoder summary to the decoder RNN");
 DEFINE_string(attention, "content", "attention type");
 DEFINE_string(attnWindow, "no", "attention window type");
+DEFINE_int64(attndim, 0, "Dimension of neural location attention");
+DEFINE_int64(
+    attnconvchannel,
+    0,
+    "Number of convolutional channels for location attention");
+DEFINE_int64(attnconvkernel, 0, "Kernel width for location attention");
 DEFINE_int64(leftWindowSize, 50, "left median window width");
 DEFINE_int64(rightWindowSize, 50, "right median window width");
 DEFINE_int64(

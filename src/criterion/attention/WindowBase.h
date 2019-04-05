@@ -27,6 +27,17 @@ class WindowBase {
 
   virtual ~WindowBase() {}
 
+  void setBatchStat(int seqLen, int targetLen, int batchSize) {
+    inputLen_ = seqLen;
+    targetLen_ = targetLen;
+    batchSize_ = batchSize;
+  }
+
+ protected:
+  int inputLen_;
+  int targetLen_;
+  int batchSize_;
+
  private:
   FL_SAVE_LOAD()
 };

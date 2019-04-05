@@ -30,6 +30,20 @@ Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx) {
     attention = std::make_shared<ContentAttention>(true);
   } else if (FLAGS_attention == w2l::kNeuralContentAttention) {
     attention = std::make_shared<NeuralContentAttention>(FLAGS_encoderdim);
+  } else if (FLAGS_attention == w2l::kSimpleLocationAttention) {
+    useSequentialDecoder = true;
+    attention = std::make_shared<SimpleLocationAttention>(FLAGS_attnconvkernel);
+  } else if (FLAGS_attention == w2l::kLocationAttention) {
+    useSequentialDecoder = true;
+    attention = std::make_shared<LocationAttention>(
+        FLAGS_encoderdim, FLAGS_attnconvkernel);
+  } else if (FLAGS_attention == w2l::kNeuralLocationAttention) {
+    useSequentialDecoder = true;
+    attention = std::make_shared<NeuralLocationAttention>(
+        FLAGS_encoderdim,
+        FLAGS_attndim,
+        FLAGS_attnconvchannel,
+        FLAGS_attnconvkernel);
   } else {
     LOG(FATAL) << "unimplemented attention";
   }
@@ -189,6 +203,10 @@ std::pair<Variable, Variable> Seq2SeqCriterion::decoder(
     const Variable& input,
     const Variable& target) {
   int U = target.dims(0);
+
+  if (window_) { // for softPretrainWindow
+    window_->setBatchStat(input.dims(1), U, input.dims(2));
+  }
 
   std::vector<Variable> outvec;
   std::vector<Variable> alphaVec;

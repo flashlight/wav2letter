@@ -136,6 +136,7 @@ target_sources(
   attention
   INTERFACE
   ${CMAKE_CURRENT_SOURCE_DIR}/attention/ContentAttention.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/attention/LocationAttention.cpp
   )
 
 target_include_directories(

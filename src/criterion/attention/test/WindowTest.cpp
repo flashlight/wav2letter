@@ -145,23 +145,33 @@ TEST(WindowTest, SoftPretrainWindow) {
   int batchsize = 4;
   double std = 5.0;
 
+  std::vector<unsigned int> peaks = {0, 4, 8, 12, 16, 20, 24, 28};
+
   Variable input_attn;
   SoftPretrainWindow window(std);
 
-  // check initialization
-  auto mask = window.computeSingleStepWindow(
-      input_attn, inputsteps, batchsize, 0 /* step */);
-  ASSERT_TRUE(
-      allClose(mask.array(), af::constant(0, {1, inputsteps, batchsize})));
-
-  auto mask_v = window.computeWindowMask(targetlen, inputsteps, batchsize);
-  ASSERT_EQ(mask_v.dims(), af::dim4(targetlen, inputsteps, batchsize));
-
-  std::vector<unsigned int> peaks = {0, 4, 8, 12, 16, 20, 24, 28};
-
+  // single step
+  window.setBatchStat(inputsteps, targetlen, batchsize);
+  std::vector<Variable> masks;
+  for (int step = 0; step < targetlen; ++step) {
+    masks.emplace_back(window.computeSingleStepWindow(
+        input_attn, inputsteps, batchsize, step));
+  }
+  auto mask_s = concatenate(masks, 0);
   af::array maxv, maxid;
-  max(maxv, maxid, mask_v.array()(af::span, af::span, 0), 1);
+  max(maxv, maxid, mask_s.array()(af::span, af::span, 0), 1);
+
+  ASSERT_EQ(mask_s.dims(), af::dim4(targetlen, inputsteps, batchsize));
   ASSERT_TRUE(allClose(maxid, af::array(8, peaks.data())));
+
+  // vectorized
+  auto mask_v = window.computeWindowMask(targetlen, inputsteps, batchsize);
+  max(maxv, maxid, mask_v.array()(af::span, af::span, 0), 1);
+
+  ASSERT_EQ(mask_v.dims(), af::dim4(targetlen, inputsteps, batchsize));
+  ASSERT_TRUE(allClose(maxid, af::array(8, peaks.data())));
+
+  ASSERT_TRUE(allClose(mask_s, mask_v));
 }
 
 int main(int argc, char** argv) {

@@ -53,12 +53,13 @@ std::pair<std::string, std::string> getStatus(
       "crit-fwd(ms)", format("%.2f", meters.critfwdtimer.value() * 1000));
   insertItem("bwd(ms)", format("%.2f", meters.bwdtimer.value() * 1000));
   insertItem("optim(ms)", format("%.2f", meters.optimtimer.value() * 1000));
-  insertItem("loss", format("%10.5f", meters.loss.value()[0]));
+  insertItem("loss", format("%10.5f", meters.train.loss.value()[0]));
 
   insertItem("train-" + errtype, format("%5.2f", meters.train.edit.value()[0]));
   for (auto& v : meters.valid) {
     insertItem(
         v.first + "-" + errtype, format("%5.2f", v.second.edit.value()[0]));
+    insertItem(v.first + "-loss", format("%10.5f", v.second.loss.value()[0]));
   }
   auto stats = meters.stats.value();
   auto numsamples = std::max<int64_t>(stats[4], 1);
@@ -180,7 +181,6 @@ void allreduceSet(fl::TimeMeter& mtr, af::array& val) {
 
 template <>
 void syncMeter<TrainMeters>(TrainMeters& mtrs) {
-  syncMeter(mtrs.loss);
   syncMeter(mtrs.stats);
   syncMeter(mtrs.runtime);
   syncMeter(mtrs.timer);
@@ -190,9 +190,11 @@ void syncMeter<TrainMeters>(TrainMeters& mtrs) {
   syncMeter(mtrs.optimtimer);
   syncMeter(mtrs.train.edit);
   syncMeter(mtrs.train.wordedit);
+  syncMeter(mtrs.train.loss);
   for (auto& v : mtrs.valid) {
     syncMeter(v.second.edit);
     syncMeter(v.second.wordedit);
+    syncMeter(v.second.loss);
   }
 }
 

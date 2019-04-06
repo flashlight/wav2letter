@@ -250,7 +250,7 @@ int main(int argc, char** argv) {
   /* ===================== Meters ===================== */
   TrainMeters meters;
   for (const auto& s : validTagSets) {
-    meters.valid[s.first] = EditDistMeters();
+    meters.valid[s.first] = DatasetMeters();
   }
 
   // best perf so far on valid datasets
@@ -394,14 +394,19 @@ int main(int argc, char** argv) {
                   std::shared_ptr<fl::Module> ntwrk,
                   std::shared_ptr<SequenceCriterion> crit,
                   std::shared_ptr<W2lDataset> testds,
-                  EditDistMeters& mtrs) {
+                  DatasetMeters& mtrs) {
     ntwrk->eval();
     crit->eval();
     mtrs.edit.reset();
     mtrs.wordedit.reset();
+    mtrs.loss.reset();
 
     for (auto& sample : *testds) {
       auto output = ntwrk->forward({fl::input(sample[kInputIdx])}).front();
+      auto loss =
+          crit->forward({output, fl::Variable(sample[kTargetIdx], false)})
+              .front();
+      mtrs.loss.add(loss.array());
       evalOutput(output.array(), sample[kTargetIdx], mtrs.edit);
     }
   };
@@ -428,7 +433,7 @@ int main(int argc, char** argv) {
     fl::distributeModuleGrads(ntwrk, gradNorm);
     fl::distributeModuleGrads(crit, gradNorm);
 
-    meters.loss.reset();
+    meters.train.loss.reset();
     meters.train.edit.reset();
     meters.train.wordedit.reset();
 
@@ -472,7 +477,7 @@ int main(int argc, char** argv) {
         LOG(FATAL) << "Error while saving models: " << ex.what();
       }
       // reset meters for next readings
-      meters.loss.reset();
+      meters.train.loss.reset();
       meters.train.edit.reset();
       meters.train.wordedit.reset();
     };
@@ -525,10 +530,7 @@ int main(int argc, char** argv) {
         if (af::anyTrue<bool>(af::isNaN(loss.array()))) {
           LOG(FATAL) << "Loss has NaN values";
         }
-        auto batchLoss = afToVector<float>(loss.array());
-        for (const auto lossval : batchLoss) {
-          meters.loss.add(lossval);
-        }
+        meters.train.loss.add(loss.array());
 
         int64_t batchIdx = (sampleIdx - 1) % trainset->size();
         int64_t globalBatchIdx = trainset->getGlobalBatchIdx(batchIdx);

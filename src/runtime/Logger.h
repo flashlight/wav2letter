@@ -17,8 +17,9 @@
 #define LOG_MASTER(lvl) LOG_IF(lvl, (fl::getWorldRank() == 0))
 
 namespace w2l {
-struct EditDistMeters {
+struct DatasetMeters {
   fl::EditDistanceMeter edit, wordedit;
+  fl::AverageValueMeter loss;
 };
 
 struct TrainMeters {
@@ -30,10 +31,9 @@ struct TrainMeters {
   fl::TimeMeter bwdtimer{true}; // includes network + criterion time
   fl::TimeMeter optimtimer{true};
 
-  EditDistMeters train;
-  std::unordered_map<std::string, EditDistMeters> valid;
+  DatasetMeters train;
+  std::unordered_map<std::string, DatasetMeters> valid;
 
-  fl::AverageValueMeter loss;
   SpeechStatMeter stats;
 };
 

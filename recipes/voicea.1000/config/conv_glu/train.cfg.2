@@ -6,7 +6,7 @@
 --valid=clean-tst,clean-tst.stratified
 --arch=network.arch.2
 --tokens=tokens.txt
---criterion=ctc
+--criterion=asg
 --lr=0.01
 --maxgradnorm=1.0
 --replabel=2
@@ -16,7 +16,6 @@
 --mfsc=true
 --filterbanks=60
 --nthread=6
---batchsize=16
---runname=clean-trn-run.2
+--batchsize=1
 --iter=1000
-
+--runname=clean-trn-run.2

@@ -46,7 +46,8 @@ std::shared_ptr<W2lDataset> createDataset(
         worldRank,
         worldSize,
         fallback2Ltr,
-        skipUnk);
+        skipUnk,
+        FLAGS_datadir);
   } else {
     ds = std::make_shared<W2lNumberedFilesDataset>(
         path, dicts, batchSize, worldRank, worldSize, FLAGS_datadir);

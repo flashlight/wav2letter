@@ -23,7 +23,8 @@ W2lListFilesDataset::W2lListFilesDataset(
     int worldRank /* = 0 */,
     int worldSize /* = 1 */,
     bool fallback2Ltr /* = false */,
-    bool skipUnk /* = false */)
+    bool skipUnk /* = false */,
+    const std::string& rootdir /* = "" */)
     : W2lDataset(dicts, batchSize, worldRank, worldSize),
       lexicon_(lexicon),
       fallback2Ltr_(fallback2Ltr),
@@ -36,7 +37,8 @@ W2lListFilesDataset::W2lListFilesDataset(
   auto filesVec = split(',', filenames);
   std::vector<SpeechSampleMetaInfo> speechSamplesMetaInfo;
   for (const auto& f : filesVec) {
-    auto fileSampleInfo = loadListFile(f);
+    auto fullpath = pathsConcat(rootdir, trim(f));
+    auto fileSampleInfo = loadListFile(fullpath);
     speechSamplesMetaInfo.insert(
         speechSamplesMetaInfo.end(),
         fileSampleInfo.begin(),

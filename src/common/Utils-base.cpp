@@ -302,6 +302,9 @@ std::vector<std::string> wrd2Target(
 
   std::vector<std::string> res;
   if (fallback2Ltr) {
+    LOG(INFO)
+        << "Falling back to using letters as targets for the unknown word '"
+        << word << "'";
     for (auto& c : word) {
       if (dict.contains(std::string(1, c))) {
         res.push_back(std::string(1, c));
@@ -372,6 +375,11 @@ LexiconMap loadWords(const std::string& fn, const int64_t maxNumWords) {
 
   std::string line;
   std::ifstream infile(fn);
+
+  if (!infile) {
+    throw std::invalid_argument("Cannot open " + fn);
+  }
+
   while (std::getline(infile, line)) {
     // Parse the line into two strings: word and spelling.
     auto fields = splitOnWhitespace(line, true);

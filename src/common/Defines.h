@@ -19,7 +19,7 @@ namespace w2l {
 constexpr size_t kInputIdx = 0;
 constexpr size_t kTargetIdx = 1;
 constexpr size_t kWordIdx = 2;
-constexpr size_t kFileIdIdx = 3;
+constexpr size_t kSampleIdx = 3;
 constexpr size_t kNumDataIdx = 4; // total number of dataset indices
 
 // Various constants used in w2l

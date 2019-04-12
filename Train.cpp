@@ -513,7 +513,8 @@ int main(int argc, char** argv) {
         meters.stats.add(sample[kInputIdx], sample[kTargetIdx]);
         if (af::anyTrue<bool>(af::isNaN(sample[kInputIdx])) ||
             af::anyTrue<bool>(af::isNaN(sample[kTargetIdx]))) {
-          LOG(FATAL) << "Sample has NaN values";
+          LOG(FATAL) << "Sample has NaN values - "
+                     << join(",", afToVector<std::string>(sample[kSampleIdx]));
         }
 
         // forward
@@ -528,7 +529,8 @@ int main(int argc, char** argv) {
         meters.critfwdtimer.stopAndIncUnit();
 
         if (af::anyTrue<bool>(af::isNaN(loss.array()))) {
-          LOG(FATAL) << "Loss has NaN values";
+          LOG(FATAL) << "Loss has NaN values. Samples - "
+                     << join(",", afToVector<std::string>(sample[kSampleIdx]));
         }
         meters.train.loss.add(loss.array());
 

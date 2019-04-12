@@ -118,9 +118,6 @@ fl::Variable FullConnectionCriterion::forward(
       final_max + log(sum(exp(final_em - tile(final_max, N)), 0)); // [1, B]
 
   const auto& fcc = moddims(final_lse, B) * scale;
-  if (anyTrue<bool>(isNaN(fcc))) {
-    throw std::runtime_error("Loss is NaN value");
-  }
 
   auto grad_func = [B, N, T, fccacc, scale](
                        std::vector<fl::Variable>& inputs,

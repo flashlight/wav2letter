@@ -59,7 +59,7 @@ std::vector<af::array> W2lDataset::get(const int64_t idx) const {
         ? af::array(targetDims)
         : af::array(targetDims, targetData.data());
   }
-  result[kFileIdIdx] = feat.sampleIds.empty()
+  result[kSampleIdx] = feat.sampleIds.empty()
       ? af::array(feat.sampleIdsDims)
       : af::array(feat.sampleIdsDims, feat.sampleIds.data());
   return result;

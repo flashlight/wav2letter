@@ -3,12 +3,16 @@ C NFEAT 32 5 1 -1
 R
 C 32 32 5 1 -1
 R
-# three consecutive four-layer residual blocks with the same structure
-RES 4 0 4 3
-C 32 32 5 1 -1
+# three consecutive six-layer residual blocks
+RES 6 2 3
+C 32 16 5 1 -1
 R
-C 32 32 5 1 -1
+C 16 16 5 1 -1
 R
+C 16 32 5 1 -1
+R
+SKIP 0 6 0.4
+SKIPL 1 7 16 32 2
 RO 2 3 0 1
 GRU 32 256 3 1
 RO 0 2 1 3

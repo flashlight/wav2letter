@@ -28,7 +28,7 @@ TEST(ModuleTest, ResidualFwd) {
   auto output_conv = conv.forward(input);
   auto output_bn = bn.forward(output_conv);
 
-  auto res_module1 = Residual(3);
+  auto res_module1 = Residual();
   res_module1.add(conv);
   res_module1.add(bn);
   res_module1.add(relu);
@@ -38,7 +38,7 @@ TEST(ModuleTest, ResidualFwd) {
   auto output1_true = relu.forward(output_bn + output_conv);
   ASSERT_TRUE(allClose(output1, output1_true));
 
-  auto res_module2 = Residual(3);
+  auto res_module2 = Residual();
   res_module2.add(conv);
   res_module2.add(bn);
   res_module2.add(relu);
@@ -52,6 +52,45 @@ TEST(ModuleTest, ResidualFwd) {
   ASSERT_TRUE(allClose(output2, output2_true));
 }
 
+TEST(ModuleTest, ResidualFwdWithProjection) {
+  auto linear1 = Linear(12, 8);
+  auto relu1 = ReLU();
+  auto linear2 = Linear(8, 4);
+  auto relu2 = ReLU();
+  auto linear3 = Linear(4, 4);
+  auto relu3 = ReLU();
+  auto projection1 = Linear(8, 4);
+  auto projection2 = Linear(12, 4);
+
+  auto input = Variable(af::randu(12, 10, 3, 4), false);
+  auto output_true1 = linear1.forward(input);
+  auto output_true = relu1.forward(output_true1);
+  output_true = linear2.forward(output_true * 0.3);
+  output_true =
+      relu2.forward((output_true + projection1.forward(output_true1)) * 0.24);
+  output_true = (output_true + projection2.forward(input)) * 0.5;
+  output_true = linear3.forward(output_true);
+  output_true = relu3.forward(output_true) + output_true;
+
+  auto res_module = Residual();
+  res_module.add(linear1);
+  res_module.add(relu1);
+  res_module.add(linear2);
+  res_module.addScale(3, 0.3);
+  res_module.add(relu2);
+  res_module.addShortcut(1, 4, projection1);
+  res_module.addScale(4, 0.24);
+  res_module.add(linear3);
+  res_module.addShortcut(0, 5, projection2);
+  res_module.addScale(5, 0.5);
+  res_module.add(relu3);
+  res_module.addShortcut(5, 7);
+
+  auto output_res = res_module.forward(input);
+
+  ASSERT_TRUE(allClose(output_res, output_true));
+}
+
 TEST(ModuleTest, ResidualSerialization) {
   char* user = getenv("USER");
   std::string userstr = "unknown";
@@ -60,7 +99,7 @@ TEST(ModuleTest, ResidualSerialization) {
   }
   const std::string path = "/tmp/" + userstr + "_test_res";
 
-  std::shared_ptr<Residual> model = std::make_shared<Residual>(3);
+  std::shared_ptr<Residual> model = std::make_shared<Residual>();
   model->add(Linear(12, 6));
   model->add(Linear(6, 6));
   model->add(ReLU());

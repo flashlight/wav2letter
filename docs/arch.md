@@ -5,12 +5,14 @@ wav2letter++ provides a simple way to create `fl::Sequential` module for the aco
 Example architecture file:
 ```
 # Comments like this are ignored
+# the output tensor will have the shape (Time, 1, NFEAT, Batch)
 V -1 1 NFEAT 0
 C2 NFEAT 300 48 1 2 1 -1 -1
 R
 C2 300 300 32 1 1 1
 R
 RO 2 0 3 1
+# the output should be with the shape (NLABEL, Time, Batch, 1)
 L 300 NLABEL
 ```
 
@@ -69,14 +71,30 @@ Here, we describe how to specify different flashlight/wav2letter modules in the 
 
 **w2l::Residual**
 ```
-RES [numLayers (N)] [skipStart1] [skipEnd1] ... [numBlocks  <OPTIONAL>]
+RES [numLayers (N)] [numResSkipConnections (K)] [numBlocks <OPTIONAL>]
 [Layer1]
 [Layer2]
+[ResSkipConnection1]
+[Layer3]
+[ResSkipConnection2]
+[Layer4]
 ...
 [LayerN]
+...
+[ResSkipConnectionK]
 ```
 
-*(Use skipStart `= 0` for a skip connection from input, skipEnd `= N+1` for a skip connection to output, and skipStart/skipEnd `= K` for a skip connection from/to LayerK.)*
+Residual skip connections between layers can only be added if these layers have already been added. There two ways to define residual skip connection:
+- standard
+```
+SKIP [fromLayerInd] [toLayerInd] [scale <OPTIONAL, DEFAULT=1>]
+```
+- with a projection matrix, when, for the residual skip connection, the number of channels in the output of `fromLayer` differs from the number of channels expected in the input of `toLayer`:
+```
+SKIPL [fromLayerInd] [toLayerInd] [inChannels] [outChannels] [axis <OPTIONAL, DEFAULT=0>][scale <OPTIONAL, DEFAULT=1>]
+```
+where `axis` is an axis along a linear projection is performed, and `scale` is the value by which the final output is multiplied (`(x + f(x)) * scale`). `scale` must be the same for all residual skip connections that share the same `toLayer`.
+*(Use fromLayerInd `= 0` for a skip connection from input, toLayerInd `= N+1` for a residual skip connection to output, and fromLayerInd/toLayerInd `= K` for a residual skip connection from/to LayerK.)*
 
 **w2l::TDSBlock**
 ```

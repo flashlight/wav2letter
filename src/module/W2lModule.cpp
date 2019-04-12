@@ -277,27 +277,63 @@ std::shared_ptr<Module> parseLines(
 
   /* ========== Residual block ========== */
   if (params[0] == "RES") {
-    LOG_IF(FATAL, params.size() <= 2) << "Failed parsing - " << line;
+    LOG_IF(FATAL, params.size() <= 3) << "Failed parsing - " << line;
 
     auto residualBlock = [&](const std::vector<std::string>& prms,
-                             int& numResLayers) {
-      numResLayers = std::stoi(prms[1]);
-      std::shared_ptr<w2l::Residual> resPtr =
-          std::make_shared<w2l::Residual>(numResLayers);
-      for (int i = 2; i + 1 < prms.size(); i += 2) {
-        resPtr->addShortcut(std::stoi(prms[i]), std::stoi(prms[i + 1]));
-      }
+                             int& numResLayerAndSkip) {
+      int numResLayers = std::stoi(prms[1]);
+      int numSkipConnections = std::stoi(prms[2]);
+      std::shared_ptr<w2l::Residual> resPtr = std::make_shared<w2l::Residual>();
 
-      for (int i = 1; i <= numResLayers; ++i) {
+      for (int i = 1; i <= numResLayers + numSkipConnections; ++i) {
         LOG_IF(FATAL, lineIdx + i >= lines.size())
             << "Failed parsing Residual block";
-        resPtr->add(parseLine(lines[lineIdx + i]));
+        auto resLine = lines[lineIdx + i];
+        auto resLinePrms = w2l::splitOnWhitespace(resLine, true);
+
+        if (resLinePrms[0] == "SKIP") {
+          LOG_IF(FATAL, !inRange(3, resLinePrms.size(), 4))
+              << "Failed parsing - " << resLine;
+          resPtr->addShortcut(
+              std::stoi(resLinePrms[1]), std::stoi(resLinePrms[2]));
+          if (resLinePrms.size() == 4) {
+            resPtr->addScale(
+                std::stoi(resLinePrms[2]), std::stof(resLinePrms[3]));
+          }
+        } else if (resLinePrms[0] == "SKIPL") {
+          LOG_IF(FATAL, !inRange(5, resLinePrms.size(), 7))
+              << "Failed parsing - " << resLine;
+          auto projection = std::make_shared<Sequential>();
+          if (resLinePrms.size() > 5) {
+            int dimIdx = std::stoi(resLinePrms[5]);
+            std::vector<int> dims = {0, 1, 2, 3};
+            dims[dimIdx] = 0;
+            projection->add(
+                std::make_shared<Reorder>(dimIdx, dims[1], dims[2], dims[3]));
+            projection->add(
+                Linear(std::stoi(resLinePrms[3]), std::stoi(resLinePrms[4])));
+            projection->add(
+                std::make_shared<Reorder>(dimIdx, dims[1], dims[2], dims[3]));
+          } else {
+            projection->add(
+                Linear(std::stoi(resLinePrms[3]), std::stoi(resLinePrms[4])));
+          }
+          resPtr->addShortcut(
+              std::stoi(resLinePrms[1]), std::stoi(resLinePrms[2]), projection);
+          if (resLinePrms.size() == 7) {
+            resPtr->addScale(
+                std::stoi(resLinePrms[2]), std::stof(resLinePrms[6]));
+          }
+        } else {
+          resPtr->add(parseLine(resLine));
+        }
       }
 
+      numResLayerAndSkip = numResLayers + numSkipConnections;
       return resPtr;
     };
 
-    auto numBlocks = params.size() % 2 == 1 ? std::stoi(params.back()) : 1;
+    auto numBlocks = params.size() == 4 ? std::stoi(params.back()) : 1;
     LOG_IF(FATAL, numBlocks <= 0)
         << "Invalid number of residual blocks: " << numBlocks;
 

@@ -32,6 +32,8 @@ class W2lListFilesDataset : public W2lDataset {
   virtual std::vector<W2lLoaderData> getLoaderData(
       const int64_t idx) const override;
 
+  virtual std::vector<float> loadSound(const std::string& audioHandle) const;
+
  private:
   std::vector<int64_t> sampleSizeOrder_;
   std::vector<SpeechSample> data_;

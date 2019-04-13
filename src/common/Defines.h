@@ -76,7 +76,6 @@ DECLARE_double(sampletarget);
 
 /* ========== FILTERING OPTIONS ========== */
 
-DECLARE_bool(skipoov);
 DECLARE_int64(minisz);
 DECLARE_int64(maxisz);
 DECLARE_int64(mintsz);
@@ -212,6 +211,5 @@ DECLARE_string(rndv_filepath);
 /* ========== FB SPECIFIC ========== */
 DECLARE_string(target);
 DECLARE_bool(everstoredb);
-DECLARE_string(targettype);
 
 } // namespace w2l

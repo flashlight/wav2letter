@@ -441,6 +441,38 @@ TEST(W2lCommonTest, TargetToSingleLtr) {
   ASSERT_THAT(target, ::testing::ElementsAreArray({1, 2, 3, 10, 4, 5, 6}));
 }
 
+TEST(W2lCommonTest, UT8Split) {
+  // ASCII
+  std::string in1 = "Vendetta";
+  auto in1Tkns = wrd2Tkn(in1);
+  for (int i = 0; i < in1.size(); ++i) {
+    ASSERT_EQ(std::string(1, in1[i]), in1Tkns[i]);
+  }
+
+  // NFKC encoding
+  // @lint-ignore TXT5 Source code should only include printable US-ASCII bytes.
+  std::string in2 = "Beyoncé";
+  auto in2Tkns = wrd2Tkn(in2);
+
+  // @lint-ignore TXT5 Source code should only include printable US-ASCII bytes.
+  std::vector<std::string> in2TknsExp = {"B", "e", "y", "o", "n", "c", "é"};
+  ASSERT_EQ(in2Tkns.size(), 7);
+  for (int i = 0; i < in2Tkns.size(); ++i) {
+    ASSERT_EQ(in2TknsExp[i], in2Tkns[i]);
+  }
+
+  // NFKD encoding
+  // @lint-ignore TXT5 Source code should only include printable US-ASCII bytes.
+  std::string in3 = "Beyoncé";
+  auto in3Tkns = wrd2Tkn(in3);
+  std::vector<std::string> in3TknsExp = {
+      "B", "e", "y", "o", "n", "c", "e", u8"\u0301"};
+  ASSERT_EQ(in3Tkns.size(), 8);
+  for (int i = 0; i < in3Tkns.size(); ++i) {
+    ASSERT_EQ(in3TknsExp[i], in3Tkns[i]);
+  }
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

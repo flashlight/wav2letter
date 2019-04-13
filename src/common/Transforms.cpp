@@ -12,6 +12,7 @@
 
 #include <glog/logging.h>
 #include "common/Defines.h"
+#include "common/Utils-base.h"
 
 namespace w2l {
 
@@ -60,12 +61,9 @@ std::vector<int> toSingleLtr(
   std::vector<int> result;
   for (auto id : labels) {
     auto token = d.getToken(id);
-    if (token.length() == 1) {
-      result.emplace_back(id);
-    } else {
-      for (auto c : token) {
-        result.emplace_back(d.getIndex(std::string(1, c)));
-      }
+    auto splitToken = wrd2Tkn(token);
+    for (const auto& c : splitToken) {
+      result.emplace_back(d.getIndex(c));
     }
   }
 

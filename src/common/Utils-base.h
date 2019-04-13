@@ -114,4 +114,8 @@ std::vector<int> wrdTensor2tknTensor(
     const Dictionary&,
     const Dictionary&,
     const int);
+
+// split word into tokens abc -> {"a", "b", "c"}
+// Works with ASCII, UTF-8 encodings
+std::vector<std::string> wrd2Tkn(const std::string& word);
 } // namespace w2l

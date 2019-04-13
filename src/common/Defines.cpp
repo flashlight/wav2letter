@@ -49,7 +49,6 @@ DEFINE_double(
     "probability [0.0, 1.0] for randomly sampling targets from a lexicon if there are multiple mappings from a word");
 
 // FILTERING OPTIONS
-DEFINE_bool(skipoov, false, "skip everstore samples if letter is oov");
 DEFINE_int64(minisz, 0, "min input size (in msec) allowed during training");
 DEFINE_int64(
     maxisz,
@@ -255,8 +254,4 @@ DEFINE_string(
 // FB SPECIFIC
 DEFINE_string(target, "tkn", "target feature");
 DEFINE_bool(everstoredb, false, "use Everstore db for reading data");
-DEFINE_string(
-    targettype,
-    "word",
-    "determines target parser type when using everstore db");
 } // namespace w2l

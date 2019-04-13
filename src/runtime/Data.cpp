@@ -32,7 +32,15 @@ std::shared_ptr<W2lDataset> createDataset(
 #ifdef BUILD_FB_DEPENDENCIES
     W2lEverstoreDataset::init(); // Required for everstore client
     ds = std::make_shared<W2lEverstoreDataset>(
-        path, dicts, batchSize, worldRank, worldSize, FLAGS_targettype);
+        path,
+        dicts,
+        lexicon,
+        batchSize,
+        worldRank,
+        worldSize,
+        fallback2Ltr,
+        skipUnk,
+        FLAGS_datadir);
 #else
     LOG(FATAL) << "W2lEverstoreDataset not supported: "
                << "build with -DBUILD_FB_DEPENDENCIES";

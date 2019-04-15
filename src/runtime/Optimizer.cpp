@@ -13,18 +13,27 @@
 namespace w2l {
 
 std::shared_ptr<fl::FirstOrderOptimizer> initOptimizer(
-    const std::shared_ptr<fl::Module>& net,
+    const std::vector<std::shared_ptr<fl::Module>>& nets,
     const std::string& optimizer,
     double lr,
     double momentum,
     double weightdecay) {
+  if (nets.size() == 0) {
+    throw std::invalid_argument("no network for initializing the optimizer");
+  }
+
+  std::vector<fl::Variable> params;
+  for (const auto& n : nets) {
+    auto p = n->params();
+    params.insert(params.end(), p.begin(), p.end());
+  }
+
   std::shared_ptr<fl::FirstOrderOptimizer> opt;
   if (optimizer == kSGDoptimizer) {
-    opt = std::make_shared<fl::SGDOptimizer>(
-        net->params(), lr, momentum, weightdecay);
+    opt = std::make_shared<fl::SGDOptimizer>(params, lr, momentum, weightdecay);
   } else if (optimizer == kAdamOptimizer) {
     opt = std::make_shared<fl::AdamOptimizer>(
-        net->params(),
+        params,
         lr,
         FLAGS_adambeta1,
         FLAGS_adambeta2,
@@ -32,14 +41,15 @@ std::shared_ptr<fl::FirstOrderOptimizer> initOptimizer(
         weightdecay);
   } else if (optimizer == kRMSPropOptimizer) {
     opt = std::make_shared<fl::RMSPropOptimizer>(
-        net->params(), lr, FLAGS_optimrho, FLAGS_optimepsilon, weightdecay);
+        params, lr, FLAGS_optimrho, FLAGS_optimepsilon, weightdecay);
   } else if (optimizer == kAdadeltaOptimizer) {
     opt = std::make_shared<fl::AdadeltaOptimizer>(
-        net->params(), 1.0, FLAGS_optimrho, FLAGS_optimepsilon, weightdecay);
+        params, 1.0, FLAGS_optimrho, FLAGS_optimepsilon, weightdecay);
   } else {
     LOG(FATAL) << "Optimizer option " << optimizer << " not implemented";
   }
 
   return opt;
 }
+
 } // namespace w2l

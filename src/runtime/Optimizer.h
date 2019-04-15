@@ -15,7 +15,7 @@
 namespace w2l {
 
 std::shared_ptr<fl::FirstOrderOptimizer> initOptimizer(
-    const std::shared_ptr<fl::Module>& net,
+    const std::vector<std::shared_ptr<fl::Module>>& nets,
     const std::string& optimizer,
     double lr,
     double momentum,

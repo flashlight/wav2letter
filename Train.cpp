@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
   if (argc <= 1) {
     LOG(FATAL) << gflags::ProgramUsage();
   }
-  if (runStatus == "train") {
+  if (runStatus == kTrainMode) {
     LOG(INFO) << "Parsing command line flags";
     gflags::ParseCommandLineFlags(&argc, &argv, false);
     if (!FLAGS_flagsfile.empty()) {
@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
       gflags::ReadFromFlagsFile(FLAGS_flagsfile, argv[0], true);
     }
     runPath = newRunPath(FLAGS_rundir, FLAGS_runname, FLAGS_tag);
-  } else if (runStatus == "continue") {
+  } else if (runStatus == kContinueMode) {
     runPath = argv[2];
     while (fileExists(getRunFile("model_last.bin", runIdx, runPath))) {
       ++runIdx;
@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
     } else {
       startEpoch = std::stoi(epoch->second);
     }
-  } else if (runStatus == "fork") {
+  } else if (runStatus == kForkMode) {
     reloadPath = argv[2];
     std::unordered_map<std::string, std::string> cfg;
     W2lSerializer::load(reloadPath, cfg);
@@ -178,7 +178,7 @@ int main(int argc, char** argv) {
   std::shared_ptr<fl::FirstOrderOptimizer> critoptim;
 
   auto scalemode = getCriterionScaleMode(FLAGS_onorm, FLAGS_sqnorm);
-  if (runStatus == "train") {
+  if (runStatus == kTrainMode) {
     auto archfile = pathsConcat(FLAGS_archdir, FLAGS_arch);
     LOG_MASTER(INFO) << "Loading architecture file from " << archfile;
     auto numFeatures = getSpeechFeatureSize();
@@ -205,11 +205,11 @@ int main(int argc, char** argv) {
   LOG_MASTER(INFO) << "[Network Params: " << numTotalParams(network) << "]";
   LOG_MASTER(INFO) << "[Criterion] " << criterion->prettyString();
 
-  if (runStatus == "train" || runStatus == "fork") {
+  if (runStatus == kTrainMode || runStatus == kForkMode) {
     netoptim = initOptimizer(
-        network, FLAGS_netoptim, FLAGS_lr, FLAGS_momentum, FLAGS_weightdecay);
+        {network}, FLAGS_netoptim, FLAGS_lr, FLAGS_momentum, FLAGS_weightdecay);
     critoptim =
-        initOptimizer(criterion, FLAGS_critoptim, FLAGS_lrcrit, 0.0, 0.0);
+        initOptimizer({criterion}, FLAGS_critoptim, FLAGS_lrcrit, 0.0, 0.0);
   }
   LOG_MASTER(INFO) << "[Network Optimizer] " << netoptim->prettyString();
   LOG_MASTER(INFO) << "[Criterion Optimizer] " << critoptim->prettyString();
@@ -231,13 +231,13 @@ int main(int argc, char** argv) {
                      << " epochs)";
 
     linNetoptim = initOptimizer(
-        network,
+        {network},
         FLAGS_netoptim,
         initLinNetlr,
         FLAGS_momentum,
         FLAGS_weightdecay);
     linCritoptim =
-        initOptimizer(linseg, FLAGS_critoptim, initLinCritlr, 0.0, 0.0);
+        initOptimizer({linseg}, FLAGS_critoptim, initLinCritlr, 0.0, 0.0);
 
     LOG_MASTER(INFO) << "[Network Optimizer] " << linNetoptim->prettyString()
                      << " (for first " << FLAGS_linseg - startEpoch

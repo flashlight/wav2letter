@@ -23,6 +23,9 @@ constexpr size_t kSampleIdx = 3;
 constexpr size_t kNumDataIdx = 4; // total number of dataset indices
 
 // Various constants used in w2l
+constexpr const char* kTrainMode = "train";
+constexpr const char* kContinueMode = "continue";
+constexpr const char* kForkMode = "fork";
 constexpr const char* kGflags = "gflags";
 constexpr const char* kCommandLine = "commandline";
 constexpr const char* kUserName = "username";

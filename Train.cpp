@@ -304,11 +304,12 @@ int main(int argc, char** argv) {
       if (FLAGS_itersave) {
         filename =
             getRunFile(format("model_iter_%03d.bin", iter), runIdx, runPath);
-      } else {
-        filename = getRunFile("model_last.bin", runIdx, runPath);
+        W2lSerializer::save(
+            filename, config, network, criterion, netoptim, critoptim);
       }
 
       // save last model
+      filename = getRunFile("model_last.bin", runIdx, runPath);
       W2lSerializer::save(
           filename, config, network, criterion, netoptim, critoptim);
 

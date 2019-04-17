@@ -8,6 +8,7 @@
 
 #include "Transforms.h"
 
+#include <array>
 #include <functional>
 
 #include <glog/logging.h>

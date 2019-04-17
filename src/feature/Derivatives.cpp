@@ -70,10 +70,10 @@ std::vector<T> Derivatives<T>::computeDerivative(
   int64_t numframes = input.size() / numfeat;
   std::vector<T> output(input.size(), 0.0);
   T denominator = (windowlen * (windowlen + 1) * (2 * windowlen + 1)) / 3.0;
-  for (size_t i = 0; i < numframes; ++i) {
-    for (size_t j = 0; j < numfeat; ++j) {
-      size_t curIdx = i * numfeat + j;
-      for (size_t d = 1; d <= windowlen; ++d) {
+  for (uint64_t i = 0; i < numframes; ++i) {
+    for (uint64_t j = 0; j < numfeat; ++j) {
+      uint64_t curIdx = i * numfeat + j;
+      for (uint64_t d = 1; d <= windowlen; ++d) {
         output[curIdx] += d *
             (input[curIdx + std::min((numframes - i - 1), d) * numfeat] -
              input[curIdx - std::min(i, d) * numfeat]);

@@ -102,11 +102,11 @@ extern std::vector<T> loadSound(const char* filename) {
     nframe =
         sf_readf_short(file, reinterpret_cast<short*>(in.data()), info.frames);
   } else {
-    LOG(FATAL) << "sndfile: unsupported format";
+    LOG(FATAL) << "sndfile: unsupported format - " << filename;
   }
   sf_close(file);
   if (nframe != info.frames) {
-    LOG(FATAL) << "sndfile: read error";
+    LOG(FATAL) << "sndfile: read error - " << filename;
   }
   return in;
 }
@@ -123,10 +123,10 @@ extern void saveSound(
   SF_INFO info;
 
   if (formats.find(format) == formats.end()) {
-    LOG(FATAL) << "sndfile: invalid format";
+    LOG(FATAL) << "sndfile: invalid format when saving - " << filename;
   }
   if (subformats.find(subformat) == subformats.end()) {
-    LOG(FATAL) << "sndfile: invalid subformat";
+    LOG(FATAL) << "sndfile: invalid subformat when saving - " << filename;
   }
 
   info.channels = channels;
@@ -135,11 +135,12 @@ extern void saveSound(
       formats.find(format)->second | subformats.find(subformat)->second;
 
   if (!filename) {
-    LOG(FATAL) << "sndfile: invalid filename";
+    LOG(FATAL) << "sndfile: empty filename when saving";
   }
 
   if (!(file = sf_open(filename, SFM_WRITE, &info))) {
-    LOG(FATAL) << "sndfile: invalid format or could not open file";
+    LOG(FATAL) << "sndfile: invalid format or could not write file - "
+               << filename;
   }
 
   sf_count_t nframe;
@@ -157,11 +158,11 @@ extern void saveSound(
     nframe = sf_writef_short(
         file, reinterpret_cast<short*>(input.data()), info.frames);
   } else {
-    LOG(FATAL) << "sndfile: unsupported write format";
+    LOG(FATAL) << "sndfile: unsupported write format - " << filename;
   }
   sf_close(file);
   if (nframe != info.frames) {
-    LOG(FATAL) << "sndfile: write error";
+    LOG(FATAL) << "sndfile: write error - " << filename;
   }
 }
 } // namespace speech

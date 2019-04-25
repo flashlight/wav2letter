@@ -125,7 +125,7 @@ DEFINE_int64(
     0,
     "number of iterations after which we will run val and save model, \
     if 0 we only do this at end of epoch ");
-DEFINE_int64(
+DEFINE_double(
     pcttraineval,
     100,
     "percentage of training set (by number of utts) to use for evaluation");

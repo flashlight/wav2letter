@@ -139,7 +139,7 @@ DECLARE_string(tag);
 DECLARE_int64(seed);
 DECLARE_int64(memstepsize);
 DECLARE_int64(reportiters);
-DECLARE_int64(pcttraineval);
+DECLARE_double(pcttraineval);
 
 /* ========== ARCHITECTURE OPTIONS ========== */
 

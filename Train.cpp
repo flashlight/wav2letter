@@ -414,12 +414,16 @@ int main(int argc, char** argv) {
 
   double gradNorm = 1.0 / (FLAGS_batchsize * worldSize);
 
+  auto trainEvalIds =
+      randomSubset(FLAGS_seed, trainds->size(), FLAGS_pcttraineval);
+
   auto train = [&meters,
                 &test,
                 &logStatus,
                 &saveModels,
                 &evalOutput,
                 &validds,
+                &trainEvalIds,
                 gradNorm,
                 &startEpoch](
                    std::shared_ptr<fl::Module> ntwrk,
@@ -537,7 +541,7 @@ int main(int argc, char** argv) {
 
         int64_t batchIdx = (sampleIdx - 1) % trainset->size();
         int64_t globalBatchIdx = trainset->getGlobalBatchIdx(batchIdx);
-        if (globalBatchIdx % 100 < FLAGS_pcttraineval) {
+        if (trainEvalIds.find(globalBatchIdx) != trainEvalIds.end()) {
           evalOutput(output.array(), sample[kTargetIdx], meters.train.edit);
         }
 

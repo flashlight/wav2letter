@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <unordered_map>
+#include <map>
 
 #include <flashlight/flashlight.h>
 
@@ -32,7 +32,7 @@ struct TrainMeters {
   fl::TimeMeter optimtimer{true};
 
   DatasetMeters train;
-  std::unordered_map<std::string, DatasetMeters> valid;
+  std::map<std::string, DatasetMeters> valid;
 
   SpeechStatMeter stats;
 };

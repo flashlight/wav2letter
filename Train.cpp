@@ -337,7 +337,7 @@ int main(int argc, char** argv) {
     trainds->shuffle(FLAGS_seed);
   }
 
-  std::unordered_map<std::string, std::shared_ptr<W2lDataset>> validds;
+  std::map<std::string, std::shared_ptr<W2lDataset>> validds;
   for (const auto& s : validTagSets) {
     validds[s.first] = createDataset(
         s.second, dicts, lexicon, FLAGS_batchsize, worldRank, worldSize);

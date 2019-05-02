@@ -114,6 +114,7 @@ int main(int argc, char** argv) {
     auto emission = afToVector<float>(rawEmission);
     auto ltrTarget = afToVector<int>(sample[kTargetIdx]);
     auto wrdTarget = afToVector<int>(sample[kWordIdx]);
+    auto sampleId = afToVector<std::string>(sample[kFileIdIdx]).front();
 
     /* viterbiPath + remove duplication/blank */
     auto viterbiPath =
@@ -146,7 +147,7 @@ int main(int argc, char** argv) {
       std::cout << "|T|: " << tensor2letters(ltrTarget, tokenDict) << std::endl;
       std::cout << "|P|: " << tensor2letters(viterbiPath, tokenDict)
                 << std::endl;
-      std::cout << "[sample: " << cnt << ", WER: " << meters.wer.value()[0]
+      std::cout << "[sample: " << sampleId << ", WER: " << meters.wer.value()[0]
                 << "\%, LER: " << meters.ler.value()[0]
                 << "\%, total WER: " << meters.werSlice.value()[0]
                 << "\%, total LER: " << meters.lerSlice.value()[0]

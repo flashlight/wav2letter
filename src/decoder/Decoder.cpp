@@ -30,6 +30,7 @@ void Decoder::candidatesAdd(
     const DecoderNode* parent,
     const float score,
     const float beamScore,
+    const int letter,
     const TrieLabelPtr& label,
     const bool prevBlank) {
   if (score > candidatesBestScore_) {
@@ -42,7 +43,7 @@ void Decoder::candidatesAdd(
     }
 
     candidates_[nCandidates_].updateAsConstructor(
-        lmState, lex, parent, score, label, prevBlank);
+        lmState, lex, parent, score, letter, label, prevBlank);
     ++nCandidates_;
   }
 }
@@ -157,7 +158,7 @@ void Decoder::decodeBegin() {
 
   /* note: the lm reset itself with :start() */
   hyp_[0].emplace_back(
-      lm_->start(0), lexicon_->getRoot(), nullptr, 0.0, nullptr);
+      lm_->start(0), lexicon_->getRoot(), nullptr, 0.0, -1, nullptr);
   nDecodedFrames_ = 0;
   nPrunedFrames_ = 0;
 }
@@ -185,101 +186,111 @@ void Decoder::decodeContinue(
           prevLex == lexicon_->getRoot() ? 0 : prevLex->maxScore_;
       const LMStatePtr& prevLmState = prevHyp.lmState_;
 
-      for (int n = 0; n < N; n++) {
+      /* (1) Try children */
+      for (auto& child : prevLex->children_) {
+        int n = child.first;
+        const TrieNodePtr& lex = child.second;
         float score = prevHyp.score_ + emissions[t * N + n];
         if (nDecodedFrames_ + t > 0 && opt.modelType_ == ModelType::ASG) {
           score += transitions[n * N + prevIdx];
         }
-
-        /* emit a word only if silence */
         if (n == sil_) {
-          score = score + opt.silWeight_;
-          /* If we got a true word */
-          for (int i = 0; i < prevLex->nLabel_; i++) {
-            float lmScore;
-            const LMStatePtr newLmState =
-                lm_->score(prevLmState, prevLex->label_[i]->lm_, lmScore);
-            candidatesAdd(
-                newLmState,
-                lexicon_->getRoot(),
-                &prevHyp,
-                score + opt.lmWeight_ * (lmScore - lexMaxScore) +
-                    opt.wordScore_,
-                opt.beamScore_,
-                prevLex->label_[i],
-                false // prevBlank
-            );
-          }
-          /* If we got an unknown word */
-          if (prevLex->nLabel_ == 0 && (opt.unkScore_ > kNegativeInfinity)) {
-            float lmScore;
-            const LMStatePtr& newLmState =
-                lm_->score(prevLmState, unk_->lm_, lmScore);
-            candidatesAdd(
-                newLmState,
-                lexicon_->getRoot(),
-                &prevHyp,
-                score + opt.lmWeight_ * (lmScore - lexMaxScore) + opt.unkScore_,
-                opt.beamScore_,
-                unk_,
-                false // prevBlank
-            );
-          }
-          /* Allow starting with a sil */
-          if (nDecodedFrames_ + t == 0) {
-            candidatesAdd(
-                prevLmState,
-                prevLex,
-                &prevHyp,
-                score,
-                opt.beamScore_,
-                nullptr,
-                false // prevBlank
-            );
-          }
+          score += opt.silWeight_;
         }
 
-        /* same place in lexicon (or sil) */
-        if ((n == prevIdx && nDecodedFrames_ + t > 0) && !prevHyp.prevBlank_) {
-          candidatesAdd(
-              prevLmState,
-              prevLex,
-              &prevHyp,
-              score,
-              opt.beamScore_,
-              nullptr,
-              prevHyp.prevBlank_ // prevBlank
-          );
-        } else if (opt.modelType_ == ModelType::CTC && n == blank_) {
-          candidatesAdd(
-              prevLmState,
-              prevLex,
-              &prevHyp,
-              score,
-              opt.beamScore_,
-              nullptr,
-              true // prevBlank
-          );
-        } else if (
-            n != sil_ ||
-            (opt.modelType_ == ModelType::CTC && n == prevIdx &&
-             prevHyp.prevBlank_)) {
-          /* we eat-up a new token */
-          const TrieNodePtr& lex = prevLex->children_[n];
-          if (lex) {
+        // We eat-up a new token
+        if (opt.modelType_ != ModelType::CTC || prevHyp.prevBlank_ ||
+            n != prevIdx) {
+          if (!lex->children_.empty()) {
             candidatesAdd(
                 prevLmState,
                 lex,
                 &prevHyp,
                 score + opt.lmWeight_ * (lex->maxScore_ - lexMaxScore),
                 opt.beamScore_,
+                n,
                 nullptr,
                 false // prevBlank
             );
           }
         }
+
+        // If we got a true word
+        for (int i = 0; i < lex->nLabel_; i++) {
+          float lmScore;
+          const LMStatePtr newLmState =
+              lm_->score(prevLmState, lex->label_[i]->lm_, lmScore);
+          candidatesAdd(
+              newLmState,
+              lexicon_->getRoot(),
+              &prevHyp,
+              score + opt.lmWeight_ * (lmScore - lexMaxScore) + opt.wordScore_,
+              opt.beamScore_,
+              n,
+              lex->label_[i],
+              false // prevBlank
+          );
+        }
+
+        // If we got an unknown word
+        if (lex->nLabel_ == 0 && (opt.unkScore_ > kNegativeInfinity)) {
+          float lmScore;
+          const LMStatePtr& newLmState =
+              lm_->score(prevLmState, unk_->lm_, lmScore);
+          candidatesAdd(
+              newLmState,
+              lexicon_->getRoot(),
+              &prevHyp,
+              score + opt.lmWeight_ * (lmScore - lexMaxScore) + opt.unkScore_,
+              opt.beamScore_,
+              n,
+              unk_,
+              false // prevBlank
+          );
+        }
       }
+
+      /* (2) Try same lexicon node */
+      if (opt.modelType_ != ModelType::CTC || !prevHyp.prevBlank_) {
+        int n = prevIdx;
+        float score = prevHyp.score_ + emissions[t * N + n];
+        if (nDecodedFrames_ + t > 0 && opt.modelType_ == ModelType::ASG) {
+          score += transitions[n * N + prevIdx];
+        }
+        if (n == sil_) {
+          score += opt.silWeight_;
+        }
+
+        candidatesAdd(
+            prevLmState,
+            prevLex,
+            &prevHyp,
+            score,
+            opt.beamScore_,
+            n,
+            nullptr,
+            false // prevBlank
+        );
+      }
+
+      /* (3) CTC only, try blank */
+      if (opt.modelType_ == ModelType::CTC) {
+        int n = blank_;
+        float score = prevHyp.score_ + emissions[t * N + n];
+        candidatesAdd(
+            prevLmState,
+            prevLex,
+            &prevHyp,
+            score,
+            opt.beamScore_,
+            n,
+            nullptr,
+            true // prevBlank
+        );
+      }
+      // finish proposing
     }
+
     candidatesStore(opt, hyp_[startFrame + t + 1], false);
   }
   nDecodedFrames_ += T;
@@ -289,50 +300,22 @@ void Decoder::decodeEnd(const DecoderOptions& opt) {
   candidatesReset();
   for (const DecoderNode& prevHyp : hyp_[nDecodedFrames_ - nPrunedFrames_]) {
     const TrieNodePtr prevLex = prevHyp.lex_;
-    const int prevIdx = prevLex->idx_;
-    const float lexMaxScore =
-        prevLex == lexicon_->getRoot() ? 0 : prevLex->maxScore_;
     const LMStatePtr prevLmState = prevHyp.lmState_;
 
-    // emit a word only if silence (... or here for end of sentence!!)
-    // one could ignore this and force to finish in a sil (if sil is provided)
-    for (int i = 0; i < prevLex->nLabel_; i++) { /* true word? */
-      float lmScore;
-      float lmScoreEnd;
-      LMStatePtr newLmState =
-          lm_->score(prevLmState, prevLex->label_[i]->lm_, lmScore);
-      newLmState = lm_->finish(newLmState, lmScoreEnd);
-
-      candidatesAdd(
-          newLmState,
-          lexicon_->getRoot(),
-          &prevHyp,
-          prevHyp.score_ +
-              opt.lmWeight_ * (lmScore + lmScoreEnd - lexMaxScore) +
-              opt.wordScore_,
-          opt.beamScore_,
-          prevLex->label_[i],
-          false // prevBlank
-      );
-    }
-
-    /* we can also end in a sil */
-    /* not enforcing that, we would end up in middle of a word */
-    if ((!opt.forceEndSil_) || (prevIdx == sil_)) {
-      float lmScoreEnd;
-      LMStatePtr newLmState = lm_->finish(prevLmState, lmScoreEnd);
-
-      candidatesAdd(
-          newLmState,
-          prevLex,
-          &prevHyp,
-          prevHyp.score_ + opt.lmWeight_ * lmScoreEnd,
-          opt.beamScore_,
-          nullptr,
-          false // prevBlank
-      );
-    }
+    float lmScoreEnd;
+    LMStatePtr newLmState = lm_->finish(prevLmState, lmScoreEnd);
+    candidatesAdd(
+        newLmState,
+        prevLex,
+        &prevHyp,
+        prevHyp.score_ + opt.lmWeight_ * lmScoreEnd,
+        opt.beamScore_,
+        -1,
+        nullptr,
+        false // prevBlank
+    );
   }
+
   candidatesStore(opt, hyp_[nDecodedFrames_ - nPrunedFrames_ + 1], true);
   ++nDecodedFrames_;
 }
@@ -375,7 +358,7 @@ Decoder::storeAllFinalHypothesis() const {
     while (node) {
       wordPredictions[r][finalFrame - i] =
           (node->label_ ? node->label_->usr_ : -1);
-      letterPredictions[r][finalFrame - i] = node->lex_->idx_;
+      letterPredictions[r][finalFrame - i] = node->letter_;
       node = node->parent_;
       i++;
     }
@@ -497,8 +480,9 @@ void Decoder::prune(int lookBack) {
 
   nPrunedFrames_ = nDecodedFrames_ - lookBack;
 
-  // (3) For the last frame hyp_[lookBack], subtract the largest score for each
-  // hypothesis in it so as to avoid underflow/overflow.
+  // (3) For the last frame hyp_[lookBack], subtract the largest
+  // score for each hypothesis in it so as to avoid
+  // underflow/overflow.
   float largestScore = hyp_[lookBack].front().score_;
   for (int i = 1; i < hyp_[lookBack].size(); i++) {
     if (largestScore < hyp_[lookBack][i].score_) {

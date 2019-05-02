@@ -260,9 +260,6 @@ int main(int argc, char** argv) {
   for (auto& it : lexicon) {
     std::string word = it.first;
     int lmIdx = lm->index(word);
-    if (lmIdx == unkIdx) { // We don't insert unknown words
-      continue;
-    }
     float score;
     auto dummyState = lm->score(start_state, lmIdx, score);
     for (auto& tokens : it.second) {
@@ -328,9 +325,10 @@ int main(int argc, char** argv) {
                   letterPrediction.begin(), letterPrediction.end(), blankIdx),
               letterPrediction.end());
         }
+        validateTokens(wordPrediction, wordDict.getIndex(kUnkToken));
+        validateTokens(letterPrediction, -1);
         remapLabels(letterTarget, tokenDict);
         remapLabels(letterPrediction, tokenDict);
-        validateTokens(wordPrediction, wordDict.getIndex(kUnkToken));
 
         // Update meters & print out predictions
         meters.werSlice.add(wordPrediction, wordTarget);

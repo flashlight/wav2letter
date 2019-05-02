@@ -8,6 +8,7 @@
 
 #pragma once
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 namespace w2l {
@@ -38,14 +39,14 @@ typedef std::shared_ptr<TrieLabel> TrieLabelPtr;
  */
 struct TrieNode {
   TrieNode(int nchildren, int idx)
-      : children_(std::vector<std::shared_ptr<TrieNode>>(nchildren, nullptr)),
+      : children_(std::unordered_map<int, std::shared_ptr<TrieNode>>()),
         idx_(idx),
         nLabel_(0),
         label_(std::vector<TrieLabelPtr>(kTrieMaxLable)),
         score_(std::vector<float>(kTrieMaxLable)),
         maxScore_(0) {}
 
-  std::vector<std::shared_ptr<TrieNode>>
+  std::unordered_map<int, std::shared_ptr<TrieNode>>
       children_; // Pointers to the childern of a node
   int idx_; // Node index
   int nLabel_; // Number of labels a node has. Note that nLabel_ is positive

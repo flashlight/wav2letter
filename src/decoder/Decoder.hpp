@@ -75,6 +75,7 @@ struct DecoderNode {
   TrieNodePtr lex_; // Trie node in the lexicon
   const DecoderNode* parent_; // Parent hypothesis
   float score_; // Score so far
+  int letter_; // Label of letter
   TrieLabelPtr label_; // Label of word (-1 if incomplete)
   bool prevBlank_;
 
@@ -83,11 +84,13 @@ struct DecoderNode {
       const TrieNodePtr& lex,
       const DecoderNode* parent,
       const float score,
+      const int letter,
       const TrieLabelPtr& label)
       : lmState_(lmState),
         lex_(lex),
         parent_(parent),
         score_(score),
+        letter_(letter),
         label_(label),
         prevBlank_(false) {}
 
@@ -96,6 +99,7 @@ struct DecoderNode {
         lex_(nullptr),
         parent_(nullptr),
         score_(0),
+        letter_(-1),
         label_(nullptr) {}
 
   void updateAsConstructor(
@@ -103,12 +107,14 @@ struct DecoderNode {
       const TrieNodePtr& lex,
       const DecoderNode* parent,
       const float score,
+      const int letter,
       const TrieLabelPtr& label,
       const bool prevBlank) {
     lmState_ = lmState;
     lex_ = lex;
     parent_ = parent;
     score_ = score;
+    letter_ = letter;
     label_ = label;
     prevBlank_ = prevBlank;
   }
@@ -212,6 +218,7 @@ class Decoder {
       const DecoderNode* parent,
       const float score,
       const float beamScore,
+      const int letter,
       const TrieLabelPtr& label,
       const bool prevBlank);
 

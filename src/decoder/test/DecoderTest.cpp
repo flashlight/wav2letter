@@ -180,7 +180,7 @@ TEST(DecoderTest, run) {
   ASSERT_EQ(n_hyp, 877);
 
   std::vector<float> hypScoreTarget{
-      -338.025, -340.189, -340.415, -340.594, -340.653};
+      -340.189, -340.415, -340.594, -340.653, -341.115};
   for (int i = 0; i < 5; i++) {
     ASSERT_NEAR(score[i], hypScoreTarget[i], 1e-3);
   }

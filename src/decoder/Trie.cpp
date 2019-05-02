@@ -35,7 +35,7 @@ TrieNodePtr Trie::insert(
     if (idx < 0 || idx >= nChildren_) {
       LOG(FATAL) << "[Trie] Invalid letter index: " << idx;
     }
-    if (!node->children_[idx]) {
+    if (node->children_.find(idx) == node->children_.end()) {
       node->children_[idx] = std::make_shared<TrieNode>(nChildren_, idx);
     }
     node = node->children_[idx];
@@ -56,7 +56,7 @@ TrieNodePtr Trie::search(const std::vector<int>& indices) {
     if (idx < 0 || idx >= nChildren_) {
       LOG(FATAL) << "[Trie] Invalid letter index: " << idx;
     }
-    if (!node->children_[idx]) {
+    if (node->children_.find(idx) == node->children_.end()) {
       return nullptr;
     }
     node = node->children_[idx];
@@ -84,15 +84,14 @@ void smearNode(TrieNodePtr node, SmearingMode smearMode) {
     node->maxScore_ = TrieLogAdd(node->maxScore_, node->score_[idx]);
   }
   for (auto child : node->children_) {
-    if (child) {
-      smearNode(child, smearMode);
-      if (smearMode == SmearingMode::LOGADD) {
-        node->maxScore_ = TrieLogAdd(node->maxScore_, child->maxScore_);
-      } else if (
-          smearMode == SmearingMode::MAX &&
-          child->maxScore_ > node->maxScore_) {
-        node->maxScore_ = child->maxScore_;
-      }
+    auto childNode = child.second;
+    smearNode(childNode, smearMode);
+    if (smearMode == SmearingMode::LOGADD) {
+      node->maxScore_ = TrieLogAdd(node->maxScore_, childNode->maxScore_);
+    } else if (
+        smearMode == SmearingMode::MAX &&
+        childNode->maxScore_ > node->maxScore_) {
+      node->maxScore_ = childNode->maxScore_;
     }
   }
 }

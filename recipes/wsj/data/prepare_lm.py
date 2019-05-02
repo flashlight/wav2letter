@@ -96,6 +96,6 @@ if __name__ == "__main__":
     dict_file = os.path.join(args.dst, "lexicon.txt")
     with open(dict_file, "w") as lexicon:
         for kv in dict:
-            lexicon.write("{w}\t{s}\n".format(w=kv[0], s=" ".join(kv[1]["spelling"])))
+            lexicon.write("{w}\t{s} |\n".format(w=kv[0], s=" ".join(kv[1]["spelling"])))
 
     sys.stdout.write("Done !\n")

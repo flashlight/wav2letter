@@ -59,7 +59,9 @@ std::vector<T> PowerSpectrum<T>::powSpectrumImpl(std::vector<T>& frames) {
           begin, begin + nSamples, begin, [mean](T x) { return x - mean; });
     }
   }
-  preEmphasis_.applyInPlace(frames);
+  if (featParams_.preemCoef != 0) {
+    preEmphasis_.applyInPlace(frames);
+  }
   windowing_.applyInPlace(frames);
   std::vector<T> dft(K * nFrames);
   for (size_t f = 0; f < nFrames; ++f) {

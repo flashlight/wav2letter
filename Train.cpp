@@ -413,6 +413,7 @@ int main(int argc, char** argv) {
   };
 
   double gradNorm = 1.0 / (FLAGS_batchsize * worldSize);
+  auto reducer = std::make_shared<fl::InlineReducer>(gradNorm);
 
   auto trainEvalIds =
       randomSubset(FLAGS_seed, trainds->size(), FLAGS_pcttraineval);
@@ -424,8 +425,8 @@ int main(int argc, char** argv) {
                 &evalOutput,
                 &validds,
                 &trainEvalIds,
-                gradNorm,
-                &startEpoch](
+                &startEpoch,
+                reducer](
                    std::shared_ptr<fl::Module> ntwrk,
                    std::shared_ptr<SequenceCriterion> crit,
                    std::shared_ptr<W2lDataset> trainset,
@@ -435,8 +436,8 @@ int main(int argc, char** argv) {
                    double initcritlr,
                    bool clampCrit,
                    int nepochs) {
-    fl::distributeModuleGrads(ntwrk, gradNorm);
-    fl::distributeModuleGrads(crit, gradNorm);
+    fl::distributeModuleGrads(ntwrk, reducer);
+    fl::distributeModuleGrads(crit, reducer);
 
     meters.train.loss.reset();
     meters.train.edit.reset();

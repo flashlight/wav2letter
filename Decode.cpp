@@ -143,9 +143,6 @@ int main(int argc, char** argv) {
       emissionSet.letterTargets.emplace_back(ltrTarget);
       emissionSet.emissionT.emplace_back(T);
       emissionSet.emissionN = N;
-      if (FLAGS_criterion == kAsgCriterion) {
-        emissionSet.transition = afToVector<float>(criterion->param(0).array());
-      }
 
       // while decoding we use batchsize 1 and hence ds only has 1 sampleid
       emissionSet.sampleIds.emplace_back(
@@ -156,6 +153,9 @@ int main(int argc, char** argv) {
         break;
       }
     }
+  }
+  if (FLAGS_criterion == kAsgCriterion) {
+    emissionSet.transition = afToVector<float>(criterion->param(0).array());
   }
 
   int nSample = emissionSet.emissions.size();
@@ -190,7 +190,6 @@ int main(int argc, char** argv) {
       static_cast<float>(FLAGS_lmweight),
       static_cast<float>(FLAGS_wordscore),
       static_cast<float>(FLAGS_unkweight),
-      FLAGS_forceendsil,
       FLAGS_logadd,
       static_cast<float>(FLAGS_silweight),
       modelType);
@@ -290,7 +289,7 @@ int main(int argc, char** argv) {
       // Build Decoder
       std::shared_ptr<TrieLabel> unk =
           std::make_shared<TrieLabel>(unkIdx, wordDict.getIndex(kUnkToken));
-      Decoder decoder(trie, lm, silIdx, blankIdx, unk);
+      Decoder decoder(decoderOpt, trie, lm, silIdx, blankIdx, unk, transition);
       LOG(INFO) << "[Decoder] Decoder loaded in thread: " << tid;
 
       // Get data and run decoder
@@ -309,8 +308,8 @@ int main(int argc, char** argv) {
         std::vector<std::vector<int>> wordPredictions;
         std::vector<std::vector<int>> letterPredictions;
 
-        std::tie(score, wordPredictions, letterPredictions) = decoder.decode(
-            decoderOpt, transition.data(), emission.data(), T, N);
+        std::tie(score, wordPredictions, letterPredictions) =
+            decoder.decode(emission.data(), T, N);
 
         // Cleanup predictions
         auto wordPrediction = wordPredictions[0];

@@ -139,7 +139,6 @@ DEFINE_int64(encoderdim, 0, "Dimension of encoded hidden state.");
 // DECODER OPTIONS
 DEFINE_bool(show, false, "show predictions");
 DEFINE_bool(showletters, false, "show letter predictions");
-DEFINE_bool(forceendsil, false, "force end sil");
 DEFINE_bool(logadd, false, "use logadd when merging decoder nodes");
 
 DEFINE_string(smearing, "none", "none, max or logadd");

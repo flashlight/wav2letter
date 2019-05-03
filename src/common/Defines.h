@@ -152,7 +152,6 @@ DECLARE_int64(encoderdim);
 
 DECLARE_bool(show);
 DECLARE_bool(showletters);
-DECLARE_bool(forceendsil);
 DECLARE_bool(logadd);
 
 DECLARE_string(smearing);

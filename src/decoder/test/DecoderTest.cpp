@@ -146,21 +146,20 @@ TEST(DecoderTest, run) {
   }
 
   /* -------- Build Decoder --------*/
-  std::shared_ptr<TrieLabel> unk =
-      std::make_shared<TrieLabel>(unk_idx, wordDict.getIndex(kUnkToken));
-  Decoder decoder(trie, lm, sil_idx, blank_idx, unk);
-  LOG(INFO) << "[Decoder] Decoder constructed.\n";
-
   DecoderOptions decoder_opt(
       2500, // FLAGS_beamsize
       100.0, // FLAGS_beamscore
       2.0, // FLAGS_lmweight
       2.0, // FLAGS_lexiconcore
       -std::numeric_limits<float>::infinity(), // FLAGS_unkweight
-      false, // FLAGS_forceendsil
       false, // FLAGS_logadd
       -1, // FLAGS_silweight
       ModelType::ASG);
+
+  std::shared_ptr<TrieLabel> unk =
+      std::make_shared<TrieLabel>(unk_idx, wordDict.getIndex(kUnkToken));
+  Decoder decoder(decoder_opt, trie, lm, sil_idx, blank_idx, unk, transitions);
+  LOG(INFO) << "[Decoder] Decoder constructed.\n";
 
   /* -------- Run --------*/
   auto emission = emission_set.emissions[0];
@@ -172,7 +171,7 @@ TEST(DecoderTest, run) {
   auto timer = fl::TimeMeter();
   timer.resume();
   std::tie(score, wordPredictions, letterPredictions) =
-      decoder.decode(decoder_opt, transitions.data(), emission.data(), T, N);
+      decoder.decode(emission.data(), T, N);
   timer.stop();
 
   int n_hyp = score.size();

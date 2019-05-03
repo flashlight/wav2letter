@@ -39,7 +39,6 @@ struct DecoderOptions {
   float lmWeight_; // Weight of lm
   float wordScore_; // Score for inserting a word
   float unkScore_; // Score for inserting a unknown word
-  bool forceEndSil_; // If or not force ending in a sil
   bool logAdd_; // If or not use logadd when merging hypothesis
   float silWeight_; // Silence is golden
   ModelType modelType_; // CTC or ASG
@@ -50,7 +49,6 @@ struct DecoderOptions {
       const float lmWeight,
       const float wordScore,
       const float unkScore,
-      const bool forceEndSil,
       const bool logAdd,
       const float silWeight,
       const ModelType modelType)
@@ -59,7 +57,6 @@ struct DecoderOptions {
         lmWeight_(lmWeight),
         wordScore_(wordScore),
         unkScore_(unkScore),
-        forceEndSil_(forceEndSil),
         logAdd_(logAdd),
         silWeight_(silWeight),
         modelType_(modelType) {}
@@ -72,20 +69,20 @@ struct DecoderOptions {
  */
 struct DecoderNode {
   LMStatePtr lmState_; // Language model state
-  TrieNodePtr lex_; // Trie node in the lexicon
+  const TrieNode* lex_; // Trie node in the lexicon
   const DecoderNode* parent_; // Parent hypothesis
   float score_; // Score so far
   int letter_; // Label of letter
-  TrieLabelPtr label_; // Label of word (-1 if incomplete)
+  const TrieLabel* label_; // Label of word (-1 if incomplete)
   bool prevBlank_;
 
   DecoderNode(
       const LMStatePtr& lmState,
-      const TrieNodePtr& lex,
+      const TrieNode* lex,
       const DecoderNode* parent,
       const float score,
       const int letter,
-      const TrieLabelPtr& label)
+      const TrieLabel* label)
       : lmState_(lmState),
         lex_(lex),
         parent_(parent),
@@ -104,11 +101,11 @@ struct DecoderNode {
 
   void updateAsConstructor(
       const LMStatePtr& lmState,
-      const TrieNodePtr& lex,
+      const TrieNode* lex,
       const DecoderNode* parent,
       const float score,
       const int letter,
-      const TrieLabelPtr& label,
+      const TrieLabel* label,
       const bool prevBlank) {
     lmState_ = lmState;
     lex_ = lex;
@@ -141,13 +138,17 @@ struct DecoderNode {
 class Decoder {
  public:
   Decoder(
+      const DecoderOptions& opt,
       const TriePtr lexicon,
       const LMPtr lm,
       const int sil,
       const int blank,
-      const TrieLabelPtr unk)
-      : lexicon_(lexicon),
+      const TrieLabelPtr unk,
+      const std::vector<float>& transitions)
+      : opt_(opt),
+        lexicon_(lexicon),
         lm_(lm),
+        transitions_(transitions),
         sil_(sil),
         blank_(blank),
         unk_(unk),
@@ -157,25 +158,15 @@ class Decoder {
 
   void decodeBegin();
 
-  void decodeContinue(
-      const DecoderOptions& opt,
-      const float* transitions,
-      const float* emissions,
-      int T,
-      int N);
+  void decodeContinue(const float* emissions, int T, int N);
 
-  void decodeEnd(const DecoderOptions& opt);
+  void decodeEnd();
 
   std::tuple<
       std::vector<float>,
       std::vector<std::vector<int>>,
       std::vector<std::vector<int>>>
-  decode(
-      const DecoderOptions& opt,
-      const float* transitions,
-      const float* emissions,
-      int T,
-      int N);
+  decode(const float* emissions, int T, int N);
 
   int numHypothesis() const;
 
@@ -188,8 +179,11 @@ class Decoder {
       int lookBack = 0) const;
 
  protected:
+  DecoderOptions opt_;
   TriePtr lexicon_;
   LMPtr lm_;
+  std::vector<float> transitions_;
+
   std::vector<DecoderNode>
       candidates_; // All the hypothesis candidates (can be larger than
                    // beamsize) for the current frame
@@ -214,20 +208,21 @@ class Decoder {
 
   void candidatesAdd(
       const LMStatePtr& lmState,
-      const TrieNodePtr& lex,
+      const TrieNode* lex,
       const DecoderNode* parent,
       const float score,
-      const float beamScore,
       const int letter,
-      const TrieLabelPtr& label,
+      const TrieLabel* label,
       const bool prevBlank);
 
-  void candidatesStore(
-      const DecoderOptions& opt,
-      std::vector<DecoderNode>& nextHyp,
-      const bool isSort);
+  void candidatesStore(std::vector<DecoderNode>& nextHyp, const bool isSort);
 
-  void mergeNodes(DecoderNode* oldNode, const DecoderNode* newNode, int logAdd);
+  void mergeNodes(
+      DecoderNode* oldNode,
+      const DecoderNode* newNode,
+      const int logAdd);
+
+  int mergeCandidates(const int size);
 
   std::tuple<
       std::vector<float>,

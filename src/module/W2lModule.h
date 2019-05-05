@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <flashlight/contrib/contrib.h>
 #include <flashlight/flashlight.h>
 
 namespace w2l {

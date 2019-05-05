@@ -6,15 +6,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "W2lModule.h"
-#include "module/Residual.h"
-#include "module/TDSBlock.h"
-
 #include <string>
 
 #include <glog/logging.h>
 
+#include "W2lModule.h"
+
 #include "common/Utils.h"
+#include "module/TDSBlock.h"
 
 #ifdef BUILD_FB_DEPENDENCIES
 #include "experimental/frontend/Frontend.h"
@@ -283,7 +282,7 @@ std::shared_ptr<Module> parseLines(
                              int& numResLayerAndSkip) {
       int numResLayers = std::stoi(prms[1]);
       int numSkipConnections = std::stoi(prms[2]);
-      std::shared_ptr<w2l::Residual> resPtr = std::make_shared<w2l::Residual>();
+      std::shared_ptr<Residual> resPtr = std::make_shared<Residual>();
 
       for (int i = 1; i <= numResLayers + numSkipConnections; ++i) {
         LOG_IF(FATAL, lineIdx + i >= lines.size())

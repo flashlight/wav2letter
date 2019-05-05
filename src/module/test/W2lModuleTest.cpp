@@ -24,7 +24,7 @@ std::string archDir = "";
 } // namespace
 
 TEST(W2lModuleTest, W2lSeqModule) {
-  const std::string archfile = pathsConcat(archDir, "test_w2l_rnn_arch.txt");
+  const std::string archfile = pathsConcat(archDir, "test_w2l_arch.txt");
   int nchannel = 4;
   int nclass = 40;
   int batchsize = 2;
@@ -51,7 +51,7 @@ TEST(W2lModuleTest, Serialization) {
     userstr = std::string(user);
   }
   const std::string path = "/tmp/" + userstr + "_test.mdl";
-  const std::string archfile = pathsConcat(archDir, "test_w2l_rnn_arch.txt");
+  const std::string archfile = pathsConcat(archDir, "test_w2l_arch.txt");
 
   int C = 1, N = 5, B = 1, T = 10;
   auto model = createW2lSeqModule(archfile, C, N);

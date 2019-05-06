@@ -104,10 +104,13 @@ Here is an example of grapheme based lexicon.
 
 ```
 # lexicon.txt
-a a
-able  a b l e
-about a b o u t
-above a b o v e
+a a |
+able  a b l e |
+about a b o u t |
+above a b o v e |
+
+hello-kitty h e l l o | k i t t y |
+
 ...
 ... (and so on)
 

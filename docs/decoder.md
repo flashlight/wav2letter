@@ -25,9 +25,10 @@ both binaries.
   token.
 * Lexicon: The set of allowed words and their possible spellings used by the
   decoder. Each line is a word and spelling pair that are separated by a tab.
-  The spelling is represented by a space-separated sequence of tokens.  An
-  example entry could be `apple	a p p l e`. Note that the same word may have
-  multiple spellings; these should be on separate lines.
+  The spelling is represented by a space-separated sequence of tokens. An
+  example entry could be `apple	a p p l e |`, where the pipe `|` at the end is
+  the delimiter used during acoustic model training. Note that the same word may
+  have multiple spellings; these should be on separate lines.
 
 ### Running the `Test`
 The dictionaries are specified through the flags `tokens` and `lexicon`. We

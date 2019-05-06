@@ -114,7 +114,7 @@ int main(int argc, char** argv) {
     auto emission = afToVector<float>(rawEmission);
     auto ltrTarget = afToVector<int>(sample[kTargetIdx]);
     auto wrdTarget = afToVector<int>(sample[kWordIdx]);
-    auto sampleId = afToVector<std::string>(sample[kFileIdIdx]).front();
+    auto sampleId = afToVector<std::string>(sample[kSampleIdx]).front();
 
     /* viterbiPath + remove duplication/blank */
     auto viterbiPath =

@@ -89,11 +89,15 @@ Residual skip connections between layers can only be added if these layers have 
 ```
 SKIP [fromLayerInd] [toLayerInd] [scale <OPTIONAL, DEFAULT=1>]
 ```
-- with a projection matrix, when, for the residual skip connection, the number of channels in the output of `fromLayer` differs from the number of channels expected in the input of `toLayer`:
+- with a sequence of projection layers, when, for the residual skip connection, the number of channels in the output of `fromLayer` differs from the number of channels expected in the input of `toLayer` (or some transformation is needed to be applied):
 ```
-SKIPL [fromLayerInd] [toLayerInd] [inChannels] [outChannels] [axis <OPTIONAL, DEFAULT=0>][scale <OPTIONAL, DEFAULT=1>]
+SKIPL [fromLayerInd] [toLayerInd] [nLayersInProjection (M)] [scale <OPTIONAL, DEFAULT=1>]
+[Layer1]
+[Layer2]
+...
+[LayerM]
 ```
-where `axis` is an axis along a linear projection is performed, and `scale` is the value by which the final output is multiplied (`(x + f(x)) * scale`). `scale` must be the same for all residual skip connections that share the same `toLayer`.
+where `scale` is the value by which the final output is multiplied (`(x + f(x)) * scale`). `scale` must be the same for all residual skip connections that share the same `toLayer`.
 *(Use fromLayerInd `= 0` for a skip connection from input, toLayerInd `= N+1` for a residual skip connection to output, and fromLayerInd/toLayerInd `= K` for a residual skip connection from/to LayerK.)*
 
 **w2l::TDSBlock**

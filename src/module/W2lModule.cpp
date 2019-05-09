@@ -284,10 +284,12 @@ std::shared_ptr<Module> parseLines(
       int numSkipConnections = std::stoi(prms[2]);
       std::shared_ptr<Residual> resPtr = std::make_shared<Residual>();
 
+      int numProjections = 0;
+
       for (int i = 1; i <= numResLayers + numSkipConnections; ++i) {
-        LOG_IF(FATAL, lineIdx + i >= lines.size())
+        LOG_IF(FATAL, lineIdx + i + numProjections >= lines.size())
             << "Failed parsing Residual block";
-        auto resLine = lines[lineIdx + i];
+        std::string resLine = lines[lineIdx + i + numProjections];
         auto resLinePrms = w2l::splitOnWhitespace(resLine, true);
 
         if (resLinePrms[0] == "SKIP") {
@@ -300,35 +302,29 @@ std::shared_ptr<Module> parseLines(
                 std::stoi(resLinePrms[2]), std::stof(resLinePrms[3]));
           }
         } else if (resLinePrms[0] == "SKIPL") {
-          LOG_IF(FATAL, !inRange(5, resLinePrms.size(), 7))
+          LOG_IF(FATAL, !inRange(4, resLinePrms.size(), 5))
               << "Failed parsing - " << resLine;
+          int numProjectionLayers = std::stoi(resLinePrms[3]);
           auto projection = std::make_shared<Sequential>();
-          if (resLinePrms.size() > 5) {
-            int dimIdx = std::stoi(resLinePrms[5]);
-            std::vector<int> dims = {0, 1, 2, 3};
-            dims[dimIdx] = 0;
-            projection->add(
-                std::make_shared<Reorder>(dimIdx, dims[1], dims[2], dims[3]));
-            projection->add(
-                Linear(std::stoi(resLinePrms[3]), std::stoi(resLinePrms[4])));
-            projection->add(
-                std::make_shared<Reorder>(dimIdx, dims[1], dims[2], dims[3]));
-          } else {
-            projection->add(
-                Linear(std::stoi(resLinePrms[3]), std::stoi(resLinePrms[4])));
+
+          for (int j = 1; j <= numProjectionLayers; ++j) {
+            LOG_IF(FATAL, lineIdx + i + numProjections + j >= lines.size())
+                << "Failed parsing Projection block";
+            projection->add(parseLine(lines[lineIdx + i + numProjections + j]));
           }
           resPtr->addShortcut(
               std::stoi(resLinePrms[1]), std::stoi(resLinePrms[2]), projection);
-          if (resLinePrms.size() == 7) {
+          if (resLinePrms.size() == 5) {
             resPtr->addScale(
-                std::stoi(resLinePrms[2]), std::stof(resLinePrms[6]));
+                std::stoi(resLinePrms[2]), std::stof(resLinePrms[4]));
           }
+          numProjections += numProjectionLayers;
         } else {
           resPtr->add(parseLine(resLine));
         }
       }
 
-      numResLayerAndSkip = numResLayers + numSkipConnections;
+      numResLayerAndSkip = numResLayers + numSkipConnections + numProjections;
       return resPtr;
     };
 

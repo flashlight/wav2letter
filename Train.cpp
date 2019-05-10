@@ -413,7 +413,10 @@ int main(int argc, char** argv) {
   };
 
   double gradNorm = 1.0 / (FLAGS_batchsize * worldSize);
-  auto reducer = std::make_shared<fl::InlineReducer>(gradNorm);
+  auto reducer = std::make_shared<fl::CoalescingReducer>(
+      /*scale=*/gradNorm,
+      /*async=*/true,
+      /*contiguous=*/true);
 
   auto trainEvalIds =
       randomSubset(FLAGS_seed, trainds->size(), FLAGS_pcttraineval);
@@ -551,6 +554,7 @@ int main(int argc, char** argv) {
         netopt->zeroGrad();
         critopt->zeroGrad();
         loss.backward();
+        reducer->finalize();
 
         af::sync();
         meters.bwdtimer.stopAndIncUnit();

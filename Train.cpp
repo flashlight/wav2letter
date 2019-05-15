@@ -167,7 +167,7 @@ int main(int argc, char** argv) {
   dicts.insert({kTargetIdx, dict});
 
   LexiconMap lexicon;
-  if (FLAGS_listdata) {
+  if (FLAGS_listdata || FLAGS_everstoredb) {
     lexicon = loadWords(FLAGS_lexicon, FLAGS_maxword);
   }
 

@@ -65,6 +65,6 @@ if __name__ == "__main__":
                 if word == "<unk>" or word == "<s>" or word == "</s>":
                     continue
                 assert re.match("^[a-z']+$", word), "invalid word - {w}".format(w=word)
-                f.write("{w}\t{s}\n".format(w=word, s=" ".join(word)))
+                f.write("{w}\t{s} |\n".format(w=word, s=" ".join(word)))
 
     sys.stdout.write("Done !\n")

@@ -153,9 +153,9 @@ int main(int argc, char** argv) {
         break;
       }
     }
-  }
-  if (FLAGS_criterion == kAsgCriterion) {
-    emissionSet.transition = afToVector<float>(criterion->param(0).array());
+    if (FLAGS_criterion == kAsgCriterion) {
+      emissionSet.transition = afToVector<float>(criterion->param(0).array());
+    }
   }
 
   int nSample = emissionSet.emissions.size();

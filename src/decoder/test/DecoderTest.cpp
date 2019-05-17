@@ -19,9 +19,9 @@
 #include "common/Transforms.h"
 #include "common/Utils.h"
 #include "criterion/criterion.h"
-#include "decoder/KenLM.hpp"
-#include "decoder/Trie.hpp"
-#include "decoder/WordLMDecoder.hpp"
+#include "decoder/KenLM.h"
+#include "decoder/Trie.h"
+#include "decoder/WordLMDecoder.h"
 #include "module/module.h"
 #include "runtime/Logger.h"
 #include "runtime/Serial.h"
@@ -36,6 +36,19 @@ using namespace w2l;
  * http://www.openslr.org/resources/11/3-gram.pruned.3e-7.arpa.gz
  * We pruned it so as to have much smaller size.
  */
+
+std::vector<int> tokens2Tensor(
+    const std::string& spelling,
+    const Dictionary& tokenDict) {
+  std::vector<int> ret;
+  ret.reserve(spelling.size());
+  auto tokens = wrd2Tkn(spelling);
+  for (const auto& tkn : tokens) {
+    ret.push_back(tokenDict.getIndex(tkn));
+  }
+  replaceReplabels(ret, FLAGS_replabel, tokenDict);
+  return ret;
+}
 
 TEST(DecoderTest, run) {
   FLAGS_criterion = kAsgCriterion;
@@ -148,13 +161,13 @@ TEST(DecoderTest, run) {
   /* -------- Build Decoder --------*/
   DecoderOptions decoder_opt(
       2500, // FLAGS_beamsize
-      100.0, // FLAGS_beamscore
+      100.0, // FLAGS_beamthreshold
       2.0, // FLAGS_lmweight
       2.0, // FLAGS_lexiconcore
       -std::numeric_limits<float>::infinity(), // FLAGS_unkweight
       false, // FLAGS_logadd
       -1, // FLAGS_silweight
-      ModelType::ASG);
+      CriterionType::ASG);
 
   std::shared_ptr<TrieLabel> unk =
       std::make_shared<TrieLabel>(unk_idx, wordDict.getIndex(kUnkToken));

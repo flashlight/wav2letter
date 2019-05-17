@@ -10,27 +10,27 @@
 
 #include <unordered_map>
 
-#include "Decoder.hpp"
-#include "LM.hpp"
-#include "Trie.hpp"
+#include "Decoder.h"
+#include "LM.h"
+#include "Trie.h"
 
 namespace w2l {
 /**
- * WordLMDecoderState stores information for each hypothesis in the beam.
+ * LexiconDecoderState stores information for each hypothesis in the beam.
  */
-struct WordLMDecoderState {
+struct LexiconDecoderState {
   LMStatePtr lmState_; // Language model state
   const TrieNode* lex_; // Trie node in the lexicon
-  const WordLMDecoderState* parent_; // Parent hypothesis
+  const LexiconDecoderState* parent_; // Parent hypothesis
   float score_; // Score so far
   int token_; // Label of token
   const TrieLabel* word_; // Label of word (-1 if incomplete)
   bool prevBlank_;
 
-  WordLMDecoderState(
+  LexiconDecoderState(
       const LMStatePtr& lmState,
       const TrieNode* lex,
-      const WordLMDecoderState* parent,
+      const LexiconDecoderState* parent,
       const float score,
       const int token,
       const TrieLabel* word,
@@ -43,7 +43,7 @@ struct WordLMDecoderState {
         word_(word),
         prevBlank_(prevBlank) {}
 
-  WordLMDecoderState()
+  LexiconDecoderState()
       : lmState_(nullptr),
         lex_(nullptr),
         parent_(nullptr),
@@ -51,6 +51,14 @@ struct WordLMDecoderState {
         token_(-1),
         word_(nullptr),
         prevBlank_(false) {}
+
+  int getWord() const {
+    return word_ ? word_->usr_ : -1;
+  }
+
+  bool isComplete() const {
+    return !parent_ || parent_->word_;
+  }
 };
 
 /**
@@ -62,11 +70,13 @@ struct WordLMDecoderState {
  *
  * where P_{lm}(W) is the language model score, pi_i is the value for the i-th
  * frame in the path leading to W and AM(W) is the (unnormalized) acoustic model
- * score of the transcription W
+ * score of the transcription W. Note that the lexicon is used to limit the
+ * search space and all candidate words are generated from it if unkScore is
+ * -inf, otherwise <UNK> will be generated for OOVs.
  */
-class WordLMDecoder : public Decoder {
+class LexiconDecoder : public Decoder {
  public:
-  WordLMDecoder(
+  LexiconDecoder(
       const DecoderOptions& opt,
       const TriePtr lexicon,
       const LMPtr lm,
@@ -87,8 +97,6 @@ class WordLMDecoder : public Decoder {
 
   void decodeBegin() override;
 
-  void decodeStep(const float* emissions, int T, int N) override;
-
   void decodeEnd() override;
 
   int nHypothesis() const;
@@ -106,10 +114,10 @@ class WordLMDecoder : public Decoder {
   LMPtr lm_;
   std::vector<float> transitions_;
 
-  std::vector<WordLMDecoderState>
+  std::vector<LexiconDecoderState>
       candidates_; // All the hypothesis candidates (can be larger than
                    // beamsize) for the current frame
-  std::vector<WordLMDecoderState*>
+  std::vector<LexiconDecoderState*>
       candidatePtrs_; // This vector is only used when sort the candidates_, so
                       // instead of moving around objects, we only need to sort
                       // pointers
@@ -117,7 +125,7 @@ class WordLMDecoder : public Decoder {
   int sil_; // Index of silence label
   int blank_; // Index of blank label (for CTC)
   TrieLabelPtr unk_; // Trie label for unknown word
-  std::unordered_map<int, std::vector<WordLMDecoderState>>
+  std::unordered_map<int, std::vector<LexiconDecoderState>>
       hyp_; // Vector of hypothesis for all the frames so far
   int nCandidates_; // Total number of candidates in candidates_. Note that
                     // candidates is not always equal to candidates_.size()
@@ -131,19 +139,17 @@ class WordLMDecoder : public Decoder {
   void candidatesAdd(
       const LMStatePtr& lmState,
       const TrieNode* lex,
-      const WordLMDecoderState* parent,
+      const LexiconDecoderState* parent,
       const float score,
       const int token,
       const TrieLabel* label,
       const bool prevBlank);
 
   void candidatesStore(
-      std::vector<WordLMDecoderState>& nextHyp,
+      std::vector<LexiconDecoderState>& nextHyp,
       const bool isSort);
 
-  int mergeCandidates(const int size);
-
-  const WordLMDecoderState* findBestAncestor(int& lookBack) const;
+  virtual int mergeCandidates(const int size) = 0;
 };
 
 } // namespace w2l

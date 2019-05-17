@@ -161,12 +161,13 @@ DECLARE_string(emission_dir);
 DECLARE_string(lm);
 DECLARE_string(am);
 DECLARE_string(sclite);
+DECLARE_string(decodertype);
 
 DECLARE_double(lmweight);
 DECLARE_double(wordscore);
 DECLARE_double(silweight);
 DECLARE_double(unkweight);
-DECLARE_double(beamscore);
+DECLARE_double(beamthreshold);
 
 DECLARE_int32(maxload);
 DECLARE_int32(maxword);

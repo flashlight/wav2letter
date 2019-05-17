@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <limits>
 
-#include "Trie.hpp"
+#include "Trie.h"
 
 const double kMinusLogThreshold = -39.14;
 

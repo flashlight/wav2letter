@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "Utils.hpp"
+#include "Utils.h"
 
 namespace w2l {
 /**
@@ -31,7 +31,7 @@ namespace w2l {
  */
 class Decoder {
  public:
-  Decoder(const DecoderOptions& opt) : opt_(opt) {}
+  explicit Decoder(const DecoderOptions& opt) : opt_(opt) {}
   virtual ~Decoder() = default;
 
   /* Initialize decoder before starting consume emissions */

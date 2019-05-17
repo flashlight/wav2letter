@@ -84,9 +84,13 @@ int main(int argc, char** argv) {
   int numClasses = tokenDict.indexSize();
   LOG(INFO) << "Number of classes (network): " << numClasses;
 
-  auto lexicon = loadWords(FLAGS_lexicon, FLAGS_maxword);
-  auto wordDict = createWordDict(lexicon);
-  LOG(INFO) << "Number of words: " << wordDict.indexSize();
+  Dictionary wordDict;
+  LexiconMap lexicon;
+  if (!FLAGS_lexicon.empty()) {
+    lexicon = loadWords(FLAGS_lexicon, FLAGS_maxword);
+    wordDict = createWordDict(lexicon);
+    LOG(INFO) << "Number of words: " << wordDict.indexSize();
+  }
 
   DictionaryMap dicts = {{kTargetIdx, tokenDict}, {kWordIdx, wordDict}};
 
@@ -112,40 +116,39 @@ int main(int argc, char** argv) {
   for (auto& sample : *ds) {
     auto rawEmission = network->forward({fl::input(sample[kInputIdx])}).front();
     auto emission = afToVector<float>(rawEmission);
-    auto ltrTarget = afToVector<int>(sample[kTargetIdx]);
-    auto wrdTarget = afToVector<int>(sample[kWordIdx]);
+    auto tokenTarget = afToVector<int>(sample[kTargetIdx]);
+    auto wordTarget = afToVector<int>(sample[kWordIdx]);
     auto sampleId = afToVector<std::string>(sample[kSampleIdx]).front();
 
-    /* viterbiPath + remove duplication/blank */
-    auto viterbiPath =
+    auto letterTarget = tkn2Ltr(tokenTarget, tokenDict);
+    std::vector<std::string> wordTargetStr;
+    if (!FLAGS_lexicon.empty() && FLAGS_criterion != kSeq2SeqCriterion) {
+      wordTargetStr = wrdTensor2Words(wordTarget, wordDict);
+    } else {
+      wordTargetStr = tknTensor2Words(letterTarget, tokenDict);
+    }
+
+    // Tokens
+    auto tokenPrediction =
         afToVector<int>(criterion->viterbiPath(rawEmission.array()));
-    if (FLAGS_criterion == kCtcCriterion || FLAGS_criterion == kAsgCriterion) {
-      uniq(viterbiPath);
-    }
-    if (FLAGS_criterion == kCtcCriterion) {
-      auto blankidx = tokenDict.getIndex(kBlankToken);
-      viterbiPath.erase(
-          std::remove(viterbiPath.begin(), viterbiPath.end(), blankidx),
-          viterbiPath.end());
-    }
-    remapLabels(viterbiPath, tokenDict);
-    remapLabels(ltrTarget, tokenDict);
+    auto letterPrediction = tkn2Ltr(tokenPrediction, tokenDict);
 
-    meters.lerSlice.add(viterbiPath, ltrTarget);
+    meters.lerSlice.add(letterPrediction, letterTarget);
 
-    auto wordViterbi = tknTensor2wrdTensor(
-        viterbiPath, wordDict, tokenDict, tokenDict.getIndex(kSilToken));
-
-    meters.werSlice.add(wordViterbi, wrdTarget);
+    // Words
+    std::vector<std::string> wrdPredictionStr =
+        tknTensor2Words(letterPrediction, tokenDict);
+    meters.werSlice.add(wordTargetStr, wrdPredictionStr);
 
     if (FLAGS_show) {
       meters.ler.reset();
       meters.wer.reset();
-      meters.ler.add(viterbiPath, ltrTarget);
-      meters.wer.add(wordViterbi, wrdTarget);
+      meters.ler.add(letterPrediction, letterTarget);
+      meters.wer.add(wordTargetStr, wrdPredictionStr);
 
-      std::cout << "|T|: " << tensor2letters(ltrTarget, tokenDict) << std::endl;
-      std::cout << "|P|: " << tensor2letters(viterbiPath, tokenDict)
+      std::cout << "|T|: " << tensor2String(letterTarget, tokenDict)
+                << std::endl;
+      std::cout << "|P|: " << tensor2String(letterPrediction, tokenDict)
                 << std::endl;
       std::cout << "[sample: " << sampleId << ", WER: " << meters.wer.value()[0]
                 << "\%, LER: " << meters.ler.value()[0]
@@ -163,8 +166,8 @@ int main(int argc, char** argv) {
     int N = rawEmission.dims(0);
     int T = rawEmission.dims(1);
     emissionSet.emissions.emplace_back(emission);
-    emissionSet.letterTargets.emplace_back(ltrTarget);
-    emissionSet.wordTargets.emplace_back(wrdTarget);
+    emissionSet.tokenTargets.emplace_back(tokenTarget);
+    emissionSet.wordTargets.emplace_back(wordTargetStr);
 
     // while testing we use batchsize 1 and hence ds only has 1 sampleid
     emissionSet.sampleIds.emplace_back(

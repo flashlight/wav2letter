@@ -8,7 +8,6 @@
 
 #pragma once
 #include <memory>
-#include "lm/model.hh"
 
 namespace w2l {
 /**

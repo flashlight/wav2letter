@@ -15,21 +15,17 @@
 #include <functional>
 #include <unordered_map>
 
-#include "WordLMDecoder.h"
+#include "TokenLMDecoder.h"
 
 namespace w2l {
 
-int WordLMDecoder::mergeCandidates(const int size) {
+int TokenLMDecoder::mergeCandidates(const int size) {
   auto compareNodesShortList = [&](const LexiconDecoderState* node1,
                                    const LexiconDecoderState* node2) {
     int lmCmp = lm_->compareState(node1->lmState_, node2->lmState_);
     if (lmCmp != 0) {
       return lmCmp > 0;
-    } else if (node1->lex_ != node2->lex_) {
-      /* same LmState */
-      return node1->lex_ > node2->lex_;
-    } else {
-      /* same LmState, same lex */
+    } else { /* same LmState */
       return node1->score_ > node2->score_;
     }
   };
@@ -42,8 +38,7 @@ int WordLMDecoder::mergeCandidates(const int size) {
   for (int i = 1; i < size; i++) {
     if (lm_->compareState(
             candidatePtrs_[i]->lmState_,
-            candidatePtrs_[nHypAfterMerging - 1]->lmState_) ||
-        candidatePtrs_[i]->lex_ != candidatePtrs_[nHypAfterMerging - 1]->lex_) {
+            candidatePtrs_[nHypAfterMerging - 1]->lmState_)) {
       candidatePtrs_[nHypAfterMerging] = candidatePtrs_[i];
       nHypAfterMerging++;
     } else {
@@ -57,7 +52,7 @@ int WordLMDecoder::mergeCandidates(const int size) {
   return nHypAfterMerging;
 }
 
-void WordLMDecoder::decodeStep(const float* emissions, int T, int N) {
+void TokenLMDecoder::decodeStep(const float* emissions, int T, int N) {
   int startFrame = nDecodedFrames_ - nPrunedFrames_;
   // Extend hyp_ buffer
   if (hyp_.size() < startFrame + T + 2) {
@@ -66,14 +61,13 @@ void WordLMDecoder::decodeStep(const float* emissions, int T, int N) {
     }
   }
 
+  // Looping over all the frames
   for (int t = 0; t < T; t++) {
     candidatesReset();
     for (const LexiconDecoderState& prevHyp : hyp_[startFrame + t]) {
+      const LMStatePtr& prevLmState = prevHyp.lmState_;
       const TrieNode* prevLex = prevHyp.lex_;
       const int prevIdx = prevLex->idx_;
-      const float lexMaxScore =
-          prevLex == lexicon_->getRoot().get() ? 0 : prevLex->maxScore_;
-      const LMStatePtr& prevLmState = prevHyp.lmState_;
 
       /* (1) Try children */
       for (auto& child : prevLex->children_) {
@@ -88,15 +82,20 @@ void WordLMDecoder::decodeStep(const float* emissions, int T, int N) {
           score += opt_.silWeight_;
         }
 
+        int lmIdx = lmIndMap_.find(n)->second;
+        float lmScore = 0;
+        const LMStatePtr newLmState = lm_->score(prevLmState, lmIdx, lmScore);
+        score += lmScore * opt_.lmWeight_;
+
         // We eat-up a new token
         if (opt_.criterionType_ != CriterionType::CTC || prevHyp.prevBlank_ ||
             n != prevIdx) {
           if (!lex->children_.empty()) {
             candidatesAdd(
-                prevLmState,
+                newLmState,
                 lex.get(),
                 &prevHyp,
-                score + opt_.lmWeight_ * (lex->maxScore_ - lexMaxScore),
+                score,
                 n,
                 nullptr,
                 false // prevBlank
@@ -106,31 +105,24 @@ void WordLMDecoder::decodeStep(const float* emissions, int T, int N) {
 
         // If we got a true word
         for (int i = 0; i < lex->nLabel_; i++) {
-          float lmScore;
-          const LMStatePtr newLmState =
-              lm_->score(prevLmState, lex->label_[i]->lm_, lmScore);
           candidatesAdd(
               newLmState,
               lexicon_->getRoot().get(),
               &prevHyp,
-              score + opt_.lmWeight_ * (lmScore - lexMaxScore) +
-                  opt_.wordScore_,
+              score + opt_.wordScore_,
               n,
               lex->label_[i].get(),
               false // prevBlank
           );
         }
 
-        // If we got an unknown word
+        // If we got an unknown word and we want to emit
         if (lex->nLabel_ == 0 && (opt_.unkScore_ > kNegativeInfinity)) {
-          float lmScore;
-          const LMStatePtr newLmState =
-              lm_->score(prevLmState, unk_->lm_, lmScore);
           candidatesAdd(
               newLmState,
               lexicon_->getRoot().get(),
               &prevHyp,
-              score + opt_.lmWeight_ * (lmScore - lexMaxScore) + opt_.unkScore_,
+              score + opt_.unkScore_,
               n,
               unk_.get(),
               false // prevBlank
@@ -175,7 +167,6 @@ void WordLMDecoder::decodeStep(const float* emissions, int T, int N) {
             true // prevBlank
         );
       }
-      // finish proposing
     }
 
     candidatesStore(hyp_[startFrame + t + 1], false);

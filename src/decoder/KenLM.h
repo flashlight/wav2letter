@@ -10,7 +10,7 @@
 
 #include <glog/logging.h>
 #include <vector>
-#include "LM.hpp"
+#include "LM.h"
 #include "lm/model.hh"
 
 namespace w2l {

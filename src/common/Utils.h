@@ -94,8 +94,8 @@ int64_t numTotalParams(std::shared_ptr<fl::Module> module);
 
 struct EmissionSet {
   std::vector<std::vector<float>> emissions;
-  std::vector<std::vector<int>> wordTargets;
-  std::vector<std::vector<int>> letterTargets;
+  std::vector<std::vector<std::string>> wordTargets;
+  std::vector<std::vector<int>> tokenTargets;
   std::vector<std::string> sampleIds;
   std::vector<float> transition;
   std::vector<int> emissionT;
@@ -106,7 +106,7 @@ struct EmissionSet {
   FL_SAVE_LOAD(
       emissions,
       wordTargets,
-      letterTargets,
+      tokenTargets,
       sampleIds,
       transition,
       emissionT,

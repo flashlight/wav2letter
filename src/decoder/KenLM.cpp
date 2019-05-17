@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "KenLM.hpp"
+#include "KenLM.h"
 
 namespace w2l {
 

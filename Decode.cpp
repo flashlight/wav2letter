@@ -24,13 +24,16 @@
 #include "common/Utils.h"
 #include "criterion/criterion.h"
 #include "data/Featurize.h"
-#include "decoder/KenLM.hpp"
-#include "decoder/Trie.hpp"
-#include "decoder/WordLMDecoder.hpp"
+#include "decoder/KenLM.h"
+#include "decoder/Trie.h"
 #include "module/module.h"
 #include "runtime/Data.h"
 #include "runtime/Logger.h"
 #include "runtime/Serial.h"
+
+#include "decoder/LexiconFreeDecoder.h"
+#include "decoder/TokenLMDecoder.h"
+#include "decoder/WordLMDecoder.h"
 
 using namespace w2l;
 
@@ -111,9 +114,13 @@ int main(int argc, char** argv) {
   int numClasses = tokenDict.indexSize();
   LOG(INFO) << "Number of classes (network): " << numClasses;
 
-  auto lexicon = loadWords(FLAGS_lexicon, FLAGS_maxword);
-  auto wordDict = createWordDict(lexicon);
-  LOG(INFO) << "Number of words: " << wordDict.indexSize();
+  Dictionary wordDict;
+  LexiconMap lexicon;
+  if (!FLAGS_lexicon.empty()) {
+    lexicon = loadWords(FLAGS_lexicon, FLAGS_maxword);
+    wordDict = createWordDict(lexicon);
+    LOG(INFO) << "Number of words: " << wordDict.indexSize();
+  }
 
   DictionaryMap dicts = {{kTargetIdx, tokenDict}, {kWordIdx, wordDict}};
 
@@ -136,11 +143,22 @@ int main(int argc, char** argv) {
       int T = rawEmission.dims(1);
 
       auto emission = afToVector<float>(rawEmission);
-      auto ltrTarget = afToVector<int>(sample[kTargetIdx]);
-      auto wrdTarget = afToVector<int>(sample[kWordIdx]);
+      auto tokenTarget = afToVector<int>(sample[kTargetIdx]);
+      auto wordTarget = afToVector<int>(sample[kWordIdx]);
+
+      // TODO: we will reform the w2l dataset so that the loaded word targets
+      // are strings already
+      std::vector<std::string> wordTargetStr;
+      if (!FLAGS_lexicon.empty() && FLAGS_criterion != kSeq2SeqCriterion) {
+        wordTargetStr = wrdTensor2Words(wordTarget, wordDict);
+      } else {
+        auto letterTarget = tkn2Ltr(tokenTarget, tokenDict);
+        wordTargetStr = tknTensor2Words(letterTarget, tokenDict);
+      }
+
       emissionSet.emissions.emplace_back(emission);
-      emissionSet.wordTargets.emplace_back(wrdTarget);
-      emissionSet.letterTargets.emplace_back(ltrTarget);
+      emissionSet.wordTargets.emplace_back(wordTargetStr);
+      emissionSet.tokenTargets.emplace_back(tokenTarget);
       emissionSet.emissionT.emplace_back(T);
       emissionSet.emissionN = N;
 
@@ -169,14 +187,14 @@ int main(int argc, char** argv) {
   std::vector<double> sliceWer(FLAGS_nthread_decoder);
   std::vector<double> sliceLer(FLAGS_nthread_decoder);
   std::vector<int> sliceNumWords(FLAGS_nthread_decoder, 0);
-  std::vector<int> sliceNumLetters(FLAGS_nthread_decoder, 0);
+  std::vector<int> sliceNumTokens(FLAGS_nthread_decoder, 0);
   std::vector<int> sliceNumSamples(FLAGS_nthread_decoder, 0);
   std::vector<double> sliceTime(FLAGS_nthread_decoder, 0);
 
   // Prepare criterion
-  ModelType modelType = ModelType::ASG;
+  CriterionType criterionType = CriterionType::ASG;
   if (FLAGS_criterion == kCtcCriterion) {
-    modelType = ModelType::CTC;
+    criterionType = CriterionType::CTC;
   } else if (FLAGS_criterion != kAsgCriterion) {
     LOG(FATAL) << "[Decoder] Invalid model type: " << FLAGS_criterion;
   }
@@ -186,13 +204,13 @@ int main(int argc, char** argv) {
   // Prepare decoder options
   DecoderOptions decoderOpt(
       FLAGS_beamsize,
-      static_cast<float>(FLAGS_beamscore),
+      static_cast<float>(FLAGS_beamthreshold),
       static_cast<float>(FLAGS_lmweight),
       static_cast<float>(FLAGS_wordscore),
       static_cast<float>(FLAGS_unkweight),
       FLAGS_logadd,
       static_cast<float>(FLAGS_silweight),
-      modelType);
+      criterionType);
 
   // Prepare log writer
   std::mutex hypMutex, refMutex, logMutex;
@@ -252,36 +270,44 @@ int main(int argc, char** argv) {
   int blankIdx =
       FLAGS_criterion == kCtcCriterion ? tokenDict.getIndex(kBlankToken) : -1;
   int unkIdx = lm->index(kUnkToken);
-  std::shared_ptr<Trie> trie =
-      std::make_shared<Trie>(tokenDict.indexSize(), silIdx);
-  auto start_state = lm->start(false);
+  std::shared_ptr<TrieLabel> unk = nullptr;
 
-  for (auto& it : lexicon) {
-    std::string word = it.first;
-    int lmIdx = lm->index(word);
-    float score;
-    auto dummyState = lm->score(start_state, lmIdx, score);
-    for (auto& tokens : it.second) {
-      auto tokensTensor = tokens2Tensor(tokens, tokenDict);
-      trie->insert(
-          tokensTensor,
-          std::make_shared<TrieLabel>(lmIdx, wordDict.getIndex(word)),
-          score);
+  std::shared_ptr<Trie> trie = nullptr;
+  if (!FLAGS_lexicon.empty()) {
+    trie = std::make_shared<Trie>(tokenDict.indexSize(), silIdx);
+    auto start_state = lm->start(false);
+
+    for (auto& it : lexicon) {
+      const std::string& word = it.first;
+      int lmIdx = -1;
+      float score = -1;
+      if (FLAGS_decodertype == "wrd") {
+        lmIdx = lm->index(word);
+        auto dummyState = lm->score(start_state, lmIdx, score);
+      }
+      for (auto& tokens : it.second) {
+        auto tokensTensor = tokens2Tensor(tokens, tokenDict);
+        trie->insert(
+            tokensTensor,
+            std::make_shared<TrieLabel>(lmIdx, wordDict.getIndex(word)),
+            score);
+      }
     }
-  }
-  LOG(INFO) << "[Decoder] Trie planted.\n";
+    unk = std::make_shared<TrieLabel>(unkIdx, wordDict.getIndex(kUnkToken));
+    LOG(INFO) << "[Decoder] Trie planted.\n";
 
-  // Smearing
-  SmearingMode smear_mode = SmearingMode::NONE;
-  if (FLAGS_smearing == "logadd") {
-    smear_mode = SmearingMode::LOGADD;
-  } else if (FLAGS_smearing == "max") {
-    smear_mode = SmearingMode::MAX;
-  } else if (FLAGS_smearing != "none") {
-    LOG(FATAL) << "[Decoder] Invalid smearing mode: " << FLAGS_smearing;
+    // Smearing
+    SmearingMode smear_mode = SmearingMode::NONE;
+    if (FLAGS_smearing == "logadd") {
+      smear_mode = SmearingMode::LOGADD;
+    } else if (FLAGS_smearing == "max") {
+      smear_mode = SmearingMode::MAX;
+    } else if (FLAGS_smearing != "none") {
+      LOG(FATAL) << "[Decoder] Invalid smearing mode: " << FLAGS_smearing;
+    }
+    trie->smear(smear_mode);
+    LOG(INFO) << "[Decoder] Trie smeared.\n";
   }
-  trie->smear(smear_mode);
-  LOG(INFO) << "[Decoder] Trie smeared.\n";
 
   // Decoding
   auto runDecoder = [&](int tid, int start, int end) {
@@ -289,11 +315,38 @@ int main(int argc, char** argv) {
       // Build Decoder
       std::unique_ptr<Decoder> decoder;
 
-      std::shared_ptr<TrieLabel> unk =
-          std::make_shared<TrieLabel>(unkIdx, wordDict.getIndex(kUnkToken));
-      decoder = std::make_unique<WordLMDecoder>(
-          decoderOpt, trie, lm, silIdx, blankIdx, unk, transition);
-      LOG(INFO) << "[Decoder] Decoder loaded in thread: " << tid;
+      if (FLAGS_decodertype == "wrd") {
+        decoder = std::make_unique<WordLMDecoder>(
+            decoderOpt, trie, lm, silIdx, blankIdx, unk, transition);
+        LOG(INFO) << "[Decoder] Decoder with word-LM loaded in thread: " << tid;
+      } else if (FLAGS_decodertype == "tkn") {
+        std::unordered_map<int, int> lmIndMap;
+        for (int i = 0; i < tokenDict.indexSize(); i++) {
+          const std::string& token = tokenDict.getToken(i);
+          int lmIdx = lm->index(token);
+          lmIndMap[i] = lmIdx;
+        }
+        if (!FLAGS_lexicon.empty()) {
+          decoder = std::make_unique<TokenLMDecoder>(
+              decoderOpt,
+              trie,
+              lm,
+              silIdx,
+              blankIdx,
+              unk,
+              transition,
+              lmIndMap);
+          LOG(INFO) << "[Decoder] Decoder with token-LM loaded in thread: "
+                    << tid;
+        } else {
+          decoder = std::make_unique<LexiconFreeDecoder>(
+              decoderOpt, lm, silIdx, blankIdx, transition, lmIndMap);
+          LOG(INFO) << "[Decoder] Decoder with token-LM loaded in thread: "
+                    << tid;
+        }
+      } else {
+        LOG(FATAL) << "Unsupported decoder type: " << FLAGS_decodertype;
+      }
 
       // Get data and run decoder
       TestMeters meters;
@@ -302,7 +355,7 @@ int main(int argc, char** argv) {
       for (int s = start; s < end; s++) {
         auto emission = emissionSet.emissions[s];
         auto wordTarget = emissionSet.wordTargets[s];
-        auto letterTarget = emissionSet.letterTargets[s];
+        auto tokenTarget = emissionSet.tokenTargets[s];
         auto sampleId = emissionSet.sampleIds[s];
         auto T = emissionSet.emissionT[s];
         auto N = emissionSet.emissionN;
@@ -311,22 +364,19 @@ int main(int argc, char** argv) {
         auto results = decoder->decode(emission.data(), T, N);
 
         // Cleanup predictions
-        auto& wordPrediction = results[0].words_;
-        auto& letterPrediction = results[0].tokens_;
-        if (FLAGS_criterion == kCtcCriterion ||
-            FLAGS_criterion == kAsgCriterion) {
-          uniq(letterPrediction);
+        auto& rawWordPrediction = results[0].words_;
+        auto& rawTokenPrediction = results[0].tokens_;
+
+        auto letterTarget = tkn2Ltr(tokenTarget, tokenDict);
+        auto letterPrediction = tkn2Ltr(rawTokenPrediction, tokenDict);
+        std::vector<std::string> wordPrediction;
+        if (!FLAGS_lexicon.empty() && FLAGS_criterion != kSeq2SeqCriterion) {
+          rawWordPrediction =
+              validateTensor(rawWordPrediction, wordDict.getIndex(kUnkToken));
+          wordPrediction = wrdTensor2Words(rawWordPrediction, wordDict);
+        } else {
+          wordPrediction = tknTensor2Words(letterPrediction, tokenDict);
         }
-        if (FLAGS_criterion == kCtcCriterion) {
-          letterPrediction.erase(
-              std::remove(
-                  letterPrediction.begin(), letterPrediction.end(), blankIdx),
-              letterPrediction.end());
-        }
-        validateTokens(wordPrediction, wordDict.getIndex(kUnkToken));
-        validateTokens(letterPrediction, -1);
-        remapLabels(letterTarget, tokenDict);
-        remapLabels(letterPrediction, tokenDict);
 
         // Update meters & print out predictions
         meters.werSlice.add(wordPrediction, wordTarget);
@@ -338,16 +388,16 @@ int main(int argc, char** argv) {
           meters.wer.add(wordPrediction, wordTarget);
           meters.ler.add(letterPrediction, letterTarget);
 
-          auto wordTargetStr = tensor2words(wordTarget, wordDict);
-          auto wordPredictionStr = tensor2words(wordPrediction, wordDict);
+          auto wordTargetStr = join(" ", wordTarget);
+          auto wordPredictionStr = join(" ", wordPrediction);
 
           std::stringstream buffer;
           buffer << "|T|: " << wordTargetStr << std::endl;
           buffer << "|P|: " << wordPredictionStr << std::endl;
           if (FLAGS_showletters) {
-            buffer << "|t|: " << tensor2letters(letterTarget, tokenDict)
+            buffer << "|t|: " << tensor2String(letterTarget, tokenDict)
                    << std::endl;
-            buffer << "|p|: " << tensor2letters(letterPrediction, tokenDict)
+            buffer << "|p|: " << tensor2String(letterPrediction, tokenDict)
                    << std::endl;
           }
           buffer << "[sample: " << sampleId
@@ -370,7 +420,7 @@ int main(int argc, char** argv) {
 
         // Update conters
         sliceNumWords[tid] += wordTarget.size();
-        sliceNumLetters[tid] += letterTarget.size();
+        sliceNumTokens[tid] += tokenTarget.size();
       }
       meters.timer.stop();
       sliceWer[tid] = meters.werSlice.value()[0];
@@ -384,14 +434,20 @@ int main(int argc, char** argv) {
 
   /* Spread threades */
   auto startThreads = [&]() {
-    fl::ThreadPool threadPool(FLAGS_nthread_decoder);
-    for (int i = 0; i < FLAGS_nthread_decoder; i++) {
-      int start = i * nSamplePerThread;
-      if (start >= nSample) {
-        break;
+    if (FLAGS_nthread_decoder == 1) {
+      runDecoder(0, 0, nSample);
+    } else if (FLAGS_nthread_decoder > 1) {
+      fl::ThreadPool threadPool(FLAGS_nthread_decoder);
+      for (int i = 0; i < FLAGS_nthread_decoder; i++) {
+        int start = i * nSamplePerThread;
+        if (start >= nSample) {
+          break;
+        }
+        int end = std::min((i + 1) * nSamplePerThread, nSample);
+        threadPool.enqueue(runDecoder, i, start, end);
       }
-      int end = std::min((i + 1) * nSamplePerThread, nSample);
-      threadPool.enqueue(runDecoder, i, start, end);
+    } else {
+      LOG(FATAL) << "Invalid nthread_decoder";
     }
   };
   auto timer = fl::TimeMeter();
@@ -400,16 +456,16 @@ int main(int argc, char** argv) {
   timer.stop();
 
   /* Compute statistics */
-  int totalLetters = 0, totalWords = 0, totalSamples = 0;
+  int totalTokens = 0, totalWords = 0, totalSamples = 0;
   for (int i = 0; i < FLAGS_nthread_decoder; i++) {
-    totalLetters += sliceNumLetters[i];
+    totalTokens += sliceNumTokens[i];
     totalWords += sliceNumWords[i];
     totalSamples += sliceNumSamples[i];
   }
   double totalWer = 0, totalLer = 0, totalTime = 0;
   for (int i = 0; i < FLAGS_nthread_decoder; i++) {
     totalWer += sliceWer[i] * sliceNumWords[i] / totalWords;
-    totalLer += sliceLer[i] * sliceNumLetters[i] / totalLetters;
+    totalLer += sliceLer[i] * sliceNumTokens[i] / totalTokens;
     totalTime += sliceTime[i];
   }
 

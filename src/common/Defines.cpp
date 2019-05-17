@@ -148,6 +148,7 @@ DEFINE_string(emission_dir, "", "path/to/emission_dir/");
 DEFINE_string(lm, "", "path/to/language_model");
 DEFINE_string(am, "", "path/to/acoustic_model");
 DEFINE_string(sclite, "", "path/to/sclite to be written");
+DEFINE_string(decodertype, "wrd", "wrd, tkn");
 
 DEFINE_double(lmweight, 1.0, "language model weight");
 DEFINE_double(wordscore, 1.0, "wordscore");
@@ -156,7 +157,7 @@ DEFINE_double(
     unkweight,
     -std::numeric_limits<float>::infinity(),
     "unknown word weight");
-DEFINE_double(beamscore, 25, "beam score threshold");
+DEFINE_double(beamthreshold, 25, "beam score threshold");
 
 DEFINE_int32(maxload, -1, "max number of testing examples.");
 DEFINE_int32(maxword, -1, "maximum number of words to use");

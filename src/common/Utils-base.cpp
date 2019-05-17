@@ -411,19 +411,6 @@ LexiconMap loadWords(const std::string& fn, const int64_t maxNumWords) {
 }
 
 std::vector<int> tokens2Tensor(
-    const std::string& spelling,
-    const Dictionary& tokenDict) {
-  std::vector<int> ret;
-  ret.reserve(spelling.size());
-  auto tokens = wrd2Tkn(spelling);
-  for (const auto& tkn : tokens) {
-    ret.push_back(tokenDict.getIndex(tkn));
-  }
-  replaceReplabels(ret, FLAGS_replabel, tokenDict);
-  return ret;
-}
-
-std::vector<int> tokens2Tensor(
     const std::vector<std::string>& spelling,
     const Dictionary& tokenDict) {
   std::vector<int> ret;
@@ -435,7 +422,7 @@ std::vector<int> tokens2Tensor(
   return ret;
 }
 
-std::string tensor2letters(
+std::string tensor2String(
     const std::vector<int>& input,
     const Dictionary& tokenDict) {
   std::string ret = "";
@@ -445,17 +432,7 @@ std::string tensor2letters(
   return ret;
 }
 
-std::string tensor2words(
-    const std::vector<int>& input,
-    const Dictionary& wordDict) {
-  std::string ret = "";
-  for (auto wrdIdx : input) {
-    ret += wordDict.getToken(wrdIdx) + " ";
-  }
-  return ret;
-}
-
-void validateTokens(std::vector<int>& input, const int unkIdx) {
+std::vector<int> validateTensor(std::vector<int> input, const int unkIdx) {
   int newSize = 0;
   for (int i = 0; i < input.size(); i++) {
     if (input[i] >= 0 and input[i] != unkIdx) {
@@ -464,49 +441,70 @@ void validateTokens(std::vector<int>& input, const int unkIdx) {
     }
   }
   input.resize(newSize);
+
+  return input;
 }
 
-std::vector<int> tknTensor2wrdTensor(
+std::vector<std::string> tknTensor2Words(
     const std::vector<int>& input,
-    const Dictionary& wordDict,
-    const Dictionary& tokenDict,
-    const int spliterIdx) {
-  std::vector<int> ret;
+    const Dictionary& tokenDict) {
+  int delimiter = -1;
+  if (!FLAGS_wordseparator.empty()) {
+    delimiter = tokenDict.getIndex(FLAGS_wordseparator);
+  } else {
+    delimiter = tokenDict.getIndex(kSilToken);
+  }
+
+  std::vector<std::string> words;
   std::string currentWord = "";
   for (auto ltrIdx : input) {
-    if (ltrIdx == spliterIdx) {
+    if (ltrIdx == delimiter) {
       if (!currentWord.empty()) {
-        if (wordDict.contains(currentWord)) {
-          ret.push_back(wordDict.getIndex(currentWord));
-        }
+        words.push_back(currentWord);
         currentWord = "";
       }
     } else {
       currentWord += tokenDict.getToken(ltrIdx);
     }
   }
-  if (!currentWord.empty() && wordDict.contains(currentWord)) {
-    ret.push_back(wordDict.getIndex(currentWord));
+  if (!currentWord.empty()) {
+    words.push_back(currentWord);
   }
-  return ret;
+  return words;
 }
 
-std::vector<int> wrdTensor2tknTensor(
+std::vector<std::string> wrdTensor2Words(
     const std::vector<int>& input,
-    const Dictionary& wordDict,
-    const Dictionary& tokenDict,
-    const int spliterIdx) {
-  std::vector<int> ret;
-  int inputSize = input.size();
-  for (int i = 0; i < inputSize; i++) {
-    for (auto c : wordDict.getToken(input[i])) {
-      ret.push_back(tokenDict.getIndex(std::string(1, c)));
-    }
-    if (i < inputSize - 1) {
-      ret.push_back(spliterIdx);
+    const Dictionary& wordDict) {
+  std::vector<std::string> words;
+  for (auto wrdIdx : input) {
+    words.push_back(wordDict.getToken(wrdIdx));
+  }
+  return words;
+}
+
+std::vector<int> tkn2Ltr(std::vector<int> tokens, const Dictionary& tokenDict) {
+  if (FLAGS_criterion == kCtcCriterion || FLAGS_criterion == kAsgCriterion) {
+    uniq(tokens);
+  }
+  if (FLAGS_criterion == kCtcCriterion) {
+    int blankIdx = tokenDict.getIndex(kBlankToken);
+    tokens.erase(
+        std::remove(tokens.begin(), tokens.end(), blankIdx), tokens.end());
+  }
+  if (FLAGS_criterion == kSeq2SeqCriterion) {
+    if (tokens.back() == tokenDict.getIndex(kEosToken)) {
+      tokens.pop_back();
     }
   }
-  return ret;
+  tokens = validateTensor(tokens, -1);
+  remapLabels(tokens, tokenDict);
+
+  if (FLAGS_usewordpiece) {
+    return toSingleLtr(tokens, tokenDict);
+  }
+
+  return tokens;
 }
 
 std::vector<std::string> wrd2Tkn(const std::string& word) {

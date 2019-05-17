@@ -91,29 +91,23 @@ std::vector<std::string> wrd2Target(
 /************** Decoder helpers **************/
 LexiconMap loadWords(const std::string& fn, const int64_t maxNumWords);
 
-std::vector<int> tokens2Tensor(const std::string&, const Dictionary&);
-
 std::vector<int> tokens2Tensor(
     const std::vector<std::string>&,
     const Dictionary&);
 
-std::string tensor2letters(const std::vector<int>&, const Dictionary&);
+std::string tensor2String(const std::vector<int>&, const Dictionary&);
 
-std::string tensor2words(const std::vector<int>&, const Dictionary&);
+std::vector<int> validateTensor(std::vector<int>, const int);
 
-void validateTokens(std::vector<int>&, const int);
-
-std::vector<int> tknTensor2wrdTensor(
+std::vector<std::string> tknTensor2Words(
     const std::vector<int>&,
-    const Dictionary&,
-    const Dictionary&,
-    const int);
+    const Dictionary&);
 
-std::vector<int> wrdTensor2tknTensor(
+std::vector<std::string> wrdTensor2Words(
     const std::vector<int>&,
-    const Dictionary&,
-    const Dictionary&,
-    const int);
+    const Dictionary&);
+
+std::vector<int> tkn2Ltr(std::vector<int>, const Dictionary&);
 
 // split word into tokens abc -> {"a", "b", "c"}
 // Works with ASCII, UTF-8 encodings

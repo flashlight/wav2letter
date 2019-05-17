@@ -58,7 +58,7 @@ add_library(
 target_sources(
   decoder
   INTERFACE
-  ${CMAKE_CURRENT_SOURCE_DIR}/Decoder.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/WordLMDecoder.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Trie.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/KenLM.cpp
   )

@@ -24,9 +24,9 @@
 #include "common/Utils.h"
 #include "criterion/criterion.h"
 #include "data/Featurize.h"
-#include "decoder/Decoder.hpp"
 #include "decoder/KenLM.hpp"
 #include "decoder/Trie.hpp"
+#include "decoder/WordLMDecoder.hpp"
 #include "module/module.h"
 #include "runtime/Data.h"
 #include "runtime/Logger.h"
@@ -287,9 +287,12 @@ int main(int argc, char** argv) {
   auto runDecoder = [&](int tid, int start, int end) {
     try {
       // Build Decoder
+      std::unique_ptr<Decoder> decoder;
+
       std::shared_ptr<TrieLabel> unk =
           std::make_shared<TrieLabel>(unkIdx, wordDict.getIndex(kUnkToken));
-      Decoder decoder(decoderOpt, trie, lm, silIdx, blankIdx, unk, transition);
+      decoder = std::make_unique<WordLMDecoder>(
+          decoderOpt, trie, lm, silIdx, blankIdx, unk, transition);
       LOG(INFO) << "[Decoder] Decoder loaded in thread: " << tid;
 
       // Get data and run decoder
@@ -304,16 +307,12 @@ int main(int argc, char** argv) {
         auto T = emissionSet.emissionT[s];
         auto N = emissionSet.emissionN;
 
-        std::vector<float> score;
-        std::vector<std::vector<int>> wordPredictions;
-        std::vector<std::vector<int>> letterPredictions;
-
-        std::tie(score, wordPredictions, letterPredictions) =
-            decoder.decode(emission.data(), T, N);
+        // DecodeResult
+        auto results = decoder->decode(emission.data(), T, N);
 
         // Cleanup predictions
-        auto wordPrediction = wordPredictions[0];
-        auto letterPrediction = letterPredictions[0];
+        auto& wordPrediction = results[0].words_;
+        auto& letterPrediction = results[0].tokens_;
         if (FLAGS_criterion == kCtcCriterion ||
             FLAGS_criterion == kAsgCriterion) {
           uniq(letterPrediction);

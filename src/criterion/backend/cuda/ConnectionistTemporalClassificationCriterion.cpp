@@ -11,10 +11,14 @@
 #include <flashlight/autograd/autograd.h>
 #include <flashlight/common/cuda.h>
 
+#include "common/Utils.h"
 #include "criterion/ConnectionistTemporalClassificationCriterion.h"
 #include "criterion/CriterionUtils.h"
+#include "libraries/criterion/cuda/CriterionUtils.cuh"
 
 using namespace fl;
+
+using CriterionUtils = w2l::cuda::CriterionUtils<float>;
 
 namespace w2l {
 
@@ -39,10 +43,11 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
   const int64_t T = input.dims(1);
   const int64_t B = input.dims(2);
   const int64_t batchL = target.dims(0);
+  auto stream = fl::cuda::getActiveStream();
 
   ctcOptions options;
   options.loc = CTC_GPU;
-  options.stream = fl::cuda::getActiveStream();
+  options.stream = stream;
   options.blank_label = N - 1;
 
   af::array inputarr(N, B, T, input.type());
@@ -57,18 +62,45 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
   std::vector<int> labels;
   std::vector<int> labelLengths;
   std::vector<int> batchTargetVec(target.elements());
-  std::vector<float> batchScaleVec;
   target.host(batchTargetVec.data());
-  auto scaleFn = getCriterionScaleFn(scaleMode_);
+
+  af::array targetSize(B, s32);
+  af::array scale(B, f32);
+
+  {
+    fl::DevicePtr targetRaw(target.array());
+    fl::DevicePtr targetSizeRaw(targetSize);
+    fl::DevicePtr scaleRaw(scale);
+
+    CriterionUtils::batchTargetSize(
+        B,
+        batchL,
+        batchL,
+        static_cast<const int*>(targetRaw.get()),
+        static_cast<int*>(targetSizeRaw.get()),
+        stream);
+
+    CriterionUtils::computeScale(
+        B,
+        T,
+        N,
+        scaleMode_,
+        static_cast<const int*>(targetSizeRaw.get()),
+        static_cast<float*>(scaleRaw.get()),
+        stream);
+  }
+
+  auto batchTargetSizeVec = afToVector<int>(targetSize);
+  auto batchScaleVec = afToVector<float>(scale);
+
   for (int b = 0; b < B; ++b) {
     const int* targetVec = batchTargetVec.data() + b * batchL;
-    int L = w2l::getTargetSize(targetVec, batchL);
+    int L = batchTargetSizeVec[b];
     const int R = w2l::countRepeats(targetVec, batchL);
 
     // A heuristic to modify target length to be able to compute CTC loss
     L = std::min(L + R, static_cast<int>(T)) - R;
 
-    batchScaleVec.push_back(scaleFn(N, T, L));
     labelLengths.push_back(L);
     for (int l = 0; l < L; ++l) {
       labels.push_back(targetVec[l]);

@@ -8,12 +8,14 @@
 
 #pragma once
 
-#include "libraries/criterion/Defines.h"
+#include <cstring>
 
 namespace w2l {
 
-// sampling strategy to use in decoder in place of teacher forcing
-constexpr const char* kModelSampling = "model";
-constexpr const char* kRandSampling = "rand";
+/// Zeroes `count * sizeof(T)` bytes
+template <typename T>
+void setZero(T* ptr, size_t count) {
+  std::memset(ptr, 0, count * sizeof(T));
+}
 
 } // namespace w2l

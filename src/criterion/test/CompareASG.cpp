@@ -28,8 +28,8 @@ namespace {
 constexpr int B = 100;
 constexpr int N = 30;
 constexpr int T = 1500;
-// intentionally set batchL > T to check that ASG truncates long targets
-constexpr int batchL = 2000;
+// intentionally set L > T to check that ASG truncates long targets
+constexpr int L = 2000;
 
 std::random_device rd;
 
@@ -113,21 +113,19 @@ int main(int argc, char** argv) {
     // generate random target sizes
     std::vector<int> targetSize(B);
     for (int b = 0; b < B; ++b) {
-      // ensure we have a sample with targetSize=1 and targetSize=batchL
-      targetSize[b] =
-          (b == B - 1) ? batchL : (b == B - 2) ? 1 : (1 + rng() % batchL);
+      // ensure we have a sample with targetSize=1 and targetSize=L
+      targetSize[b] = (b == B - 1) ? L : (b == B - 2) ? 1 : (1 + rng() % L);
     }
     std::shuffle(targetSize.begin(), targetSize.end(), rng);
 
     // generate random targets with the above sizes
-    std::vector<int> targetHost(B * batchL);
+    std::vector<int> targetHost(B * L);
     for (int b = 0; b < B; ++b) {
-      auto* targetCur = &targetHost[b * batchL];
-      auto L = targetSize[b];
-      for (int i = 0; i < L; ++i) {
+      auto* targetCur = &targetHost[b * L];
+      for (int i = 0; i < targetSize[b]; ++i) {
         targetCur[i] = rng() % N;
       }
-      for (int i = L; i < batchL; ++i) {
+      for (int i = targetSize[b]; i < L; ++i) {
         targetCur[i] = -1;
       }
     }
@@ -138,7 +136,7 @@ int main(int argc, char** argv) {
     af::setSeed(afSeed);
 
     auto input = af::randn(N, T, B);
-    auto target = af::array(batchL, B, targetHost.data());
+    auto target = af::array(L, B, targetHost.data());
     auto trans = af::randn(N, N);
     fl::save(argv[2], input, target, trans);
     std::cerr << "input generated" << std::endl;

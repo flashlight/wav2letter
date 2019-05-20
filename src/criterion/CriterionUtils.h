@@ -11,7 +11,10 @@
 #include <float.h>
 #include <stdint.h>
 #include <limits>
-#include "Defines.h"
+
+#include <flashlight/flashlight.h>
+
+#include "criterion/Defines.h"
 
 namespace w2l {
 
@@ -79,9 +82,9 @@ int countRepeats(const int* labels, int len);
 
 int getTargetSize(const int* labels, int len);
 
-CriterionScaleMode getCriterionScaleMode(const std::string& onorm, bool sqnorm);
+af::array getTargetSizeArray(const af::array& target, int maxSize);
 
-CriterionScaleFn getCriterionScaleFn(CriterionScaleMode scale);
+CriterionScaleMode getCriterionScaleMode(const std::string& onorm, bool sqnorm);
 
 // Input: N x T x B (type: float), Output: T x B (type: int)
 af::array viterbiPath(const af::array& input, const af::array& trans);

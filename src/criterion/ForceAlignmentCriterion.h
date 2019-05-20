@@ -9,8 +9,9 @@
 #pragma once
 
 #include <flashlight/flashlight.h>
-#include "CriterionUtils.h"
-#include "Defines.h"
+
+#include "criterion/CriterionUtils.h"
+#include "criterion/Defines.h"
 
 namespace w2l {
 
@@ -36,45 +37,6 @@ class ForceAlignmentCriterion : public fl::BinaryModule {
       fl::BinaryModule,
       fl::serializeAs<int64_t>(N_),
       scaleMode_)
-
-  struct fwParams {
-    std::vector<int> targetsRaw;
-    std::vector<float> inputsRaw, transRaw, scale;
-    std::vector<float> res;
-    std::vector<double> alpha;
-    std::vector<double> transBuf1, transBuf2;
-
-    fwParams(int n, int t, int b, int l) {
-      targetsRaw.resize(l * b);
-      inputsRaw.resize(b * t * n);
-      res.resize(b);
-      scale.resize(b);
-      alpha.resize(b * l * t);
-      transBuf1.resize(b * l);
-      transBuf2.resize(b * l);
-      transRaw.resize(n * n);
-    }
-  };
-
-  struct bwParams {
-    std::vector<double> alphaGrad;
-    std::vector<float> inputsGrad, transGradRes, outputsGrad;
-    std::vector<double> transGrad;
-    std::vector<double> fwTransBuf1, fwTransBuf2;
-    std::vector<double> transBuf1, transBuf2;
-
-    bwParams(int n, int t, int b, int l) {
-      alphaGrad.resize(b * l * t, 0);
-      inputsGrad.resize(b * t * n, 0);
-      transGrad.resize(b * n * n, 0);
-      outputsGrad.resize(b);
-      transGradRes.resize(n * n, 0);
-      fwTransBuf1.resize(b * l);
-      fwTransBuf2.resize(b * l);
-      transBuf1.resize(b * l, 0);
-      transBuf2.resize(b * l, 0);
-    }
-  };
 };
 
 typedef ForceAlignmentCriterion FACLoss;

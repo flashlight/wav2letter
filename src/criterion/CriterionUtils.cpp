@@ -48,58 +48,25 @@ CriterionScaleMode getCriterionScaleMode(
   }
 }
 
-CriterionScaleFn getCriterionScaleFn(CriterionScaleMode scale) {
-  switch (scale) {
-    case CriterionScaleMode::NONE:
-      return
-          [](int64_t /* unused */, int64_t /* unused */, int64_t /* unused */) {
-            return 1.0;
-          };
-    case CriterionScaleMode::INPUT_SZ:
-      return [](int64_t /* unused */, int64_t T, int64_t /* unused */) {
-        return (T > 0) ? (1.0 / T) : 1.0;
-      };
-    case CriterionScaleMode::INPUT_SZ_SQRT:
-      return [](int64_t /* unused */, int64_t T, int64_t /* unused */) {
-        return (T > 0) ? std::sqrt(1.0 / T) : 1.0;
-      };
-    case CriterionScaleMode::TARGET_SZ:
-      return [](int64_t /* unused */, int64_t /* unused */, int64_t L) {
-        return (L > 0) ? (1.0 / L) : 1.0;
-      };
-    case CriterionScaleMode::TARGET_SZ_SQRT:
-      return [](int64_t /* unused */, int64_t /* unused */, int64_t L) {
-        return (L > 0) ? std::sqrt(1.0 / L) : 1.0;
-      };
-    default:
-      throw(af::exception("Unsupported criterion scale mode!"));
-      return
-          [](int64_t /* unused */, int64_t /* unused */, int64_t /* unused */) {
-            return 1.0;
-          };
-      // return so that compiler doesn't compain
-  }
-}
 Variable getLinearTarget(const Variable& targetVar, int T) {
-  int batchL = targetVar.dims(0);
+  int L = targetVar.dims(0);
   int B = targetVar.dims(1);
 
-  std::vector<int> target(B * batchL);
+  std::vector<int> target(B * L);
   std::vector<int> newTarget(B * T);
 
   targetVar.host(target.data());
   for (int b = 0; b < B; ++b) {
-    const auto pTarget = target.data() + b * batchL;
+    const auto pTarget = target.data() + b * L;
     auto pNewTarget = newTarget.data() + b * T;
 
-    int L = w2l::getTargetSize(pTarget, batchL);
-    L = std::min(L, T);
-    if (L == 0) {
+    int targetSize = std::min(T, w2l::getTargetSize(pTarget, L));
+    if (targetSize == 0) {
       // hacky way to make ASG think L == 0.
       std::fill(pNewTarget, pNewTarget + T, -1);
     } else {
       for (int t = 0; t < T; ++t) {
-        pNewTarget[t] = pTarget[t * L / T];
+        pNewTarget[t] = pTarget[t * targetSize / T];
       }
     }
   }

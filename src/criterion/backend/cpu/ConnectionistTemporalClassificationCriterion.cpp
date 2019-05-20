@@ -8,8 +8,11 @@
 
 #include "criterion/ConnectionistTemporalClassificationCriterion.h"
 #include "criterion/CriterionUtils.h"
+#include "libraries/criterion/cpu/CriterionUtils.h"
 
 using namespace fl;
+
+using CriterionUtils = w2l::cpu::CriterionUtils<float>;
 
 namespace w2l {
 
@@ -26,6 +29,7 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
   std::vector<std::vector<float>> batchAlphas;
   std::vector<float> batchLoss;
   std::vector<float> batchScales;
+  std::vector<int> batchTargetSizes;
   {
     const int64_t N = logprobs.dims(0);
     const int64_t T = logprobs.dims(1);
@@ -35,6 +39,7 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
     batchAlphas.resize(B);
     batchLoss.resize(B);
     batchScales.resize(B);
+    batchTargetSizes.resize(B);
 
     // get host pointers
     std::vector<float> batchInputVec(logprobs.elements());
@@ -43,22 +48,24 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
     std::vector<int> batchTargetVec(target.elements());
     target.host(batchTargetVec.data());
 
-    auto scaleFn = getCriterionScaleFn(scaleMode_);
+    CriterionUtils::batchTargetSize(
+        B, batchL, batchL, batchTargetVec.data(), batchTargetSizes.data());
+
+    CriterionUtils::computeScale(
+        B, T, N, scaleMode_, batchTargetSizes.data(), batchScales.data());
 
 #pragma omp parallel for num_threads(B)
     for (int64_t b = 0; b < B; ++b) {
       const float* inputVec = batchInputVec.data() + b * N * T;
       const int* targetVec = batchTargetVec.data() + b * batchL;
 
-      int64_t L = w2l::getTargetSize(targetVec, batchL);
+      int64_t L = batchTargetSizes[b];
       const int64_t S = 2 * L + 1;
       int64_t R = w2l::countRepeats(targetVec, L);
 
       // A heuristic to modify target length to be able to compute CTC loss
       L = std::min(L + R, T) - R;
       R = w2l::countRepeats(targetVec, L); // Recompute repeats as L has changed
-
-      batchScales[b] = scaleFn(N, T, L);
 
       auto& alphas = batchAlphas[b];
       alphas.resize(T * S, NEG_INFINITY_FLT);
@@ -112,7 +119,7 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
   }
   auto result = af::array(batchLoss.size(), batchLoss.data());
 
-  auto gradFunc = [batchAlphas, batchScales](
+  auto gradFunc = [batchAlphas, batchScales, batchTargetSizes](
                       std::vector<Variable>& moduleInputs,
                       const Variable& gradOutput) {
     const int64_t N = moduleInputs[0].dims(0);
@@ -133,7 +140,7 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
       const int* targetVec = batchTargetVec.data() + b * batchL;
       float* grad = batchInGrad.data() + b * N * T;
 
-      int64_t L = w2l::getTargetSize(targetVec, batchL);
+      int64_t L = batchTargetSizes[b];
       const int64_t S = 2 * L + 1;
       const int64_t R = w2l::countRepeats(targetVec, L);
 

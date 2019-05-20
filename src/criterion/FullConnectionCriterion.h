@@ -36,39 +36,6 @@ class FullConnectionCriterion : public fl::BinaryModule {
       fl::BinaryModule,
       fl::serializeAs<int64_t>(N_),
       scaleMode_)
-
-  struct fwParams {
-    std::vector<int> targetsRaw;
-    std::vector<float> inputsRaw, transRaw, scale;
-
-    std::vector<float> res;
-    std::vector<double> alpha;
-    std::vector<int> alphaIndex;
-
-    fwParams(int n, int t, int b, int l) {
-      targetsRaw.resize(l * b);
-      inputsRaw.resize(b * t * n);
-      alphaIndex.resize(b * n * t);
-      res.resize(b);
-      scale.resize(b);
-      alpha.resize(b * n * t);
-      transRaw.resize(n * n);
-    }
-  };
-
-  struct bwParams {
-    std::vector<double> alphaGrad;
-    std::vector<float> inputsGrad, transGradRes, outputsGrad;
-    std::vector<double> transGrad;
-
-    bwParams(int n, int t, int b) {
-      alphaGrad.resize(b * n * t, 0);
-      inputsGrad.resize(b * t * n, 0);
-      transGrad.resize(b * n * n, 0);
-      outputsGrad.resize(b);
-      transGradRes.resize(n * n, 0);
-    }
-  };
 };
 
 typedef FullConnectionCriterion FCCLoss;

@@ -6,15 +6,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "criterion/FullConnectionCriterion.h"
+#include "criterion/ForceAlignmentCriterion.h"
 
 #include <flashlight/common/cuda.h>
 
 #include "criterion/CriterionUtils.h"
-#include "libraries/criterion/cuda/FullConnectionCriterion.cuh"
+#include "libraries/criterion/cuda/ForceAlignmentCriterion.cuh"
 
 using fl::Variable;
-using FCC = w2l::cuda::FullConnectionCriterion<float>;
+using FAC = w2l::cuda::ForceAlignmentCriterion<float>;
 
 namespace w2l {
 
@@ -24,10 +24,12 @@ static void backward(
     int B,
     int T,
     int N,
-    const af::array& trans,
+    int L,
+    const af::array& target,
+    const af::array& targetSize,
     af::array& workspace) {
   if (gradVar.type() != f32) {
-    throw std::invalid_argument("FCC: grad must be float32");
+    throw std::invalid_argument("FAC: grad must be float32");
   }
 
   const auto& grad = gradVar.array();
@@ -35,16 +37,19 @@ static void backward(
   af::array transGrad(N, N, f32);
 
   {
-    fl::DevicePtr transRaw(trans);
+    fl::DevicePtr targetRaw(target);
+    fl::DevicePtr targetSizeRaw(targetSize);
     fl::DevicePtr gradRaw(grad);
     fl::DevicePtr inputGradRaw(inputGrad);
     fl::DevicePtr transGradRaw(transGrad);
     fl::DevicePtr workspaceRaw(workspace);
-    FCC::backward(
+    FAC::backward(
         B,
         T,
         N,
-        static_cast<const float*>(transRaw.get()),
+        L,
+        static_cast<const int*>(targetRaw.get()),
+        static_cast<const int*>(targetSizeRaw.get()),
         static_cast<const float*>(gradRaw.get()),
         static_cast<float*>(inputGradRaw.get()),
         static_cast<float*>(transGradRaw.get()),
@@ -56,20 +61,21 @@ static void backward(
   inputs[1].addGrad(Variable(transGrad, false));
 }
 
-Variable FullConnectionCriterion::forward(
+Variable ForceAlignmentCriterion::forward(
     const Variable& inputVar,
     const Variable& targetVar) {
   const auto& transVar = param(0);
   int B = inputVar.dims(2);
   int T = inputVar.dims(1);
   int N = inputVar.dims(0);
+  int L = targetVar.dims(0);
 
   if (N != transVar.dims(0)) {
-    throw std::invalid_argument("FCC: input dim doesn't match N");
+    throw std::invalid_argument("FAC: input dim doesn't match N");
   } else if (inputVar.type() != f32) {
-    throw std::invalid_argument("FCC: input must be float32");
+    throw std::invalid_argument("FAC: input must be float32");
   } else if (targetVar.type() != s32) {
-    throw std::invalid_argument("FCC: target must be int32");
+    throw std::invalid_argument("FAC: target must be int32");
   }
 
   const auto& input = inputVar.array();
@@ -77,21 +83,24 @@ Variable FullConnectionCriterion::forward(
   const auto& targetSize = getTargetSizeArray(target, T);
   const auto& trans = transVar.array();
   af::array loss(B, f32);
-  af::array workspace(FCC::getWorkspaceSize(B, T, N), u8);
+  af::array workspace(FAC::getWorkspaceSize(B, T, N, L), u8);
 
   {
     fl::DevicePtr inputRaw(input);
+    fl::DevicePtr targetRaw(target);
     fl::DevicePtr targetSizeRaw(targetSize);
     fl::DevicePtr transRaw(trans);
     fl::DevicePtr lossRaw(loss);
     fl::DevicePtr workspaceRaw(workspace);
 
-    FCC::forward(
+    FAC::forward(
         B,
         T,
         N,
+        L,
         scaleMode_,
         static_cast<const float*>(inputRaw.get()),
+        static_cast<const int*>(targetRaw.get()),
         static_cast<const int*>(targetSizeRaw.get()),
         static_cast<const float*>(transRaw.get()),
         static_cast<float*>(lossRaw.get()),
@@ -103,7 +112,7 @@ Variable FullConnectionCriterion::forward(
       loss,
       {inputVar.withoutData(), transVar.withoutData()},
       [=](std::vector<Variable>& inputs, const Variable& gradVar) mutable {
-        backward(inputs, gradVar, B, T, N, trans, workspace);
+        backward(inputs, gradVar, B, T, N, L, target, targetSize, workspace);
       });
 }
 

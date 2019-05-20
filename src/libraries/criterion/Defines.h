@@ -8,12 +8,14 @@
 
 #pragma once
 
-#include "libraries/criterion/Defines.h"
-
 namespace w2l {
 
-// sampling strategy to use in decoder in place of teacher forcing
-constexpr const char* kModelSampling = "model";
-constexpr const char* kRandSampling = "rand";
+enum class CriterionScaleMode {
+  NONE = 0,
+  INPUT_SZ = 1,
+  INPUT_SZ_SQRT = 2,
+  TARGET_SZ = 3,
+  TARGET_SZ_SQRT = 4,
+};
 
 } // namespace w2l

@@ -316,8 +316,8 @@ int main(int argc, char** argv) {
       std::unique_ptr<Decoder> decoder;
 
       if (FLAGS_decodertype == "wrd") {
-        decoder = std::make_unique<WordLMDecoder>(
-            decoderOpt, trie, lm, silIdx, blankIdx, unk, transition);
+        decoder.reset(new WordLMDecoder(
+            decoderOpt, trie, lm, silIdx, blankIdx, unk, transition));
         LOG(INFO) << "[Decoder] Decoder with word-LM loaded in thread: " << tid;
       } else if (FLAGS_decodertype == "tkn") {
         std::unordered_map<int, int> lmIndMap;
@@ -327,7 +327,7 @@ int main(int argc, char** argv) {
           lmIndMap[i] = lmIdx;
         }
         if (!FLAGS_lexicon.empty()) {
-          decoder = std::make_unique<TokenLMDecoder>(
+          decoder.reset(new TokenLMDecoder(
               decoderOpt,
               trie,
               lm,
@@ -335,12 +335,12 @@ int main(int argc, char** argv) {
               blankIdx,
               unk,
               transition,
-              lmIndMap);
+              lmIndMap));
           LOG(INFO) << "[Decoder] Decoder with token-LM loaded in thread: "
                     << tid;
         } else {
-          decoder = std::make_unique<LexiconFreeDecoder>(
-              decoderOpt, lm, silIdx, blankIdx, transition, lmIndMap);
+          decoder.reset(new LexiconFreeDecoder(
+              decoderOpt, lm, silIdx, blankIdx, transition, lmIndMap));
           LOG(INFO) << "[Decoder] Decoder with token-LM loaded in thread: "
                     << tid;
         }

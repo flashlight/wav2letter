@@ -3,21 +3,23 @@ cmake_minimum_required(VERSION 3.5.1)
 project(wav2letter++)
 
 # ----------------------------- Setup -----------------------------
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/")
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ----------------------------- Configuration -----------------------------
 
-# Build tests
+option(W2L_LIBRARIES_ONLY "Build only wav2letter-libraries" OFF)
+option(W2L_LIBRARIES_BUILD_CUDA "Build CUDA components of wav2letter-libraries" OFF)
 option(W2L_BUILD_TESTS "Build tests for wav2letter++" ON)
-if (W2L_BUILD_TESTS)
-  enable_testing()
-  add_subdirectory(${CMAKE_SOURCE_DIR}/src/tests)
-endif ()
-
-# Build examples
 option(W2L_BUILD_EXAMPLES "Build examples for wav2letter++" ON)
+
+# ------------------------- Libraries-Only Build ------------------------------
+
+if (W2L_LIBRARIES_ONLY)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/src/libraries)
+  return()
+endif ()
 
 # ------------------------ Global External Dependencies ------------------------
 # ArrayFire
@@ -76,28 +78,60 @@ else()
   message(FATAL_ERROR "flashlight not found.")
 endif ()
 
+# "Import" flashlight backend variables using the dummy target
+if (TARGET flashlight::BACKEND_UNIFIED)
+  set(FLASHLIGHT_BACKEND "UNIFIED")
+  set(FLASHLIGHT_USE_UNIFIED ON)
+elseif (TARGET flashlight::BACKEND_CPU)
+  set(FLASHLIGHT_BACKEND "CPU")
+  set(FLASHLIGHT_USE_CPU ON)
+elseif (TARGET flashlight::BACKEND_CUDA)
+  set(FLASHLIGHT_BACKEND "CUDA")
+  set(FLASHLIGHT_USE_CUDA ON)
+elseif (TARGET flashlight::BACKEND_OPENCL)
+  set(FLASHLIGHT_BACKEND "OPENCL")
+  set(FLASHLIGHT_USE_OPENCL ON)
+else ()
+  message(FATAL_ERROR "could not determine flashlight backend")
+endif ()
+
+# --------------------- Additional Configuration -------------------------
+
+if (FLASHLIGHT_USE_CUDA)
+  set(W2L_LIBRARIES_BUILD_CUDA ON CACHE BOOL "" FORCE)
+endif ()
+
 # ------------------------ Components ------------------------
 
+# wav2letter-libraries
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/libraries)
+
 # Common
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/common)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/common)
 
 # Feature
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/feature)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/feature)
 
 # Runtime
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/runtime)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/runtime)
 
 # Module
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/module)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/module)
 
 # Decoder
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/decoder)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/decoder)
 
 # Criterion
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/criterion)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/criterion)
 
 # Data
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/data)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/data)
+
+# Tests
+if (W2L_BUILD_TESTS)
+  enable_testing()
+  add_subdirectory(${PROJECT_SOURCE_DIR}/src/tests)
+endif ()
 
 # ----------------------------- wav2letter++ lib  -----------------------------
 
@@ -126,7 +160,7 @@ target_link_libraries(
 target_include_directories(
   wav2letter++
   PUBLIC
-  ${CMAKE_SOURCE_DIR}/src # all includes are based at src/
+  ${PROJECT_SOURCE_DIR}/src # all includes are based at src/
   ${FLASHLIGHT_INCLUDE_DIRS} # includes are <flashlight/...>
   )
 
@@ -145,7 +179,7 @@ target_link_libraries(
 add_executable(
   Test
   Test.cpp
-)
+  )
 
 target_link_libraries(
   Test
@@ -156,7 +190,7 @@ target_link_libraries(
 add_executable(
   Decoder
   Decode.cpp
-)
+  )
 
 target_link_libraries(
   Decoder

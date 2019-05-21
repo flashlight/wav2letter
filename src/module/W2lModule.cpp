@@ -131,6 +131,19 @@ std::shared_ptr<Module> parseLines(
     return std::make_shared<w2l::TDSBlock>(cisz, cwx, freqdim, dropprob);
   }
 
+  if (params[0] == "AC") {
+    LOG_IF(FATAL, !inRange(5, params.size(), 8)) << "Failed parsing - " << line;
+    int cisz = std::stoi(params[1]);
+    int cosz = std::stoi(params[2]);
+    int cwx = std::stoi(params[3]);
+    int csx = std::stoi(params[4]);
+    int cpx = (params.size() >= 6) ? std::stoi(params[5]) : 0;
+    float futurePartPx = (params.size() >= 7) ? std::stof(params[6]) : 1.;
+    int cdx = (params.size() >= 8) ? std::stoi(params[7]) : 1;
+    return std::make_shared<AsymmetricConv1D>(
+        cisz, cosz, cwx, csx, cpx, futurePartPx, cdx);
+  }
+
   if (params[0] == "C2") {
     LOG_IF(FATAL, !inRange(7, params.size(), 11))
         << "Failed parsing - " << line;
@@ -155,6 +168,15 @@ std::shared_ptr<Module> parseLines(
     int lisz = std::stoi(params[1]);
     int losz = std::stoi(params[2]);
     return std::make_shared<Linear>(lisz, losz);
+  }
+
+  /* ========== EMBEDDING ========== */
+
+  if (params[0] == "E") {
+    LOG_IF(FATAL, params.size() != 3) << "Failed parsing - " << line;
+    int embsz = std::stoi(params[1]);
+    int ntokens = std::stoi(params[2]);
+    return std::make_shared<Embedding>(embsz, ntokens);
   }
 
   /* ========== NORMALIZATIONS ========== */

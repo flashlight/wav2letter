@@ -69,6 +69,10 @@ Here, we describe how to specify different flashlight/wav2letter modules in the 
    1. GRU : `GRU [inputSize] [outputSize] [numLayers] [isBidirectional] [dropProb]`
    1. LSTM : `LSTM [inputSize] [outputSize] [numLayers] [isBidirectional] [dropProb]` <br/>
 
+**fl::Embedding**  `E [embeddingSize] [nTokens]`
+
+**fl::AsymmetricConv1D**  `AC [inputChannels] [outputChannels] [xFilterSz] [xStride] [xPadding <OPTIONAL>] [xFuturePart <OPTIONAL>] [xDilation <OPTIONAL>]`
+
 **w2l::Residual**
 ```
 RES [numLayers (N)] [numResSkipConnections (K)] [numBlocks <OPTIONAL>]

@@ -130,7 +130,7 @@ void dirCreate(const std::string& path) {
   if (dirExists(path)) {
     return;
   }
-  mode_t nMode = 0775;
+  mode_t nMode = 0755;
   int nError = 0;
 #ifdef _WIN32
   nError = _mkdir(path.c_str());

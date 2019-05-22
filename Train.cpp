@@ -413,8 +413,7 @@ int main(int argc, char** argv) {
   };
 
   double gradNorm = 1.0 / (FLAGS_batchsize * worldSize);
-  auto reducer = std::make_shared<fl::InlineReducer>(
-      /*scale=*/gradNorm);
+  auto reducer = std::make_shared<fl::CoalescingReducer>(gradNorm, true, true);
 
   auto trainEvalIds =
       randomSubset(FLAGS_seed, trainds->size(), FLAGS_pcttraineval);

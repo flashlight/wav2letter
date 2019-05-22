@@ -33,6 +33,44 @@ TEST(ModuleTest, TDSFwd) {
   ASSERT_EQ(output.dims(2), c);
 }
 
+TEST(ModuleTest, SpecAugmentFwd) {
+  SpecAugment specAug(0, 27, 2, 100, 0.2, 2);
+  int T = 512, F = 80;
+  auto input = Variable(af::randu(T, F), false);
+
+  specAug.eval();
+  ASSERT_TRUE(fl::allClose(input, specAug(input)));
+
+  specAug.train();
+  auto output = specAug(input);
+  ASSERT_FALSE(fl::allClose(input, output));
+
+  // Every value of output is either 0 or input
+  for (int t = 0; t < T; ++t) {
+    for (int f = 0; f < F; ++f) {
+      auto o = output.array()(t, f).scalar<float>();
+      auto i = input.array()(t, f).scalar<float>();
+      ASSERT_TRUE(o == i || o == 0);
+    }
+  }
+
+  // non-zero time frames are masked
+  int tZeros = 0;
+  for (int t = 0; t < T; ++t) {
+    auto curOutSlice = output.array().row(t);
+    tZeros = af::allTrue<bool>(curOutSlice == 0) ? tZeros + 1 : tZeros;
+  }
+  ASSERT_GT(tZeros, 0);
+
+  // non-zero frequency channels are masked
+  int fZeros = 0;
+  for (int f = 0; f < F; ++f) {
+    auto curOutSlice = output.array().col(f);
+    fZeros = af::allTrue<bool>(curOutSlice == 0) ? fZeros + 1 : fZeros;
+  }
+  ASSERT_GT(fZeros, 0);
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
 

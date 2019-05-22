@@ -13,6 +13,7 @@
 #include "W2lModule.h"
 
 #include "common/Utils.h"
+#include "module/SpecAugment.h"
 #include "module/TDSBlock.h"
 
 #ifdef BUILD_FB_DEPENDENCIES
@@ -365,8 +366,21 @@ std::shared_ptr<Module> parseLines(
     }
   }
 
-  /* ========== Trainable frontend ========== */
+  /* ========== Data Augmentation  ========== */
+  if (params[0] == "SAUG") {
+    LOG_IF(FATAL, params.size() != 7) << "Failed parsing - " << line;
+    return std::make_shared<w2l::SpecAugment>(
+        std::stoi(params[1]),
+        std::stoi(params[2]),
+        std::stoi(params[3]),
+        std::stoi(params[4]),
+        std::stod(params[5]),
+        std::stoi(params[6]));
+  }
+
 #ifdef BUILD_FB_DEPENDENCIES
+
+  /* ========== Trainable frontend ========== */
   if (params[0] == "SL2P") {
     return std::make_shared<w2l::SqL2Pooling>();
   }

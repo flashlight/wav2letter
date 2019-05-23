@@ -57,6 +57,7 @@ int main(int argc, char** argv) {
       LOG(INFO) << "Reading flags from file " << FLAGS_flagsfile;
       gflags::ReadFromFlagsFile(FLAGS_flagsfile, argv[0], true);
     }
+    gflags::ParseCommandLineFlags(&argc, &argv, false);
     runPath = newRunPath(FLAGS_rundir, FLAGS_runname, FLAGS_tag);
   } else if (runStatus == kContinueMode) {
     runPath = argv[2];
@@ -82,6 +83,7 @@ int main(int argc, char** argv) {
       LOG(INFO) << "Reading flags from file " << FLAGS_flagsfile;
       gflags::ReadFromFlagsFile(FLAGS_flagsfile, argv[0], true);
     }
+    gflags::ParseCommandLineFlags(&argc, &argv, false);
     auto epoch = cfg.find(kEpoch);
     if (epoch == cfg.end()) {
       LOG(WARNING) << "Did not find epoch to start from, starting from 0.";
@@ -110,6 +112,7 @@ int main(int argc, char** argv) {
       LOG(INFO) << "Reading flags from file" << FLAGS_flagsfile;
       gflags::ReadFromFlagsFile(FLAGS_flagsfile, argv[0], true);
     }
+    gflags::ParseCommandLineFlags(&argc, &argv, false);
     runPath = newRunPath(FLAGS_rundir, FLAGS_runname, FLAGS_tag);
   } else {
     LOG(FATAL) << gflags::ProgramUsage();

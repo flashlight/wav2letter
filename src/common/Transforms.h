@@ -72,10 +72,6 @@ void uniq(std::vector<T>& in) {
   in.resize(std::distance(in.begin(), it));
 }
 
-std::vector<int> toSingleLtr(
-    const std::vector<int>& labels,
-    const Dictionary& d);
-
 af::array
 pad(const af::array& in, const int size, const int dim = 0, float val = 0.0);
 

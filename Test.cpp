@@ -120,24 +120,23 @@ int main(int argc, char** argv) {
     auto wordTarget = afToVector<int>(sample[kWordIdx]);
     auto sampleId = afToVector<std::string>(sample[kSampleIdx]).front();
 
-    auto letterTarget = tkn2Ltr(tokenTarget, tokenDict);
+    auto letterTarget = tknTarget2Ltr(tokenTarget, tokenDict);
     std::vector<std::string> wordTargetStr;
     if (!FLAGS_lexicon.empty() && FLAGS_criterion != kSeq2SeqCriterion) {
-      wordTargetStr = wrdTensor2Words(wordTarget, wordDict);
+      wordTargetStr = wrdIdx2Wrd(wordTarget, wordDict);
     } else {
-      wordTargetStr = tknTensor2Words(letterTarget, tokenDict);
+      wordTargetStr = tknIdx2Wrd(letterTarget);
     }
 
     // Tokens
     auto tokenPrediction =
         afToVector<int>(criterion->viterbiPath(rawEmission.array()));
-    auto letterPrediction = tkn2Ltr(tokenPrediction, tokenDict);
+    auto letterPrediction = tknPrediction2Ltr(tokenPrediction, tokenDict);
 
     meters.lerSlice.add(letterPrediction, letterTarget);
 
     // Words
-    std::vector<std::string> wrdPredictionStr =
-        tknTensor2Words(letterPrediction, tokenDict);
+    std::vector<std::string> wrdPredictionStr = tknIdx2Wrd(letterPrediction);
     meters.werSlice.add(wordTargetStr, wrdPredictionStr);
 
     if (FLAGS_show) {
@@ -146,10 +145,8 @@ int main(int argc, char** argv) {
       meters.ler.add(letterPrediction, letterTarget);
       meters.wer.add(wordTargetStr, wrdPredictionStr);
 
-      std::cout << "|T|: " << tensor2String(letterTarget, tokenDict)
-                << std::endl;
-      std::cout << "|P|: " << tensor2String(letterPrediction, tokenDict)
-                << std::endl;
+      std::cout << "|T|: " << join(" ", letterTarget) << std::endl;
+      std::cout << "|P|: " << join(" ", letterPrediction) << std::endl;
       std::cout << "[sample: " << sampleId << ", WER: " << meters.wer.value()[0]
                 << "\%, LER: " << meters.ler.value()[0]
                 << "\%, total WER: " << meters.werSlice.value()[0]

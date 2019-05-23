@@ -55,30 +55,6 @@ void replaceReplabels(
   in.resize(ptr0);
 }
 
-std::vector<int> toSingleLtr(
-    const std::vector<int>& labels,
-    const Dictionary& d) {
-  std::vector<int> result;
-  for (auto id : labels) {
-    auto token = d.getToken(id);
-    auto splitToken = wrd2Tkn(token);
-    for (const auto& c : splitToken) {
-      result.emplace_back(d.getIndex(c));
-    }
-  }
-
-  if (result.size() > 0 && !FLAGS_wordseparator.empty()) {
-    if (result[0] == d.getIndex(FLAGS_wordseparator)) {
-      result.erase(result.begin());
-    }
-    if (result.back() == d.getIndex(FLAGS_wordseparator)) {
-      result.pop_back();
-    }
-  }
-
-  return result;
-}
-
 af::array pad(
     const af::array& in,
     const int size,

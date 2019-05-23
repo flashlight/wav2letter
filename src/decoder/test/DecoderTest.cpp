@@ -136,7 +136,7 @@ TEST(DecoderTest, run) {
     float score;
     auto dummy_state = lm->score(start_state, lm_idx, score);
     for (auto& spelling : it.second) {
-      auto spelling_tensor = tokens2Tensor(spelling, tokenDict);
+      auto spelling_tensor = tkn2Idx(spelling, tokenDict);
       trie->insert(
           spelling_tensor,
           std::make_shared<TrieLabel>(lm_idx, wordDict.getIndex(word)),

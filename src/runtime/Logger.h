@@ -18,7 +18,7 @@
 
 namespace w2l {
 struct DatasetMeters {
-  fl::EditDistanceMeter edit, wordedit;
+  fl::EditDistanceMeter tknEdit, wrdEdit;
   fl::AverageValueMeter loss;
 };
 

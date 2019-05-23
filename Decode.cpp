@@ -150,10 +150,10 @@ int main(int argc, char** argv) {
       // are strings already
       std::vector<std::string> wordTargetStr;
       if (!FLAGS_lexicon.empty() && FLAGS_criterion != kSeq2SeqCriterion) {
-        wordTargetStr = wrdTensor2Words(wordTarget, wordDict);
+        wordTargetStr = wrdIdx2Wrd(wordTarget, wordDict);
       } else {
-        auto letterTarget = tkn2Ltr(tokenTarget, tokenDict);
-        wordTargetStr = tknTensor2Words(letterTarget, tokenDict);
+        auto letterTarget = tknTarget2Ltr(tokenTarget, tokenDict);
+        wordTargetStr = tknIdx2Wrd(letterTarget);
       }
 
       emissionSet.emissions.emplace_back(emission);
@@ -286,7 +286,7 @@ int main(int argc, char** argv) {
         auto dummyState = lm->score(start_state, lmIdx, score);
       }
       for (auto& tokens : it.second) {
-        auto tokensTensor = tokens2Tensor(tokens, tokenDict);
+        auto tokensTensor = tkn2Idx(tokens, tokenDict);
         trie->insert(
             tokensTensor,
             std::make_shared<TrieLabel>(lmIdx, wordDict.getIndex(word)),
@@ -367,15 +367,16 @@ int main(int argc, char** argv) {
         auto& rawWordPrediction = results[0].words_;
         auto& rawTokenPrediction = results[0].tokens_;
 
-        auto letterTarget = tkn2Ltr(tokenTarget, tokenDict);
-        auto letterPrediction = tkn2Ltr(rawTokenPrediction, tokenDict);
+        auto letterTarget = tknTarget2Ltr(tokenTarget, tokenDict);
+        auto letterPrediction =
+            tknPrediction2Ltr(rawTokenPrediction, tokenDict);
         std::vector<std::string> wordPrediction;
         if (!FLAGS_lexicon.empty() && FLAGS_criterion != kSeq2SeqCriterion) {
           rawWordPrediction =
-              validateTensor(rawWordPrediction, wordDict.getIndex(kUnkToken));
-          wordPrediction = wrdTensor2Words(rawWordPrediction, wordDict);
+              validateIdx(rawWordPrediction, wordDict.getIndex(kUnkToken));
+          wordPrediction = wrdIdx2Wrd(rawWordPrediction, wordDict);
         } else {
-          wordPrediction = tknTensor2Words(letterPrediction, tokenDict);
+          wordPrediction = tknIdx2Wrd(letterPrediction);
         }
 
         // Update meters & print out predictions
@@ -395,10 +396,8 @@ int main(int argc, char** argv) {
           buffer << "|T|: " << wordTargetStr << std::endl;
           buffer << "|P|: " << wordPredictionStr << std::endl;
           if (FLAGS_showletters) {
-            buffer << "|t|: " << tensor2String(letterTarget, tokenDict)
-                   << std::endl;
-            buffer << "|p|: " << tensor2String(letterPrediction, tokenDict)
-                   << std::endl;
+            buffer << "|t|: " << join(" ", letterTarget) << std::endl;
+            buffer << "|p|: " << join(" ", letterPrediction) << std::endl;
           }
           buffer << "[sample: " << sampleId
                  << ", WER: " << meters.wer.value()[0]

@@ -427,6 +427,7 @@ TEST(W2lCommonTest, WrdToTarget) {
 TEST(W2lCommonTest, TargetToSingleLtr) {
   gflags::FlagSaver flagsaver;
   w2l::FLAGS_wordseparator = "_";
+  w2l::FLAGS_usewordpiece = true;
 
   Dictionary dict;
   for (int i = 0; i < 10; ++i) {
@@ -437,8 +438,9 @@ TEST(W2lCommonTest, TargetToSingleLtr) {
   dict.addToken("456_", 4560);
 
   std::vector<int> words = {1, 230, 4560};
-  auto target = toSingleLtr(words, dict);
-  ASSERT_THAT(target, ::testing::ElementsAreArray({1, 2, 3, 10, 4, 5, 6}));
+  auto target = tknIdx2Ltr(words, dict);
+  ASSERT_THAT(
+      target, ::testing::ElementsAreArray({"1", "2", "3", "_", "4", "5", "6"}));
 }
 
 TEST(W2lCommonTest, UT8Split) {

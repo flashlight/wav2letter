@@ -410,7 +410,7 @@ LexiconMap loadWords(const std::string& fn, const int64_t maxNumWords) {
   return lexicon;
 }
 
-std::vector<int> tokens2Tensor(
+std::vector<int> tkn2Idx(
     const std::vector<std::string>& spelling,
     const Dictionary& tokenDict) {
   std::vector<int> ret;
@@ -422,17 +422,7 @@ std::vector<int> tokens2Tensor(
   return ret;
 }
 
-std::string tensor2String(
-    const std::vector<int>& input,
-    const Dictionary& tokenDict) {
-  std::string ret = "";
-  for (auto ltrIdx : input) {
-    ret += tokenDict.getToken(ltrIdx);
-  }
-  return ret;
-}
-
-std::vector<int> validateTensor(std::vector<int> input, const int unkIdx) {
+std::vector<int> validateIdx(std::vector<int> input, const int unkIdx) {
   int newSize = 0;
   for (int i = 0; i < input.size(); i++) {
     if (input[i] >= 0 and input[i] != unkIdx) {
@@ -445,26 +435,46 @@ std::vector<int> validateTensor(std::vector<int> input, const int unkIdx) {
   return input;
 }
 
-std::vector<std::string> tknTensor2Words(
-    const std::vector<int>& input,
-    const Dictionary& tokenDict) {
-  int delimiter = -1;
-  if (!FLAGS_wordseparator.empty()) {
-    delimiter = tokenDict.getIndex(FLAGS_wordseparator);
-  } else {
-    delimiter = tokenDict.getIndex(kSilToken);
+std::vector<std::string> tknIdx2Ltr(
+    const std::vector<int>& labels,
+    const Dictionary& d) {
+  std::vector<std::string> result;
+
+  for (auto id : labels) {
+    auto token = d.getToken(id);
+    if (FLAGS_usewordpiece) {
+      auto splitToken = wrd2Tkn(token);
+      for (const auto& c : splitToken) {
+        result.emplace_back(c);
+      }
+    } else {
+      result.emplace_back(token);
+    }
   }
 
+  if (result.size() > 0 && !FLAGS_wordseparator.empty()) {
+    if (result.front() == FLAGS_wordseparator) {
+      result.erase(result.begin());
+    }
+    if (result.back() == FLAGS_wordseparator) {
+      result.pop_back();
+    }
+  }
+
+  return result;
+}
+
+std::vector<std::string> tknIdx2Wrd(const std::vector<std::string>& input) {
   std::vector<std::string> words;
   std::string currentWord = "";
-  for (auto ltrIdx : input) {
-    if (ltrIdx == delimiter) {
+  for (auto& tkn : input) {
+    if (tkn == FLAGS_wordseparator) {
       if (!currentWord.empty()) {
         words.push_back(currentWord);
         currentWord = "";
       }
     } else {
-      currentWord += tokenDict.getToken(ltrIdx);
+      currentWord += tkn;
     }
   }
   if (!currentWord.empty()) {
@@ -473,7 +483,7 @@ std::vector<std::string> tknTensor2Words(
   return words;
 }
 
-std::vector<std::string> wrdTensor2Words(
+std::vector<std::string> wrdIdx2Wrd(
     const std::vector<int>& input,
     const Dictionary& wordDict) {
   std::vector<std::string> words;
@@ -481,30 +491,6 @@ std::vector<std::string> wrdTensor2Words(
     words.push_back(wordDict.getToken(wrdIdx));
   }
   return words;
-}
-
-std::vector<int> tkn2Ltr(std::vector<int> tokens, const Dictionary& tokenDict) {
-  if (FLAGS_criterion == kCtcCriterion || FLAGS_criterion == kAsgCriterion) {
-    uniq(tokens);
-  }
-  if (FLAGS_criterion == kCtcCriterion) {
-    int blankIdx = tokenDict.getIndex(kBlankToken);
-    tokens.erase(
-        std::remove(tokens.begin(), tokens.end(), blankIdx), tokens.end());
-  }
-  if (FLAGS_criterion == kSeq2SeqCriterion) {
-    if (tokens.back() == tokenDict.getIndex(kEosToken)) {
-      tokens.pop_back();
-    }
-  }
-  tokens = validateTensor(tokens, -1);
-  remapLabels(tokens, tokenDict);
-
-  if (FLAGS_usewordpiece) {
-    return toSingleLtr(tokens, tokenDict);
-  }
-
-  return tokens;
 }
 
 std::vector<std::string> wrd2Tkn(const std::string& word) {
@@ -531,6 +517,44 @@ std::vector<std::string> wrd2Tkn(const std::string& word) {
     i += curTknBytes;
   }
   return tokens;
+}
+
+std::vector<std::string> tknTarget2Ltr(
+    std::vector<int> tokens,
+    const Dictionary& tokenDict) {
+  if (tokens.empty()) {
+    return std::vector<std::string>{};
+  }
+
+  if (FLAGS_criterion == kSeq2SeqCriterion) {
+    if (tokens.back() == tokenDict.getIndex(kEosToken)) {
+      tokens.pop_back();
+    }
+  }
+  remapLabels(tokens, tokenDict);
+
+  return tknIdx2Ltr(tokens, tokenDict);
+}
+
+std::vector<std::string> tknPrediction2Ltr(
+    std::vector<int> tokens,
+    const Dictionary& tokenDict) {
+  if (tokens.empty()) {
+    return std::vector<std::string>{};
+  }
+
+  if (FLAGS_criterion == kCtcCriterion || FLAGS_criterion == kAsgCriterion) {
+    uniq(tokens);
+  }
+  if (FLAGS_criterion == kCtcCriterion) {
+    int blankIdx = tokenDict.getIndex(kBlankToken);
+    tokens.erase(
+        std::remove(tokens.begin(), tokens.end(), blankIdx), tokens.end());
+  }
+  tokens = validateIdx(tokens, -1);
+  remapLabels(tokens, tokenDict);
+
+  return tknIdx2Ltr(tokens, tokenDict);
 }
 
 } // namespace w2l

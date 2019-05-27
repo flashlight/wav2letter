@@ -6,24 +6,17 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <cstdlib>
-#include <unordered_map>
-
 #include <flashlight/distributed/distributed.h>
 
-#include "Distributed.h"
 #include "common/Defines.h"
+#include "runtime/Distributed.h"
 
 namespace w2l {
 
-void maybeInitDistributedEnv(
-    bool enableDistributed,
+void initDistributed(
     int worldRank,
     int worldSize,
     const std::string& rndvFilepath) {
-  if (!enableDistributed) {
-    return;
-  }
   if (rndvFilepath.empty()) {
     distributedInit(
         fl::DistributedInit::MPI,
@@ -41,4 +34,5 @@ void maybeInitDistributedEnv(
          {fl::DistributedConstants::kFilePath, rndvFilepath}});
   }
 }
+
 } // namespace w2l

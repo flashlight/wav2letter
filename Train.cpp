@@ -122,19 +122,18 @@ int main(int argc, char** argv) {
   af::setSeed(FLAGS_seed);
   af::setFFTPlanCacheSize(FLAGS_fftcachesize);
 
-  maybeInitDistributedEnv(
-      FLAGS_enable_distributed,
-      FLAGS_world_rank,
-      FLAGS_world_size,
-      FLAGS_rndv_filepath);
+  std::shared_ptr<fl::Reducer> reducer = nullptr;
+  if (FLAGS_enable_distributed) {
+    initDistributed(FLAGS_world_rank, FLAGS_world_size, FLAGS_rndv_filepath);
+    reducer = std::make_shared<fl::CoalescingReducer>(
+        1.0 / fl::getWorldSize(), true, true);
+  }
 
-  auto worldRank = fl::getWorldRank();
-  auto worldSize = fl::getWorldSize();
-
+  int worldRank = fl::getWorldRank();
+  int worldSize = fl::getWorldSize();
   bool isMaster = (worldRank == 0);
 
   LOG_MASTER(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
-
   LOG_MASTER(INFO) << "Experiment path: " << runPath;
   LOG_MASTER(INFO) << "Experiment runidx: " << runIdx;
 
@@ -402,9 +401,6 @@ int main(int argc, char** argv) {
     }
   };
 
-  double gradNorm = 1.0 / (FLAGS_batchsize * worldSize);
-  auto reducer = std::make_shared<fl::CoalescingReducer>(gradNorm, true, true);
-
   auto trainEvalIds =
       randomSubset(FLAGS_seed, trainds->size(), FLAGS_pcttraineval);
 
@@ -426,8 +422,10 @@ int main(int argc, char** argv) {
                    double initcritlr,
                    bool clampCrit,
                    int nepochs) {
-    fl::distributeModuleGrads(ntwrk, reducer);
-    fl::distributeModuleGrads(crit, reducer);
+    if (reducer) {
+      fl::distributeModuleGrads(ntwrk, reducer);
+      fl::distributeModuleGrads(crit, reducer);
+    }
 
     meters.train.loss.reset();
     meters.train.tknEdit.reset();
@@ -541,12 +539,24 @@ int main(int argc, char** argv) {
         netopt->zeroGrad();
         critopt->zeroGrad();
         loss.backward();
-        reducer->finalize();
-
+        if (reducer) {
+          reducer->finalize();
+        }
         af::sync();
         meters.bwdtimer.stopAndIncUnit();
+
+        // optimizer
         meters.optimtimer.resume();
 
+        // scale down gradients by batchsize
+        for (const auto& p : ntwrk->params()) {
+          p.grad() = p.grad() / FLAGS_batchsize;
+        }
+        for (const auto& p : crit->params()) {
+          p.grad() = p.grad() / FLAGS_batchsize;
+        }
+
+        // clamp gradients
         if (FLAGS_maxgradnorm > 0) {
           auto params = ntwrk->params();
           if (clampCrit) {
@@ -555,6 +565,8 @@ int main(int argc, char** argv) {
           }
           fl::clipGradNorm(params, FLAGS_maxgradnorm);
         }
+
+        // update weights
         critopt->step();
         netopt->step();
         af::sync();

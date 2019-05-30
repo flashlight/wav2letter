@@ -137,13 +137,17 @@ DEFINE_bool(garbage, false, "add a garbage between each target label");
 DEFINE_int64(encoderdim, 0, "Dimension of encoded hidden state.");
 
 // DECODER OPTIONS
+const std::string kLmEosToken = "</s>";
+const std::string kLmPadToken = "<pad>";
+
 DEFINE_bool(show, false, "show predictions");
 DEFINE_bool(showletters, false, "show letter predictions");
 DEFINE_bool(logadd, false, "use logadd when merging decoder nodes");
 
 DEFINE_string(smearing, "none", "none, max or logadd");
-DEFINE_string(lmtype, "kenlm", "kenlm, cnnlm");
+DEFINE_string(lmtype, "kenlm", "kenlm, convlm");
 DEFINE_string(lexicon, "", "path/to/lexicon.txt");
+DEFINE_string(lm_vocab, "", "path/to/lm_vocab.txt");
 DEFINE_string(emission_dir, "", "path/to/emission_dir/");
 DEFINE_string(lm, "", "path/to/language_model");
 DEFINE_string(am, "", "path/to/acoustic_model");
@@ -163,6 +167,10 @@ DEFINE_int32(maxload, -1, "max number of testing examples.");
 DEFINE_int32(maxword, -1, "maximum number of words to use");
 DEFINE_int32(beamsize, 2500, "max beam size");
 DEFINE_int32(nthread_decoder, 1, "number of threads for decoding");
+DEFINE_int32(
+    lm_memory,
+    5000,
+    "total memory size for batch during forward pass ");
 
 // ASG OPTIONS
 DEFINE_int64(linseg, 0, "# of epochs of LinSeg to init transitions for ASG");

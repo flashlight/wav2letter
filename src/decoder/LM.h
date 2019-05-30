@@ -8,6 +8,7 @@
 
 #pragma once
 #include <memory>
+#include <vector>
 
 namespace w2l {
 /**
@@ -45,6 +46,8 @@ class LM {
   /* Compare two language model states. */
   virtual int compareState(const LMStatePtr& state1, const LMStatePtr& state2)
       const = 0;
+
+  virtual void updateCache(std::vector<LMStatePtr> states) {}
 
  protected:
   LM() = default;

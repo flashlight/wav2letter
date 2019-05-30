@@ -108,4 +108,7 @@ std::vector<std::string> wrd2Tkn(const std::string& word);
 std::vector<std::string> tknTarget2Ltr(std::vector<int>, const Dictionary&);
 
 std::vector<std::string> tknPrediction2Ltr(std::vector<int>, const Dictionary&);
+
+Dictionary createLMDict(const std::string& filepath);
+
 } // namespace w2l

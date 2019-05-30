@@ -127,6 +127,9 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/src/criterion)
 # Data
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/data)
 
+# LM
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/lm)
+
 # Tests
 if (W2L_BUILD_TESTS)
   enable_testing()
@@ -153,6 +156,7 @@ target_link_libraries(
   common
   criterion
   decoder
+  lm
   module
   runtime
   )

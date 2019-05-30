@@ -9,8 +9,7 @@
 #pragma once
 
 #include <glog/logging.h>
-#include <vector>
-#include "LM.h"
+#include "decoder/LM.h"
 #include "lm/model.hh"
 
 namespace w2l {

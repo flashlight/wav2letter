@@ -12,6 +12,7 @@
 #include <cmath>
 #include <unordered_map>
 #include <vector>
+#include "LM.h"
 
 namespace w2l {
 
@@ -242,6 +243,16 @@ void pruneAndNormalize(
   for (int i = 0; i < hypothesis[lookBack].size(); i++) {
     hypothesis[lookBack][i].score_ -= largestScore;
   }
+}
+
+template <class DecoderState>
+void updateLMCache(LMPtr lm, std::vector<DecoderState>& hypothesis) {
+  // For ConvLM update cache
+  std::vector<LMStatePtr> states;
+  for (const auto& hyp : hypothesis) {
+    states.emplace_back(hyp.lmState_);
+  }
+  lm->updateCache(states);
 }
 
 } // namespace w2l

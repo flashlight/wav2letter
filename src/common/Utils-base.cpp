@@ -557,4 +557,30 @@ std::vector<std::string> tknPrediction2Ltr(
   return tknIdx2Ltr(tokens, tokenDict);
 }
 
+Dictionary createLMDict(const std::string& filepath) {
+  Dictionary dict;
+  if (filepath.empty()) {
+    throw std::runtime_error("Empty filepath specified for token dictiinary.");
+    return dict;
+  }
+  std::ifstream infile(trim(filepath));
+  if (!infile) {
+    throw std::runtime_error("Unable to open dictionary file: " + filepath);
+  }
+  std::string line;
+  while (std::getline(infile, line)) {
+    if (line.empty()) {
+      continue;
+    }
+    auto tkns = splitOnWhitespace(line, true);
+    auto idx = dict.indexSize();
+    dict.addToken(tkns.front(), idx);
+  }
+  if (!dict.isContiguous()) {
+    throw std::runtime_error("Invalid Dictionary!");
+  }
+
+  return dict;
+}
+
 } // namespace w2l

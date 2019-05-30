@@ -150,6 +150,9 @@ DECLARE_int64(encoderdim);
 
 /* ========== DECODER OPTIONS ========== */
 
+extern const std::string kLmEosToken;
+extern const std::string kLmPadToken;
+
 DECLARE_bool(show);
 DECLARE_bool(showletters);
 DECLARE_bool(logadd);
@@ -157,6 +160,7 @@ DECLARE_bool(logadd);
 DECLARE_string(smearing);
 DECLARE_string(lmtype);
 DECLARE_string(lexicon);
+DECLARE_string(lm_vocab);
 DECLARE_string(emission_dir);
 DECLARE_string(lm);
 DECLARE_string(am);
@@ -173,6 +177,7 @@ DECLARE_int32(maxload);
 DECLARE_int32(maxword);
 DECLARE_int32(beamsize);
 DECLARE_int32(nthread_decoder);
+DECLARE_int32(lm_memory);
 
 /* ========== ASG OPTIONS ========== */
 

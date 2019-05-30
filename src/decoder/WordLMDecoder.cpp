@@ -179,7 +179,9 @@ void WordLMDecoder::decodeStep(const float* emissions, int T, int N) {
     }
 
     candidatesStore(hyp_[startFrame + t + 1], false);
+    updateLMCache(lm_, hyp_[startFrame + t + 1]);
   }
+
   nDecodedFrames_ += T;
 }
 

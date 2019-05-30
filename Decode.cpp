@@ -24,8 +24,9 @@
 #include "common/Utils.h"
 #include "criterion/criterion.h"
 #include "data/Featurize.h"
-#include "decoder/KenLM.h"
 #include "decoder/Trie.h"
+#include "lm/ConvLM.h"
+#include "lm/KenLM.h"
 #include "module/module.h"
 #include "runtime/Data.h"
 #include "runtime/Logger.h"
@@ -254,6 +255,10 @@ int main(int argc, char** argv) {
     if (!lm) {
       LOG(FATAL) << "[LM constructing] Failed to load LM: " << FLAGS_lm;
     }
+  } else if (FLAGS_lmtype == "convlm") {
+    af::setDevice(0);
+    lm = std::make_shared<ConvLM>(
+        FLAGS_lm, FLAGS_lm_vocab, FLAGS_lm_memory, FLAGS_beamsize);
   } else {
     LOG(FATAL) << "[LM constructing] Invalid LM Type: " << FLAGS_lmtype;
   }
@@ -315,22 +320,32 @@ int main(int argc, char** argv) {
       // Build Decoder
       std::unique_ptr<Decoder> decoder;
 
+      std::shared_ptr<LM> lmLocal;
+      lmLocal = lm;
+      if (FLAGS_lmtype == "convlm") {
+        af::setDevice(tid);
+        if (tid != 0) {
+          lmLocal = std::make_shared<ConvLM>(
+              FLAGS_lm, FLAGS_lm_vocab, FLAGS_lm_memory, FLAGS_beamsize);
+        }
+      }
+
       if (FLAGS_decodertype == "wrd") {
         decoder.reset(new WordLMDecoder(
-            decoderOpt, trie, lm, silIdx, blankIdx, unk, transition));
+            decoderOpt, trie, lmLocal, silIdx, blankIdx, unk, transition));
         LOG(INFO) << "[Decoder] Decoder with word-LM loaded in thread: " << tid;
       } else if (FLAGS_decodertype == "tkn") {
         std::unordered_map<int, int> lmIndMap;
         for (int i = 0; i < tokenDict.indexSize(); i++) {
           const std::string& token = tokenDict.getToken(i);
-          int lmIdx = lm->index(token);
+          int lmIdx = lmLocal->index(token);
           lmIndMap[i] = lmIdx;
         }
         if (!FLAGS_lexicon.empty()) {
           decoder.reset(new TokenLMDecoder(
               decoderOpt,
               trie,
-              lm,
+              lmLocal,
               silIdx,
               blankIdx,
               unk,
@@ -340,14 +355,13 @@ int main(int argc, char** argv) {
                     << tid;
         } else {
           decoder.reset(new LexiconFreeDecoder(
-              decoderOpt, lm, silIdx, blankIdx, transition, lmIndMap));
+              decoderOpt, lmLocal, silIdx, blankIdx, transition, lmIndMap));
           LOG(INFO) << "[Decoder] Decoder with token-LM loaded in thread: "
                     << tid;
         }
       } else {
         LOG(FATAL) << "Unsupported decoder type: " << FLAGS_decodertype;
       }
-
       // Get data and run decoder
       TestMeters meters;
       int sliceSize = end - start;

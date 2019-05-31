@@ -1,0 +1,88 @@
+# ==================================================================
+# module list
+# ------------------------------------------------------------------
+# inherit from flml/flashlight:cuda-base-latest
+# python           3.6          (apt)
+# libsndfile       bef2abc      (git)
+# MKL              2018.4.057   (apt)
+# FFTW             latest       (apt)
+# KenLM            e47088d      (git)
+# GLOG             latest       (apt)
+# gflags           latest       (apt)
+# python           3.6          (apt)
+# ==================================================================
+
+FROM flml/flashlight:cuda-base-latest
+
+RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
+        # for libsndfile
+        autoconf automake autogen build-essential libasound2-dev \
+        libflac-dev libogg-dev libtool libvorbis-dev pkg-config python \
+        # for Intel's Math Kernel Library (MKL)
+        cpio \
+        # FFTW
+        libfftw3-dev \
+        # for kenlm
+        zlib1g-dev libbz2-dev liblzma-dev libboost-all-dev \
+        # gflags
+        libgflags-dev libgflags2v5 \
+        # for glog
+        libgoogle-glog-dev libgoogle-glog0v5 \
+        # for receipts data processing
+        sox && \
+# ==================================================================
+# python (for receipts data processing)
+# ------------------------------------------------------------------
+    PIP_INSTALL="python3 -m pip --no-cache-dir install --upgrade" && \
+    DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
+        software-properties-common \
+        && \
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
+        python3.6 \
+        python3.6-dev \
+        && \
+    wget -O ~/get-pip.py \
+        https://bootstrap.pypa.io/get-pip.py && \
+    python3.6 ~/get-pip.py && \
+    ln -s /usr/bin/python3.6 /usr/local/bin/python3 && \
+    ln -s /usr/bin/python3.6 /usr/local/bin/python && \
+    $PIP_INSTALL \
+        setuptools \
+        && \
+    $PIP_INSTALL \
+        sox \
+        tqdm && \
+# ==================================================================
+# libsndfile https://github.com/erikd/libsndfile.git
+# ------------------------------------------------------------------
+    cd /tmp && git clone https://github.com/erikd/libsndfile.git && \
+    cd libsndfile && git checkout bef2abc9e888142203953addc31c50a192e496e5 && \
+    ./autogen.sh && ./configure --enable-werror && \
+    make && make check && make install && \
+# ==================================================================
+# MKL https://software.intel.com/en-us/mkl
+# ------------------------------------------------------------------
+    cd /tmp && wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB && \
+    apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB && \
+    wget https://apt.repos.intel.com/setup/intelproducts.list -O /etc/apt/sources.list.d/intelproducts.list && \
+    sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list' && \
+    apt-get update && DEBIAN_FRONTEND=noninteractive $APT_INSTALL intel-mkl-64bit-2018.4-057 && \
+# ==================================================================
+# KenLM https://github.com/kpu/kenlm
+# ------------------------------------------------------------------
+    cd /root && git clone https://github.com/kpu/kenlm.git && \
+    cd kenlm && git checkout e47088ddfae810a5ee4c8a9923b5f8071bed1ae8 && \
+    mkdir build && cd build && \
+    cmake .. && \
+    make -j8 && make install && \
+# ==================================================================
+# config & cleanup
+# ------------------------------------------------------------------
+    ldconfig && \
+    apt-get clean && \
+    apt-get autoremove && \
+    rm -rf /var/lib/apt/lists/* /tmp/*

@@ -1,5 +1,7 @@
 # wav2letter++
 
+[![CircleCI](https://circleci.com/gh/facebookresearch/wav2letter.svg?style=svg)](https://circleci.com/gh/facebookresearch/wav2letter)
+
 wav2letter++ is a fast open source speech processing toolkit from the Speech Team at Facebook AI Research.
 It is written entirely in C++ and uses the [ArrayFire](https://github.com/arrayfire/arrayfire) tensor library and the [flashlight](https://github.com/facebookresearch/flashlight) machine learning library for maximum efficiency.
 Our approach is detailed in this [arXiv paper](https://arxiv.org/abs/1812.07625).

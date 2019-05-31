@@ -1,0 +1,41 @@
+# Copyright (c) Facebook, Inc. and its affiliates.
+ # All rights reserved.
+ #
+ # This source code is licensed under the BSD-style license found in the
+ # LICENSE file in the root directory of this source tree.
+
+version: 2.0
+
+jobs:
+  build:
+    docker:
+      - image: wav2letter/wav2letter:cuda-base-latest
+    steps:
+      - checkout
+      - run:
+          command: |
+            cd /root && git clone --recursive https://github.com/facebookresearch/flashlight.git && \
+            cd /root/flashlight && mkdir -p build && \
+            cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CUDA && \
+            make && make install && \
+            export MKLROOT=/opt/intel/mkl && export KENLM_ROOT_DIR=/root/kenlm && \
+            cd /root/project && mkdir -p build && \
+            cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DW2L_CRITERION_BACKEND=CUDA && \
+            make
+
+  build-cpu:
+    docker:
+      - image: wav2letter/wav2letter:cpu-base-latest
+    steps:
+      - checkout
+      - run:
+          command: |
+            export MKLROOT=/opt/intel/mkl && mkdir -p build && cd build
+            cd /root && git clone --recursive https://github.com/facebookresearch/flashlight.git && \
+            cd flashlight && mkdir -p build && cd build && \
+            cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CPU && \
+            make && make install
+            export KENLM_ROOT_DIR=/root/kenlm && \
+            cd /root/project && mkdir -p build && \
+            cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DW2L_CRITERION_BACKEND=CPU && \
+            make

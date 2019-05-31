@@ -1,163 +1,26 @@
 # ==================================================================
 # module list
 # ------------------------------------------------------------------
-# Ubuntu           16.04
-# OpenMPI          latest       (apt)
-# cmake            3.10         (git)
-# MKL              2018.4-057   (apt)
-# arrayfire        3.6.2        (git, CPU backend)
-# MKLDNN           4bdffc2      (git)
-# Gloo             b7e0906      (git)
 # flashlight       master       (git, CPU backend)
-# libsndfile       bef2abc      (git)
-# FFTW             latest       (apt)
-# KenLM            e47088d      (git)
-# GLOG             latest       (apt)
-# gflags           latest       (apt)
-# python           3.6          (apt)
 # ==================================================================
 
-FROM ubuntu:16.04
-
-RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
-    apt-get update && \
-    DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
-        build-essential \
-        ca-certificates \
-        wget \
-        git \
-        vim \
-        emacs \
-        nano \
-        htop \
-        g++ \
-        # for MKL
-        apt-transport-https cpio \
-        # for arrayfire CPU backend
-        # OpenBLAS
-        libopenblas-dev libfftw3-dev liblapacke-dev \
-        # ATLAS
-        libatlas3-base libatlas-dev \
-        # ssh for OpenMPI
-        openssh-server openssh-client \
-        # OpenMPI
-        libopenmpi-dev libomp-dev \
-        # for libsndfile
-        autoconf automake autogen build-essential libasound2-dev \
-        libflac-dev libogg-dev libtool libvorbis-dev pkg-config python \
-        # FFTW
-        libfftw3-dev \
-        # for kenlm
-        zlib1g-dev libbz2-dev liblzma-dev libboost-all-dev \
-        # gflags
-        libgflags-dev libgflags2v5 \
-        # for glog
-        libgoogle-glog-dev libgoogle-glog0v5 \
-        # for receipts data processing
-        sox && \
-# ==================================================================
-# cmake 3.10 (for MKLDNN)
-# ------------------------------------------------------------------
-    apt-get purge -y cmake && \
-    # for cmake
-    DEBIAN_FRONTEND=noninteractive $APT_INSTALL zlib1g-dev libcurl4-openssl-dev && \
-    cd /tmp && wget https://cmake.org/files/v3.10/cmake-3.10.3.tar.gz  && \
-    tar -xzvf cmake-3.10.3.tar.gz  && cd cmake-3.10.3  && \
-    ./bootstrap --system-curl && \
-    make -j8 &&  make install && cmake --version && \
-# ==================================================================
-# python (for receipts data processing)
-# ------------------------------------------------------------------
-    PIP_INSTALL="python3 -m pip --no-cache-dir install --upgrade" && \
-    DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
-        software-properties-common \
-        && \
-    add-apt-repository ppa:deadsnakes/ppa && \
-    apt-get update && \
-    DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
-        python3.6 \
-        python3.6-dev \
-        && \
-    wget -O ~/get-pip.py \
-        https://bootstrap.pypa.io/get-pip.py && \
-    python3.6 ~/get-pip.py && \
-    ln -s /usr/bin/python3.6 /usr/local/bin/python3 && \
-    ln -s /usr/bin/python3.6 /usr/local/bin/python && \
-    $PIP_INSTALL \
-        setuptools \
-        && \
-    $PIP_INSTALL \
-        sox \
-        tqdm && \
-# ==================================================================
-# MKL https://software.intel.com/en-us/mkl
-# ------------------------------------------------------------------
-    cd /tmp && wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB && \
-    apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB && \
-    wget https://apt.repos.intel.com/setup/intelproducts.list -O /etc/apt/sources.list.d/intelproducts.list && \
-    sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list' && \
-    apt-get update && DEBIAN_FRONTEND=noninteractive $APT_INSTALL intel-mkl-64bit-2018.4-057 && \
-    export MKLROOT=/opt/intel/mkl && \
-# ==================================================================
-# arrayfire with CPU backend https://github.com/arrayfire/arrayfire/wiki/
-# ------------------------------------------------------------------
-    cd /tmp && git clone --recursive https://github.com/arrayfire/arrayfire.git && \
-    cd arrayfire && git checkout v3.6.2  && \
-    mkdir build && cd build && \
-    CXXFLAGS=-DOS_LNX cmake .. -DCMAKE_BUILD_TYPE=Release -DAF_BUILD_CUDA=OFF -DAF_BUILD_OPENCL=OFF -DAF_BUILD_EXAMPLES=OFF && \
-    make -j8 && make install && \
-# ==================================================================
-# MKLDNN https://github.com/intel/mkl-dnn/
-# ------------------------------------------------------------------
-    cd /tmp && git clone https://github.com/intel/mkl-dnn.git && \
-    cd mkl-dnn && git checkout 4bdffc2 && mkdir -p build && cd build && \
-    cmake .. -DMKLDNN_USE_MKL=FULL && \
-    make -j8 && make install && \
-# ==================================================================
-# Gloo https://github.com/facebookincubator/gloo.git
-# ------------------------------------------------------------------
-    cd /tmp && git clone https://github.com/facebookincubator/gloo.git && \
-    cd gloo && git checkout b7e0906 && mkdir build && cd build && \
-    cmake .. -DUSE_MPI=ON && \
-    make -j8 && make install && \
-# ==================================================================
-# flashlight https://github.com/facebookresearch/flashlight.git
-# ------------------------------------------------------------------
-    export MKLROOT=/opt/intel/mkl && \
-    cd /root && git clone --recursive https://github.com/facebookresearch/flashlight.git && \
-    cd flashlight && mkdir -p build && cd build && \
-    cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CPU && \
-    make -j8 && make install && \
-# ==================================================================
-# libsndfile https://github.com/erikd/libsndfile.git
-# ------------------------------------------------------------------
-    cd /tmp && git clone https://github.com/erikd/libsndfile.git && \
-    cd libsndfile && git checkout bef2abc9e888142203953addc31c50a192e496e5 && \
-    ./autogen.sh && ./configure --enable-werror && \
-    make && make check && make install && \
-# ==================================================================
-# KenLM https://github.com/kpu/kenlm
-# ------------------------------------------------------------------
-    cd /root && git clone https://github.com/kpu/kenlm.git && \
-    cd kenlm && git checkout e47088ddfae810a5ee4c8a9923b5f8071bed1ae8 && \
-    mkdir build && cd build && \
-    cmake .. && \
-    make -j8 && make install && \
-# ==================================================================
-# config & cleanup
-# ------------------------------------------------------------------
-    ldconfig && \
-    apt-get clean && \
-    apt-get autoremove && \
-    rm -rf /var/lib/apt/lists/* /tmp/*
+FROM wav2letter/wav2letter:cpu-base-latest
 
 RUN mkdir /root/wav2letter
 COPY . /root/wav2letter
 
 # ==================================================================
+# flashlight https://github.com/facebookresearch/flashlight.git
+# ------------------------------------------------------------------
+RUN export MKLROOT=/opt/intel/mkl && \
+    cd /root && git clone --recursive https://github.com/facebookresearch/flashlight.git && \
+    cd flashlight && mkdir -p build && cd build && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CPU && \
+    make -j8 && make install && \
+# ==================================================================
 # wav2letter with CPU backend
 # ------------------------------------------------------------------
-RUN export MKLROOT=/opt/intel/mkl && export KENLM_ROOT_DIR=/root/kenlm && \
+    export KENLM_ROOT_DIR=/root/kenlm && \
     cd /root/wav2letter && mkdir -p build && \
     cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DW2L_CRITERION_BACKEND=CPU && \
     make -j8

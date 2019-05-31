@@ -135,8 +135,10 @@ void LexiconFreeDecoder::decodeStep(const float* emissions, int T, int N) {
           }
         }
 
+        // DEBUG: CTC branch is not tested
         if ((opt_.criterionType_ == CriterionType::ASG && n != prevIdx) ||
-            (opt_.criterionType_ == CriterionType::CTC && n != blank_)) {
+            (opt_.criterionType_ == CriterionType::CTC && n != blank_ &&
+             (n != prevIdx || prevHyp.prevBlank_))) {
           int lmIdx = lmIndMap_.find(n)->second;
           float lmScore = 0;
           const LMStatePtr newLmState = lm_->score(prevLmState, lmIdx, lmScore);
@@ -148,6 +150,14 @@ void LexiconFreeDecoder::decodeStep(const float* emissions, int T, int N) {
               score,
               n,
               false // prevBlank
+          );
+        } else if (opt_.criterionType_ == CriterionType::CTC && n == blank_) {
+          candidatesAdd(
+              prevLmState,
+              &prevHyp,
+              score,
+              n,
+              true // prevBlank
           );
         } else {
           candidatesAdd(

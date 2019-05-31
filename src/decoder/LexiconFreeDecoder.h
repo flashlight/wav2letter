@@ -10,8 +10,8 @@
 
 #include <unordered_map>
 
-#include "Decoder.h"
-#include "LM.h"
+#include "decoder/Decoder.h"
+#include "decoder/LM.h"
 
 namespace w2l {
 /**

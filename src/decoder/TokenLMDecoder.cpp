@@ -15,7 +15,7 @@
 #include <functional>
 #include <unordered_map>
 
-#include "TokenLMDecoder.h"
+#include "decoder/TokenLMDecoder.h"
 
 namespace w2l {
 

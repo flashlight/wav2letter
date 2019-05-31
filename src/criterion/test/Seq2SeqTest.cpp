@@ -278,28 +278,26 @@ TEST(Seq2SeqTest, BatchedDecoderStep) {
   for (auto& seq2seq : criterions) {
     seq2seq.eval();
     std::vector<Variable> ys;
-    std::vector<Seq2SeqStatePtr> instates;
+    std::vector<Seq2SeqState> inStates(B);
+    std::vector<Seq2SeqState*> inStatePtrs(B);
 
     auto input = noGrad(af::randn(H, T, 1, f32));
+    std::vector<std::vector<float>> single_scores(B);
+    std::vector<std::vector<float>> batched_scores;
+
     for (int i = 0; i < B; i++) {
       Variable y = constant(i % N, 1, s32, false);
       ys.push_back(y);
 
-      Seq2SeqStatePtr instate = std::make_shared<Seq2SeqState>();
-      instate->alpha = noGrad(af::randn(1, T, 1, f32));
-      instate->hidden = noGrad(af::randn(H, 1, 1, f32));
-      instate->summary = noGrad(af::randn(H, 1, 1, f32));
-      instates.push_back(instate);
-    }
+      inStates[i].alpha = noGrad(af::randn(1, T, 1, f32));
+      inStates[i].hidden = noGrad(af::randn(H, 1, 1, f32));
+      inStates[i].summary = noGrad(af::randn(H, 1, 1, f32));
+      inStatePtrs[i] = &inStates[i];
 
-    std::vector<std::vector<float>> single_scores(B);
-    std::vector<std::vector<float>> batched_scores;
-
-    // Single forward
-    for (int i = 0; i < B; i++) {
+      // Single forward
       Seq2SeqState outstate;
       Variable ox;
-      std::tie(ox, outstate) = seq2seq.decodeStep(input, ys[i], *instates[i]);
+      std::tie(ox, outstate) = seq2seq.decodeStep(input, y, inStates[i]);
       ox = logSoftmax(ox, 0);
       single_scores[i] = w2l::afToVector<float>(ox);
     }
@@ -307,7 +305,7 @@ TEST(Seq2SeqTest, BatchedDecoderStep) {
     // Batched forward
     std::vector<Seq2SeqStatePtr> outstates;
     std::tie(batched_scores, outstates) =
-        seq2seq.decodeBatchStep(input, ys, instates);
+        seq2seq.decodeBatchStep(input, ys, inStatePtrs);
 
     // Check
     for (int i = 0; i < B; i++) {

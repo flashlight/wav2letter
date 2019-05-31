@@ -33,6 +33,7 @@
 #include "runtime/Serial.h"
 
 #include "decoder/LexiconFreeDecoder.h"
+#include "decoder/Seq2SeqDecoder.h"
 #include "decoder/TokenLMDecoder.h"
 #include "decoder/WordLMDecoder.h"
 
@@ -62,25 +63,34 @@ int main(int argc, char** argv) {
   }
 
   /* ===================== Create Network ===================== */
-  if (!(FLAGS_am.empty() ^ FLAGS_emission_dir.empty())) {
-    LOG(FATAL)
-        << "One and only one of flag -am and -emission_dir should be set.";
+  if (FLAGS_emission_dir.empty() && FLAGS_am.empty()) {
+    LOG(FATAL) << "Both flags are empty: `-emission_dir` and `-am`";
   }
-  EmissionSet emissionSet;
 
-  /* Using acoustic model */
+  EmissionSet emissionSet;
   std::shared_ptr<fl::Module> network;
   std::shared_ptr<SequenceCriterion> criterion;
-  if (!FLAGS_am.empty()) {
-    std::unordered_map<std::string, std::string> cfg;
-    LOG(INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
+  std::unordered_map<std::string, std::string> cfg;
 
+  /* Using existing emissions */
+  if (!FLAGS_emission_dir.empty()) {
+    std::string cleanedTestPath = cleanFilepath(FLAGS_test);
+    std::string loadPath =
+        pathsConcat(FLAGS_emission_dir, cleanedTestPath + ".bin");
+    LOG(INFO) << "[Serialization] Loading file: " << loadPath;
+    W2lSerializer::load(loadPath, emissionSet);
+    gflags::ReadFlagsFromString(emissionSet.gflags, gflags::GetArgv0(), true);
+  }
+  /* Using acoustic model */
+  if (!FLAGS_am.empty()) {
+    LOG(INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
+    af::setDevice(0);
     W2lSerializer::load(FLAGS_am, cfg, network, criterion);
     network->eval();
     LOG(INFO) << "[Network] " << network->prettyString();
     if (criterion) {
       criterion->eval();
-      LOG(INFO) << "[Network] " << criterion->prettyString();
+      LOG(INFO) << "[Criterion] " << criterion->prettyString();
     }
     LOG(INFO) << "[Network] Number of params: " << numTotalParams(network);
 
@@ -90,15 +100,6 @@ int main(int argc, char** argv) {
     }
     LOG(INFO) << "[Network] Updating flags from config file: " << FLAGS_am;
     gflags::ReadFlagsFromString(flags->second, gflags::GetArgv0(), true);
-  }
-  /* Using existing emissions */
-  else {
-    std::string cleanedTestPath = cleanFilepath(FLAGS_test);
-    std::string loadPath =
-        pathsConcat(FLAGS_emission_dir, cleanedTestPath + ".bin");
-    LOG(INFO) << "[Serialization] Loading file: " << loadPath;
-    W2lSerializer::load(loadPath, emissionSet);
-    gflags::ReadFlagsFromString(emissionSet.gflags, gflags::GetArgv0(), true);
   }
 
   // override with user-specified flags
@@ -196,6 +197,8 @@ int main(int argc, char** argv) {
   CriterionType criterionType = CriterionType::ASG;
   if (FLAGS_criterion == kCtcCriterion) {
     criterionType = CriterionType::CTC;
+  } else if (FLAGS_criterion == kSeq2SeqCriterion) {
+    criterionType = CriterionType::S2S;
   } else if (FLAGS_criterion != kAsgCriterion) {
     LOG(FATAL) << "[Decoder] Invalid model type: " << FLAGS_criterion;
   }
@@ -265,20 +268,14 @@ int main(int argc, char** argv) {
   LOG(INFO) << "[Decoder] LM constructed.\n";
 
   // Build Trie
-  if (std::strlen(kSilToken) != 1) {
-    LOG(FATAL) << "[Decoder] Invalid unknown_symbol: " << kSilToken;
-  }
-  if (std::strlen(kBlankToken) != 1) {
-    LOG(FATAL) << "[Decoder] Invalid unknown_symbol: " << kBlankToken;
-  }
-  int silIdx = tokenDict.getIndex(kSilToken);
   int blankIdx =
       FLAGS_criterion == kCtcCriterion ? tokenDict.getIndex(kBlankToken) : -1;
-  int unkIdx = lm->index(kUnkToken);
+  int silIdx = -1;
   std::shared_ptr<TrieLabel> unk = nullptr;
 
   std::shared_ptr<Trie> trie = nullptr;
-  if (!FLAGS_lexicon.empty()) {
+  if (!FLAGS_lexicon.empty() && FLAGS_criterion != kSeq2SeqCriterion) {
+    silIdx = tokenDict.getIndex(FLAGS_wordseparator);
     trie = std::make_shared<Trie>(tokenDict.indexSize(), silIdx);
     auto start_state = lm->start(false);
 
@@ -298,7 +295,8 @@ int main(int argc, char** argv) {
             score);
       }
     }
-    unk = std::make_shared<TrieLabel>(unkIdx, wordDict.getIndex(kUnkToken));
+    unk = std::make_shared<TrieLabel>(
+        lm->index(kUnkToken), wordDict.getIndex(kUnkToken));
     LOG(INFO) << "[Decoder] Trie planted.\n";
 
     // Smearing
@@ -319,33 +317,62 @@ int main(int argc, char** argv) {
     try {
       // Build Decoder
       std::unique_ptr<Decoder> decoder;
+      std::shared_ptr<SequenceCriterion> localCriterion;
+      std::shared_ptr<LM> localLm;
 
-      std::shared_ptr<LM> lmLocal;
-      lmLocal = lm;
+      localLm = lm;
       if (FLAGS_lmtype == "convlm") {
         af::setDevice(tid);
         if (tid != 0) {
-          lmLocal = std::make_shared<ConvLM>(
+          localLm = std::make_shared<ConvLM>(
               FLAGS_lm, FLAGS_lm_vocab, FLAGS_lm_memory, FLAGS_beamsize);
         }
       }
 
       if (FLAGS_decodertype == "wrd") {
         decoder.reset(new WordLMDecoder(
-            decoderOpt, trie, lmLocal, silIdx, blankIdx, unk, transition));
+            decoderOpt, trie, localLm, silIdx, blankIdx, unk, transition));
         LOG(INFO) << "[Decoder] Decoder with word-LM loaded in thread: " << tid;
       } else if (FLAGS_decodertype == "tkn") {
         std::unordered_map<int, int> lmIndMap;
         for (int i = 0; i < tokenDict.indexSize(); i++) {
           const std::string& token = tokenDict.getToken(i);
-          int lmIdx = lmLocal->index(token);
+          int lmIdx = localLm->index(token);
           lmIndMap[i] = lmIdx;
         }
-        if (!FLAGS_lexicon.empty()) {
+
+        if (criterionType == CriterionType::S2S) {
+          af::setDevice(tid);
+          if (tid != 0) {
+            std::shared_ptr<fl::Module> dummyNetwork;
+            std::unordered_map<std::string, std::string> dummyCfg;
+            W2lSerializer::load(
+                FLAGS_am, dummyCfg, dummyNetwork, localCriterion);
+            localCriterion->eval();
+          } else {
+            localCriterion = criterion;
+          }
+
+          auto amUpdateFunc = buildAmUpdateFunction(localCriterion);
+          int eos = tokenDict.getIndex(kEosToken);
+
+          decoder.reset(new Seq2SeqDecoder(
+              decoderOpt,
+              lm,
+              lmIndMap,
+              eos,
+              amUpdateFunc,
+              FLAGS_maxdecoderoutputlen,
+              static_cast<float>(FLAGS_hardselection),
+              static_cast<float>(FLAGS_softselection)));
+          LOG(INFO)
+              << "[Decoder] Seq2Seq decoder with token-LM loaded in thread: "
+              << tid;
+        } else if (!FLAGS_lexicon.empty()) {
           decoder.reset(new TokenLMDecoder(
               decoderOpt,
               trie,
-              lmLocal,
+              localLm,
               silIdx,
               blankIdx,
               unk,
@@ -355,7 +382,7 @@ int main(int argc, char** argv) {
                     << tid;
         } else {
           decoder.reset(new LexiconFreeDecoder(
-              decoderOpt, lmLocal, silIdx, blankIdx, transition, lmIndMap));
+              decoderOpt, localLm, silIdx, blankIdx, transition, lmIndMap));
           LOG(INFO) << "[Decoder] Decoder with token-LM loaded in thread: "
                     << tid;
         }

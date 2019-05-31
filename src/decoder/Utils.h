@@ -12,7 +12,8 @@
 #include <cmath>
 #include <unordered_map>
 #include <vector>
-#include "LM.h"
+
+#include "decoder/LM.h"
 
 namespace w2l {
 
@@ -20,7 +21,7 @@ const int kBufferBucketSize = 65536;
 const float kNegativeInfinity = -std::numeric_limits<float>::infinity();
 const int kLookBackLimit = 100;
 
-enum class CriterionType { ASG = 0, CTC = 1 };
+enum class CriterionType { ASG = 0, CTC = 1, S2S = 2 };
 
 struct DecoderOptions {
   int beamSize_; // Maximum number of hypothesis we hold after each step

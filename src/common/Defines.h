@@ -179,6 +179,12 @@ DECLARE_int32(beamsize);
 DECLARE_int32(nthread_decoder);
 DECLARE_int32(lm_memory);
 
+// Seq2Seq
+DECLARE_double(smoothingtemperature);
+DECLARE_int32(attentionthreshold);
+DECLARE_double(hardselection);
+DECLARE_double(softselection);
+
 /* ========== ASG OPTIONS ========== */
 
 DECLARE_int64(linseg);

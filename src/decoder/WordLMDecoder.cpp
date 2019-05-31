@@ -15,7 +15,7 @@
 #include <functional>
 #include <unordered_map>
 
-#include "WordLMDecoder.h"
+#include "decoder/WordLMDecoder.h"
 
 namespace w2l {
 

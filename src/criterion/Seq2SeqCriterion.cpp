@@ -419,9 +419,11 @@ std::pair<Variable, Seq2SeqState> Seq2SeqCriterion::decodeStep(
 
 std::pair<std::vector<std::vector<float>>, std::vector<Seq2SeqStatePtr>>
 Seq2SeqCriterion::decodeBatchStep(
-    const Variable& xEncoded,
-    std::vector<Variable>& ys,
-    const std::vector<Seq2SeqStatePtr>& inStates) const {
+    const fl::Variable& xEncoded,
+    std::vector<fl::Variable>& ys,
+    const std::vector<Seq2SeqState*>& inStates,
+    const int attentionThreshold,
+    const float smoothingTemperature) const {
   // xEncoded is shape [hiddendim, seqlen, batchsize]
   // y (if not empty) is shape [1, batchsize]
   size_t stepSize = af::getMemStepSize();
@@ -475,7 +477,16 @@ Seq2SeqCriterion::decodeBatchStep(
     // outStateBatched [hidden_dim, 1, batchSize]
     outStateBatched = moddims(
         outStateBatched, {outStateBatched.dims(0), 1, outStateBatched.dims(1)});
+
+    af::array bestpath, maxvalues;
+    af::max(maxvalues, bestpath, alphaBatched.array(), 0);
+    std::vector<int> maxIdx = w2l::afToVector<int>(bestpath);
     for (int i = 0; i < batchSize; i++) {
+      outstates[i]->peakAttnPos = maxIdx[i];
+      // TODO: std::abs maybe unnecessary
+      outstates[i]->isValid =
+          std::abs(outstates[i]->peakAttnPos - inStates[i]->peakAttnPos) <=
+          attentionThreshold;
       outstates[i]->alpha = alphaBatched(af::span, af::span, i);
       outstates[i]->summary = outStateBatched(af::span, af::span, i);
     }
@@ -485,7 +496,7 @@ Seq2SeqCriterion::decodeBatchStep(
   // outBatched [nclass, 1, batchsize]
   yBatched = moddims(yBatched, {yBatched.dims(0), 1, yBatched.dims(1)});
   auto outBatched = linearOut()->forward(outStateBatched + yBatched);
-  outBatched = logSoftmax(outBatched, 0);
+  outBatched = logSoftmax(outBatched / smoothingTemperature, 0);
   std::vector<std::vector<float>> out(batchSize);
   for (int i = 0; i < batchSize; i++) {
     out[i] = w2l::afToVector<float>(outBatched(af::span, af::span, i));
@@ -499,4 +510,64 @@ std::string Seq2SeqCriterion::prettyString() const {
   return "Seq2SeqCriterion";
 }
 
+AMUpdateFunc buildAmUpdateFunction(
+    std::shared_ptr<SequenceCriterion>& criterion) {
+  auto buf = std::make_shared<Seq2SeqDecoderBuffer>(
+      FLAGS_beamsize, FLAGS_attentionthreshold, FLAGS_smoothingtemperature);
+
+  const Seq2SeqCriterion* s2sCriterion =
+      static_cast<Seq2SeqCriterion*>(criterion.get());
+  auto amUpdateFunc = [buf, s2sCriterion](
+                          const float* emissions,
+                          const int N,
+                          const int T,
+                          const std::vector<int>& rawY,
+                          const std::vector<AMStatePtr>& rawPrevStates,
+                          int& t) {
+    if (t == 0) {
+      buf->input = fl::Variable(af::array(N, T, emissions), false);
+    }
+    int batchSize = rawY.size();
+    buf->prevStates.resize(0);
+    buf->ys.resize(0);
+
+    // Cast to seq2seq states
+    for (int i = 0; i < batchSize; i++) {
+      Seq2SeqState* prevState =
+          static_cast<Seq2SeqState*>(rawPrevStates[i].get());
+      fl::Variable y;
+      if (t > 0) {
+        y = fl::constant(rawY[i], 1, s32, false);
+      } else {
+        prevState = &buf->dummyState;
+      }
+      buf->ys.push_back(y);
+      buf->prevStates.push_back(prevState);
+    }
+
+    // Run forward in batch
+    std::vector<std::vector<float>> amScores;
+    std::vector<Seq2SeqStatePtr> outStates;
+
+    std::tie(amScores, outStates) = s2sCriterion->decodeBatchStep(
+        buf->input,
+        buf->ys,
+        buf->prevStates,
+        buf->attentionThreshold,
+        buf->smoothingTemperature);
+
+    // Cast back to void*
+    std::vector<AMStatePtr> out;
+    for (auto& os : outStates) {
+      if (os->isValid) {
+        out.push_back(os);
+      } else {
+        out.push_back(nullptr);
+      }
+    }
+    return std::make_pair(amScores, out);
+  };
+
+  return amUpdateFunc;
+}
 } // namespace w2l

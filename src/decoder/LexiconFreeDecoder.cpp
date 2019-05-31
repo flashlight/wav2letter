@@ -14,7 +14,7 @@
 #include <cmath>
 #include <functional>
 
-#include "LexiconFreeDecoder.h"
+#include "decoder/LexiconFreeDecoder.h"
 
 namespace w2l {
 

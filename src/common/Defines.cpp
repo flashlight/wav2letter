@@ -172,6 +172,20 @@ DEFINE_int32(
     5000,
     "total memory size for batch during forward pass ");
 
+DEFINE_double(
+    smoothingtemperature,
+    1.0,
+    "smoothening the probability distribution in seq2seq decoder");
+DEFINE_int32(
+    attentionthreshold,
+    std::numeric_limits<int>::infinity(),
+    "hard attention limit");
+DEFINE_double(hardselection, 1.0, "end-of-sentence threshold");
+DEFINE_double(
+    softselection,
+    std::numeric_limits<double>::infinity(),
+    "threshold to keep new candidate from being proposed");
+
 // ASG OPTIONS
 DEFINE_int64(linseg, 0, "# of epochs of LinSeg to init transitions for ASG");
 DEFINE_double(linlr, -1.0, "LinSeg learning rate (if < 0, use lr)");

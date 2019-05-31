@@ -9,6 +9,7 @@
 #pragma once
 
 #include <memory>
+
 #include "SequenceCriterion.h"
 #include "common/Utils.h"
 #include "criterion/Defines.h"
@@ -16,12 +17,16 @@
 #include "criterion/attention/window.h"
 
 namespace w2l {
+
 struct Seq2SeqState {
   fl::Variable alpha;
   fl::Variable hidden;
   fl::Variable summary;
   int step;
-  Seq2SeqState() : step(0) {}
+  int peakAttnPos;
+  bool isValid;
+
+  Seq2SeqState() : step(0), peakAttnPos(-1), isValid(false) {}
 };
 
 typedef std::shared_ptr<Seq2SeqState> Seq2SeqStatePtr;
@@ -105,9 +110,11 @@ class Seq2SeqCriterion : public SequenceCriterion {
 
   std::pair<std::vector<std::vector<float>>, std::vector<Seq2SeqStatePtr>>
   decodeBatchStep(
-      const fl::Variable& encodedx,
+      const fl::Variable& xEncoded,
       std::vector<fl::Variable>& ys,
-      const std::vector<Seq2SeqStatePtr>& instates) const;
+      const std::vector<Seq2SeqState*>& inStates,
+      const int attentionThreshold = std::numeric_limits<int>::infinity(),
+      const float smoothingTemperature = 1.0) const;
 
   std::pair<fl::Variable, Seq2SeqState> decodeStep(
       const fl::Variable& xEncoded,
@@ -149,6 +156,35 @@ class Seq2SeqCriterion : public SequenceCriterion {
 
 w2l::Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx);
 
+/* Decoder helpers */
+struct Seq2SeqDecoderBuffer {
+  fl::Variable input;
+  Seq2SeqState dummyState;
+  std::vector<fl::Variable> ys;
+  std::vector<Seq2SeqState*> prevStates;
+  int attentionThreshold;
+  double smoothingTemperature;
+
+  Seq2SeqDecoderBuffer(int beamSize, int attnThre, int smootTemp)
+      : attentionThreshold(attnThre), smoothingTemperature(smootTemp) {
+    ys.reserve(beamSize);
+    prevStates.reserve(beamSize);
+  }
+};
+
+typedef std::shared_ptr<void> AMStatePtr;
+typedef std::function<
+    std::pair<std::vector<std::vector<float>>, std::vector<AMStatePtr>>(
+        const float*,
+        const int,
+        const int,
+        const std::vector<int>&,
+        const std::vector<AMStatePtr>&,
+        int&)>
+    AMUpdateFunc;
+
+AMUpdateFunc buildAmUpdateFunction(
+    std::shared_ptr<SequenceCriterion>& criterion);
 } // namespace w2l
 
 CEREAL_REGISTER_TYPE(w2l::Seq2SeqCriterion)

@@ -137,13 +137,13 @@ int main(int argc, char** argv) {
 
     // Words
     std::vector<std::string> wrdPredictionStr = tknIdx2Wrd(letterPrediction);
-    meters.werSlice.add(wordTargetStr, wrdPredictionStr);
+    meters.werSlice.add(wrdPredictionStr, wordTargetStr);
 
     if (FLAGS_show) {
       meters.ler.reset();
       meters.wer.reset();
       meters.ler.add(letterPrediction, letterTarget);
-      meters.wer.add(wordTargetStr, wrdPredictionStr);
+      meters.wer.add(wrdPredictionStr, wordTargetStr);
 
       std::cout << "|T|: " << join(" ", letterTarget) << std::endl;
       std::cout << "|P|: " << join(" ", letterPrediction) << std::endl;

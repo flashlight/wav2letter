@@ -165,10 +165,11 @@ std::shared_ptr<Module> parseLines(
   /* ========== LINEAR ========== */
 
   if (params[0] == "L") {
-    LOG_IF(FATAL, params.size() != 3) << "Failed parsing - " << line;
+    LOG_IF(FATAL, !inRange(3, params.size(), 4)) << "Failed parsing - " << line;
     int lisz = std::stoi(params[1]);
     int losz = std::stoi(params[2]);
-    return std::make_shared<Linear>(lisz, losz);
+    bool bias = (params.size() == 4) && params[3] == "0" ? false : true;
+    return std::make_shared<Linear>(lisz, losz, bias);
   }
 
   /* ========== EMBEDDING ========== */

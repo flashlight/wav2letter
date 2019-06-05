@@ -140,7 +140,7 @@ std::vector<Variable> Seq2SeqCriterion::forward(
     losses = (1 - labelSmooth_) * losses - (labelSmooth_ / nClass) * smoothLoss;
   }
 
-  return {losses};
+  return {losses, out};
 }
 
 std::pair<Variable, Variable> Seq2SeqCriterion::vectorizedDecoder(

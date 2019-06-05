@@ -256,6 +256,7 @@ DEFINE_int64(
     pretrainWindow,
     0,
     "use window in training for pretrainWindow epochs");
+DEFINE_double(gumbeltemperature, 1.0, "temperature in gumbel softmax");
 
 // DISTRIBUTED TRAINING
 DEFINE_bool(enable_distributed, false, "enable distributed training");

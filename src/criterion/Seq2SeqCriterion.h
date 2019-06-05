@@ -53,10 +53,10 @@ class Seq2SeqCriterion : public SequenceCriterion {
       std::shared_ptr<WindowBase> window = nullptr,
       bool trainWithWindow = false,
       int pctTeacherForcing = 100,
-      bool useSequentialDecoder = false,
       double labelSmooth = 0.0,
       bool inputFeeding = false,
-      std::string samplingStrategy = w2l::kRandSampling);
+      std::string samplingStrategy = w2l::kRandSampling,
+      double gumbelTemperature = 1.0);
 
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs) override;
@@ -126,6 +126,16 @@ class Seq2SeqCriterion : public SequenceCriterion {
     window_ = nullptr;
   }
 
+  void setSampling(std::string newSamplingStrategy, int newPctTeacherForcing) {
+    pctTeacherForcing_ = newPctTeacherForcing;
+    samplingStrategy_ = newSamplingStrategy;
+    setUseSequentialDecoder();
+  }
+
+  void setGumbelTemperature(double temperature) {
+    gumbelTemperature_ = temperature;
+  }
+
  private:
   int eos_;
   int maxDecoderOutputLen_;
@@ -137,6 +147,7 @@ class Seq2SeqCriterion : public SequenceCriterion {
   bool inputFeeding_;
   int nClass_;
   std::string samplingStrategy_;
+  double gumbelTemperature_;
 
   FL_SAVE_LOAD_WITH_BASE(
       SequenceCriterion,
@@ -149,9 +160,12 @@ class Seq2SeqCriterion : public SequenceCriterion {
       labelSmooth_,
       inputFeeding_,
       nClass_,
-      fl::versioned(samplingStrategy_, 1))
+      fl::versioned(samplingStrategy_, 1),
+      fl::versioned(gumbelTemperature_, 2))
 
   Seq2SeqCriterion() = default;
+
+  void setUseSequentialDecoder();
 };
 
 w2l::Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx);
@@ -188,4 +202,4 @@ AMUpdateFunc buildAmUpdateFunction(
 } // namespace w2l
 
 CEREAL_REGISTER_TYPE(w2l::Seq2SeqCriterion)
-CEREAL_CLASS_VERSION(w2l::Seq2SeqCriterion, 1)
+CEREAL_CLASS_VERSION(w2l::Seq2SeqCriterion, 2)

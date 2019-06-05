@@ -215,6 +215,7 @@ DECLARE_double(softwrate);
 DECLARE_double(softwstd);
 DECLARE_bool(trainWithWindow);
 DECLARE_int64(pretrainWindow);
+DECLARE_double(gumbeltemperature);
 
 /* ========== DISTRIBUTED TRAINING ========== */
 DECLARE_bool(enable_distributed);

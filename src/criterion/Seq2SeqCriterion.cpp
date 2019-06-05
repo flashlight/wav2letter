@@ -16,13 +16,6 @@ using namespace fl;
 namespace w2l {
 
 Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx) {
-  bool useSequentialDecoder = false;
-  if ((FLAGS_pctteacherforcing < 100 &&
-       FLAGS_samplingstrategy == w2l::kModelSampling) ||
-      FLAGS_inputfeeding) {
-    useSequentialDecoder = true;
-  }
-
   std::shared_ptr<AttentionBase> attention;
   if (FLAGS_attention == w2l::kContentAttention) {
     attention = std::make_shared<ContentAttention>();
@@ -31,14 +24,11 @@ Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx) {
   } else if (FLAGS_attention == w2l::kNeuralContentAttention) {
     attention = std::make_shared<NeuralContentAttention>(FLAGS_encoderdim);
   } else if (FLAGS_attention == w2l::kSimpleLocationAttention) {
-    useSequentialDecoder = true;
     attention = std::make_shared<SimpleLocationAttention>(FLAGS_attnconvkernel);
   } else if (FLAGS_attention == w2l::kLocationAttention) {
-    useSequentialDecoder = true;
     attention = std::make_shared<LocationAttention>(
         FLAGS_encoderdim, FLAGS_attnconvkernel);
   } else if (FLAGS_attention == w2l::kNeuralLocationAttention) {
-    useSequentialDecoder = true;
     attention = std::make_shared<NeuralLocationAttention>(
         FLAGS_encoderdim,
         FLAGS_attndim,
@@ -52,9 +42,6 @@ Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx) {
   if (FLAGS_attnWindow == w2l::kNoWindow) {
     window = nullptr;
   } else if (FLAGS_attnWindow == w2l::kMedianWindow) {
-    if (FLAGS_trainWithWindow) {
-      useSequentialDecoder = true;
-    }
     window = std::make_shared<MedianWindow>(
         FLAGS_leftWindowSize, FLAGS_rightWindowSize);
   } else if (FLAGS_attnWindow == w2l::kStepWindow) {
@@ -78,10 +65,10 @@ Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx) {
       window,
       FLAGS_trainWithWindow,
       FLAGS_pctteacherforcing,
-      useSequentialDecoder,
       FLAGS_labelsmooth,
       FLAGS_inputfeeding,
-      FLAGS_samplingstrategy);
+      FLAGS_samplingstrategy,
+      FLAGS_gumbeltemperature);
 }
 
 Seq2SeqCriterion::Seq2SeqCriterion(
@@ -93,25 +80,26 @@ Seq2SeqCriterion::Seq2SeqCriterion(
     std::shared_ptr<WindowBase> window /* nullptr */,
     bool trainWithWindow /* false */,
     int pctTeacherForcing /* = 100 */,
-    bool useSequentialDecoder /* = false */,
     double labelSmooth /* = 0.0 */,
     bool inputFeeding /* = false */,
-    std::string samplingStrategy /* = w2l::kRandSampling */)
+    std::string samplingStrategy, /* = w2l::kRandSampling */
+    double gumbelTemperature /* = 1.0 */)
     : eos_(eos),
       maxDecoderOutputLen_(maxDecoderOutputLen),
       window_(window),
       trainWithWindow_(trainWithWindow),
       pctTeacherForcing_(pctTeacherForcing),
-      useSequentialDecoder_(useSequentialDecoder),
       labelSmooth_(labelSmooth),
       inputFeeding_(inputFeeding),
       nClass_(nClass),
-      samplingStrategy_(samplingStrategy) {
+      samplingStrategy_(samplingStrategy),
+      gumbelTemperature_(gumbelTemperature) {
   add(std::make_shared<Embedding>(hiddenDim, nClass_));
   add(std::make_shared<RNN>(hiddenDim, hiddenDim, 1, RnnMode::GRU, false, 0.0));
   add(std::make_shared<Linear>(hiddenDim, nClass_));
   add(attention);
   params_.push_back(uniform(af::dim4{hiddenDim}, -1e-1, 1e-1));
+  setUseSequentialDecoder();
 }
 
 std::vector<Variable> Seq2SeqCriterion::forward(
@@ -215,11 +203,16 @@ std::pair<Variable, Variable> Seq2SeqCriterion::decoder(
   for (int u = 0; u < U; u++) {
     Variable ox;
     std::tie(ox, state) = decodeStep(input, y, state);
-    outvec.push_back(ox);
-    alphaVec.push_back(state.alpha);
-    if (!train_ ||
-        af::allTrue<bool>(
-            af::randu(1) * 100 <= af::constant(pctTeacherForcing_, 1))) {
+
+    if (!train_) {
+      y = target(u, af::span);
+    } else if (samplingStrategy_ == w2l::kGumbelSampling) {
+      double eps = 1e-7;
+      auto gb = -log(-log((1 - 2 * eps) * af::randu(ox.dims()) + eps));
+      ox = logSoftmax((ox + Variable(gb, false)) / gumbelTemperature_, 0);
+      y = Variable(exp(ox).array(), false);
+    } else if (af::allTrue<bool>(
+                   af::randu(1) * 100 <= af::constant(pctTeacherForcing_, 1))) {
       y = target(u, af::span);
     } else if (samplingStrategy_ == w2l::kModelSampling) {
       af::array maxIdx, maxValues;
@@ -232,6 +225,9 @@ std::pair<Variable, Variable> Seq2SeqCriterion::decoder(
     } else {
       throw std::invalid_argument("Invalid sampling strategy");
     }
+
+    outvec.push_back(ox);
+    alphaVec.push_back(state.alpha);
   }
 
   // [nClass, targetlen, batchsize]
@@ -385,11 +381,14 @@ std::pair<Variable, Seq2SeqState> Seq2SeqCriterion::decodeStep(
   Variable hy;
   if (y.isempty()) {
     hy = tile(startEmbedding(), {1, 1, static_cast<int>(xEncoded.dims(2))});
+  } else if (train_ && samplingStrategy_ == w2l::kGumbelSampling) {
+    hy = linear(y, embedding()->param(0));
   } else {
     hy = embedding()->forward(y);
-    if (inputFeeding_) {
-      hy = hy + moddims(inState.summary, hy.dims());
-    }
+  }
+
+  if (inputFeeding_ && !y.isempty()) {
+    hy = hy + moddims(inState.summary, hy.dims());
   }
 
   // [hiddendim, batchsize]
@@ -504,6 +503,23 @@ Seq2SeqCriterion::decodeBatchStep(
 
   af::setMemStepSize(stepSize);
   return std::make_pair(out, outstates);
+}
+
+void Seq2SeqCriterion::setUseSequentialDecoder() {
+  useSequentialDecoder_ = false;
+  if ((pctTeacherForcing_ < 100 && samplingStrategy_ == w2l::kModelSampling) ||
+      samplingStrategy_ == w2l::kGumbelSampling || inputFeeding_) {
+    useSequentialDecoder_ = true;
+  } else if (
+      std::dynamic_pointer_cast<SimpleLocationAttention>(attention()) ||
+      std::dynamic_pointer_cast<LocationAttention>(attention()) ||
+      std::dynamic_pointer_cast<NeuralLocationAttention>(attention())) {
+    useSequentialDecoder_ = true;
+  } else if (
+      window_ && trainWithWindow_ &&
+      std::dynamic_pointer_cast<MedianWindow>(window_)) {
+    useSequentialDecoder_ = true;
+  }
 }
 
 std::string Seq2SeqCriterion::prettyString() const {

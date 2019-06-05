@@ -358,7 +358,7 @@ int main(int argc, char** argv) {
 
           decoder.reset(new Seq2SeqDecoder(
               decoderOpt,
-              lm,
+              localLm,
               lmIndMap,
               eos,
               amUpdateFunc,

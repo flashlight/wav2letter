@@ -155,7 +155,7 @@ int main(int argc, char** argv) {
         wordTargetStr = wrdIdx2Wrd(wordTarget, wordDict);
       } else {
         auto letterTarget = tknTarget2Ltr(tokenTarget, tokenDict);
-        wordTargetStr = tknIdx2Wrd(letterTarget);
+        wordTargetStr = tkn2Wrd(letterTarget);
       }
 
       emissionSet.emissions.emplace_back(emission);
@@ -417,7 +417,7 @@ int main(int argc, char** argv) {
               validateIdx(rawWordPrediction, wordDict.getIndex(kUnkToken));
           wordPrediction = wrdIdx2Wrd(rawWordPrediction, wordDict);
         } else {
-          wordPrediction = tknIdx2Wrd(letterPrediction);
+          wordPrediction = tkn2Wrd(letterPrediction);
         }
 
         // Update meters & print out predictions

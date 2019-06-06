@@ -305,7 +305,7 @@ std::vector<std::string> wrd2Target(
     LOG(INFO)
         << "Falling back to using letters as targets for the unknown word '"
         << word << "'";
-    auto tokens = wrd2Tkn(word);
+    auto tokens = splitWrd(word);
     for (const auto& tkn : tokens) {
       if (dict.contains(tkn)) {
         res.push_back(tkn);
@@ -443,7 +443,7 @@ std::vector<std::string> tknIdx2Ltr(
   for (auto id : labels) {
     auto token = d.getToken(id);
     if (FLAGS_usewordpiece) {
-      auto splitToken = wrd2Tkn(token);
+      auto splitToken = splitWrd(token);
       for (const auto& c : splitToken) {
         result.emplace_back(c);
       }
@@ -464,7 +464,7 @@ std::vector<std::string> tknIdx2Ltr(
   return result;
 }
 
-std::vector<std::string> tknIdx2Wrd(const std::vector<std::string>& input) {
+std::vector<std::string> tkn2Wrd(const std::vector<std::string>& input) {
   std::vector<std::string> words;
   std::string currentWord = "";
   for (auto& tkn : input) {
@@ -493,7 +493,7 @@ std::vector<std::string> wrdIdx2Wrd(
   return words;
 }
 
-std::vector<std::string> wrd2Tkn(const std::string& word) {
+std::vector<std::string> splitWrd(const std::string& word) {
   std::vector<std::string> tokens;
   tokens.reserve(word.size());
   int len = word.length();
@@ -511,7 +511,7 @@ std::vector<std::string> wrd2Tkn(const std::string& word) {
       curTknBytes = 4;
     }
     if (curTknBytes == -1 || i + curTknBytes > len) {
-      throw std::runtime_error("wrd2Tkn: invalid UTF-8 : " + word);
+      throw std::runtime_error("splitWrd: invalid UTF-8 : " + word);
     }
     tokens.emplace_back(word.begin() + i, word.begin() + i + curTknBytes);
     i += curTknBytes;

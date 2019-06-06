@@ -42,7 +42,7 @@ std::vector<int> tokens2Tensor(
     const Dictionary& tokenDict) {
   std::vector<int> ret;
   ret.reserve(spelling.size());
-  auto tokens = wrd2Tkn(spelling);
+  auto tokens = splitWrd(spelling);
   for (const auto& tkn : tokens) {
     ret.push_back(tokenDict.getIndex(tkn));
   }

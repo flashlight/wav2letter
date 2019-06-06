@@ -125,7 +125,7 @@ int main(int argc, char** argv) {
     if (!FLAGS_lexicon.empty() && FLAGS_criterion != kSeq2SeqCriterion) {
       wordTargetStr = wrdIdx2Wrd(wordTarget, wordDict);
     } else {
-      wordTargetStr = tknIdx2Wrd(letterTarget);
+      wordTargetStr = tkn2Wrd(letterTarget);
     }
 
     // Tokens
@@ -136,7 +136,7 @@ int main(int argc, char** argv) {
     meters.lerSlice.add(letterPrediction, letterTarget);
 
     // Words
-    std::vector<std::string> wrdPredictionStr = tknIdx2Wrd(letterPrediction);
+    std::vector<std::string> wrdPredictionStr = tkn2Wrd(letterPrediction);
     meters.werSlice.add(wrdPredictionStr, wordTargetStr);
 
     if (FLAGS_show) {

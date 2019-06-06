@@ -372,8 +372,8 @@ int main(int argc, char** argv) {
       auto ltrPred = tknPrediction2Ltr(viterbipath, tgtDict);
       auto ltrTgt = tknTarget2Ltr(tgtraw, tgtDict);
 
-      auto wrdPred = tknIdx2Wrd(ltrPred);
-      auto wrdTgt = tknIdx2Wrd(ltrTgt);
+      auto wrdPred = tkn2Wrd(ltrPred);
+      auto wrdTgt = tkn2Wrd(ltrTgt);
 
       mtr.tknEdit.add(ltrPred, ltrTgt);
       mtr.wrdEdit.add(wrdPred, wrdTgt);

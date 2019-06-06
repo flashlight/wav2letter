@@ -446,7 +446,7 @@ TEST(W2lCommonTest, TargetToSingleLtr) {
 TEST(W2lCommonTest, UT8Split) {
   // ASCII
   std::string in1 = "Vendetta";
-  auto in1Tkns = wrd2Tkn(in1);
+  auto in1Tkns = splitWrd(in1);
   for (int i = 0; i < in1.size(); ++i) {
     ASSERT_EQ(std::string(1, in1[i]), in1Tkns[i]);
   }
@@ -454,7 +454,7 @@ TEST(W2lCommonTest, UT8Split) {
   // NFKC encoding
   // @lint-ignore TXT5 Source code should only include printable US-ASCII bytes.
   std::string in2 = "Beyoncé";
-  auto in2Tkns = wrd2Tkn(in2);
+  auto in2Tkns = splitWrd(in2);
 
   // @lint-ignore TXT5 Source code should only include printable US-ASCII bytes.
   std::vector<std::string> in2TknsExp = {"B", "e", "y", "o", "n", "c", "é"};
@@ -466,7 +466,7 @@ TEST(W2lCommonTest, UT8Split) {
   // NFKD encoding
   // @lint-ignore TXT5 Source code should only include printable US-ASCII bytes.
   std::string in3 = "Beyoncé";
-  auto in3Tkns = wrd2Tkn(in3);
+  auto in3Tkns = splitWrd(in3);
   std::vector<std::string> in3TknsExp = {
       "B", "e", "y", "o", "n", "c", "e", u8"\u0301"};
   ASSERT_EQ(in3Tkns.size(), 8);

@@ -456,7 +456,7 @@ std::vector<std::string> tknIdx2Ltr(
     if (result.front() == FLAGS_wordseparator) {
       result.erase(result.begin());
     }
-    if (result.back() == FLAGS_wordseparator) {
+    if (!result.empty() && result.back() == FLAGS_wordseparator) {
       result.pop_back();
     }
   }

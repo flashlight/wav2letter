@@ -334,7 +334,6 @@ TEST(Seq2SeqTest, Seq2SeqSampling) {
         nullptr,
         false,
         0,
-        true,
         0.05,
         false,
         ss);
@@ -355,7 +354,6 @@ TEST(Seq2SeqTest, Seq2SeqSampling) {
       nullptr,
       false,
       60,
-      false,
       0.05,
       false,
       w2l::kRandSampling);
@@ -375,7 +373,6 @@ TEST(Seq2SeqTest, Seq2SeqSampling) {
       nullptr,
       false,
       60,
-      false,
       0.05,
       false,
       w2l::kModelSampling);

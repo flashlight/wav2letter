@@ -22,7 +22,7 @@ template <class Float>
 struct WorkspacePtrs {
   explicit WorkspacePtrs(void* workspace, int B, int T, int N) {
     w2l::Workspace<> ws(workspace);
-    ws.request(&alpha, B, T, N);
+    ws.request(&alpha, B, 2, N);
     ws.request(&beta, B, T, N);
     requiredSize = ws.requiredSize();
   }
@@ -41,7 +41,7 @@ __global__ void
 computeInitial(int T, int N, const Float* input, WorkspacePtrs<Float> ws) {
   int b = blockIdx.x;
   for (int n = threadIdx.x; n < N; n += blockDim.x) {
-    int k = b * T * N + n;
+    int k = b * 2 * N + n;
     ws.alpha[k] = input[k];
   }
 }
@@ -67,9 +67,9 @@ __global__ void computeStep(
     m = blockIdx.x % N;
   }
 
-  const auto* alphaPrev = &ws.alpha[b * T * N + (t - 1) * N];
+  const auto* alphaPrev = &ws.alpha[b * 2 * N + ((t - 1) % 2) * N];
   const auto* inputCur = &input[b * T * N + t * N];
-  auto* alphaCur = &ws.alpha[b * T * N + t * N];
+  auto* alphaCur = &ws.alpha[b * 2 * N + (t % 2) * N];
   auto* betaCur = &ws.beta[b * T * N + t * N];
 
   using BlockReduce =

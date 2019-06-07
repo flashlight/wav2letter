@@ -52,8 +52,7 @@ void ViterbiPath<Float>::compute(
 #pragma omp parallel for num_threads(B)
   for (int b = 0; b < B; ++b) {
     for (int n = 0; n < N; ++n) {
-      int k = b * 2 * N + n;
-      ws.alpha[k] = input[k];
+      ws.alpha[b * 2 * N + n] = input[b * T * N + n];
     }
 
     for (int t = 1; t <= T; ++t) {

@@ -41,8 +41,7 @@ __global__ void
 computeInitial(int T, int N, const Float* input, WorkspacePtrs<Float> ws) {
   int b = blockIdx.x;
   for (int n = threadIdx.x; n < N; n += blockDim.x) {
-    int k = b * 2 * N + n;
-    ws.alpha[k] = input[k];
+    ws.alpha[b * 2 * N + n] = input[b * T * N + n];
   }
 }
 

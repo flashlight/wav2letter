@@ -47,16 +47,16 @@ parallelism.
 
 Our CTC implementation is efficient compared with many of the other publicly available implementations.  It is
 also written to be as numerically stable as possible.  The algorithm is numerically sensitive and we have observed
-catastrophic underflow even in double precision with the standard calculation - the result of division of 
-two numbers on the order of 1e-324 which should have been approximately one, instead become infinity 
+catastrophic underflow even in double precision with the standard calculation - the result of division of
+two numbers on the order of 1e-324 which should have been approximately one, instead become infinity
 when the denominator underflowed to 0.  Instead, by performing the calculation in log space, it is numerically
 stable even in single precision floating point at the cost of significantly more expensive operations.  Instead of
 one machine instruction, addition requires the evaluation of multiple transcendental functions.  Because of this,
 the speed of CTC implementations can only be fairly compared if they are both performing the calculation the same
 way.
 
-We compare our performance with [Eesen](https://github.com/srvk/eesen/commit/68f2bc2d46a5513cce3c232a645292632a1b08f9), 
-a CTC implementation built on 
+We compare our performance with [Eesen](https://github.com/srvk/eesen/commit/68f2bc2d46a5513cce3c232a645292632a1b08f9),
+a CTC implementation built on
 [Theano](https://github.com/mohammadpz/CTC-Connectionist-Temporal-Classification/commit/904e8c72e15334887609d399254cf05a591d570f),
 and a Cython CPU only implementation [Stanford-CTC](https://github.com/amaas/stanford-ctc/commit/c8859897336a349b6c561d2bf2d179fae90b4d67).
 We benchmark the Theano implementation operating on 32-bit floating-point numbers and doing the calculation in log-space,
@@ -187,3 +187,7 @@ The CUDA implementation requires a device of at least compute capability 3.0.
 
 The CUDA implementation supports a maximum label length of 639 (timesteps are
 unlimited).
+
+## Modifications by wav2letter++ team
+
+Updated GPU version to be more numerically stable by computing logsoftmax in a single kernel and storing probabilities in log space.

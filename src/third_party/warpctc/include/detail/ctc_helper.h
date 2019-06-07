@@ -40,6 +40,10 @@ template <typename Arg, typename Res = Arg> struct negate {
     HOSTDEVICE Res operator()(const Arg& x) const {return Res(-x);}
 };
 
+template <typename Arg, typename Res = Arg> struct logarithmic {
+  HOSTDEVICE Res operator()(const Arg& x) const {return std::log(x);}
+};
+
 template <typename Arg, typename Res = Arg> struct exponential {
     HOSTDEVICE Res operator()(const Arg& x) const {return std::exp(x);}
 };

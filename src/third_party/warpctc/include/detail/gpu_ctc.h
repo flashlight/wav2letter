@@ -62,7 +62,7 @@ class GpuCTC {
                                           size_t& best_config);
 
         ctcStatus_t
-        compute_probs(const ProbT* const activations);
+        compute_log_probs(const ProbT* const activations);
 
         ctcStatus_t
         compute_cost_and_score(const ProbT* const activations,
@@ -355,7 +355,7 @@ GpuCTC<ProbT>::launch_gpu_kernels(const ProbT* const probs,
 
 template<typename ProbT>
 ctcStatus_t
-GpuCTC<ProbT>::compute_probs(const ProbT* const activations) {
+GpuCTC<ProbT>::compute_log_probs(const ProbT* const activations) {
 
     cudaError_t cuda_status;
     cuda_status =
@@ -391,8 +391,8 @@ GpuCTC<ProbT>::compute_probs(const ProbT* const activations) {
         return ctc_status;
 
     // Kernel launch to calculate probabilities
-    compute_probs_kernel<ProbT, VT><<<grid_size, NT, 0, stream_>>>
-        (ctc_helper::exponential<ProbT>(), probs_,
+    compute_log_probs_kernel<ProbT, VT><<<grid_size, NT, 0, stream_>>>
+        (ctc_helper::logarithmic<ProbT>(), probs_,
          denoms_, out_dim_, num_elements);
 
     return CTC_STATUS_SUCCESS;
@@ -417,12 +417,15 @@ GpuCTC<ProbT>::compute_cost_and_score(const ProbT* const activations,
     if (status != CTC_STATUS_SUCCESS)
         return status;
 
-    status = compute_probs(activations);
+    status = compute_log_probs(activations);
     if (status != CTC_STATUS_SUCCESS)
         return status;
 
-    launch_gpu_kernels(probs_, grads, best_config,
+    status = launch_gpu_kernels(probs_, grads, best_config,
                        compute_alpha, compute_betas_and_grad);
+
+    if (status != CTC_STATUS_SUCCESS)
+        return status;
 
     cudaError_t cuda_status_mem, cuda_status_sync;
     cuda_status_mem = cudaMemcpyAsync(costs, nll_forward_,
@@ -472,4 +475,3 @@ GpuCTC<ProbT>::score_forward(const ProbT* const activations,
     return compute_cost_and_score(activations, nullptr, costs, flat_labels,
                                   label_lengths, input_lengths, true, false);
 }
-

@@ -252,9 +252,6 @@ int main(int argc, char** argv) {
   };
 
   // Build Language Model
-  int blankIdx =
-      FLAGS_criterion == kCtcCriterion ? tokenDict.getIndex(kBlankToken) : -1;
-  int silIdx = -1;
   int unkWordIdx = -1;
 
   Dictionary usrDict = tokenDict;
@@ -279,9 +276,11 @@ int main(int argc, char** argv) {
   LOG(INFO) << "[Decoder] LM constructed.\n";
 
   // Build Trie
+  int blankIdx =
+      FLAGS_criterion == kCtcCriterion ? tokenDict.getIndex(kBlankToken) : -1;
+  int silIdx = tokenDict.getIndex(FLAGS_wordseparator);
   std::shared_ptr<Trie> trie = nullptr;
   if (!FLAGS_lexicon.empty() && FLAGS_criterion != kSeq2SeqCriterion) {
-    silIdx = tokenDict.getIndex(FLAGS_wordseparator);
     trie = std::make_shared<Trie>(tokenDict.indexSize(), silIdx);
     auto startState = lm->start(false);
 
@@ -360,12 +359,12 @@ int main(int argc, char** argv) {
           }
 
           auto amUpdateFunc = buildAmUpdateFunction(localCriterion);
-          int eos = tokenDict.getIndex(kEosToken);
+          int eosIdx = tokenDict.getIndex(kEosToken);
 
           decoder.reset(new Seq2SeqDecoder(
               decoderOpt,
               localLm,
-              eos,
+              eosIdx,
               amUpdateFunc,
               FLAGS_maxdecoderoutputlen,
               static_cast<float>(FLAGS_hardselection),

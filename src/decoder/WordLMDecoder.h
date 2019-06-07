@@ -24,7 +24,7 @@ class WordLMDecoder : public LexiconDecoder {
       const LMPtr lm,
       const int sil,
       const int blank,
-      const TrieLabelPtr unk,
+      const int unk,
       const std::vector<float>& transitions)
       : LexiconDecoder(opt, lexicon, lm, sil, blank, unk, transitions) {}
 

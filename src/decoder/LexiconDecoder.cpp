@@ -30,7 +30,7 @@ void LexiconDecoder::candidatesAdd(
     const LexiconDecoderState* parent,
     const float score,
     const int token,
-    const TrieLabel* word,
+    const int word,
     const bool prevBlank) {
   if (isGoodCandidate(candidatesBestScore_, score, opt_.beamThreshold_)) {
     if (nCandidates_ == candidates_.size()) {
@@ -58,7 +58,7 @@ void LexiconDecoder::candidatesStore(
       candidatesBestScore_,
       opt_.beamThreshold_);
 
-  /* Sort by (LmState, lex, score) and copy into next hypothesis */
+  /* Sort by (lmState, lex, score) and copy into next hypothesis */
   nValidHyp = mergeCandidates(nValidHyp);
 
   /* Sort hypothesis and select top-K */
@@ -72,7 +72,7 @@ void LexiconDecoder::decodeBegin() {
 
   /* note: the lm reset itself with :start() */
   hyp_[0].emplace_back(
-      lm_->start(0), lexicon_->getRoot().get(), nullptr, 0.0, sil_, nullptr);
+      lm_->start(0), lexicon_->getRoot().get(), nullptr, 0.0, sil_, -1);
   nDecodedFrames_ = 0;
   nPrunedFrames_ = 0;
 }
@@ -84,15 +84,14 @@ void LexiconDecoder::decodeEnd() {
     const TrieNode* prevLex = prevHyp.lex_;
     const LMStatePtr& prevLmState = prevHyp.lmState_;
 
-    float lmScoreEnd;
-    LMStatePtr newLmState = lm_->finish(prevLmState, lmScoreEnd);
+    auto lmStateScorePair = lm_->finish(prevLmState);
     candidatesAdd(
-        newLmState,
+        lmStateScorePair.first,
         prevLex,
         &prevHyp,
-        prevHyp.score_ + opt_.lmWeight_ * lmScoreEnd,
+        prevHyp.score_ + opt_.lmWeight_ * lmStateScorePair.second,
         -1,
-        nullptr,
+        -1,
         false // prevBlank
     );
   }

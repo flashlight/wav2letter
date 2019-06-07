@@ -34,7 +34,7 @@ struct Seq2SeqDecoderState {
   const Seq2SeqDecoderState* parent_; // Parent hypothesis
   float score_; // Score so far
   int token_; // Label of token
-  AMStatePtr amState_;
+  AMStatePtr amState_; // Acoustic model state
 
   Seq2SeqDecoderState(
       const LMStatePtr& lmState,
@@ -77,7 +77,6 @@ class Seq2SeqDecoder : public Decoder {
   Seq2SeqDecoder(
       const DecoderOptions& opt,
       const LMPtr lm,
-      const std::unordered_map<int, int>& lmIndMap,
       const int eos,
       AMUpdateFunc amUpdateFunc,
       const int maxOutputLength,
@@ -85,7 +84,6 @@ class Seq2SeqDecoder : public Decoder {
       const float softSelection)
       : Decoder(opt),
         lm_(lm),
-        lmIndMap_(lmIndMap),
         eos_(eos),
         amUpdateFunc_(amUpdateFunc),
         maxOutputLength_(maxOutputLength),
@@ -104,7 +102,6 @@ class Seq2SeqDecoder : public Decoder {
 
  protected:
   LMPtr lm_;
-  std::unordered_map<int, int> lmIndMap_;
   int eos_;
   AMUpdateFunc amUpdateFunc_;
   std::vector<Seq2SeqDecoderState> completedCandidates;

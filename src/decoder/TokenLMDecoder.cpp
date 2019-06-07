@@ -82,9 +82,9 @@ void TokenLMDecoder::decodeStep(const float* emissions, int T, int N) {
           score += opt_.silWeight_;
         }
 
-        int lmIdx = lmIndMap_.find(n)->second;
         float lmScore = 0;
-        const LMStatePtr newLmState = lm_->score(prevLmState, lmIdx, lmScore);
+        LMStatePtr newLmState;
+        std::tie(newLmState, lmScore) = lm_->score(prevLmState, n);
         score += lmScore * opt_.lmWeight_;
 
         // We eat-up a new token
@@ -97,7 +97,7 @@ void TokenLMDecoder::decodeStep(const float* emissions, int T, int N) {
                 &prevHyp,
                 score,
                 n,
-                nullptr,
+                -1,
                 false // prevBlank
             );
           }
@@ -111,7 +111,7 @@ void TokenLMDecoder::decodeStep(const float* emissions, int T, int N) {
               &prevHyp,
               score + opt_.wordScore_,
               n,
-              lex->label_[i].get(),
+              lex->label_[i],
               false // prevBlank
           );
         }
@@ -124,7 +124,7 @@ void TokenLMDecoder::decodeStep(const float* emissions, int T, int N) {
               &prevHyp,
               score + opt_.unkScore_,
               n,
-              unk_.get(),
+              unk_,
               false // prevBlank
           );
         }
@@ -148,7 +148,7 @@ void TokenLMDecoder::decodeStep(const float* emissions, int T, int N) {
             &prevHyp,
             score,
             n,
-            nullptr,
+            -1,
             false // prevBlank
         );
       }
@@ -163,7 +163,7 @@ void TokenLMDecoder::decodeStep(const float* emissions, int T, int N) {
             &prevHyp,
             score,
             n,
-            nullptr,
+            -1,
             true // prevBlank
         );
       }

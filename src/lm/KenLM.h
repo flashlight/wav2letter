@@ -8,46 +8,41 @@
 
 #pragma once
 
-#include <glog/logging.h>
+#include "common/Dictionary.h"
 #include "decoder/LM.h"
 #include "lm/model.hh"
 
 namespace w2l {
 /**
- * KenLMState extends LMState by adding a state object from KenLM, which
- * contains context length, indicies and compare functions
+ * KenLMState is a state object from KenLM, which  contains context length,
+ * indicies and compare functions
  * https://github.com/kpu/kenlm/blob/master/lm/state.hh.
  */
-struct KenLMState : public LMState {
-  lm::ngram::State state_;
-
-  explicit KenLMState(lm::ngram::State state) : state_(state) {}
-};
+using KenLMState = lm::ngram::State;
 
 /**
  * KenLM extends LM by using the toolkit https://kheafield.com/code/kenlm/.
  */
 class KenLM : public LM {
  public:
-  int index(const std::string& token) override;
+  KenLM(const std::string& path, const Dictionary& usrTknDict);
 
-  LMStatePtr start(bool isNull) override;
+  LMStatePtr start(bool startWithNothing) override;
 
-  LMStatePtr score(const LMStatePtr& inState, int tokenIdx, float& score)
-      override;
+  std::pair<LMStatePtr, float> score(
+      const LMStatePtr& state,
+      const int usrTokenIdx) override;
 
-  LMStatePtr finish(const LMStatePtr& inState, float& score) override;
+  std::pair<LMStatePtr, float> finish(const LMStatePtr& state) override;
 
   int compareState(const LMStatePtr& state1, const LMStatePtr& state2)
       const override;
 
-  explicit KenLM(const std::string& path);
-
  private:
-  const lm::base::Model* model;
-  const lm::base::Vocabulary* vocab;
-};
+  std::shared_ptr<lm::base::Model> model_;
+  const lm::base::Vocabulary* vocab_;
 
-typedef std::shared_ptr<KenLM> KenLMPtr;
+  static KenLMState* getRawState(const LMStatePtr& state);
+};
 
 } // namespace w2l

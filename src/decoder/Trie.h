@@ -13,7 +13,7 @@
 
 namespace w2l {
 
-const int kTrieMaxLable = 6;
+const int kTrieMaxLabel = 6;
 
 enum class SmearingMode {
   NONE = 0,
@@ -22,40 +22,36 @@ enum class SmearingMode {
 };
 
 /**
- * TrieLabel is the label for trie nodes representing completed tokens. It
- * has two indices of each token, one from the dictionary in language model and
- * the other from the dictionary in decoder.
- */
-struct TrieLabel {
-  TrieLabel(int lm, int usr) : lm_(lm), usr_(usr) {}
-  int lm_;
-  int usr_;
-};
-
-typedef std::shared_ptr<TrieLabel> TrieLabelPtr;
-
-/**
  * TrieNode is the trie node structure in Trie.
  */
 struct TrieNode {
-  TrieNode(int nchildren, int idx)
+  explicit TrieNode(int idx)
       : children_(std::unordered_map<int, std::shared_ptr<TrieNode>>()),
         idx_(idx),
         nLabel_(0),
-        label_(std::vector<TrieLabelPtr>(kTrieMaxLable)),
-        score_(std::vector<float>(kTrieMaxLable)),
+        label_(kTrieMaxLabel),
+        score_(kTrieMaxLabel),
         maxScore_(0) {}
 
-  std::unordered_map<int, std::shared_ptr<TrieNode>>
-      children_; // Pointers to the childern of a node
-  int idx_; // Node index
-  int nLabel_; // Number of labels a node has. Note that nLabel_ is positive
-               // only if the current code represent a completed token.
-  std::vector<TrieLabelPtr> label_; // Labels
-  std::vector<float>
-      score_; // Scores (score_ should have the same size as label_)
-  float maxScore_; // Maximum score of all the labels if this node is a leaf,
-                   // otherwise it will be the value after trie smearing.
+  // Pointers to the childern of a node
+  std::unordered_map<int, std::shared_ptr<TrieNode>> children_;
+
+  // Node index
+  int idx_;
+
+  // Number of labels a node has. Note that nLabel_ is positive
+  // only if the current code represent a completed token.
+  int nLabel_;
+
+  // Labels of words that are constructed from the given path
+  std::vector<int> label_;
+
+  // Scores (score_ should have the same size as label_)
+  std::vector<float> score_;
+
+  // Maximum score of all the labels if this node is a leaf,
+  // otherwise it will be the value after trie smearing.
+  float maxScore_;
 };
 
 typedef std::shared_ptr<TrieNode> TrieNodePtr;
@@ -67,9 +63,8 @@ typedef std::shared_ptr<TrieNode> TrieNodePtr;
  */
 class Trie {
  public:
-  Trie(int nChildren, int rootIdx)
-      : root_(std::make_shared<TrieNode>(nChildren, rootIdx)),
-        nChildren_(nChildren) {}
+  Trie(int maxChildren, int rootIdx)
+      : root_(std::make_shared<TrieNode>(rootIdx)), maxChildren_(maxChildren) {}
 
   /* Return the root node pointer */
   TrieNodePtr getRoot();
@@ -78,10 +73,7 @@ class Trie {
   int getNumChildren();
 
   /* Insert a token into trie with label */
-  TrieNodePtr insert(
-      const std::vector<int>& indices,
-      const TrieLabelPtr label,
-      float score);
+  TrieNodePtr insert(const std::vector<int>& indices, int label, float score);
 
   /* Get the labels for a given token */
   TrieNodePtr search(const std::vector<int>& indices);
@@ -98,8 +90,8 @@ class Trie {
 
  private:
   TrieNodePtr root_;
-  int nChildren_; // The maximum number of childern for each node. It is
-                  // usually the size of letters or phonmes.
+  int maxChildren_; // The maximum number of childern for each node. It is
+                    // usually the size of letters or phonmes.
 };
 
 typedef std::shared_ptr<Trie> TriePtr;

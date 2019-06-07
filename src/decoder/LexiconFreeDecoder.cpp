@@ -139,9 +139,9 @@ void LexiconFreeDecoder::decodeStep(const float* emissions, int T, int N) {
         if ((opt_.criterionType_ == CriterionType::ASG && n != prevIdx) ||
             (opt_.criterionType_ == CriterionType::CTC && n != blank_ &&
              (n != prevIdx || prevHyp.prevBlank_))) {
-          int lmIdx = lmIndMap_.find(n)->second;
           float lmScore = 0;
-          const LMStatePtr newLmState = lm_->score(prevLmState, lmIdx, lmScore);
+          LMStatePtr newLmState;
+          std::tie(newLmState, lmScore) = lm_->score(prevLmState, n);
           score += lmScore * opt_.lmWeight_;
 
           candidatesAdd(
@@ -184,7 +184,8 @@ void LexiconFreeDecoder::decodeEnd() {
     const LMStatePtr& prevLmState = prevHyp.lmState_;
 
     float lmScoreEnd;
-    LMStatePtr newLmState = lm_->finish(prevLmState, lmScoreEnd);
+    LMStatePtr newLmState;
+    std::tie(newLmState, lmScoreEnd) = lm_->finish(prevLmState);
     candidatesAdd(
         newLmState,
         &prevHyp,

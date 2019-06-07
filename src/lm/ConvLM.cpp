@@ -7,9 +7,11 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#include "lm/ConvLM.h"
+#include <glog/logging.h>
+
 #include "common/Defines.h"
 #include "common/Utils-base.h"
+#include "lm/ConvLM.h"
 #include "runtime/Serial.h"
 
 namespace w2l {
@@ -17,6 +19,7 @@ namespace w2l {
 ConvLM::ConvLM(
     const std::string& modelPath,
     const std::string& tokenVocabPath,
+    const Dictionary& usrTknDict,
     int lmMemory,
     int beamSize,
     int historySize)
@@ -29,9 +32,10 @@ ConvLM::ConvLM(
     LOG(FATAL) << "[ConvLM] File with ConvLM model '" << modelPath
                << "' doesn't exist";
   }
-  /* Load token vocabulary */
-  // fairseq vocab should be <fairseq_style> - 0 <pad> - 1, </s> - 2, <unk> - 3
 
+  /* Load token vocabulary */
+  // Note: fairseq vocab should start with:
+  // <fairseq_style> - 0 <pad> - 1, </s> - 2, <unk> - 3
   LOG(INFO) << "[ConvLM]: Loading vocabulary from " << tokenVocabPath;
   vocab_ = createLMDict(tokenVocabPath);
   vocab_.setDefaultIndex(vocab_.getIndex(kUnkToken));
@@ -44,6 +48,14 @@ ConvLM::ConvLM(
   network_->eval();
   LOG(INFO) << "[ConvLM]: Finish loading LM from " << modelPath;
 
+  /* Create index map */
+  usrToLmIdxMap_.clear();
+  for (int i = 0; i < usrTknDict.indexSize(); i++) {
+    auto token = usrTknDict.getToken(i);
+    int lmIdx = vocab_.getIndex(token.c_str());
+    usrToLmIdxMap_.emplace(i, lmIdx);
+  }
+
   /* Refresh cache */
   cacheIndices_.reserve(beamSize_);
   cache_.resize(beamSize_, std::vector<float>(vocabSize_));
@@ -51,72 +63,83 @@ ConvLM::ConvLM(
   batchedTokens_.resize(beamSize_ * maxHistorySize_);
 }
 
-int ConvLM::index(const std::string& token) {
-  return vocab_.getIndex(token.c_str());
-}
-
-LMStatePtr ConvLM::start(bool startWithNonEos) {
+LMStatePtr ConvLM::start(bool startWithNothing) {
   auto outState = std::make_shared<ConvLMState>(1);
-  if (!startWithNonEos) {
+  if (!startWithNothing) {
     outState->length = 1;
-    outState->tokens[0] = index(kLmEosToken);
+    outState->tokens[0] = vocab_.getIndex(kLmEosToken);
   } else {
     LOG(FATAL) << "[ConvLM] Only support using EOS to start the sentence";
   }
   return outState;
 }
 
-LMStatePtr
-ConvLM::score(const LMStatePtr& inState, int tokenIdx, float& scoreRef) {
-  const ConvLMState* inState_ = static_cast<ConvLMState*>(inState.get());
-  int inStateLength = inState_->length;
+std::pair<LMStatePtr, float> ConvLM::scoreWithLmIdx(
+    const LMStatePtr& state,
+    const int tokenIdx) {
+  auto inState = getRawState(state);
+  int inStateLength = inState->length;
   std::shared_ptr<ConvLMState> outState;
 
   // Prepare output state
   if (inStateLength == maxHistorySize_) {
     outState = std::make_shared<ConvLMState>(maxHistorySize_);
     std::copy(
-        inState_->tokens.begin() + 1,
-        inState_->tokens.end(),
+        inState->tokens.begin() + 1,
+        inState->tokens.end(),
         outState->tokens.begin());
     outState->tokens[maxHistorySize_ - 1] = tokenIdx;
   } else {
     outState = std::make_shared<ConvLMState>(inStateLength + 1);
     std::copy(
-        inState_->tokens.begin(),
-        inState_->tokens.end(),
+        inState->tokens.begin(),
+        inState->tokens.end(),
         outState->tokens.begin());
     outState->tokens[inStateLength] = tokenIdx;
   }
 
   // Prepare score
+  float score = 0;
   if (tokenIdx < 0 || tokenIdx >= vocabSize_) {
     LOG(FATAL) << "[ConvLM] Invalid query word: " << tokenIdx;
   }
 
-  if (cacheIndices_.find(inState_) != cacheIndices_.end()) {
+  if (cacheIndices_.find(inState) != cacheIndices_.end()) {
     // Cache hit
-    auto cacheInd = cacheIndices_[inState_];
+    auto cacheInd = cacheIndices_[inState];
     if (cacheInd < 0 || cacheInd >= beamSize_) {
       LOG(FATAL) << "[ConvLM] Invalid cache access: " << cacheInd;
     }
-    scoreRef = cache_[cacheInd][tokenIdx];
+    score = cache_[cacheInd][tokenIdx];
   } else {
     // Cache miss
     if (cacheIndices_.size() == beamSize_) {
       cacheIndices_.clear();
     }
     int newIdx = cacheIndices_.size();
-    cacheIndices_[inState_] = newIdx;
+    cacheIndices_[inState] = newIdx;
 
-    std::vector<int> lastTokenPositions = {inState_->length - 1};
-    cache_[newIdx] = getLogProb(inState_->tokens, lastTokenPositions)[0];
-    scoreRef = cache_[newIdx][tokenIdx];
+    std::vector<int> lastTokenPositions = {inState->length - 1};
+    cache_[newIdx] = getLogProb(inState->tokens, lastTokenPositions)[0];
+    score = cache_[newIdx][tokenIdx];
   }
-  if (std::isnan(scoreRef) || !std::isfinite(scoreRef)) {
-    LOG(FATAL) << "[ConvLM] Wrong scoring from ConvLM: " << scoreRef;
+  if (std::isnan(score) || !std::isfinite(score)) {
+    LOG(FATAL) << "[ConvLM] Wrong scoring from ConvLM: " << score;
   }
-  return outState;
+  return std::make_pair(std::move(outState), score);
+}
+
+std::pair<LMStatePtr, float> ConvLM::score(
+    const LMStatePtr& state,
+    const int usrTokenIdx) {
+  if (usrTokenIdx < 0 || usrTokenIdx >= usrToLmIdxMap_.size()) {
+    LOG(FATAL) << "[KenLM] Invalid user token index" << usrTokenIdx;
+  }
+  return scoreWithLmIdx(state, usrToLmIdxMap_[usrTokenIdx]);
+}
+
+std::pair<LMStatePtr, float> ConvLM::finish(const LMStatePtr& state) {
+  return scoreWithLmIdx(state, vocab_.getIndex(kLmEosToken));
 }
 
 void ConvLM::updateCache(std::vector<LMStatePtr> states) {
@@ -130,7 +153,7 @@ void ConvLM::updateCache(std::vector<LMStatePtr> states) {
   slot_.clear();
   slot_.resize(beamSize_, nullptr);
   for (const auto& state : states) {
-    const ConvLMState* state_ = static_cast<ConvLMState*>(state.get());
+    auto state_ = getRawState(state);
     if (cacheIndices_.find(state_) != cacheIndices_.end()) {
       slot_[cacheIndices_[state_]] = state_;
     } else if (state_->length > longestHistory) {
@@ -167,7 +190,7 @@ void ConvLM::updateCache(std::vector<LMStatePtr> states) {
     std::vector<int> lastTokenPositions;
     for (int i = batchStart; (nBatchStates < maxBatchSize) && (i < nStates);
          i++, batchStart++) {
-      const ConvLMState* state = static_cast<ConvLMState*>(states[i].get());
+      auto state = getRawState(states[i]);
       if (cacheIndices_.find(state) != cacheIndices_.end()) {
         continue;
       }
@@ -179,7 +202,7 @@ void ConvLM::updateCache(std::vector<LMStatePtr> states) {
       }
       start += state->length;
       for (int j = 0; j < longestHistory - state->length; j++) {
-        batchedTokens_[start + j] = index(kLmPadToken);
+        batchedTokens_[start + j] = vocab_.getIndex(kLmPadToken);
       }
       lastTokenPositions.push_back(state->length - 1);
       ++nBatchStates;
@@ -248,21 +271,21 @@ std::vector<std::vector<float>> ConvLM::getLogProb(
   return chosenFramePred;
 }
 
-LMStatePtr ConvLM::finish(const LMStatePtr& inState, float& scoreRef) {
-  return score(inState, index(kLmEosToken), scoreRef);
-}
-
 int ConvLM::compareState(const LMStatePtr& state1, const LMStatePtr& state2)
     const {
-  auto state1_ = static_cast<ConvLMState*>(state1.get());
-  auto state2_ = static_cast<ConvLMState*>(state2.get());
-  if (state1_->length != state2_->length) {
-    return state1_->length < state2_->length ? -1 : 1;
+  auto inState1 = getRawState(state1);
+  auto inState2 = getRawState(state2);
+  if (inState1->length != inState2->length) {
+    return inState1->length < inState2->length ? -1 : 1;
   }
   return std::memcmp(
-      state1_->tokens.data(),
-      state2_->tokens.data(),
-      state1_->length * sizeof(int));
+      inState1->tokens.data(),
+      inState2->tokens.data(),
+      inState1->length * sizeof(int));
+}
+
+ConvLMState* ConvLM::getRawState(const LMStatePtr& state) {
+  return static_cast<ConvLMState*>(state.get());
 }
 
 } // namespace w2l

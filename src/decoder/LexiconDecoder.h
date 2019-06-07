@@ -24,8 +24,8 @@ struct LexiconDecoderState {
   const LexiconDecoderState* parent_; // Parent hypothesis
   float score_; // Score so far
   int token_; // Label of token
-  const TrieLabel* word_; // Label of word (-1 if incomplete)
-  bool prevBlank_;
+  int word_; // Label of word (-1 if incomplete)
+  bool prevBlank_; // If previous hypothesis is blank (for CTC only)
 
   LexiconDecoderState(
       const LMStatePtr& lmState,
@@ -33,7 +33,7 @@ struct LexiconDecoderState {
       const LexiconDecoderState* parent,
       const float score,
       const int token,
-      const TrieLabel* word,
+      const int word,
       const bool prevBlank = false)
       : lmState_(lmState),
         lex_(lex),
@@ -49,15 +49,15 @@ struct LexiconDecoderState {
         parent_(nullptr),
         score_(0),
         token_(-1),
-        word_(nullptr),
+        word_(-1),
         prevBlank_(false) {}
 
   int getWord() const {
-    return word_ ? word_->usr_ : -1;
+    return word_;
   }
 
   bool isComplete() const {
-    return !parent_ || parent_->word_;
+    return !parent_ || parent_->word_ >= 0;
   }
 };
 
@@ -82,7 +82,7 @@ class LexiconDecoder : public Decoder {
       const LMPtr lm,
       const int sil,
       const int blank,
-      const TrieLabelPtr unk,
+      const int unk,
       const std::vector<float>& transitions)
       : Decoder(opt),
         lexicon_(lexicon),
@@ -114,41 +114,58 @@ class LexiconDecoder : public Decoder {
   LMPtr lm_;
   std::vector<float> transitions_;
 
-  std::vector<LexiconDecoderState>
-      candidates_; // All the hypothesis candidates (can be larger than
-                   // beamsize) for the current frame
-  std::vector<LexiconDecoderState*>
-      candidatePtrs_; // This vector is only used when sort the candidates_, so
-                      // instead of moving around objects, we only need to sort
-                      // pointers
+  // All the hypothesis new candidates (can be larger than beamsize) proposed
+  // based on the ones from previous frame
+  std::vector<LexiconDecoderState> candidates_;
+
+  // This vector is designed for efficient sorting and merging the candidates_,
+  // so instead of moving around objects, we only need to sort pointers
+  std::vector<LexiconDecoderState*> candidatePtrs_;
+
+  // Best candidate score of current frame
   float candidatesBestScore_;
-  int sil_; // Index of silence label
-  int blank_; // Index of blank label (for CTC)
-  TrieLabelPtr unk_; // Trie label for unknown word
-  std::unordered_map<int, std::vector<LexiconDecoderState>>
-      hyp_; // Vector of hypothesis for all the frames so far
-  int nCandidates_; // Total number of candidates in candidates_. Note that
-                    // candidates is not always equal to candidates_.size()
-                    // since we do not refresh the buffer for candidates_ in
-                    // memory through out the whole decoding process.
+
+  // Index of silence label
+  int sil_;
+
+  // Index of blank label (for CTC)
+  int blank_;
+
+  // Index of unknown word
+  int unk_;
+
+  // Vector of hypothesis for all the frames so far
+  std::unordered_map<int, std::vector<LexiconDecoderState>> hyp_;
+
+  // Total number of candidates in candidates_. Note that candidates is not
+  // always equal to candidates_.size() since we do not refresh the buffer for
+  // candidates_ in memory through out the whole decoding process.
+  int nCandidates_;
+
+  // These 2 variables are used for online decoding, for hypothesis pruning
   int nDecodedFrames_; // Total number of decoded frames.
   int nPrunedFrames_; // Total number of pruned frames from hyp_.
 
+  // Reset candidates buffer for decoding a new input frame
   void candidatesReset();
 
+  // Add a new candidate to the buffer
   void candidatesAdd(
       const LMStatePtr& lmState,
       const TrieNode* lex,
       const LexiconDecoderState* parent,
       const float score,
       const int token,
-      const TrieLabel* label,
+      const int label,
       const bool prevBlank);
 
+  // Merge and sort candidates proposed in the current frame and place them into
+  // the `hyp_` buffer
   void candidatesStore(
       std::vector<LexiconDecoderState>& nextHyp,
       const bool isSort);
 
+  // Merge hypothesis getting into same state from different path
   virtual int mergeCandidates(const int size) = 0;
 };
 

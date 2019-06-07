@@ -22,7 +22,7 @@ struct LexiconFreeDecoderState {
   const LexiconFreeDecoderState* parent_; // Parent hypothesis
   float score_; // Score so far
   int token_; // Label of token
-  bool prevBlank_;
+  bool prevBlank_; // If previous hypothesis is blank (for CTC only)
 
   LexiconFreeDecoderState(
       const LMStatePtr& lmState,
@@ -71,15 +71,13 @@ class LexiconFreeDecoder : public Decoder {
       const LMPtr lm,
       const int sil,
       const int blank,
-      const std::vector<float>& transitions,
-      const std::unordered_map<int, int>& lmIndMap)
+      const std::vector<float>& transitions)
       : Decoder(opt),
         lm_(lm),
         transitions_(transitions),
         sil_(sil),
         blank_(blank),
-        nCandidates_(0),
-        lmIndMap_(lmIndMap) {
+        nCandidates_(0) {
     candidates_.reserve(kBufferBucketSize);
   }
 
@@ -103,29 +101,39 @@ class LexiconFreeDecoder : public Decoder {
   LMPtr lm_;
   std::vector<float> transitions_;
 
-  std::vector<LexiconFreeDecoderState>
-      candidates_; // All the hypothesis candidates (can be larger than
-                   // beamsize) for the current frame
-  std::vector<LexiconFreeDecoderState*>
-      candidatePtrs_; // This vector is only used when sort the candidates_, so
-                      // instead of moving around objects, we only need to sort
-                      // pointers
+  // All the hypothesis new candidates (can be larger than beamsize) proposed
+  // based on the ones from previous frame
+  std::vector<LexiconFreeDecoderState> candidates_;
+
+  // This vector is designed for efficient sorting and merging the candidates_,
+  // so instead of moving around objects, we only need to sort pointers
+  std::vector<LexiconFreeDecoderState*> candidatePtrs_;
+
+  // Best candidate score of current frame
   float candidatesBestScore_;
-  int sil_; // Index of silence label
-  int blank_; // Index of blank label (for CTC)
-  std::unordered_map<int, std::vector<LexiconFreeDecoderState>>
-      hyp_; // Vector of hypothesis for all the frames so far
-  int nCandidates_; // Total number of candidates in candidates_. Note that
-                    // candidates is not always equal to candidates_.size()
-                    // since we do not refresh the buffer for candidates_ in
-                    // memory through out the whole decoding process.
+
+  // Index of silence label
+  int sil_;
+
+  // Index of blank label (for CTC)
+  int blank_;
+
+  // Vector of hypothesis for all the frames so far
+  std::unordered_map<int, std::vector<LexiconFreeDecoderState>> hyp_;
+
+  // Total number of candidates in candidates_. Note that candidates is not
+  // always equal to candidates_.size() since we do not refresh the buffer for
+  // candidates_ in memory through out the whole decoding process.
+  int nCandidates_;
+
+  // These 2 variables are used for online decoding, for hypothesis pruning
   int nDecodedFrames_; // Total number of decoded frames.
   int nPrunedFrames_; // Total number of pruned frames from hyp_.
 
-  std::unordered_map<int, int> lmIndMap_;
-
+  // Reset candidates buffer for decoding a new input frame
   void candidatesReset();
 
+  // Add a new candidate to the buffer
   void candidatesAdd(
       const LMStatePtr& lmState,
       const LexiconFreeDecoderState* parent,
@@ -133,10 +141,13 @@ class LexiconFreeDecoder : public Decoder {
       const int token,
       const bool prevBlank);
 
+  // Merge and sort candidates proposed in the current frame and place them into
+  // the `hyp_` buffer
   void candidatesStore(
       std::vector<LexiconFreeDecoderState>& nextHyp,
       const bool isSort);
 
+  // Merge hypothesis getting into same state from different path
   int mergeCandidates(const int size);
 };
 

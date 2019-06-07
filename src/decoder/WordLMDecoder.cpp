@@ -98,7 +98,7 @@ void WordLMDecoder::decodeStep(const float* emissions, int T, int N) {
                 &prevHyp,
                 score + opt_.lmWeight_ * (lex->maxScore_ - lexMaxScore),
                 n,
-                nullptr,
+                -1,
                 false // prevBlank
             );
           }
@@ -107,8 +107,9 @@ void WordLMDecoder::decodeStep(const float* emissions, int T, int N) {
         // If we got a true word
         for (int i = 0; i < lex->nLabel_; i++) {
           float lmScore;
-          const LMStatePtr newLmState =
-              lm_->score(prevLmState, lex->label_[i]->lm_, lmScore);
+          LMStatePtr newLmState;
+          std::tie(newLmState, lmScore) =
+              lm_->score(prevLmState, lex->label_[i]);
           candidatesAdd(
               newLmState,
               lexicon_->getRoot().get(),
@@ -116,7 +117,7 @@ void WordLMDecoder::decodeStep(const float* emissions, int T, int N) {
               score + opt_.lmWeight_ * (lmScore - lexMaxScore) +
                   opt_.wordScore_,
               n,
-              lex->label_[i].get(),
+              lex->label_[i],
               false // prevBlank
           );
         }
@@ -124,15 +125,15 @@ void WordLMDecoder::decodeStep(const float* emissions, int T, int N) {
         // If we got an unknown word
         if (lex->nLabel_ == 0 && (opt_.unkScore_ > kNegativeInfinity)) {
           float lmScore;
-          const LMStatePtr newLmState =
-              lm_->score(prevLmState, unk_->lm_, lmScore);
+          LMStatePtr newLmState;
+          std::tie(newLmState, lmScore) = lm_->score(prevLmState, unk_);
           candidatesAdd(
               newLmState,
               lexicon_->getRoot().get(),
               &prevHyp,
               score + opt_.lmWeight_ * (lmScore - lexMaxScore) + opt_.unkScore_,
               n,
-              unk_.get(),
+              unk_,
               false // prevBlank
           );
         }
@@ -156,7 +157,7 @@ void WordLMDecoder::decodeStep(const float* emissions, int T, int N) {
             &prevHyp,
             score,
             n,
-            nullptr,
+            -1,
             false // prevBlank
         );
       }
@@ -171,7 +172,7 @@ void WordLMDecoder::decodeStep(const float* emissions, int T, int N) {
             &prevHyp,
             score,
             n,
-            nullptr,
+            -1,
             true // prevBlank
         );
       }

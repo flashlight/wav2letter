@@ -13,39 +13,37 @@
 
 #include "decoder/Trie.h"
 
-const double kMinusLogThreshold = -39.14;
-
 namespace w2l {
+
+const double kMinusLogThreshold = -39.14;
 
 TrieNodePtr Trie::getRoot() {
   return root_;
 }
 
 int Trie::getNumChildren() {
-  return nChildren_;
+  return maxChildren_;
 }
 
-TrieNodePtr Trie::insert(
-    const std::vector<int>& indices,
-    const TrieLabelPtr label,
-    float score) {
+TrieNodePtr
+Trie::insert(const std::vector<int>& indices, int label, float score) {
   TrieNodePtr node = root_;
   for (int i = 0; i < indices.size(); i++) {
     int idx = indices[i];
-    if (idx < 0 || idx >= nChildren_) {
+    if (idx < 0 || idx >= maxChildren_) {
       LOG(FATAL) << "[Trie] Invalid letter index: " << idx;
     }
     if (node->children_.find(idx) == node->children_.end()) {
-      node->children_[idx] = std::make_shared<TrieNode>(nChildren_, idx);
+      node->children_[idx] = std::make_shared<TrieNode>(idx);
     }
     node = node->children_[idx];
   }
-  if (node->nLabel_ < kTrieMaxLable) {
+  if (node->nLabel_ < kTrieMaxLabel) {
     node->label_[node->nLabel_] = label;
     node->score_[node->nLabel_] = score;
     node->nLabel_++;
   } else {
-    LOG(INFO) << "[Trie] Trie label number reached limit: " << kTrieMaxLable;
+    LOG(INFO) << "[Trie] Trie label number reached limit: " << kTrieMaxLabel;
   }
   return node;
 }
@@ -53,7 +51,7 @@ TrieNodePtr Trie::insert(
 TrieNodePtr Trie::search(const std::vector<int>& indices) {
   TrieNodePtr node = root_;
   for (auto idx : indices) {
-    if (idx < 0 || idx >= nChildren_) {
+    if (idx < 0 || idx >= maxChildren_) {
       LOG(FATAL) << "[Trie] Invalid letter index: " << idx;
     }
     if (node->children_.find(idx) == node->children_.end()) {

@@ -252,51 +252,52 @@ int main(int argc, char** argv) {
   };
 
   // Build Language Model
+  int blankIdx =
+      FLAGS_criterion == kCtcCriterion ? tokenDict.getIndex(kBlankToken) : -1;
+  int silIdx = -1;
+  int unkWordIdx = -1;
+
+  Dictionary usrDict = tokenDict;
+  if (FLAGS_decodertype == "wrd") {
+    usrDict = wordDict;
+    unkWordIdx = wordDict.getIndex(kUnkToken);
+  }
+
   std::shared_ptr<LM> lm;
   if (FLAGS_lmtype == "kenlm") {
-    lm = std::make_shared<KenLM>(FLAGS_lm);
+    lm = std::make_shared<KenLM>(FLAGS_lm, usrDict);
     if (!lm) {
       LOG(FATAL) << "[LM constructing] Failed to load LM: " << FLAGS_lm;
     }
   } else if (FLAGS_lmtype == "convlm") {
     af::setDevice(0);
     lm = std::make_shared<ConvLM>(
-        FLAGS_lm, FLAGS_lm_vocab, FLAGS_lm_memory, FLAGS_beamsize);
+        FLAGS_lm, FLAGS_lm_vocab, usrDict, FLAGS_lm_memory, FLAGS_beamsize);
   } else {
     LOG(FATAL) << "[LM constructing] Invalid LM Type: " << FLAGS_lmtype;
   }
   LOG(INFO) << "[Decoder] LM constructed.\n";
 
   // Build Trie
-  int blankIdx =
-      FLAGS_criterion == kCtcCriterion ? tokenDict.getIndex(kBlankToken) : -1;
-  int silIdx = -1;
-  std::shared_ptr<TrieLabel> unk = nullptr;
-
   std::shared_ptr<Trie> trie = nullptr;
   if (!FLAGS_lexicon.empty() && FLAGS_criterion != kSeq2SeqCriterion) {
     silIdx = tokenDict.getIndex(FLAGS_wordseparator);
     trie = std::make_shared<Trie>(tokenDict.indexSize(), silIdx);
-    auto start_state = lm->start(false);
+    auto startState = lm->start(false);
 
     for (auto& it : lexicon) {
       const std::string& word = it.first;
-      int lmIdx = -1;
+      int usrIdx = wordDict.getIndex(word);
       float score = -1;
       if (FLAGS_decodertype == "wrd") {
-        lmIdx = lm->index(word);
-        auto dummyState = lm->score(start_state, lmIdx, score);
+        LMStatePtr dummyState;
+        std::tie(dummyState, score) = lm->score(startState, usrIdx);
       }
       for (auto& tokens : it.second) {
         auto tokensTensor = tkn2Idx(tokens, tokenDict);
-        trie->insert(
-            tokensTensor,
-            std::make_shared<TrieLabel>(lmIdx, wordDict.getIndex(word)),
-            score);
+        trie->insert(tokensTensor, usrIdx, score);
       }
     }
-    unk = std::make_shared<TrieLabel>(
-        lm->index(kUnkToken), wordDict.getIndex(kUnkToken));
     LOG(INFO) << "[Decoder] Trie planted.\n";
 
     // Smearing
@@ -317,30 +318,35 @@ int main(int argc, char** argv) {
     try {
       // Build Decoder
       std::unique_ptr<Decoder> decoder;
-      std::shared_ptr<SequenceCriterion> localCriterion;
-      std::shared_ptr<LM> localLm;
+      std::shared_ptr<SequenceCriterion> localCriterion; // not thread-safe
+      std::shared_ptr<LM> localLm = lm; // not thread-safe
 
-      localLm = lm;
-      if (FLAGS_lmtype == "convlm") {
-        af::setDevice(tid);
-        if (tid != 0) {
+      if (tid != 0) {
+        if (FLAGS_lmtype == "convlm") {
+          af::setDevice(tid);
           localLm = std::make_shared<ConvLM>(
-              FLAGS_lm, FLAGS_lm_vocab, FLAGS_lm_memory, FLAGS_beamsize);
+              FLAGS_lm,
+              FLAGS_lm_vocab,
+              usrDict,
+              FLAGS_lm_memory,
+              FLAGS_beamsize);
+        } else {
+          auto kenLMPtr = static_cast<KenLM*>(lm.get());
+          localLm = std::make_shared<KenLM>(*kenLMPtr);
         }
       }
 
       if (FLAGS_decodertype == "wrd") {
         decoder.reset(new WordLMDecoder(
-            decoderOpt, trie, localLm, silIdx, blankIdx, unk, transition));
+            decoderOpt,
+            trie,
+            localLm,
+            silIdx,
+            blankIdx,
+            unkWordIdx,
+            transition));
         LOG(INFO) << "[Decoder] Decoder with word-LM loaded in thread: " << tid;
       } else if (FLAGS_decodertype == "tkn") {
-        std::unordered_map<int, int> lmIndMap;
-        for (int i = 0; i < tokenDict.indexSize(); i++) {
-          const std::string& token = tokenDict.getToken(i);
-          int lmIdx = localLm->index(token);
-          lmIndMap[i] = lmIdx;
-        }
-
         if (criterionType == CriterionType::S2S) {
           af::setDevice(tid);
           if (tid != 0) {
@@ -359,7 +365,6 @@ int main(int argc, char** argv) {
           decoder.reset(new Seq2SeqDecoder(
               decoderOpt,
               localLm,
-              lmIndMap,
               eos,
               amUpdateFunc,
               FLAGS_maxdecoderoutputlen,
@@ -375,14 +380,13 @@ int main(int argc, char** argv) {
               localLm,
               silIdx,
               blankIdx,
-              unk,
-              transition,
-              lmIndMap));
+              unkWordIdx,
+              transition));
           LOG(INFO) << "[Decoder] Decoder with token-LM loaded in thread: "
                     << tid;
         } else {
           decoder.reset(new LexiconFreeDecoder(
-              decoderOpt, localLm, silIdx, blankIdx, transition, lmIndMap));
+              decoderOpt, localLm, silIdx, blankIdx, transition));
           LOG(INFO) << "[Decoder] Decoder with token-LM loaded in thread: "
                     << tid;
         }

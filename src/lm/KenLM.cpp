@@ -6,55 +6,73 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <glog/logging.h>
+
 #include "lm/KenLM.h"
 
 namespace w2l {
 
-KenLM::KenLM(const std::string& path) {
-  model = lm::ngram::LoadVirtual(path.c_str());
-  if (!model) {
+KenLM::KenLM(const std::string& path, const Dictionary& usrTknDict) {
+  // Load LM
+  model_.reset(lm::ngram::LoadVirtual(path.c_str()));
+  if (!model_) {
     LOG(FATAL) << "[KenLM] LM loading failed.";
   }
-  vocab = &model->BaseVocabulary();
-  if (!vocab) {
+  vocab_ = &model_->BaseVocabulary();
+  if (!vocab_) {
     LOG(FATAL) << "[KenLM] LM vocabulary loading failed.";
   }
-}
 
-int KenLM::index(const std::string& token) {
-  return vocab->Index(token.c_str());
-}
-
-LMStatePtr KenLM::start(bool isNull) {
-  lm::ngram::State outState;
-  if (isNull) {
-    model->NullContextWrite(&outState);
-  } else {
-    model->BeginSentenceWrite(&outState);
+  // Create index map
+  usrToLmIdxMap_.clear();
+  for (int i = 0; i < usrTknDict.indexSize(); i++) {
+    auto token = usrTknDict.getToken(i);
+    int lmIdx = vocab_->Index(token.c_str());
+    usrToLmIdxMap_.emplace(i, lmIdx);
   }
-  return std::make_shared<KenLMState>(outState);
 }
 
-LMStatePtr KenLM::score(const LMStatePtr& inState, int tokenIdx, float& score) {
-  auto inState_ = static_cast<KenLMState*>(inState.get());
-  lm::ngram::State outState;
-  score = model->BaseScore(&inState_->state_, tokenIdx, &outState);
-  return std::make_shared<KenLMState>(outState);
+LMStatePtr KenLM::start(bool startWithNothing) {
+  auto outState = std::make_shared<KenLMState>();
+  if (startWithNothing) {
+    model_->NullContextWrite(outState.get());
+  } else {
+    model_->BeginSentenceWrite(outState.get());
+  }
+
+  return outState;
 }
 
-LMStatePtr KenLM::finish(const LMStatePtr& inState, float& score) {
-  /* DEBUG: could skip the end sentence </s> */
-  auto inState_ = static_cast<KenLMState*>(inState.get());
-  lm::ngram::State outState;
-  score = model->BaseScore(&inState_->state_, vocab->EndSentence(), &outState);
-  return std::make_shared<KenLMState>(outState);
+std::pair<LMStatePtr, float> KenLM::score(
+    const LMStatePtr& state,
+    const int usrTokenIdx) {
+  if (usrTokenIdx < 0 || usrTokenIdx >= usrToLmIdxMap_.size()) {
+    LOG(FATAL) << "[KenLM] Invalid user token index" << usrTokenIdx;
+  }
+  auto inState = getRawState(state);
+  auto outState = std::make_shared<KenLMState>();
+  float score =
+      model_->BaseScore(inState, usrToLmIdxMap_[usrTokenIdx], outState.get());
+  return std::make_pair(std::move(outState), score);
+}
+
+std::pair<LMStatePtr, float> KenLM::finish(const LMStatePtr& state) {
+  auto inState = getRawState(state);
+  auto outState = std::make_shared<KenLMState>();
+  float score =
+      model_->BaseScore(inState, vocab_->EndSentence(), outState.get());
+  return std::make_pair(std::move(outState), score);
 }
 
 int KenLM::compareState(const LMStatePtr& state1, const LMStatePtr& state2)
     const {
-  auto state1_ = static_cast<KenLMState*>(state1.get());
-  auto state2_ = static_cast<KenLMState*>(state2.get());
-  return state1_->state_.Compare(state2_->state_);
+  auto inState1 = getRawState(state1);
+  auto inState2 = getRawState(state2);
+  return inState1->Compare(*inState2);
+}
+
+KenLMState* KenLM::getRawState(const LMStatePtr& state) {
+  return static_cast<KenLMState*>(state.get());
 }
 
 } // namespace w2l

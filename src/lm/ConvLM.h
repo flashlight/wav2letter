@@ -9,13 +9,12 @@
 #pragma once
 
 #include <flashlight/flashlight.h>
-#include <glog/logging.h>
 #include "common/Dictionary.h"
 #include "decoder/LM.h"
 
 namespace w2l {
 
-struct ConvLMState : public LMState {
+struct ConvLMState {
   std::vector<int> tokens;
   int length;
 
@@ -26,34 +25,34 @@ struct ConvLMState : public LMState {
 
 class ConvLM : public LM {
  public:
-  int index(const std::string& token) override;
-
-  LMStatePtr start(bool startWithNonEos) override;
-
-  LMStatePtr score(const LMStatePtr& inState, int tokenIdx, float& score)
-      override;
-
-  LMStatePtr finish(const LMStatePtr& inState, float& score) override;
-
-  int compareState(const LMStatePtr& state1, const LMStatePtr& state2)
-      const override;
-
-  explicit ConvLM(
+  ConvLM(
       const std::string& modelPath,
       const std::string& tokenVocabPath,
+      const Dictionary& usrTknDict,
       int lmMemory = 10000,
       int beamSize = 2500,
       int historySize = 49);
 
+  LMStatePtr start(bool startWithNothing) override;
+
+  std::pair<LMStatePtr, float> score(
+      const LMStatePtr& state,
+      const int usrTokenIdx) override;
+
+  std::pair<LMStatePtr, float> finish(const LMStatePtr& state) override;
+
+  int compareState(const LMStatePtr& state1, const LMStatePtr& state2)
+      const override;
+
   void updateCache(std::vector<LMStatePtr> states) override;
 
  private:
-  // This cache is not thread-safe!
+  // This cache is also not thread-safe!
   int lmMemory_;
   int beamSize_;
-  std::unordered_map<const ConvLMState*, int> cacheIndices_;
+  std::unordered_map<ConvLMState*, int> cacheIndices_;
   std::vector<std::vector<float>> cache_;
-  std::vector<const ConvLMState*> slot_;
+  std::vector<ConvLMState*> slot_;
   std::vector<int> batchedTokens_;
 
   Dictionary vocab_;
@@ -68,7 +67,11 @@ class ConvLM : public LM {
       int sampleSize = -1,
       int batchSize = 1);
 
-  typedef std::shared_ptr<ConvLM> ConvLMPtr;
+  static ConvLMState* getRawState(const LMStatePtr& state);
+
+  std::pair<LMStatePtr, float> scoreWithLmIdx(
+      const LMStatePtr& state,
+      const int tokenIdx);
 };
 
 } // namespace w2l

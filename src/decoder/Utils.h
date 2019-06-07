@@ -232,8 +232,8 @@ void pruneAndNormalize(
     hyp.parent_ = nullptr;
   }
 
-  // (3) For the last frame, subtract the largest score for each hypothesis in
-  // it so as to avoid underflow/overflow.
+  // (3) For each hypothesis in the last frame, subtract the largest score so as
+  // to avoid underflow/overflow.
   float largestScore = hypothesis[lookBack].front().score_;
   for (int i = 1; i < hypothesis[lookBack].size(); i++) {
     if (largestScore < hypothesis[lookBack][i].score_) {
@@ -247,7 +247,7 @@ void pruneAndNormalize(
 }
 
 template <class DecoderState>
-void updateLMCache(LMPtr lm, std::vector<DecoderState>& hypothesis) {
+void updateLMCache(const LMPtr& lm, std::vector<DecoderState>& hypothesis) {
   // For ConvLM update cache
   std::vector<LMStatePtr> states;
   for (const auto& hyp : hypothesis) {

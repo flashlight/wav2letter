@@ -24,18 +24,14 @@ class TokenLMDecoder : public LexiconDecoder {
       const LMPtr lm,
       const int sil,
       const int blank,
-      const TrieLabelPtr unk,
-      const std::vector<float>& transitions,
-      const std::unordered_map<int, int>& lmIndMap)
-      : LexiconDecoder(opt, lexicon, lm, sil, blank, unk, transitions),
-        lmIndMap_(lmIndMap) {}
+      const int unk,
+      const std::vector<float>& transitions)
+      : LexiconDecoder(opt, lexicon, lm, sil, blank, unk, transitions) {}
 
   void decodeStep(const float* emissions, int T, int N) override;
 
  protected:
   int mergeCandidates(const int size) override;
-
-  std::unordered_map<int, int> lmIndMap_;
 };
 
 } // namespace w2l

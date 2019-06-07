@@ -59,33 +59,32 @@ TEST(DecoderTest, run) {
 #endif
 
   /* ===================== Create Dataset ===================== */
-  EmissionSet emission_set;
+  EmissionSet emissionSet;
 
   // T, N
-  std::string tn_path = pathsConcat(dataDir, "TN.bin");
-  std::ifstream tn_stream(tn_path, std::ios::binary | std::ios::in);
-  std::vector<int> tn_array(2);
+  std::string tnPath = pathsConcat(dataDir, "TN.bin");
+  std::ifstream tnStream(tnPath, std::ios::binary | std::ios::in);
+  std::vector<int> tnArray(2);
   int T, N;
-  tn_stream.read((char*)tn_array.data(), 2 * sizeof(int));
-  T = tn_array[0];
-  N = tn_array[1];
-  emission_set.emissionN = N;
-  emission_set.emissionT.push_back(T);
-  tn_stream.close();
+  tnStream.read((char*)tnArray.data(), 2 * sizeof(int));
+  T = tnArray[0];
+  N = tnArray[1];
+  emissionSet.emissionN = N;
+  emissionSet.emissionT.push_back(T);
+  tnStream.close();
 
   // Emission
-  emission_set.emissions.resize(1);
-  emission_set.emissions[0].resize(T * N);
-  std::string emission_path = pathsConcat(dataDir, "emission.bin");
-  std::ifstream em_stream(emission_path, std::ios::binary | std::ios::in);
-  em_stream.read(
-      (char*)emission_set.emissions[0].data(), T * N * sizeof(float));
+  emissionSet.emissions.resize(1);
+  emissionSet.emissions[0].resize(T * N);
+  std::string emissionPath = pathsConcat(dataDir, "emission.bin");
+  std::ifstream em_stream(emissionPath, std::ios::binary | std::ios::in);
+  em_stream.read((char*)emissionSet.emissions[0].data(), T * N * sizeof(float));
   em_stream.close();
 
   // Transitions
   std::vector<float> transitions(N * N);
-  std::string transitions_path = pathsConcat(dataDir, "transition.bin");
-  std::ifstream tr_stream(transitions_path, std::ios::binary | std::ios::in);
+  std::string transitionsPath = pathsConcat(dataDir, "transition.bin");
+  std::ifstream tr_stream(transitionsPath, std::ios::binary | std::ios::in);
   tr_stream.read((char*)transitions.data(), N * N * sizeof(float));
   tr_stream.close();
 
@@ -100,47 +99,43 @@ TEST(DecoderTest, run) {
 
   /* ===================== Decode ===================== */
   /* -------- Build Language Model --------*/
-  auto lm = std::make_shared<KenLM>(pathsConcat(dataDir, "lm.arpa"));
+  auto lm = std::make_shared<KenLM>(pathsConcat(dataDir, "lm.arpa"), wordDict);
   LOG(INFO) << "[Decoder] LM constructed.\n";
 
   std::vector<std::string> sentence{"the", "cat", "sat", "on", "the", "mat"};
   auto inState = lm->start(0);
-  float total_score = 0, lm_score = 0;
+  float totalScore = 0, lmScore = 0;
   std::vector<float> lmScoreTarget{
       -1.05971, -4.19448, -3.33383, -2.76726, -1.16237, -4.64589};
   for (int i = 0; i < sentence.size(); i++) {
-    auto word = sentence[i];
-    inState = lm->score(inState, lm->index(word), lm_score);
-    ASSERT_NEAR(lm_score, lmScoreTarget[i], 1e-5);
-    total_score += lm_score;
+    const auto& word = sentence[i];
+    std::tie(inState, lmScore) = lm->score(inState, wordDict.getIndex(word));
+    ASSERT_NEAR(lmScore, lmScoreTarget[i], 1e-5);
+    totalScore += lmScore;
   }
-  lm->finish(inState, lm_score);
-  total_score += lm_score;
-  ASSERT_NEAR(total_score, -19.5123, 1e-5);
+  std::tie(inState, lmScore) = lm->finish(inState);
+  totalScore += lmScore;
+  ASSERT_NEAR(totalScore, -19.5123, 1e-5);
 
   /* -------- Build Trie --------*/
-  int sil_idx = tokenDict.getIndex(kSilToken);
-  int blank_idx =
+  int silIdx = tokenDict.getIndex(kSilToken);
+  int blankIdx =
       FLAGS_criterion == kCtcCriterion ? tokenDict.getIndex(kBlankToken) : -1;
-  int unk_idx = lm->index(kUnkToken);
-  auto trie = std::make_shared<Trie>(tokenDict.indexSize(), sil_idx);
-  auto start_state = lm->start(false);
+  int unkIdx = wordDict.getIndex(kUnkToken);
+  auto trie = std::make_shared<Trie>(tokenDict.indexSize(), silIdx);
+  auto startState = lm->start(false);
 
   // Insert words
-  for (auto& it : lexicon) {
-    std::string word = it.first;
-    int lm_idx = lm->index(word);
-    if (lm_idx == unk_idx) {
-      continue;
-    }
-    float score;
-    auto dummy_state = lm->score(start_state, lm_idx, score);
-    for (auto& spelling : it.second) {
-      auto spelling_tensor = tkn2Idx(spelling, tokenDict);
-      trie->insert(
-          spelling_tensor,
-          std::make_shared<TrieLabel>(lm_idx, wordDict.getIndex(word)),
-          score);
+  for (const auto& it : lexicon) {
+    const std::string& word = it.first;
+    int usrIdx = wordDict.getIndex(word);
+    float score = -1;
+    LMStatePtr dummyState;
+    std::tie(dummyState, score) = lm->score(startState, usrIdx);
+
+    for (const auto& tokens : it.second) {
+      auto tokensTensor = tkn2Idx(tokens, tokenDict);
+      trie->insert(tokensTensor, usrIdx, score);
     }
   }
   LOG(INFO) << "[Decoder] Trie planted.\n";
@@ -150,16 +145,16 @@ TEST(DecoderTest, run) {
   LOG(INFO) << "[Decoder] Trie smeared.\n";
 
   std::vector<float> trieScoreTarget{
-      -1.05971, -4.41062, -3.67099, -3.06203, -1.05971, -4.29683};
+      -1.05971, -2.87742, -2.64553, -3.05081, -1.05971, -3.08968};
   for (int i = 0; i < sentence.size(); i++) {
     auto word = sentence[i];
-    auto word_tensor = tokens2Tensor(word, tokenDict);
-    auto node = trie->search(word_tensor);
+    auto wordTensor = tokens2Tensor(word, tokenDict);
+    auto node = trie->search(wordTensor);
     ASSERT_NEAR(node->maxScore_, trieScoreTarget[i], 1e-5);
   }
 
   /* -------- Build Decoder --------*/
-  DecoderOptions decoder_opt(
+  DecoderOptions decoderOpt(
       2500, // FLAGS_beamsize
       100.0, // FLAGS_beamthreshold
       2.0, // FLAGS_lmweight
@@ -169,14 +164,12 @@ TEST(DecoderTest, run) {
       -1, // FLAGS_silweight
       CriterionType::ASG);
 
-  std::shared_ptr<TrieLabel> unk =
-      std::make_shared<TrieLabel>(unk_idx, wordDict.getIndex(kUnkToken));
   WordLMDecoder decoder(
-      decoder_opt, trie, lm, sil_idx, blank_idx, unk, transitions);
+      decoderOpt, trie, lm, silIdx, blankIdx, unkIdx, transitions);
   LOG(INFO) << "[Decoder] Decoder constructed.\n";
 
   /* -------- Run --------*/
-  auto emission = emission_set.emissions[0];
+  auto emission = emissionSet.emissions[0];
 
   std::vector<float> score;
   std::vector<std::vector<int>> wordPredictions;
@@ -189,10 +182,10 @@ TEST(DecoderTest, run) {
 
   int n_hyp = results.size();
 
-  ASSERT_EQ(n_hyp, 877);
+  ASSERT_EQ(n_hyp, 1452);
 
   std::vector<float> hypScoreTarget{
-      -340.189, -340.415, -340.594, -340.653, -341.115};
+      -278.111, -278.652, -279.275, -279.847, -280.01};
   for (int i = 0; i < 5; i++) {
     ASSERT_NEAR(results[i].score_, hypScoreTarget[i], 1e-3);
   }

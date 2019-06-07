@@ -112,7 +112,7 @@ int main(int argc, char** argv) {
 
   EmissionSet emissionSet;
   meters.timer.resume();
-  int cnt = 1;
+  int cnt = 0;
   for (auto& sample : *ds) {
     auto rawEmission = network->forward({fl::input(sample[kInputIdx])}).front();
     auto emission = afToVector<float>(rawEmission);

@@ -463,7 +463,7 @@ int main(int argc, char** argv) {
 
         // Update conters
         sliceNumWords[tid] += wordTarget.size();
-        sliceNumTokens[tid] += tokenTarget.size();
+        sliceNumTokens[tid] += letterTarget.size();
       }
       meters.timer.stop();
       sliceWer[tid] = meters.werSlice.value()[0];

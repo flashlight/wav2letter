@@ -17,21 +17,20 @@
 
 namespace w2l {
 
-const int kBufferBucketSize = 65536;
 const float kNegativeInfinity = -std::numeric_limits<float>::infinity();
 const int kLookBackLimit = 100;
 
 enum class CriterionType { ASG = 0, CTC = 1, S2S = 2 };
 
 struct DecoderOptions {
-  int beamSize_; // Maximum number of hypothesis we hold after each step
-  float beamThreshold_; // Threshold to prune hypothesis
-  float lmWeight_; // Weight of lm
-  float wordScore_; // Score for inserting a word
-  float unkScore_; // Score for inserting a unknown word
-  bool logAdd_; // If or not use logadd when merging hypothesis
-  float silWeight_; // Silence is golden
-  CriterionType criterionType_; // CTC or ASG
+  int beamSize; // Maximum number of hypothesis we hold after each step
+  float beamThreshold; // Threshold to prune hypothesis
+  float lmWeight; // Weight of lm
+  float wordScore; // Score for inserting a word
+  float unkScore; // Score for inserting a unknown word
+  bool logAdd; // If or not use logadd when merging hypothesis
+  float silWeight; // Silence is golden
+  CriterionType criterionType; // CTC or ASG
 
   DecoderOptions(
       const int beamSize,
@@ -41,26 +40,26 @@ struct DecoderOptions {
       const float unkScore,
       const bool logAdd,
       const float silWeight,
-      const CriterionType CriterionType)
-      : beamSize_(beamSize),
-        beamThreshold_(beamThreshold),
-        lmWeight_(lmWeight),
-        wordScore_(wordScore),
-        unkScore_(unkScore),
-        logAdd_(logAdd),
-        silWeight_(silWeight),
-        criterionType_(CriterionType) {}
+      const CriterionType criterionType)
+      : beamSize(beamSize),
+        beamThreshold(beamThreshold),
+        lmWeight(lmWeight),
+        wordScore(wordScore),
+        unkScore(unkScore),
+        logAdd(logAdd),
+        silWeight(silWeight),
+        criterionType(criterionType) {}
 
   DecoderOptions() {}
 };
 
 struct DecodeResult {
-  float score_;
-  std::vector<int> words_;
-  std::vector<int> tokens_;
+  float score;
+  std::vector<int> words;
+  std::vector<int> tokens;
 
   explicit DecodeResult(int length = 0)
-      : score_(0), words_(length, -1), tokens_(length, -1) {}
+      : score(0), words(length, -1), tokens(length, -1) {}
 };
 
 template <class DecoderState>
@@ -68,53 +67,43 @@ void mergeStates(
     DecoderState* oldNode,
     const DecoderState* newNode,
     bool logAdd) {
-  float maxScore = std::max(oldNode->score_, newNode->score_);
+  float maxScore = std::max(oldNode->score, newNode->score);
   if (logAdd) {
-    float minScore = std::min(oldNode->score_, newNode->score_);
-    oldNode->score_ = maxScore + std::log1p(std::exp(minScore - maxScore));
+    float minScore = std::min(oldNode->score, newNode->score);
+    oldNode->score = maxScore + std::log1p(std::exp(minScore - maxScore));
   } else {
-    oldNode->score_ = maxScore;
+    oldNode->score = maxScore;
   }
 }
 
-bool isGoodCandidate(
+bool isValidCandidate(
     float& bestScore,
     const float score,
     const float beamThreshold);
 
 template <class DecoderState>
-int pruneCandidates(
+void pruneCandidates(
     std::vector<DecoderState*>& candidatePtrs,
     std::vector<DecoderState>& candidates,
-    const int nCandidates,
-    const float bestScore,
-    const float beamThreshold) {
-  int nValidHyp = 0;
-
-  for (int i = 0; i < nCandidates; i++) {
-    if (candidates[i].score_ >= bestScore - beamThreshold) {
-      if (candidatePtrs.size() == nValidHyp) {
-        candidatePtrs.resize(candidatePtrs.size() + kBufferBucketSize);
-      }
-      candidatePtrs[nValidHyp] = &candidates[i];
-      ++nValidHyp;
+    const float threshold) {
+  for (auto& candidate : candidates) {
+    if (candidate.score >= threshold) {
+      candidatePtrs.emplace_back(&candidate);
     }
   }
-
-  return nValidHyp;
 }
 
 template <class DecoderState>
 void storeTopCandidates(
     std::vector<DecoderState>& nextHyp,
     std::vector<DecoderState*>& candidatePtrs,
-    int nValidHyp,
     const int beamSize,
     const bool returnSorted) {
   auto compareNodes = [](const DecoderState* node1, const DecoderState* node2) {
-    return node1->score_ > node2->score_;
+    return node1->score > node2->score;
   };
 
+  int nValidHyp = candidatePtrs.size();
   int finalSize = std::min(nValidHyp, beamSize);
   if (!returnSorted && nValidHyp > beamSize) {
     std::nth_element(
@@ -144,13 +133,13 @@ DecodeResult getHypothesis(const DecoderState* node, const int finalFrame) {
   }
 
   DecodeResult res(finalFrame + 1);
-  res.score_ = node_->score_;
+  res.score = node_->score;
 
   int i = 0;
   while (node_) {
-    res.words_[finalFrame - i] = node_->getWord();
-    res.tokens_[finalFrame - i] = node_->token_;
-    node_ = node_->parent_;
+    res.words[finalFrame - i] = node_->getWord();
+    res.tokens[finalFrame - i] = node_->token;
+    node_ = node_->parent;
     i++;
   }
 
@@ -182,12 +171,12 @@ const DecoderState* findBestAncestor(
     return nullptr;
   }
 
-  float bestScore = finalHyps.front().score_;
+  float bestScore = finalHyps.front().score;
   const DecoderState* bestNode = finalHyps.data();
   for (int r = 1; r < nHyp; r++) {
     const DecoderState* node = &finalHyps[r];
-    if (node->score_ > bestScore) {
-      bestScore = node->score_;
+    if (node->score > bestScore) {
+      bestScore = node->score;
       bestNode = node;
     }
   }
@@ -195,7 +184,7 @@ const DecoderState* findBestAncestor(
   int n = 0;
   while (bestNode && n < lookBack) {
     n++;
-    bestNode = bestNode->parent_;
+    bestNode = bestNode->parent;
   }
 
   const int maxLookBack = lookBack + kLookBackLimit;
@@ -206,7 +195,7 @@ const DecoderState* findBestAncestor(
     }
 
     n++;
-    bestNode = bestNode->parent_;
+    bestNode = bestNode->parent;
 
     if (n == maxLookBack) {
       break;
@@ -229,20 +218,20 @@ void pruneAndNormalize(
 
   // (2) Avoid further back-tracking
   for (DecoderState& hyp : hypothesis[0]) {
-    hyp.parent_ = nullptr;
+    hyp.parent = nullptr;
   }
 
   // (3) For each hypothesis in the last frame, subtract the largest score so as
   // to avoid underflow/overflow.
-  float largestScore = hypothesis[lookBack].front().score_;
+  float largestScore = hypothesis[lookBack].front().score;
   for (int i = 1; i < hypothesis[lookBack].size(); i++) {
-    if (largestScore < hypothesis[lookBack][i].score_) {
-      largestScore = hypothesis[lookBack][i].score_;
+    if (largestScore < hypothesis[lookBack][i].score) {
+      largestScore = hypothesis[lookBack][i].score;
     }
   }
 
   for (int i = 0; i < hypothesis[lookBack].size(); i++) {
-    hypothesis[lookBack][i].score_ -= largestScore;
+    hypothesis[lookBack][i].score -= largestScore;
   }
 }
 
@@ -251,7 +240,7 @@ void updateLMCache(const LMPtr& lm, std::vector<DecoderState>& hypothesis) {
   // For ConvLM update cache
   std::vector<LMStatePtr> states;
   for (const auto& hyp : hypothesis) {
-    states.emplace_back(hyp.lmState_);
+    states.emplace_back(hyp.lmState);
   }
   lm->updateCache(states);
 }

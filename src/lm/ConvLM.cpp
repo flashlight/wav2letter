@@ -132,7 +132,7 @@ std::pair<LMStatePtr, float> ConvLM::scoreWithLmIdx(
 std::pair<LMStatePtr, float> ConvLM::score(
     const LMStatePtr& state,
     const int usrTokenIdx) {
-  if (usrTokenIdx < 0 || usrTokenIdx >= usrToLmIdxMap_.size()) {
+  if (usrToLmIdxMap_.find(usrTokenIdx) == usrToLmIdxMap_.end()) {
     LOG(FATAL) << "[KenLM] Invalid user token index" << usrTokenIdx;
   }
   return scoreWithLmIdx(state, usrToLmIdxMap_[usrTokenIdx]);

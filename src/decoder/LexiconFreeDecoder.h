@@ -18,11 +18,11 @@ namespace w2l {
  * LexiconFreeDecoderState stores information for each hypothesis in the beam.
  */
 struct LexiconFreeDecoderState {
-  LMStatePtr lmState_; // Language model state
-  const LexiconFreeDecoderState* parent_; // Parent hypothesis
-  float score_; // Score so far
-  int token_; // Label of token
-  bool prevBlank_; // If previous hypothesis is blank (for CTC only)
+  LMStatePtr lmState; // Language model state
+  const LexiconFreeDecoderState* parent; // Parent hypothesis
+  float score; // Score so far
+  int token; // Label of token
+  bool prevBlank; // If previous hypothesis is blank (for CTC only)
 
   LexiconFreeDecoderState(
       const LMStatePtr& lmState,
@@ -30,18 +30,18 @@ struct LexiconFreeDecoderState {
       const float score,
       const int token,
       const bool prevBlank = false)
-      : lmState_(lmState),
-        parent_(parent),
-        score_(score),
-        token_(token),
-        prevBlank_(prevBlank) {}
+      : lmState(lmState),
+        parent(parent),
+        score(score),
+        token(token),
+        prevBlank(prevBlank) {}
 
   LexiconFreeDecoderState()
-      : lmState_(nullptr),
-        parent_(nullptr),
-        score_(0),
-        token_(-1),
-        prevBlank_(false) {}
+      : lmState(nullptr),
+        parent(nullptr),
+        score(0),
+        token(-1),
+        prevBlank(false) {}
 
   int getWord() const {
     return -1;
@@ -68,7 +68,7 @@ class LexiconFreeDecoder : public Decoder {
  public:
   LexiconFreeDecoder(
       const DecoderOptions& opt,
-      const LMPtr lm,
+      const LMPtr& lm,
       const int sil,
       const int blank,
       const std::vector<float>& transitions)
@@ -76,10 +76,7 @@ class LexiconFreeDecoder : public Decoder {
         lm_(lm),
         transitions_(transitions),
         sil_(sil),
-        blank_(blank),
-        nCandidates_(0) {
-    candidates_.reserve(kBufferBucketSize);
-  }
+        blank_(blank) {}
 
   void decodeBegin() override;
 
@@ -121,11 +118,6 @@ class LexiconFreeDecoder : public Decoder {
   // Vector of hypothesis for all the frames so far
   std::unordered_map<int, std::vector<LexiconFreeDecoderState>> hyp_;
 
-  // Total number of candidates in candidates_. Note that candidates is not
-  // always equal to candidates_.size() since we do not refresh the buffer for
-  // candidates_ in memory through out the whole decoding process.
-  int nCandidates_;
-
   // These 2 variables are used for online decoding, for hypothesis pruning
   int nDecodedFrames_; // Total number of decoded frames.
   int nPrunedFrames_; // Total number of pruned frames from hyp_.
@@ -148,7 +140,7 @@ class LexiconFreeDecoder : public Decoder {
       const bool isSort);
 
   // Merge hypothesis getting into same state from different path
-  int mergeCandidates(const int size);
+  void mergeCandidates();
 };
 
 } // namespace w2l

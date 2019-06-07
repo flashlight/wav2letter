@@ -53,6 +53,6 @@ class LM {
   std::unordered_map<int, int> usrToLmIdxMap_;
 };
 
-typedef std::shared_ptr<LM> LMPtr;
+using LMPtr = std::shared_ptr<LM>;
 
 } // namespace w2l

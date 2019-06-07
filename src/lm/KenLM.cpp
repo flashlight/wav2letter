@@ -46,7 +46,7 @@ LMStatePtr KenLM::start(bool startWithNothing) {
 std::pair<LMStatePtr, float> KenLM::score(
     const LMStatePtr& state,
     const int usrTokenIdx) {
-  if (usrTokenIdx < 0 || usrTokenIdx >= usrToLmIdxMap_.size()) {
+  if (usrToLmIdxMap_.find(usrTokenIdx) == usrToLmIdxMap_.end()) {
     LOG(FATAL) << "[KenLM] Invalid user token index" << usrTokenIdx;
   }
   auto inState = getRawState(state);

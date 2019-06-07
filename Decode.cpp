@@ -409,8 +409,8 @@ int main(int argc, char** argv) {
         auto results = decoder->decode(emission.data(), T, N);
 
         // Cleanup predictions
-        auto& rawWordPrediction = results[0].words_;
-        auto& rawTokenPrediction = results[0].tokens_;
+        auto& rawWordPrediction = results[0].words;
+        auto& rawTokenPrediction = results[0].tokens;
 
         auto letterTarget = tknTarget2Ltr(tokenTarget, tokenDict);
         auto letterPrediction =

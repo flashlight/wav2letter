@@ -150,7 +150,7 @@ TEST(DecoderTest, run) {
     auto word = sentence[i];
     auto wordTensor = tokens2Tensor(word, tokenDict);
     auto node = trie->search(wordTensor);
-    ASSERT_NEAR(node->maxScore_, trieScoreTarget[i], 1e-5);
+    ASSERT_NEAR(node->maxScore, trieScoreTarget[i], 1e-5);
   }
 
   /* -------- Build Decoder --------*/
@@ -187,7 +187,7 @@ TEST(DecoderTest, run) {
   std::vector<float> hypScoreTarget{
       -278.111, -278.652, -279.275, -279.847, -280.01};
   for (int i = 0; i < 5; i++) {
-    ASSERT_NEAR(results[i].score_, hypScoreTarget[i], 1e-3);
+    ASSERT_NEAR(results[i].score, hypScoreTarget[i], 1e-3);
   }
 }
 

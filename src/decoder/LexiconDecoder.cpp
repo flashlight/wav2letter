@@ -20,8 +20,9 @@
 namespace w2l {
 
 void LexiconDecoder::candidatesReset() {
-  nCandidates_ = 0;
   candidatesBestScore_ = kNegativeInfinity;
+  candidates_.clear();
+  candidatePtrs_.clear();
 }
 
 void LexiconDecoder::candidatesAdd(
@@ -32,38 +33,29 @@ void LexiconDecoder::candidatesAdd(
     const int token,
     const int word,
     const bool prevBlank) {
-  if (isGoodCandidate(candidatesBestScore_, score, opt_.beamThreshold_)) {
-    if (nCandidates_ == candidates_.size()) {
-      candidates_.resize(candidates_.size() + kBufferBucketSize);
-    }
-
-    candidates_[nCandidates_] = LexiconDecoderState(
+  if (isValidCandidate(candidatesBestScore_, score, opt_.beamThreshold)) {
+    candidates_.emplace_back(
         lmState, lex, parent, score, token, word, prevBlank);
-    ++nCandidates_;
   }
 }
 
 void LexiconDecoder::candidatesStore(
     std::vector<LexiconDecoderState>& nextHyp,
     const bool returnSorted) {
-  if (nCandidates_ == 0) {
+  if (candidates_.empty()) {
+    nextHyp.clear();
     return;
   }
 
   /* Select valid candidates */
-  int nValidHyp = pruneCandidates(
-      candidatePtrs_,
-      candidates_,
-      nCandidates_,
-      candidatesBestScore_,
-      opt_.beamThreshold_);
+  pruneCandidates(
+      candidatePtrs_, candidates_, candidatesBestScore_ - opt_.beamThreshold);
 
   /* Sort by (lmState, lex, score) and copy into next hypothesis */
-  nValidHyp = mergeCandidates(nValidHyp);
+  mergeCandidates();
 
   /* Sort hypothesis and select top-K */
-  storeTopCandidates(
-      nextHyp, candidatePtrs_, nValidHyp, opt_.beamSize_, returnSorted);
+  storeTopCandidates(nextHyp, candidatePtrs_, opt_.beamSize, returnSorted);
 }
 
 void LexiconDecoder::decodeBegin() {
@@ -81,15 +73,15 @@ void LexiconDecoder::decodeEnd() {
   candidatesReset();
   for (const LexiconDecoderState& prevHyp :
        hyp_[nDecodedFrames_ - nPrunedFrames_]) {
-    const TrieNode* prevLex = prevHyp.lex_;
-    const LMStatePtr& prevLmState = prevHyp.lmState_;
+    const TrieNode* prevLex = prevHyp.lex;
+    const LMStatePtr& prevLmState = prevHyp.lmState;
 
     auto lmStateScorePair = lm_->finish(prevLmState);
     candidatesAdd(
         lmStateScorePair.first,
         prevLex,
         &prevHyp,
-        prevHyp.score_ + opt_.lmWeight_ * lmStateScorePair.second,
+        prevHyp.score + opt_.lmWeight * lmStateScorePair.second,
         -1,
         -1,
         false // prevBlank

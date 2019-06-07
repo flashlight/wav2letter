@@ -26,35 +26,35 @@ enum class SmearingMode {
  */
 struct TrieNode {
   explicit TrieNode(int idx)
-      : children_(std::unordered_map<int, std::shared_ptr<TrieNode>>()),
-        idx_(idx),
-        nLabel_(0),
-        label_(kTrieMaxLabel),
-        score_(kTrieMaxLabel),
-        maxScore_(0) {}
+      : children(std::unordered_map<int, std::shared_ptr<TrieNode>>()),
+        idx(idx),
+        nLabel(0),
+        label(kTrieMaxLabel),
+        score(kTrieMaxLabel),
+        maxScore(0) {}
 
   // Pointers to the childern of a node
-  std::unordered_map<int, std::shared_ptr<TrieNode>> children_;
+  std::unordered_map<int, std::shared_ptr<TrieNode>> children;
 
   // Node index
-  int idx_;
+  int idx;
 
   // Number of labels a node has. Note that nLabel_ is positive
   // only if the current code represent a completed token.
-  int nLabel_;
+  int nLabel;
 
   // Labels of words that are constructed from the given path
-  std::vector<int> label_;
+  std::vector<int> label;
 
   // Scores (score_ should have the same size as label_)
-  std::vector<float> score_;
+  std::vector<float> score;
 
   // Maximum score of all the labels if this node is a leaf,
   // otherwise it will be the value after trie smearing.
-  float maxScore_;
+  float maxScore;
 };
 
-typedef std::shared_ptr<TrieNode> TrieNodePtr;
+using TrieNodePtr = std::shared_ptr<TrieNode>;
 
 /**
  * Trie is used to store the lexicon in langiage model. We use it to limit
@@ -94,6 +94,6 @@ class Trie {
                     // usually the size of letters or phonmes.
 };
 
-typedef std::shared_ptr<Trie> TriePtr;
+using TriePtr = std::shared_ptr<Trie>;
 
 } // namespace w2l

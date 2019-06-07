@@ -33,15 +33,15 @@ Trie::insert(const std::vector<int>& indices, int label, float score) {
     if (idx < 0 || idx >= maxChildren_) {
       LOG(FATAL) << "[Trie] Invalid letter index: " << idx;
     }
-    if (node->children_.find(idx) == node->children_.end()) {
-      node->children_[idx] = std::make_shared<TrieNode>(idx);
+    if (node->children.find(idx) == node->children.end()) {
+      node->children[idx] = std::make_shared<TrieNode>(idx);
     }
-    node = node->children_[idx];
+    node = node->children[idx];
   }
-  if (node->nLabel_ < kTrieMaxLabel) {
-    node->label_[node->nLabel_] = label;
-    node->score_[node->nLabel_] = score;
-    node->nLabel_++;
+  if (node->nLabel < kTrieMaxLabel) {
+    node->label[node->nLabel] = label;
+    node->score[node->nLabel] = score;
+    node->nLabel++;
   } else {
     LOG(INFO) << "[Trie] Trie label number reached limit: " << kTrieMaxLabel;
   }
@@ -54,10 +54,10 @@ TrieNodePtr Trie::search(const std::vector<int>& indices) {
     if (idx < 0 || idx >= maxChildren_) {
       LOG(FATAL) << "[Trie] Invalid letter index: " << idx;
     }
-    if (node->children_.find(idx) == node->children_.end()) {
+    if (node->children.find(idx) == node->children.end()) {
       return nullptr;
     }
-    node = node->children_[idx];
+    node = node->children[idx];
   }
   return node;
 }
@@ -77,19 +77,19 @@ double TrieLogAdd(double log_a, double log_b) {
 }
 
 void smearNode(TrieNodePtr node, SmearingMode smearMode) {
-  node->maxScore_ = -std::numeric_limits<float>::infinity();
-  for (int idx = 0; idx < node->nLabel_; idx++) {
-    node->maxScore_ = TrieLogAdd(node->maxScore_, node->score_[idx]);
+  node->maxScore = -std::numeric_limits<float>::infinity();
+  for (int idx = 0; idx < node->nLabel; idx++) {
+    node->maxScore = TrieLogAdd(node->maxScore, node->score[idx]);
   }
-  for (auto child : node->children_) {
+  for (auto child : node->children) {
     auto childNode = child.second;
     smearNode(childNode, smearMode);
     if (smearMode == SmearingMode::LOGADD) {
-      node->maxScore_ = TrieLogAdd(node->maxScore_, childNode->maxScore_);
+      node->maxScore = TrieLogAdd(node->maxScore, childNode->maxScore);
     } else if (
         smearMode == SmearingMode::MAX &&
-        childNode->maxScore_ > node->maxScore_) {
-      node->maxScore_ = childNode->maxScore_;
+        childNode->maxScore > node->maxScore) {
+      node->maxScore = childNode->maxScore;
     }
   }
 }

@@ -10,7 +10,7 @@
 
 namespace w2l {
 
-bool isGoodCandidate(
+bool isValidCandidate(
     float& bestScore,
     const float score,
     const float beamThreshold) {

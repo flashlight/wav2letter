@@ -19,37 +19,33 @@
 
 namespace w2l {
 
-int TokenLMDecoder::mergeCandidates(const int size) {
+void TokenLMDecoder::mergeCandidates() {
   auto compareNodesShortList = [&](const LexiconDecoderState* node1,
                                    const LexiconDecoderState* node2) {
-    int lmCmp = lm_->compareState(node1->lmState_, node2->lmState_);
+    int lmCmp = lm_->compareState(node1->lmState, node2->lmState);
     if (lmCmp != 0) {
       return lmCmp > 0;
     } else { /* same LmState */
-      return node1->score_ > node2->score_;
+      return node1->score > node2->score;
     }
   };
   std::sort(
-      candidatePtrs_.begin(),
-      candidatePtrs_.begin() + size,
-      compareNodesShortList);
+      candidatePtrs_.begin(), candidatePtrs_.end(), compareNodesShortList);
 
   int nHypAfterMerging = 1;
-  for (int i = 1; i < size; i++) {
+  for (int i = 1; i < candidatePtrs_.size(); i++) {
     if (lm_->compareState(
-            candidatePtrs_[i]->lmState_,
-            candidatePtrs_[nHypAfterMerging - 1]->lmState_)) {
+            candidatePtrs_[i]->lmState,
+            candidatePtrs_[nHypAfterMerging - 1]->lmState)) {
       candidatePtrs_[nHypAfterMerging] = candidatePtrs_[i];
       nHypAfterMerging++;
     } else {
       mergeStates(
-          candidatePtrs_[nHypAfterMerging - 1],
-          candidatePtrs_[i],
-          opt_.logAdd_);
+          candidatePtrs_[nHypAfterMerging - 1], candidatePtrs_[i], opt_.logAdd);
     }
   }
 
-  return nHypAfterMerging;
+  candidatePtrs_.resize(nHypAfterMerging);
 }
 
 void TokenLMDecoder::decodeStep(const float* emissions, int T, int N) {
@@ -65,32 +61,32 @@ void TokenLMDecoder::decodeStep(const float* emissions, int T, int N) {
   for (int t = 0; t < T; t++) {
     candidatesReset();
     for (const LexiconDecoderState& prevHyp : hyp_[startFrame + t]) {
-      const LMStatePtr& prevLmState = prevHyp.lmState_;
-      const TrieNode* prevLex = prevHyp.lex_;
-      const int prevIdx = prevLex->idx_;
+      const LMStatePtr& prevLmState = prevHyp.lmState;
+      const TrieNode* prevLex = prevHyp.lex;
+      const int prevIdx = prevLex->idx;
 
       /* (1) Try children */
-      for (auto& child : prevLex->children_) {
+      for (auto& child : prevLex->children) {
         int n = child.first;
         const TrieNodePtr& lex = child.second;
-        float score = prevHyp.score_ + emissions[t * N + n];
+        float score = prevHyp.score + emissions[t * N + n];
         if (nDecodedFrames_ + t > 0 &&
-            opt_.criterionType_ == CriterionType::ASG) {
+            opt_.criterionType == CriterionType::ASG) {
           score += transitions_[n * N + prevIdx];
         }
         if (n == sil_) {
-          score += opt_.silWeight_;
+          score += opt_.silWeight;
         }
 
         float lmScore = 0;
         LMStatePtr newLmState;
         std::tie(newLmState, lmScore) = lm_->score(prevLmState, n);
-        score += lmScore * opt_.lmWeight_;
+        score += lmScore * opt_.lmWeight;
 
         // We eat-up a new token
-        if (opt_.criterionType_ != CriterionType::CTC || prevHyp.prevBlank_ ||
+        if (opt_.criterionType != CriterionType::CTC || prevHyp.prevBlank ||
             n != prevIdx) {
-          if (!lex->children_.empty()) {
+          if (!lex->children.empty()) {
             candidatesAdd(
                 newLmState,
                 lex.get(),
@@ -104,25 +100,25 @@ void TokenLMDecoder::decodeStep(const float* emissions, int T, int N) {
         }
 
         // If we got a true word
-        for (int i = 0; i < lex->nLabel_; i++) {
+        for (int i = 0; i < lex->nLabel; i++) {
           candidatesAdd(
               newLmState,
               lexicon_->getRoot().get(),
               &prevHyp,
-              score + opt_.wordScore_,
+              score + opt_.wordScore,
               n,
-              lex->label_[i],
+              lex->label[i],
               false // prevBlank
           );
         }
 
         // If we got an unknown word and we want to emit
-        if (lex->nLabel_ == 0 && (opt_.unkScore_ > kNegativeInfinity)) {
+        if (lex->nLabel == 0 && (opt_.unkScore > kNegativeInfinity)) {
           candidatesAdd(
               newLmState,
               lexicon_->getRoot().get(),
               &prevHyp,
-              score + opt_.unkScore_,
+              score + opt_.unkScore,
               n,
               unk_,
               false // prevBlank
@@ -131,15 +127,15 @@ void TokenLMDecoder::decodeStep(const float* emissions, int T, int N) {
       }
 
       /* (2) Try same lexicon node */
-      if (opt_.criterionType_ != CriterionType::CTC || !prevHyp.prevBlank_) {
+      if (opt_.criterionType != CriterionType::CTC || !prevHyp.prevBlank) {
         int n = prevIdx;
-        float score = prevHyp.score_ + emissions[t * N + n];
+        float score = prevHyp.score + emissions[t * N + n];
         if (nDecodedFrames_ + t > 0 &&
-            opt_.criterionType_ == CriterionType::ASG) {
+            opt_.criterionType == CriterionType::ASG) {
           score += transitions_[n * N + prevIdx];
         }
         if (n == sil_) {
-          score += opt_.silWeight_;
+          score += opt_.silWeight;
         }
 
         candidatesAdd(
@@ -154,9 +150,9 @@ void TokenLMDecoder::decodeStep(const float* emissions, int T, int N) {
       }
 
       /* (3) CTC only, try blank */
-      if (opt_.criterionType_ == CriterionType::CTC) {
+      if (opt_.criterionType == CriterionType::CTC) {
         int n = blank_;
-        float score = prevHyp.score_ + emissions[t * N + n];
+        float score = prevHyp.score + emissions[t * N + n];
         candidatesAdd(
             prevLmState,
             prevLex,

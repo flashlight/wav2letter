@@ -19,13 +19,13 @@ namespace w2l {
  * LexiconDecoderState stores information for each hypothesis in the beam.
  */
 struct LexiconDecoderState {
-  LMStatePtr lmState_; // Language model state
-  const TrieNode* lex_; // Trie node in the lexicon
-  const LexiconDecoderState* parent_; // Parent hypothesis
-  float score_; // Score so far
-  int token_; // Label of token
-  int word_; // Label of word (-1 if incomplete)
-  bool prevBlank_; // If previous hypothesis is blank (for CTC only)
+  LMStatePtr lmState; // Language model state
+  const TrieNode* lex; // Trie node in the lexicon
+  const LexiconDecoderState* parent; // Parent hypothesis
+  float score; // Score so far
+  int token; // Label of token
+  int word; // Label of word (-1 if incomplete)
+  bool prevBlank; // If previous hypothesis is blank (for CTC only)
 
   LexiconDecoderState(
       const LMStatePtr& lmState,
@@ -35,29 +35,29 @@ struct LexiconDecoderState {
       const int token,
       const int word,
       const bool prevBlank = false)
-      : lmState_(lmState),
-        lex_(lex),
-        parent_(parent),
-        score_(score),
-        token_(token),
-        word_(word),
-        prevBlank_(prevBlank) {}
+      : lmState(lmState),
+        lex(lex),
+        parent(parent),
+        score(score),
+        token(token),
+        word(word),
+        prevBlank(prevBlank) {}
 
   LexiconDecoderState()
-      : lmState_(nullptr),
-        lex_(nullptr),
-        parent_(nullptr),
-        score_(0),
-        token_(-1),
-        word_(-1),
-        prevBlank_(false) {}
+      : lmState(nullptr),
+        lex(nullptr),
+        parent(nullptr),
+        score(0),
+        token(-1),
+        word(-1),
+        prevBlank(false) {}
 
   int getWord() const {
-    return word_;
+    return word;
   }
 
   bool isComplete() const {
-    return !parent_ || parent_->word_ >= 0;
+    return !parent || parent->word >= 0;
   }
 };
 
@@ -78,8 +78,8 @@ class LexiconDecoder : public Decoder {
  public:
   LexiconDecoder(
       const DecoderOptions& opt,
-      const TriePtr lexicon,
-      const LMPtr lm,
+      const TriePtr& lexicon,
+      const LMPtr& lm,
       const int sil,
       const int blank,
       const int unk,
@@ -90,10 +90,7 @@ class LexiconDecoder : public Decoder {
         transitions_(transitions),
         sil_(sil),
         blank_(blank),
-        unk_(unk),
-        nCandidates_(0) {
-    candidates_.reserve(kBufferBucketSize);
-  }
+        unk_(unk) {}
 
   void decodeBegin() override;
 
@@ -137,11 +134,6 @@ class LexiconDecoder : public Decoder {
   // Vector of hypothesis for all the frames so far
   std::unordered_map<int, std::vector<LexiconDecoderState>> hyp_;
 
-  // Total number of candidates in candidates_. Note that candidates is not
-  // always equal to candidates_.size() since we do not refresh the buffer for
-  // candidates_ in memory through out the whole decoding process.
-  int nCandidates_;
-
   // These 2 variables are used for online decoding, for hypothesis pruning
   int nDecodedFrames_; // Total number of decoded frames.
   int nPrunedFrames_; // Total number of pruned frames from hyp_.
@@ -166,7 +158,7 @@ class LexiconDecoder : public Decoder {
       const bool isSort);
 
   // Merge hypothesis getting into same state from different path
-  virtual int mergeCandidates(const int size) = 0;
+  virtual void mergeCandidates() = 0;
 };
 
 } // namespace w2l

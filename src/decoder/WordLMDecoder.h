@@ -20,8 +20,8 @@ class WordLMDecoder : public LexiconDecoder {
  public:
   WordLMDecoder(
       const DecoderOptions& opt,
-      const TriePtr lexicon,
-      const LMPtr lm,
+      const TriePtr& lexicon,
+      const LMPtr& lm,
       const int sil,
       const int blank,
       const int unk,
@@ -31,7 +31,7 @@ class WordLMDecoder : public LexiconDecoder {
   void decodeStep(const float* emissions, int T, int N) override;
 
  protected:
-  int mergeCandidates(const int size) override;
+  void mergeCandidates() override;
 };
 
 } // namespace w2l

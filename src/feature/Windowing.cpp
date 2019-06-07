@@ -10,14 +10,15 @@
 
 #include <cmath>
 #include <numeric>
-
-#include <glog/logging.h>
+#include <stdexcept>
 
 namespace speech {
 template <typename T>
 Windowing<T>::Windowing(int64_t N, WindowType windowtype)
     : windowLength_(N), windowType_(windowtype), coefs_(N) {
-  LOG_IF(FATAL, N <= 1) << "Windowlength has to be > 1";
+  if (windowLength_ <= 1) {
+    throw std::invalid_argument("Windowing: windowLength must be > 1");
+  }
   std::iota(coefs_.begin(), coefs_.end(), 0.0);
   switch (windowtype) {
     case WindowType::HAMMING:
@@ -31,7 +32,7 @@ Windowing<T>::Windowing(int64_t N, WindowType windowtype)
       }
       break;
     default:
-      LOG(FATAL) << "Unsupported window specified.";
+      throw std::invalid_argument("Windowing: unsupported window type");
   }
 }
 
@@ -44,7 +45,10 @@ std::vector<T> Windowing<T>::apply(const std::vector<T>& input) const {
 
 template <typename T>
 void Windowing<T>::applyInPlace(std::vector<T>& input) const {
-  LOG_IF(FATAL, (input.size() % windowLength_) != 0);
+  if (input.size() % windowLength_ != 0) {
+    throw std::invalid_argument(
+        "Windowing: input size is not divisible by windowLength");
+  }
   size_t n = 0;
   for (auto& in : input) {
     in *= coefs_[n++];

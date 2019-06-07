@@ -8,15 +8,19 @@
 
 #include "PreEmphasis.h"
 
-#include <glog/logging.h>
+#include <stdexcept>
 
 namespace speech {
 
 template <typename T>
 PreEmphasis<T>::PreEmphasis(T alpha, int64_t N)
     : preemCoef_(alpha), windowLength_(N) {
-  LOG_IF(FATAL, windowLength_ < 2);
-  LOG_IF(FATAL, preemCoef_ < 0.0 || preemCoef_ >= 1.0);
+  if (windowLength_ <= 1) {
+    throw std::invalid_argument("PreEmphasis: windowLength must be > 1");
+  }
+  if (preemCoef_ < 0.0 || preemCoef_ >= 1.0) {
+    throw std::invalid_argument("PreEmphasis: alpha must be in [0, 1)");
+  }
 };
 
 template <typename T>
@@ -28,7 +32,10 @@ std::vector<T> PreEmphasis<T>::apply(const std::vector<T>& input) const {
 
 template <typename T>
 void PreEmphasis<T>::applyInPlace(std::vector<T>& input) const {
-  LOG_IF(FATAL, (input.size() % windowLength_) != 0);
+  if (input.size() % windowLength_ != 0) {
+    throw std::invalid_argument(
+        "PreEmphasis: input.size() not divisible by windowLength");
+  }
   size_t nframes = input.size() / windowLength_;
   for (size_t n = nframes; n > 0; --n) {
     size_t e = n * windowLength_ - 1; // end of current frame

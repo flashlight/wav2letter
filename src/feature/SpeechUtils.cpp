@@ -8,7 +8,7 @@
 
 #include "SpeechUtils.h"
 
-#include <glog/logging.h>
+#include <stdexcept>
 
 namespace speech {
 
@@ -37,11 +37,10 @@ std::vector<float> mklGemm(
     const std::vector<float>& matB,
     MKL_INT n,
     MKL_INT k) {
-  LOG_IF(
-      FATAL,
-      n <= 0 || k <= 0 || matA.empty() || (matA.size() % k != 0) ||
-          (matB.size() != n * k))
-      << "Invalid args";
+  if (n <= 0 || k <= 0 || matA.empty() || (matA.size() % k != 0) ||
+      (matB.size() != n * k)) {
+    throw std::invalid_argument("mklGemm: invalid arguments");
+  }
 
   MKL_INT m = matA.size() / k;
 
@@ -71,11 +70,10 @@ std::vector<double> mklGemm(
     const std::vector<double>& matB,
     MKL_INT n,
     MKL_INT k) {
-  LOG_IF(
-      FATAL,
-      n <= 0 || k <= 0 || matA.empty() || (matA.size() % k != 0) ||
-          (matB.size() != n * k))
-      << "Invalid args";
+  if (n <= 0 || k <= 0 || matA.empty() || (matA.size() % k != 0) ||
+      (matB.size() != n * k)) {
+    throw std::invalid_argument("mklGemm: invalid arguments");
+  }
 
   MKL_INT m = matA.size() / k;
 

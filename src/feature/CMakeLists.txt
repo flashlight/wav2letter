@@ -75,7 +75,6 @@ target_link_libraries(
   ${FFTW_LIBRARIES}
   ${SNDFILE_LIBRARIES}
   ${SNDFILE_DEP_LIBRARIES}
-  ${GLOG_LIBRARIES}
   )
 
 target_include_directories(

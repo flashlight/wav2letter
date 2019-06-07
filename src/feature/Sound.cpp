@@ -11,7 +11,6 @@
 #include <string>
 #include <unordered_map>
 
-#include <glog/logging.h>
 #include <sndfile.h>
 
 namespace {
@@ -55,12 +54,13 @@ SoundInfo loadSoundInfo(const char* filename) {
   info.format = 0;
 
   if (!filename) {
-    LOG(FATAL) << "sndfile: invalid filename - " << filename;
+    throw std::invalid_argument("loadSoundInfo: filename is null");
   }
 
   if (!(file = sf_open(filename, SFM_READ, &info))) {
-    LOG(FATAL) << "sndfile: unknown format or could not open file - "
-               << filename;
+    throw std::runtime_error(
+        "loadSoundInfo: unknown format or could not open file - " +
+        std::string(filename));
   }
 
   sf_close(file);
@@ -80,12 +80,13 @@ extern std::vector<T> loadSound(const char* filename) {
   info.format = 0;
 
   if (!filename) {
-    LOG(FATAL) << "sndfile: invalid filename - " << filename;
+    throw std::invalid_argument("loadSound: filename is null");
   }
 
   if (!(file = sf_open(filename, SFM_READ, &info))) {
-    LOG(FATAL) << "sndfile: unknown format or could not open file - "
-               << filename;
+    throw std::runtime_error(
+        "loadSound: unknown format or could not open file - " +
+        std::string(filename));
   }
 
   std::vector<T> in(info.frames * info.channels);
@@ -102,11 +103,12 @@ extern std::vector<T> loadSound(const char* filename) {
     nframe =
         sf_readf_short(file, reinterpret_cast<short*>(in.data()), info.frames);
   } else {
-    LOG(FATAL) << "sndfile: unsupported format - " << filename;
+    throw std::logic_error("loadSound: called with unsupported T");
   }
   sf_close(file);
   if (nframe != info.frames) {
-    LOG(FATAL) << "sndfile: read error - " << filename;
+    throw std::runtime_error(
+        "loadSound: read error - " + std::string(filename));
   }
   return in;
 }
@@ -123,10 +125,12 @@ extern void saveSound(
   SF_INFO info;
 
   if (formats.find(format) == formats.end()) {
-    LOG(FATAL) << "sndfile: invalid format when saving - " << filename;
+    throw std::invalid_argument(
+        "saveSound: invalid format - " + std::string(format));
   }
   if (subformats.find(subformat) == subformats.end()) {
-    LOG(FATAL) << "sndfile: invalid subformat when saving - " << filename;
+    throw std::invalid_argument(
+        "saveSound: invalid subformat - " + std::string(subformat));
   }
 
   info.channels = channels;
@@ -135,12 +139,13 @@ extern void saveSound(
       formats.find(format)->second | subformats.find(subformat)->second;
 
   if (!filename) {
-    LOG(FATAL) << "sndfile: empty filename when saving";
+    throw std::invalid_argument("saveSound: filename is null");
   }
 
   if (!(file = sf_open(filename, SFM_WRITE, &info))) {
-    LOG(FATAL) << "sndfile: invalid format or could not write file - "
-               << filename;
+    throw std::runtime_error(
+        "saveSound: invalid format or could not write file - " +
+        std::string(filename));
   }
 
   sf_count_t nframe;
@@ -158,11 +163,12 @@ extern void saveSound(
     nframe = sf_writef_short(
         file, reinterpret_cast<short*>(input.data()), info.frames);
   } else {
-    LOG(FATAL) << "sndfile: unsupported write format - " << filename;
+    throw std::logic_error("saveSound: called with unsupported T");
   }
   sf_close(file);
   if (nframe != info.frames) {
-    LOG(FATAL) << "sndfile: write error - " << filename;
+    throw std::runtime_error(
+        "saveSound: write error - " + std::string(filename));
   }
 }
 } // namespace speech

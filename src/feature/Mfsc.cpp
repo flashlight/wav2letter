@@ -11,8 +11,6 @@
 #include <algorithm>
 #include <numeric>
 
-#include <glog/logging.h>
-
 #include "SpeechUtils.h"
 
 namespace speech {
@@ -103,10 +101,11 @@ int64_t Mfsc<T>::outputSize(int64_t inputSz) {
 template <typename T>
 void Mfsc<T>::validateMfscParams() const {
   this->validatePowSpecParams();
-  LOG_IF(FATAL, this->featParams_.numFilterbankChans <= 0)
-      << "numfilterbankchans' has to be positive.";
-  LOG_IF(FATAL, this->featParams_.melFloor <= 0.0)
-      << "'melfloor' has to be positive.";
+  if (this->featParams_.numFilterbankChans <= 0) {
+    throw std::invalid_argument("Mfsc: numFilterbankChans must be positive");
+  } else if (this->featParams_.melFloor <= 0.0) {
+    throw std::invalid_argument("Mfsc: melfloor must be positive");
+  }
 }
 
 template class Mfsc<float>;

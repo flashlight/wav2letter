@@ -8,7 +8,7 @@
 
 #include "Derivatives.h"
 
-#include <glog/logging.h>
+#include <stdexcept>
 
 #include "SpeechUtils.h"
 
@@ -22,7 +22,10 @@ template <typename T>
 std::vector<T> Derivatives<T>::apply(
     const std::vector<T>& input,
     int64_t numfeat) const {
-  LOG_IF(FATAL, (input.size() % numfeat) != 0) << "Invalid args";
+  if (input.size() % numfeat != 0) {
+    throw std::invalid_argument(
+        "Derivatives: input size is not divisible by numFeatures");
+  }
   // Compute deltas
   if (deltaWindow_ <= 0) {
     return input;

@@ -8,8 +8,6 @@
 
 #include "Mfcc.h"
 
-#include <glog/logging.h>
-
 #include "SpeechUtils.h"
 
 namespace speech {
@@ -71,8 +69,9 @@ template <typename T>
 void Mfcc<T>::validateMfccParams() const {
   this->validatePowSpecParams();
   this->validateMfscParams();
-  LOG_IF(FATAL, this->featParams_.lifterParam < 0)
-      << "'lifterparam' has to be >=0.";
+  if (this->featParams_.lifterParam < 0) {
+    throw std::invalid_argument("Mfcc: lifterparam must be nonnegative");
+  }
 }
 
 template class Mfcc<float>;

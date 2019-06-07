@@ -10,8 +10,7 @@
 
 #include <cmath>
 #include <numeric>
-
-#include <glog/logging.h>
+#include <stdexcept>
 
 namespace speech {
 
@@ -33,7 +32,10 @@ std::vector<T> Ceplifter<T>::apply(const std::vector<T>& input) const {
 
 template <typename T>
 void Ceplifter<T>::applyInPlace(std::vector<T>& input) const {
-  LOG_IF(FATAL, (input.size() % numFilters_) != 0);
+  if (input.size() % numFilters_ != 0) {
+    throw std::invalid_argument(
+        "Ceplifter: input size is not divisible by numFilters");
+  }
   size_t n = 0;
   for (auto& in : input) {
     in *= coefs_[n++];

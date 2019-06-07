@@ -11,8 +11,6 @@
 #include <algorithm>
 #include <unordered_map>
 
-#include <glog/logging.h>
-
 #include "SpeechUtils.h"
 
 namespace speech {
@@ -92,7 +90,12 @@ template <typename T>
 std::vector<T> PowerSpectrum<T>::batchApply(
     const std::vector<T>& input,
     int64_t batchSz) {
-  LOG_IF(FATAL, batchSz <= 0 || input.size() % batchSz != 0);
+  if (batchSz <= 0) {
+    throw std::invalid_argument("PowerSpectrum: negative batchSz");
+  } else if (input.size() % batchSz != 0) {
+    throw std::invalid_argument(
+        "PowerSpectrum: input size is not divisible by batchSz");
+  }
   int64_t N = input.size() / batchSz;
   int64_t outputSz = outputSize(N);
   std::vector<T> feat(outputSz * batchSz);
@@ -102,7 +105,9 @@ std::vector<T> PowerSpectrum<T>::batchApply(
     auto start = input.begin() + b * N;
     std::vector<T> inputBuf(start, start + N);
     auto curFeat = apply(inputBuf);
-    LOG_IF(FATAL, outputSz != curFeat.size());
+    if (outputSz != curFeat.size()) {
+      throw std::logic_error("PowerSpectrum: apply() returned wrong size");
+    }
     std::copy(
         curFeat.begin(), curFeat.end(), feat.begin() + b * curFeat.size());
   }
@@ -121,16 +126,17 @@ int64_t PowerSpectrum<T>::outputSize(int64_t inputSz) {
 
 template <typename T>
 void PowerSpectrum<T>::validatePowSpecParams() const {
-  LOG_IF(FATAL, featParams_.samplingFreq <= 0)
-      << "'samplingfreq' has to be positive.";
-  LOG_IF(FATAL, featParams_.frameSizeMs <= 0)
-      << "'framesizems' has to be positive.";
-  LOG_IF(FATAL, featParams_.frameStrideMs <= 0)
-      << "'framestridems' has to be positive.";
-  LOG_IF(FATAL, featParams_.numFrameSizeSamples() <= 0)
-      << "'framesizems' too low.";
-  LOG_IF(FATAL, featParams_.numFrameStrideSamples() <= 0)
-      << "'framestridems' too low.";
+  if (featParams_.samplingFreq <= 0) {
+    throw std::invalid_argument("PowerSpectrum: samplingFreq is negative");
+  } else if (featParams_.frameSizeMs <= 0) {
+    throw std::invalid_argument("PowerSpectrum: frameSizeMs is negative");
+  } else if (featParams_.frameStrideMs <= 0) {
+    throw std::invalid_argument("PowerSpectrum: frameStrideMs is negative");
+  } else if (featParams_.numFrameSizeSamples() <= 0) {
+    throw std::invalid_argument("PowerSpectrum: frameSizeMs is too low");
+  } else if (featParams_.numFrameStrideSamples() <= 0) {
+    throw std::invalid_argument("PowerSpectrum: frameStrideMs is too low");
+  }
 }
 
 template <typename T>

@@ -6,7 +6,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <glog/logging.h>
 #include <gtest/gtest.h>
 #include <fstream>
 #include <iostream>
@@ -82,9 +81,9 @@ TEST(MfccTest, htkCompareTest) {
       max = curdiff;
     }
   }
-  LOG(INFO) << "| Max diff across all dimensions " << max << "\n"; // 0.325853
+  std::cerr << "| Max diff across all dimensions " << max << "\n"; // 0.325853
 
-  LOG(INFO) << "| Avg diff across all dimensions " << sum / feat.size()
+  std::cerr << "| Avg diff across all dimensions " << sum / feat.size()
             << "\n"; // 0.00252719
 }
 

@@ -10,8 +10,7 @@
 
 #include <algorithm>
 #include <cmath>
-
-#include <glog/logging.h>
+#include <stdexcept>
 
 #include "SpeechUtils.h"
 
@@ -80,7 +79,7 @@ T TriFilterbank<T>::hertzToWarpedScale(T hz, FrequencyScale freqscale) const {
     case FrequencyScale::LINEAR:
       return hz;
     default:
-      LOG(FATAL) << "Unsupported frequency scale specified.";
+      throw std::invalid_argument("TriFilterbank: unsupported frequency scale");
       return 0.0;
   }
 }
@@ -95,7 +94,7 @@ T TriFilterbank<T>::warpedToHertzScale(T wrp, FrequencyScale freqscale) const {
     case FrequencyScale::LINEAR:
       return wrp;
     default:
-      LOG(FATAL) << "Unsupported frequency scale specified.";
+      throw std::invalid_argument("TriFilterbank: unsupported frequency scale");
       return 0.0;
   }
 }

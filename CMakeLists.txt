@@ -13,6 +13,8 @@ option(W2L_LIBRARIES_ONLY "Build only wav2letter-libraries" OFF)
 option(W2L_LIBRARIES_BUILD_CUDA "Build CUDA components of wav2letter-libraries" OFF)
 option(W2L_BUILD_TESTS "Build tests for wav2letter++" ON)
 option(W2L_BUILD_EXAMPLES "Build examples for wav2letter++" ON)
+option(W2L_BUILD_EXPERIMENTAL "Build internal experimental components for wav2letter++" OFF)
+option(W2L_BUILD_SCRIPTS "Build internal scripts for wav2letter++" OFF)
 
 # ------------------------- Libraries-Only Build ------------------------------
 
@@ -167,6 +169,18 @@ target_include_directories(
   ${PROJECT_SOURCE_DIR}/src # all includes are based at src/
   ${FLASHLIGHT_INCLUDE_DIRS} # includes are <flashlight/...>
   )
+
+# Build experimental assets if specified
+if (W2L_BUILD_EXPERIMENTAL)
+  message(STATUS "Building experimental assets.")
+  add_subdirectory(${PROJECT_SOURCE_DIR}/src/experimental)
+endif ()
+
+# Build scripts if specified
+if (W2L_BUILD_SCRIPTS)
+  message(STATUS "Building scripts.")
+  add_subdirectory(${PROJECT_SOURCE_DIR}/scripts)
+endif ()
 
 # ----------------------------- Train -----------------------------
 add_executable(

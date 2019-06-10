@@ -16,7 +16,7 @@
 #include "module/SpecAugment.h"
 #include "module/TDSBlock.h"
 
-#ifdef BUILD_FB_DEPENDENCIES
+#ifdef W2L_BUILD_FB_DEPENDENCIES
 #include "experimental/frontend/Frontend.h"
 #endif
 
@@ -379,7 +379,7 @@ std::shared_ptr<Module> parseLines(
         std::stoi(params[6]));
   }
 
-#ifdef BUILD_FB_DEPENDENCIES
+#ifdef W2L_BUILD_FB_DEPENDENCIES
 
   /* ========== Trainable frontend ========== */
   if (params[0] == "SL2P") {

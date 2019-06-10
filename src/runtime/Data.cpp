@@ -12,7 +12,7 @@
 #include "data/W2lNumberedFilesDataset.h"
 #include "runtime/Data.h"
 
-#ifdef BUILD_FB_DEPENDENCIES
+#ifdef W2L_BUILD_FB_DEPENDENCIES
 #include "fb/W2lEverstoreDataset.h"
 #endif
 
@@ -29,7 +29,7 @@ std::shared_ptr<W2lDataset> createDataset(
     bool skipUnk /* = true */) {
   std::shared_ptr<W2lDataset> ds;
   if (FLAGS_everstoredb) {
-#ifdef BUILD_FB_DEPENDENCIES
+#ifdef W2L_BUILD_FB_DEPENDENCIES
     W2lEverstoreDataset::init(); // Required for everstore client
     ds = std::make_shared<W2lEverstoreDataset>(
         path,
@@ -43,7 +43,7 @@ std::shared_ptr<W2lDataset> createDataset(
         FLAGS_datadir);
 #else
     LOG(FATAL) << "W2lEverstoreDataset not supported: "
-               << "build with -DBUILD_FB_DEPENDENCIES";
+               << "build with -DW2L_BUILD_FB_DEPENDENCIES";
 #endif
   } else if (FLAGS_listdata) {
     ds = std::make_shared<W2lListFilesDataset>(

@@ -315,25 +315,40 @@ int main(int argc, char** argv) {
   // Decoding
   auto runDecoder = [&](int tid, int start, int end) {
     try {
-      // Build Decoder
-      std::unique_ptr<Decoder> decoder;
-      std::shared_ptr<SequenceCriterion> localCriterion; // not thread-safe
-      std::shared_ptr<LM> localLm = lm; // not thread-safe
+      // Note: These 2 GPU-dependent models should be placed on different cards
+      // for different threads and nthread_decoder should not be greater than
+      // the number of GPUs.
+      std::shared_ptr<SequenceCriterion> localCriterion = criterion;
+      std::shared_ptr<LM> localLm = lm;
+      if (FLAGS_lmtype == "convlm" || criterionType == CriterionType::S2S) {
+        if (tid >= af::getDeviceCount()) {
+          LOG(FATAL)
+              << "FLAGS_nthread_decoder exceeds the number of visible GPUs";
+        }
+        af::setDevice(tid);
+      }
 
+      // Make a copy for non-main threads.
       if (tid != 0) {
         if (FLAGS_lmtype == "convlm") {
-          af::setDevice(tid);
           localLm = std::make_shared<ConvLM>(
               FLAGS_lm,
               FLAGS_lm_vocab,
               usrDict,
               FLAGS_lm_memory,
               FLAGS_beamsize);
-        } else {
-          auto kenLMPtr = static_cast<KenLM*>(lm.get());
-          localLm = std::make_shared<KenLM>(*kenLMPtr);
+        }
+
+        if (criterionType == CriterionType::S2S) {
+          std::shared_ptr<fl::Module> dummyNetwork;
+          std::unordered_map<std::string, std::string> dummyCfg;
+          W2lSerializer::load(FLAGS_am, dummyCfg, dummyNetwork, localCriterion);
+          localCriterion->eval();
         }
       }
+
+      // Build Decoder
+      std::unique_ptr<Decoder> decoder;
 
       if (FLAGS_decodertype == "wrd") {
         decoder.reset(new WordLMDecoder(
@@ -347,17 +362,6 @@ int main(int argc, char** argv) {
         LOG(INFO) << "[Decoder] Decoder with word-LM loaded in thread: " << tid;
       } else if (FLAGS_decodertype == "tkn") {
         if (criterionType == CriterionType::S2S) {
-          af::setDevice(tid);
-          if (tid != 0) {
-            std::shared_ptr<fl::Module> dummyNetwork;
-            std::unordered_map<std::string, std::string> dummyCfg;
-            W2lSerializer::load(
-                FLAGS_am, dummyCfg, dummyNetwork, localCriterion);
-            localCriterion->eval();
-          } else {
-            localCriterion = criterion;
-          }
-
           auto amUpdateFunc = buildAmUpdateFunction(localCriterion);
           int eosIdx = tokenDict.getIndex(kEosToken);
 
@@ -386,12 +390,14 @@ int main(int argc, char** argv) {
         } else {
           decoder.reset(new LexiconFreeDecoder(
               decoderOpt, localLm, silIdx, blankIdx, transition));
-          LOG(INFO) << "[Decoder] Decoder with token-LM loaded in thread: "
-                    << tid;
+          LOG(INFO)
+              << "[Decoder] Lexicon-free decoder with token-LM loaded in thread: "
+              << tid;
         }
       } else {
         LOG(FATAL) << "Unsupported decoder type: " << FLAGS_decodertype;
       }
+
       // Get data and run decoder
       TestMeters meters;
       int sliceSize = end - start;

@@ -6,8 +6,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <gflags/gflags.h>
-#include <glog/logging.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -15,7 +13,11 @@
 #include <array>
 #include <fstream>
 #include <functional>
+#include <iostream>
 #include <regex>
+#include <stdexcept>
+
+#include <gflags/gflags.h>
 
 #include "common/Transforms.h"
 #include "common/Utils-base.h"
@@ -70,8 +72,9 @@ std::string trim(const std::string& str) {
     return "";
   }
   auto j = str.find_last_not_of(kSpaceChars);
-  DCHECK_NE(j, std::string::npos);
-  DCHECK_LE(i, j);
+  if (j == std::string::npos || i > j) {
+    return "";
+  }
   return str.substr(i, j - i + 1);
 }
 
@@ -302,30 +305,30 @@ std::vector<std::string> wrd2Target(
 
   std::vector<std::string> res;
   if (fallback2Ltr) {
-    LOG(INFO)
-        << "Falling back to using letters as targets for the unknown word '"
-        << word << "'";
+    std::cerr
+        << "Falling back to using letters as targets for the unknown word: "
+        << word << "\n";
     auto tokens = splitWrd(word);
     for (const auto& tkn : tokens) {
       if (dict.contains(tkn)) {
         res.push_back(tkn);
       } else if (skipUnk) {
-        LOG(INFO)
+        std::cerr
             << "Skipping unknown token '" << tkn
-            << "' when falling back to letter target for the unknown word '"
-            << word << "'";
+            << "' when falling back to letter target for the unknown word: "
+            << word << "\n";
       } else {
-        LOG(FATAL)
-            << "Unknown token '" << tkn
-            << "' when falling back to letter target for the unknown word '"
-            << word << "'";
+        throw std::invalid_argument(
+            "Unknown token '" + tkn +
+            "' when falling back to letter target for the unknown word: " +
+            word);
       }
     }
   } else if (skipUnk) {
-    LOG(INFO) << "Skipping unknown word '" << word
-              << "' when generating target";
+    std::cerr << "Skipping unknown word '" << word
+              << "' when generating target\n";
   } else {
-    LOG(FATAL) << "Unknown word '" << word << "' in the lexicon";
+    throw std::invalid_argument("Unknown word in the lexicon: " + word);
   }
   return res;
 }

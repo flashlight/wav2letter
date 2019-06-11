@@ -8,14 +8,15 @@
 
 #include "Dictionary.h"
 
-#include <glog/logging.h>
 #include <fstream>
+#include <iostream>
+#include <stdexcept>
 
 namespace w2l {
 
 void Dictionary::addToken(const std::string& token, int idx) {
   if (token2idx_.find(token) != token2idx_.end()) {
-    LOG(FATAL) << "Duplicate entry name in dictionary '" << token << "'";
+    throw std::invalid_argument("Duplicate entry name in dictionary: " + token);
   }
   token2idx_[token] = idx;
   if (idx2token_.find(idx) == idx2token_.end()) {
@@ -35,7 +36,8 @@ void Dictionary::addToken(const std::string& token) {
 std::string Dictionary::getToken(int idx) const {
   auto iter = idx2token_.find(idx);
   if (iter == idx2token_.end()) {
-    LOG(FATAL) << "Unknown index in dictionary '" << idx << "'";
+    throw std::invalid_argument(
+        "Unknown index in dictionary: " + std::to_string(idx));
   }
   return iter->second;
 }
@@ -48,9 +50,9 @@ int Dictionary::getIndex(const std::string& token) const {
   auto iter = token2idx_.find(token);
   if (iter == token2idx_.end()) {
     if (defaultIndex_ < 0) {
-      LOG(FATAL) << "Unknown token in dictionary: '" << token << "'";
+      throw std::invalid_argument("Unknown token in dictionary: " + token);
     } else {
-      LOG(INFO) << "Skipping unknown token: '" << token << "'";
+      std::cerr << "Skipping unknown token: " << token << "\n";
       return defaultIndex_;
     }
   }

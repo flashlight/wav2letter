@@ -16,8 +16,6 @@
 #include <stdexcept>
 #include <thread>
 
-#include <glog/logging.h>
-
 namespace w2l {
 
 template <class... Args>

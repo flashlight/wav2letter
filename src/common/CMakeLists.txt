@@ -17,7 +17,6 @@ target_sources(
 target_link_libraries(
   common
   INTERFACE
-  ${GLOG_LIBRARIES}
   ${GFLAGS_LIBRARIES}
   flashlight::flashlight
   )

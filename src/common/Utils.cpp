@@ -12,7 +12,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
-
 #include <array>
 #include <fstream>
 #include <functional>
@@ -20,7 +19,6 @@
 
 #include <flashlight/flashlight.h>
 #include <gflags/gflags.h>
-#include <glog/logging.h>
 
 #include "common/Defines.h"
 #include "common/Transforms.h"

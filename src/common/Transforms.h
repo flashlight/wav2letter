@@ -10,11 +10,11 @@
 
 #include <algorithm>
 #include <numeric>
+#include <stdexcept>
 #include <unordered_map>
 #include <vector>
 
 #include <arrayfire.h>
-#include <glog/logging.h>
 
 #include "common/Defines.h"
 #include "common/Dictionary.h"
@@ -109,7 +109,9 @@ std::vector<T> transpose2d(
     int64_t inRow,
     int64_t inCol,
     int64_t inBatch = 1) {
-  LOG_IF(FATAL, in.size() != inRow * inCol * inBatch);
+  if (in.size() != inRow * inCol * inBatch) {
+    throw std::invalid_argument("Invalid input size");
+  }
   std::vector<T> out(in.size());
   for (size_t b = 0; b < inBatch; ++b) {
     int64_t start = b * inRow * inCol;

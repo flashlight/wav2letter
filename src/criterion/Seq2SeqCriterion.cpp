@@ -7,7 +7,6 @@
  */
 
 #include "Seq2SeqCriterion.h"
-#include <glog/logging.h>
 #include <algorithm>
 #include <queue>
 
@@ -35,7 +34,7 @@ Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx) {
         FLAGS_attnconvchannel,
         FLAGS_attnconvkernel);
   } else {
-    LOG(FATAL) << "unimplemented attention";
+    throw std::runtime_error("Unimplmented attention: " + FLAGS_attention);
   }
 
   std::shared_ptr<WindowBase> window;
@@ -53,7 +52,7 @@ Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx) {
   } else if (FLAGS_attnWindow == w2l::kSoftPretrainWindow) {
     window = std::make_shared<SoftPretrainWindow>(FLAGS_softwstd);
   } else {
-    LOG(FATAL) << "unimplemented window";
+    throw std::runtime_error("Unimplmented window: " + FLAGS_attnWindow);
   }
 
   return Seq2SeqCriterion(
@@ -465,7 +464,8 @@ Seq2SeqCriterion::decodeBatchStep(
 
   /* (2) Attention forward */
   if (window_ && (!train_ || trainWithWindow_)) {
-    LOG(FATAL) << "Batched decoding does not support window models";
+    throw std::runtime_error(
+        "Batched decoding does not support models with window");
   } else {
     Variable alphaBatched;
     // DEBUG: Third Variable is set to empty since no attention use it.

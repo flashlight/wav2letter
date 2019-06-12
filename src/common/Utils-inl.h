@@ -30,7 +30,11 @@ std::string format(const char* fmt, Args&&... args) {
   if (res2 < 0) {
     throw std::runtime_error(std::strerror(errno));
   }
-  DCHECK_EQ(res2, res);
+
+  if (res2 != res) {
+    throw std::runtime_error(
+        "The size of the formated string is not equal to what it is expected.");
+  }
   return buf;
 }
 

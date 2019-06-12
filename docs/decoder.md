@@ -4,41 +4,50 @@
 ### Major Components
 
 * The **test** binary is used to compute basic statistics like letter error rate
-  (LER) and word error rate (WER) given an acoustic model using the greedy best
-  path without any other constraints like lexicon or language models. It will
+  (LER) and word error rate (WER) given an acoustic model (AM) using the greedy best
+  path without the constraints of lexicon or language model (LM). It will
   also generate an **Emission Set** including the emission matrix as well as other
-  target-related information for each sample, so that the **Emission Set** can be
-  fed into the decoder directly to generate transcripts without running the
-  acoustic model (AM) forwarding again.
+  target-related information for each sample so that the **Emission Set** can be
+  fed into the decoder directly to generate transcripts without running AM
+  forwarding again.
 * The **decode** binary is a beam search decoder that attempts to find for each
-  sample the best transcript that minimize WER using an external language model.
+  sample the best transcript that minimizes WER using an external LM.
   It can take as input either an emission set generated from the test binary, or
-  an acoustic model to generate emissions at runtime. It is suggested to have
-  the **Emission Set** generated before, if we want to run a hyper-parameter
-  search over the same dataset.
+  an AM to generate emissions at runtime. We suggest generating the
+  **Emission Set** before decoding if running a hyper-parameter search over the
+  same dataset.
 
 ### Things you need to know
 * Types of decoders:
-  * Word-LM or Token-LM: If `-decodertype` flag is set to `wrd` (by default),
-    then the decoder will query LM only when it propose a valid word in lexicon.
-    Otherwise, if it is set to `tkn`, decoder will query LM each time a new token
-    is proposed into the transcript. Note that it is necessary to provide a
-    lexicon when using a word-level language model.
-  * Lexicon or Lexicon-free: If `-lexicon` flag is specified, i.e. a lexicon is
-    provided to the decoder, then decoder will only consider generating words
-    provided in the lexicon. Otherwise, all possible combination of tokens will
-    appear in the final transcript and word sequence is determined by splitting
-    the transcripts with token `-wordseparator`. Note that lexicon-free decoder
-    only works with token-level language model because it will be impossible to
-    know if a valid word is proposed during decoder without a lexicon.
+  * Word-LM or Token-LM?
+    * If `-decodertype` flag is set to `wrd` (by default),
+    then the decoder will query the word-level LM only when it proposes a valid
+    word in the lexicon.
+    * Otherwise, if set to `tkn`, the decoder will
+    query the token-level LM each time a new token is proposed into the
+    transcript.
+    * In principle, unigrams in the token LM should match with the
+    tokens used in AM training, while the unigrams in the word LM are valid
+    words already, and a lexicon is requested to map those words into spellings,
+    i.e. a sequence of AM tokens.
+  * Lexicon or Lexicon-free?
+    * If `-lexicon` flag is specified, i.e. a lexicon is
+    provided to the decoder, then the decoder will only generate words
+    that are present in the lexicon.
+    * Otherwise, all possible combinations of tokens may
+    appear in the final transcript, and the final word sequence will be
+    determined by splitting the transcripts with token `-wordseparator`.
+    * Note that the lexicon-free decoder only works with token-level LM because
+    lexicon-free decoding has no notion of a set of valid words.
   * Seq2Seq: If `-criterion` flag is set to `seq2seq`, seq2seq decoder will be
-    used. Note that the current implementation of seq2seq decoder only support
-    lexicon-free decoding with token-level language model.
+    used. Note that the current implementation of seq2seq decoder only supports
+    lexicon-free decoding with token-level LM.
 * Types of language models:
   * KenLM: We are using the [KenLM toolkit](https://kheafield.com/code/kenlm/)
-    for n-gram language models.
+    for n-gram LMs.
   * ConvLM: We also implemented the [Convolutional Language Model](https://arxiv.org/abs/1812.06864)
-    using flashlight and it is incorporated into the decoder.
+    using [flashlight](https://github.com/facebookresearch/flashlight) and it is
+    incorporated into the decoder.
 * Lexicon: The set of allowed words and their possible spellings used by the
   decoder. Each line is a word and spelling pair that are separated by a tab.
   The spelling is represented by a space-separated sequence of tokens. An
@@ -50,7 +59,7 @@
   `| i | l i k e | h e l l o | k i t t y |` during AM training, we would better
   have `h e l l o | k i t t y |` as the spelling of word `Hello-kitty`.
 * Emission Set:
-  * `emissions`: A vector of column major T x N floating-point matrices of
+  * `emissions`: A vector of column-major T x N floating-point matrices of
     AM scores (e.g. log-probabilities) for each sample. T is the number of
     output frames and N is the number of tokens.
   * `wordTargets`: Word targets in string of each sample.
@@ -84,11 +93,11 @@
 -show
 ```
 
-We load the acoustic model as well as all the flags it used from flag `-am`. We
+We load the AM and its flags/configuration based on the `-am` flag. We
 will reuse things like `-datadir` and `-tokens` from it. But it is also possible
 to override the flags from command line. `-emission_dir` specifies the path to
 the directory we save the `Emission Set`. The flags `-datadir` and `-test` are
-concatenated to specify the datasets we want to run experiment on. Note that we
+concatenated to specify the datasets we want to run experiments on. Note that we
 can test on more than 1 dataset, they must be in the same `-datadir` and are
 specified as a comma-separated list to `test`.
 
@@ -99,12 +108,12 @@ AM again. But for Seq2seq decoder, `-am` is required, since we need the RNN
 decoder part during beam search. The flag `-sclite` specifies the path to save
 the logs, including the *stdout* log and the hypotheses and references in
 *sclite* format ([trn](http://www1.icsi.berkeley.edu/Speech/docs/sctk-1.2/infmts.htm#trn_fmt_name_0)).
-Note that AM type as well as other things we specified for training can be
+Note that AM type, as well as other things we specified for AM training, can be
 inferred from `-am` or **Emission Set**.
 
-Below are commands to decode with different type of decoders. Please refer to
+Below are commands to decode with different types of decoders. Please refer to
 [here](https://github.com/facebookresearch/wav2letter/blob/master/src/common/Defines.cpp)
-for detailed meaning of each flag.
+for the detailed meaning of each flag.
 
 #### Lexicon + Word-LM (Using `-am`)
 ```
@@ -216,20 +225,20 @@ To decode with ConvLM, all you need to add for the above commands are:
 * `-lm_vocab <path/to/convlm_vocabulary_dict.txt>`
 * `-lm_memory 5000`
 
-`-lmtype`, whose default value is `kenlm`, is used to specify the type of
-language model. `-lm_vocab` specified a dictionary which was used to map tokens
-into indices in language model training. Its format is similar to `-tokens`
+`-lmtype`, whose default value is `kenlm`, is used to specify the type of LM.
+`-lm_vocab` specified a dictionary that was used to map tokens
+into indices in LM training. Its format is similar to `-tokens`
 where each line is a single token (char, word, word-piece, etc.) and the token
 index is exactly its line number.
 
-In order to efficiently decode with ConvLM, which is pretty expensive on running
+To efficiently decode with ConvLM, which is pretty expensive on running the
 forward pass, we design a dynamic cache to hold the probabilities over all the
-tokens given the candidates generated from previous frame. This way, when we
-want to propose new candidates during beam search, we can easily look up the
-cache for the language model score of it. In other word, we only need to run
+tokens given the candidates generated from the previous frame. This way, when we
+want to propose new candidates during beam search, we can easily check the
+cache for its pre-computed LM score. In other words, we only need to run the
 ConvLM forward pass in batch at the end of decoding each frame, when all the
 possible new candidates are gathered. Thus, the batching and caching can greatly
-reduce the number of forward pass we need to run in total.
+reduce the number of the forward passes we need to run in total.
 
 Usually, the cache has size `beam size` x `number of classes in ConvLM` in main
 memory. If we cannot feed `beam size` samples to ConvLM in a single batch,

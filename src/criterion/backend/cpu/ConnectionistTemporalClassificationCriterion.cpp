@@ -141,11 +141,12 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
       float* grad = batchInGrad.data() + b * N * T;
 
       int64_t L = batchTargetSizes[b];
-      const int64_t S = 2 * L + 1;
-      const int64_t R = w2l::countRepeats(targetVec, L);
 
+      L = std::min(L, T);
+      const int64_t R = w2l::countRepeats(targetVec, L);
       L = std::min(L + R, T) - R;
 
+      const int64_t S = 2 * L + 1;
       const auto& alphas = batchAlphas[b];
 
       int64_t start = (S == 1) ? S : S - 1;

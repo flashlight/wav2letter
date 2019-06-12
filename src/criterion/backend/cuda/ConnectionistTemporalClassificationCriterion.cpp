@@ -39,10 +39,10 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
   const auto& input = inputs[0];
   const auto& target = inputs[1];
   validate(input, target);
-  const int64_t N = input.dims(0);
-  const int64_t T = input.dims(1);
-  const int64_t B = input.dims(2);
-  const int64_t batchL = target.dims(0);
+  const int N = input.dims(0);
+  const int T = input.dims(1);
+  const int B = input.dims(2);
+  const int batchL = target.dims(0);
   auto stream = fl::cuda::getActiveStream();
 
   ctcOptions options;
@@ -96,10 +96,11 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
   for (int b = 0; b < B; ++b) {
     const int* targetVec = batchTargetVec.data() + b * batchL;
     int L = batchTargetSizeVec[b];
-    const int R = w2l::countRepeats(targetVec, batchL);
 
     // A heuristic to modify target length to be able to compute CTC loss
-    L = std::min(L + R, static_cast<int>(T)) - R;
+    L = std::min(L, T);
+    const int R = w2l::countRepeats(targetVec, L);
+    L = std::min(L + R, T) - R;
 
     labelLengths.push_back(L);
     for (int l = 0; l < L; ++l) {

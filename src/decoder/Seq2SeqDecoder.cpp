@@ -111,10 +111,6 @@ void Seq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
     // Batch forwarding
     rawY_.clear();
     rawPrevStates_.clear();
-    if (hyp_[t].empty()) {
-      t--;
-      break;
-    }
     for (const Seq2SeqDecoderState& prevHyp : hyp_[t]) {
       const AMStatePtr& prevState = prevHyp.amState;
       if (prevHyp.token == eos_) {
@@ -219,6 +215,9 @@ void Seq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
     }
   } else {
     std::cout << "[WARNING] No completed candidates.\n";
+    while (t > 0 && hyp_[t].empty()) {
+      --t;
+    }
     hyp_[maxOutputLength_ + 1].resize(hyp_[t].size());
     for (int i = 0; i < hyp_[t].size(); i++) {
       hyp_[maxOutputLength_ + 1][i] = std::move(hyp_[t][i]);

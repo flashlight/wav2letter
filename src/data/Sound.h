@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 #include <vector>
 
-namespace speech {
+namespace w2l {
 
 struct SoundInfo {
   int64_t frames;
@@ -74,14 +74,15 @@ struct SoundInfo {
 SoundInfo loadSoundInfo(const char* filename);
 
 template <typename T>
-extern std::vector<T> loadSound(const char* filename);
+std::vector<T> loadSound(const char* filename);
 
 template <typename T>
-extern void saveSound(
+void saveSound(
     const char* filename,
     std::vector<T> input,
     int64_t samplerate,
     int64_t channels,
     const char* format,
     const char* subformat);
-} // namespace speech
+
+} // namespace w2l

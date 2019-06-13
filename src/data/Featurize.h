@@ -13,8 +13,8 @@
 
 #include "common/Dictionary.h"
 #include "data/NumberedFilesLoader.h"
+#include "data/Sound.h"
 #include "feature/FeatureParams.h"
-#include "feature/Sound.h"
 
 namespace w2l {
 

@@ -75,7 +75,7 @@ W2lLoaderData NumberedFilesLoader::get(const int64_t idx) const {
   W2lLoaderData data;
   auto inputpath = filename(idx, inputExtension_);
   data.sampleId = std::to_string(idx);
-  data.input = speech::loadSound<float>(inputpath.c_str());
+  data.input = w2l::loadSound<float>(inputpath.c_str());
 
   for (auto& targetExtension : targetExtensions_) {
     auto targetpath = filename(idx, targetExtension.second);

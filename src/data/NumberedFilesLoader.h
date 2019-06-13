@@ -12,7 +12,7 @@
 #include <string>
 
 #include "common/Dictionary.h"
-#include "feature/Sound.h"
+#include "data/Sound.h"
 
 namespace w2l {
 

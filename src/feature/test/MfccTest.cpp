@@ -7,6 +7,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -16,11 +17,19 @@
 #include "common/Utils.h"
 #include "feature/FeatureParams.h"
 #include "feature/Mfcc.h"
-#include "feature/Sound.h"
 
 namespace {
 std::string loadPath = "";
-}
+
+auto loadData = [](const std::string& filepath) {
+  std::vector<float> data;
+  std::ifstream file(filepath);
+  std::istream_iterator<float> eos;
+  std::istream_iterator<float> iit(file);
+  std::copy(iit, eos, std::back_inserter(data));
+  return data;
+};
+} // namespace
 
 using namespace speech;
 
@@ -29,21 +38,11 @@ using namespace speech;
 // Reference : https://labrosa.ee.columbia.edu/matlab/rastamat/mfccs.html
 TEST(MfccTest, htkCompareTest) {
   // read wav data
-  auto wavinput =
-      loadSound<float>(w2l::pathsConcat(loadPath, "sa1.wav").c_str());
-  ASSERT_TRUE(wavinput.size() > 0 && "Wavfile not loaded properly!");
+  auto wavinput = loadData(w2l::pathsConcat(loadPath, "sa1.dat"));
+  ASSERT_TRUE(wavinput.size() > 0 && "sa1 frames not loaded properly!");
 
   // read expected output data computed from HTK
-  std::vector<float> htkfeat;
-  std::fstream file(w2l::pathsConcat(loadPath, "sa1-mfcc.htk"));
-  std::string line;
-  while (getline(file, line)) {
-    std::istringstream iss(line);
-    std::copy(
-        std::istream_iterator<float>(iss),
-        std::istream_iterator<float>(),
-        std::back_inserter(htkfeat));
-  }
+  auto htkfeat = loadData(w2l::pathsConcat(loadPath, "sa1-mfcc.htk"));
   // HTK features not read properly!
   ASSERT_TRUE(htkfeat.size() > 0);
   FeatureParams params;

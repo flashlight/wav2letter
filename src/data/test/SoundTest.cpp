@@ -12,9 +12,7 @@
 #include <functional>
 
 #include "common/Utils.h"
-#include "feature/Sound.h"
-
-using namespace speech;
+#include "data/Sound.h"
 
 namespace {
 std::string loadPath = "";
@@ -34,7 +32,7 @@ TEST(SoundTest, Mono) {
       w2l::pathsConcat(loadPath, "test_mono.wav"); // 16-bit Signed Integer PCM
   auto datapath = w2l::pathsConcat(loadPath, "test_mono.dat");
 
-  auto info = loadSoundInfo(audiopath.c_str());
+  auto info = w2l::loadSoundInfo(audiopath.c_str());
   ASSERT_EQ(info.samplerate, 48000);
   ASSERT_EQ(info.channels, 1);
   ASSERT_EQ(info.frames, 24576);
@@ -42,14 +40,14 @@ TEST(SoundTest, Mono) {
   auto data = loadData(datapath);
 
   // Double
-  auto vecDouble = loadSound<double>(audiopath.c_str());
+  auto vecDouble = w2l::loadSound<double>(audiopath.c_str());
   ASSERT_EQ(vecDouble.size(), info.channels * info.frames);
   for (int64_t i = 0; i < vecDouble.size(); ++i) {
     ASSERT_NEAR(vecDouble[i], data[i], 1E-8);
   }
 
   // Float
-  auto vecFloat = loadSound<float>(audiopath.c_str());
+  auto vecFloat = w2l::loadSound<float>(audiopath.c_str());
   ASSERT_EQ(vecFloat.size(), info.channels * info.frames);
 
   for (int64_t i = 0; i < vecFloat.size(); ++i) {
@@ -63,7 +61,7 @@ TEST(SoundTest, Mono) {
       });
 
   // Short
-  auto vecShort = loadSound<short>(audiopath.c_str());
+  auto vecShort = w2l::loadSound<short>(audiopath.c_str());
   ASSERT_EQ(vecShort.size(), info.channels * info.frames);
 
   for (int64_t i = 0; i < vecShort.size(); ++i) {
@@ -76,7 +74,7 @@ TEST(SoundTest, Mono) {
         return d * (1 << 16);
       });
   // Int
-  auto vecInt = loadSound<int>(audiopath.c_str());
+  auto vecInt = w2l::loadSound<int>(audiopath.c_str());
   ASSERT_EQ(vecInt.size(), info.channels * info.frames);
   for (int64_t i = 0; i < vecInt.size(); ++i) {
     ASSERT_NEAR(vecInt[i], data[i], 25);
@@ -87,13 +85,13 @@ TEST(SoundTest, Stereo) {
   auto audiopath = w2l::pathsConcat(
       loadPath, "test_stereo.wav"); // 16-bit Signed Integer PCM
   auto datapath = w2l::pathsConcat(loadPath, "test_stereo.dat");
-  auto info = loadSoundInfo(audiopath.c_str());
+  auto info = w2l::loadSoundInfo(audiopath.c_str());
 
   ASSERT_EQ(info.samplerate, 48000);
   ASSERT_EQ(info.channels, 2);
   ASSERT_EQ(info.frames, 24576);
 
-  auto vecFloat = loadSound<float>(audiopath.c_str());
+  auto vecFloat = w2l::loadSound<float>(audiopath.c_str());
   ASSERT_EQ(vecFloat.size(), info.channels * info.frames);
 
   auto data = loadData(datapath);
@@ -108,8 +106,8 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
 
   // Resolve directory for data
-#ifdef FEATURE_TEST_DATADIR
-  loadPath = FEATURE_TEST_DATADIR;
+#ifdef DATA_TEST_DATADIR
+  loadPath = DATA_TEST_DATADIR;
 #endif
 
   return RUN_ALL_TESTS();

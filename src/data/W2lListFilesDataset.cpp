@@ -95,7 +95,7 @@ std::vector<W2lLoaderData> W2lListFilesDataset::getLoaderData(
 
 std::vector<float> W2lListFilesDataset::loadSound(
     const std::string& audioHandle) const {
-  return speech::loadSound<float>(audioHandle.c_str());
+  return w2l::loadSound<float>(audioHandle.c_str());
 }
 
 std::vector<SpeechSampleMetaInfo> W2lListFilesDataset::loadListFile(

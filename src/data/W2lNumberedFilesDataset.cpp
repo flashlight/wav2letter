@@ -86,7 +86,7 @@ std::vector<SpeechSampleMetaInfo> W2lNumberedFilesDataset::loadSampleSizes() {
       auto audiofile = l.filename(i, FLAGS_input);
       auto targetfile = l.filename(i, FLAGS_target);
       auto idx = cumulativeSizes_[j] + i;
-      auto info = speech::loadSoundInfo(audiofile.c_str());
+      auto info = w2l::loadSoundInfo(audiofile.c_str());
       auto durationMs =
           (static_cast<double>(info.frames) / info.samplerate) * 1e3;
       auto ref = loadTarget(targetfile);

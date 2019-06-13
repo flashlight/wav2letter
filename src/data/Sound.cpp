@@ -44,7 +44,7 @@ const std::unordered_map<std::string, int> subformats{
     {"vorbis", SF_FORMAT_VORBIS}};
 } // namespace
 
-namespace speech {
+namespace w2l {
 
 SoundInfo loadSoundInfo(const char* filename) {
   SNDFILE* file;
@@ -73,7 +73,7 @@ SoundInfo loadSoundInfo(const char* filename) {
 }
 
 template <typename T>
-extern std::vector<T> loadSound(const char* filename) {
+std::vector<T> loadSound(const char* filename) {
   SNDFILE* file;
   SF_INFO info;
 
@@ -114,7 +114,7 @@ extern std::vector<T> loadSound(const char* filename) {
 }
 
 template <typename T>
-extern void saveSound(
+void saveSound(
     const char* filename,
     std::vector<T> input,
     int64_t samplerate,
@@ -171,35 +171,36 @@ extern void saveSound(
         "saveSound: write error - " + std::string(filename));
   }
 }
-} // namespace speech
 
-template std::vector<float> speech::loadSound(const char*);
-template std::vector<double> speech::loadSound(const char*);
-template std::vector<int> speech::loadSound(const char*);
-template std::vector<short> speech::loadSound(const char*);
+} // namespace w2l
 
-template void speech::saveSound(
+template std::vector<float> w2l::loadSound(const char*);
+template std::vector<double> w2l::loadSound(const char*);
+template std::vector<int> w2l::loadSound(const char*);
+template std::vector<short> w2l::loadSound(const char*);
+
+template void w2l::saveSound(
     const char*,
     std::vector<float>,
     int64_t,
     int64_t,
     const char*,
     const char*);
-template void speech::saveSound(
+template void w2l::saveSound(
     const char*,
     std::vector<double>,
     int64_t,
     int64_t,
     const char*,
     const char*);
-template void speech::saveSound(
+template void w2l::saveSound(
     const char*,
     std::vector<int>,
     int64_t,
     int64_t,
     const char*,
     const char*);
-template void speech::saveSound(
+template void w2l::saveSound(
     const char*,
     std::vector<short>,
     int64_t,

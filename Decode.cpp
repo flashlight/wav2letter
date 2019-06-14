@@ -460,7 +460,7 @@ int main(int argc, char** argv) {
 
           std::cout << buffer.str();
           if (!FLAGS_sclite.empty()) {
-            std::string suffix = "(" + sampleId + ")\n";
+            std::string suffix = " (" + sampleId + ")\n";
             writeHyp(wordPredictionStr + suffix);
             writeRef(wordTargetStr + suffix);
             writeLog(buffer.str());

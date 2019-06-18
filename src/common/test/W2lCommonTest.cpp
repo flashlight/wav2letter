@@ -186,9 +186,9 @@ TEST(W2lCommonTest, RetryWithBackoff) {
 
 TEST(W2lCommonTest, Replabel) {
   Dictionary dict;
-  dict.addToken("1", 1);
-  dict.addToken("2", 2);
-  dict.addToken("3", 3);
+  dict.addEntry("1", 1);
+  dict.addEntry("2", 2);
+  dict.addEntry("3", 3);
   std::vector<int> lab = {5, 6, 6, 6, 10, 8, 8, 10, 10, 10, 10, 10};
 
   auto lab0 = lab;
@@ -224,34 +224,34 @@ TEST(W2lCommonTest, Replabel) {
 
 TEST(W2lCommonTest, Dictionary) {
   Dictionary dict;
-  dict.addToken("1", 1);
-  dict.addToken("2", 2);
-  dict.addToken("3", 3);
-  dict.addToken("4", 3);
+  dict.addEntry("1", 1);
+  dict.addEntry("2", 2);
+  dict.addEntry("3", 3);
+  dict.addEntry("4", 3);
 
-  ASSERT_EQ(dict.getToken(1), "1");
-  ASSERT_EQ(dict.getToken(3), "3");
+  ASSERT_EQ(dict.getEntry(1), "1");
+  ASSERT_EQ(dict.getEntry(3), "3");
 
   ASSERT_EQ(dict.getIndex("2"), 2);
   ASSERT_EQ(dict.getIndex("4"), 3);
 
-  ASSERT_EQ(dict.tokenSize(), 4);
+  ASSERT_EQ(dict.entrySize(), 4);
   ASSERT_EQ(dict.indexSize(), 3);
 
-  dict.addToken("5");
+  dict.addEntry("5");
   ASSERT_EQ(dict.getIndex("5"), 4);
-  ASSERT_EQ(dict.tokenSize(), 5);
+  ASSERT_EQ(dict.entrySize(), 5);
 
-  dict.addToken("6");
+  dict.addEntry("6");
   ASSERT_EQ(dict.getIndex("6"), 5);
   ASSERT_EQ(dict.indexSize(), 5);
 }
 
 TEST(W2lCommonTest, InvReplabel) {
   Dictionary dict;
-  dict.addToken("1", 1);
-  dict.addToken("2", 2);
-  dict.addToken("3", 3);
+  dict.addEntry("1", 1);
+  dict.addEntry("2", 2);
+  dict.addEntry("3", 3);
   std::vector<int> lab = {6, 3, 7, 2, 8, 0, 1};
 
   auto lab1 = lab;
@@ -385,12 +385,12 @@ TEST(W2lCommonTest, WrdToTarget) {
     for (auto p : l.second) {
       for (auto c : p) {
         if (!dict.contains(c)) {
-          dict.addToken(c);
+          dict.addEntry(c);
         }
       }
     }
   }
-  dict.addToken("_");
+  dict.addEntry("_");
 
   std::vector<std::string> words = {"123", "456"};
   auto target = wrd2Target(words, lexicon, dict);
@@ -431,11 +431,11 @@ TEST(W2lCommonTest, TargetToSingleLtr) {
 
   Dictionary dict;
   for (int i = 0; i < 10; ++i) {
-    dict.addToken(std::to_string(i), i);
+    dict.addEntry(std::to_string(i), i);
   }
-  dict.addToken("_", 10);
-  dict.addToken("23_", 230);
-  dict.addToken("456_", 4560);
+  dict.addEntry("_", 10);
+  dict.addEntry("23_", 230);
+  dict.addEntry("456_", 4560);
 
   std::vector<int> words = {1, 230, 4560};
   auto target = tknIdx2Ltr(words, dict);

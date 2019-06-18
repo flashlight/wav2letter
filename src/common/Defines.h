@@ -145,7 +145,6 @@ DECLARE_double(pcttraineval);
 
 DECLARE_string(arch);
 DECLARE_string(criterion);
-DECLARE_bool(garbage);
 DECLARE_int64(encoderdim);
 
 /* ========== DECODER OPTIONS ========== */

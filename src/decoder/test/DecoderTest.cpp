@@ -52,7 +52,6 @@ std::vector<int> tokens2Tensor(
 
 TEST(DecoderTest, run) {
   FLAGS_criterion = kAsgCriterion;
-  FLAGS_replabel = 1;
   std::string dataDir = "";
 #ifdef DECODER_TEST_DATADIR
   dataDir = DECODER_TEST_DATADIR;
@@ -92,7 +91,8 @@ TEST(DecoderTest, run) {
 
   /* ===================== Create Dictionary ===================== */
   auto lexicon = loadWords(pathsConcat(dataDir, "words.lst"), -1);
-  auto tokenDict = createTokenDict(pathsConcat(dataDir, "letters.lst"));
+  Dictionary tokenDict(pathsConcat(dataDir, "letters.lst"));
+  tokenDict.addEntry("1"); // replabel
   auto wordDict = createWordDict(lexicon);
 
   LOG(INFO) << "[Dictionary] Number of words: " << wordDict.indexSize();

@@ -6,38 +6,80 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "Dictionary.h"
+#include "common/Dictionary.h"
 
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
 
+#include "common/Utils-base.h"
+
 namespace w2l {
 
-void Dictionary::addToken(const std::string& token, int idx) {
-  if (token2idx_.find(token) != token2idx_.end()) {
-    throw std::invalid_argument("Duplicate entry name in dictionary: " + token);
+Dictionary::Dictionary(std::istream& stream) {
+  createFromStream(stream);
+}
+
+Dictionary::Dictionary(const std::string& filename) {
+  if (!fileExists(filename)) {
+    throw std::invalid_argument(
+        "Dictionary file '" + filename + "' does not exist.");
   }
-  token2idx_[token] = idx;
-  if (idx2token_.find(idx) == idx2token_.end()) {
-    idx2token_[idx] = token;
+  std::ifstream stream(filename);
+  createFromStream(stream);
+}
+
+void Dictionary::createFromStream(std::istream& stream) {
+  if (!stream) {
+    throw std::runtime_error("Unable to open dictionary input stream.");
+  }
+  std::string line;
+  while (std::getline(stream, line)) {
+    if (line.empty()) {
+      continue;
+    }
+    auto tkns = splitOnWhitespace(line, true);
+    auto idx = idx2entry_.size();
+    // All entries on the same line map to the same index
+    for (const auto& tkn : tkns) {
+      addEntry(tkn, idx);
+    }
+  }
+  if (!isContiguous()) {
+    throw std::runtime_error("Invalid dictionary format - not contiguous");
   }
 }
 
-void Dictionary::addToken(const std::string& token) {
-  int idx = idx2token_.size();
+void Dictionary::addEntry(const std::string& entry, int idx) {
+  if (entry2idx_.find(entry) != entry2idx_.end()) {
+    throw std::invalid_argument(
+        "Duplicate entry name in dictionary '" + entry + "'");
+  }
+  entry2idx_[entry] = idx;
+  if (idx2entry_.find(idx) == idx2entry_.end()) {
+    idx2entry_[idx] = entry;
+  }
+}
+
+void Dictionary::addEntry(const std::string& entry) {
+  // Check if the entry already exists in the dictionary
+  if (entry2idx_.find(entry) != entry2idx_.end()) {
+    throw std::invalid_argument(
+        "Duplicate entry in dictionary '" + entry + "'");
+  }
+  int idx = idx2entry_.size();
   // Find first available index.
-  while (idx2token_.find(idx) != idx2token_.end()) {
+  while (idx2entry_.find(idx) != idx2entry_.end()) {
     ++idx;
   }
-  addToken(token, idx);
+  addEntry(entry, idx);
 }
 
-std::string Dictionary::getToken(int idx) const {
-  auto iter = idx2token_.find(idx);
-  if (iter == idx2token_.end()) {
+std::string Dictionary::getEntry(int idx) const {
+  auto iter = idx2entry_.find(idx);
+  if (iter == idx2entry_.end()) {
     throw std::invalid_argument(
-        "Unknown index in dictionary: " + std::to_string(idx));
+        "Unknown index in dictionary '" + std::to_string(idx) + "'");
   }
   return iter->second;
 }
@@ -46,67 +88,68 @@ void Dictionary::setDefaultIndex(int idx) {
   defaultIndex_ = idx;
 }
 
-int Dictionary::getIndex(const std::string& token) const {
-  auto iter = token2idx_.find(token);
-  if (iter == token2idx_.end()) {
+int Dictionary::getIndex(const std::string& entry) const {
+  auto iter = entry2idx_.find(entry);
+  if (iter == entry2idx_.end()) {
     if (defaultIndex_ < 0) {
-      throw std::invalid_argument("Unknown token in dictionary: " + token);
+      throw std::invalid_argument(
+          "Unknown entry in dictionary: '" + entry + "'");
     } else {
-      std::cerr << "Skipping unknown token: " << token << "\n";
+      std::cerr << "Skipping unknown entry: '" << entry << "'";
       return defaultIndex_;
     }
   }
   return iter->second;
 }
 
-bool Dictionary::contains(const std::string& token) const {
-  auto iter = token2idx_.find(token);
-  if (iter == token2idx_.end()) {
+bool Dictionary::contains(const std::string& entry) const {
+  auto iter = entry2idx_.find(entry);
+  if (iter == entry2idx_.end()) {
     return false;
   }
   return true;
 }
 
-size_t Dictionary::tokenSize() const {
-  return token2idx_.size();
+size_t Dictionary::entrySize() const {
+  return entry2idx_.size();
 }
 
 bool Dictionary::isContiguous() const {
   for (size_t i = 0; i < indexSize(); ++i) {
-    if (idx2token_.find(i) == idx2token_.end()) {
+    if (idx2entry_.find(i) == idx2entry_.end()) {
       return false;
     }
   }
-  for (const auto& tknidx : token2idx_) {
-    if (idx2token_.find(tknidx.second) == idx2token_.end()) {
+  for (const auto& tknidx : entry2idx_) {
+    if (idx2entry_.find(tknidx.second) == idx2entry_.end()) {
       return false;
     }
   }
   return true;
 }
 
-std::vector<int> Dictionary::mapTokensToIndices(
-    const std::vector<std::string>& tokens) const {
+std::vector<int> Dictionary::mapEntriesToIndices(
+    const std::vector<std::string>& entries) const {
   std::vector<int> indices;
-  indices.reserve(tokens.size());
-  for (const auto& tkn : tokens) {
+  indices.reserve(entries.size());
+  for (const auto& tkn : entries) {
     indices.emplace_back(getIndex(tkn));
   }
   return indices;
 }
 
-std::vector<std::string> Dictionary::mapIndicesToTokens(
+std::vector<std::string> Dictionary::mapIndicesToEntries(
     const std::vector<int>& indices) const {
-  std::vector<std::string> tokens;
-  tokens.reserve(indices.size());
+  std::vector<std::string> entries;
+  entries.reserve(indices.size());
   for (const auto& idx : indices) {
-    tokens.emplace_back(getToken(idx));
+    entries.emplace_back(getEntry(idx));
   }
-  return tokens;
+  return entries;
 }
 
 size_t Dictionary::indexSize() const {
-  return idx2token_.size();
+  return idx2entry_.size();
 }
 
 } // namespace w2l

@@ -26,7 +26,7 @@ KenLM::KenLM(const std::string& path, const Dictionary& usrTknDict) {
   // Create index map
   usrToLmIdxMap_.clear();
   for (int i = 0; i < usrTknDict.indexSize(); i++) {
-    auto token = usrTknDict.getToken(i);
+    auto token = usrTknDict.getEntry(i);
     int lmIdx = vocab_->Index(token.c_str());
     usrToLmIdxMap_.emplace(i, lmIdx);
   }

@@ -29,13 +29,13 @@ Dictionary getDict() {
   std::string ltr = "a";
   int alphabet_sz = 26;
   while (alphabet_sz--) {
-    dict.addToken(ltr);
+    dict.addEntry(ltr);
     ltr[0] += 1;
   }
-  dict.addToken("|");
-  dict.addToken("'");
-  dict.addToken("L", dict.getIndex("|"));
-  dict.addToken("N", dict.getIndex("|"));
+  dict.addEntry("|");
+  dict.addEntry("'");
+  dict.addEntry("L", dict.getIndex("|"));
+  dict.addEntry("N", dict.getIndex("|"));
   return dict;
 }
 
@@ -93,7 +93,7 @@ TEST(DataTest, inputFeaturizer) {
 
 TEST(DataTest, targetFeaturizer) {
   auto dict = getDict();
-  dict.addToken(kEosToken);
+  dict.addEntry(kEosToken);
   std::vector<std::vector<std::string>> targets = {{"a", "b", "c", "c", "c"},
                                                    {"b", "c", "d", "d"}};
 
@@ -255,7 +255,7 @@ TEST(DataTest, W2lDatasetDeterministicSampling) {
   w2l::FLAGS_input = "wav";
   w2l::FLAGS_target = "phn";
   std::string hubPaths = "dataset/train";
-  auto dict = createTokenDict(w2l::pathsConcat(loadPath, "dict39.phn"));
+  w2l::Dictionary dict(w2l::pathsConcat(loadPath, "dict39.phn"));
   DictionaryMap dicts;
   dicts.insert({kTargetIdx, dict});
 

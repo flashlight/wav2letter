@@ -36,6 +36,17 @@ endfunction(build_test)
 if (W2L_BUILD_TESTS)
   # Common
   build_test(${CMAKE_SOURCE_DIR}/src/common/test/W2lCommonTest.cpp)
+  build_test(${CMAKE_SOURCE_DIR}/src/common/test/DictionaryTest.cpp)
+  set(
+    W2L_DICTIONARY_TEST_DIR
+    "\"${CMAKE_SOURCE_DIR}/src/common/test/\""
+    )
+  target_compile_definitions(
+    DictionaryTest
+    PRIVATE
+    -DW2L_DICTIONARY_TEST_DIR=${W2L_DICTIONARY_TEST_DIR}
+  )
+
   # Criterion
   build_test(${CMAKE_SOURCE_DIR}/src/criterion/test/CriterionTest.cpp)
   build_test(${CMAKE_SOURCE_DIR}/src/criterion/test/Seq2SeqTest.cpp)

@@ -133,7 +133,6 @@ DEFINE_double(
 // ARCHITECTURE OPTIONS
 DEFINE_string(arch, "default", "network architecture");
 DEFINE_string(criterion, kAsgCriterion, "training criterion");
-DEFINE_bool(garbage, false, "add a garbage between each target label");
 DEFINE_int64(encoderdim, 0, "Dimension of encoded hidden state.");
 
 // DECODER OPTIONS

@@ -216,52 +216,10 @@ int64_t loadSize(const std::string& filepath) {
   return std::stol(line);
 }
 
-Dictionary createTokenDict(const std::string& filepath) {
-  Dictionary dict;
-  if (filepath.empty()) {
-    throw std::runtime_error("Empty filepath specified for token dictiinary.");
-    return dict;
-  }
-  std::ifstream infile(trim(filepath));
-  if (!infile) {
-    throw std::runtime_error("Unable to open dictionary file: " + filepath);
-  }
-  std::string line;
-  while (std::getline(infile, line)) {
-    if (line.empty()) {
-      continue;
-    }
-    auto tkns = splitOnWhitespace(line, true);
-    auto idx = dict.indexSize();
-    for (const auto& tkn : tkns) {
-      dict.addToken(tkn, idx);
-    }
-  }
-  if (!dict.isContiguous()) {
-    throw std::runtime_error("Invalid Dictionary!");
-  }
-
-  for (int64_t r = 1; r <= FLAGS_replabel; ++r) {
-    dict.addToken(std::to_string(r));
-  }
-  // ctc expects the blank label last
-  if (FLAGS_garbage || FLAGS_criterion == kCtcCriterion) {
-    dict.addToken(kBlankToken);
-  }
-  if (FLAGS_eostoken) {
-    dict.addToken(kEosToken);
-  }
-  return dict;
-}
-
-Dictionary createTokenDict() {
-  return createTokenDict(pathsConcat(FLAGS_tokensdir, FLAGS_tokens));
-}
-
 Dictionary createWordDict(const LexiconMap& lexicon) {
   Dictionary dict;
   for (const auto& it : lexicon) {
-    dict.addToken(it.first);
+    dict.addEntry(it.first);
   }
   dict.setDefaultIndex(dict.getIndex(kUnkToken));
   return dict;
@@ -444,7 +402,7 @@ std::vector<std::string> tknIdx2Ltr(
   std::vector<std::string> result;
 
   for (auto id : labels) {
-    auto token = d.getToken(id);
+    auto token = d.getEntry(id);
     if (FLAGS_usewordpiece) {
       auto splitToken = splitWrd(token);
       for (const auto& c : splitToken) {
@@ -491,7 +449,7 @@ std::vector<std::string> wrdIdx2Wrd(
     const Dictionary& wordDict) {
   std::vector<std::string> words;
   for (auto wrdIdx : input) {
-    words.push_back(wordDict.getToken(wrdIdx));
+    words.push_back(wordDict.getEntry(wrdIdx));
   }
   return words;
 }
@@ -558,32 +516,6 @@ std::vector<std::string> tknPrediction2Ltr(
   remapLabels(tokens, tokenDict);
 
   return tknIdx2Ltr(tokens, tokenDict);
-}
-
-Dictionary createLMDict(const std::string& filepath) {
-  Dictionary dict;
-  if (filepath.empty()) {
-    throw std::runtime_error("Empty filepath specified for token dictiinary.");
-    return dict;
-  }
-  std::ifstream infile(trim(filepath));
-  if (!infile) {
-    throw std::runtime_error("Unable to open dictionary file: " + filepath);
-  }
-  std::string line;
-  while (std::getline(infile, line)) {
-    if (line.empty()) {
-      continue;
-    }
-    auto tkns = splitOnWhitespace(line, true);
-    auto idx = dict.indexSize();
-    dict.addToken(tkns.front(), idx);
-  }
-  if (!dict.isContiguous()) {
-    throw std::runtime_error("Invalid Dictionary!");
-  }
-
-  return dict;
 }
 
 } // namespace w2l

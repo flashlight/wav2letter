@@ -126,7 +126,7 @@ W2lFeatureData featurize(
       auto target = d.targets.find(targetType)->second;
 
       if (targetType == kTargetIdx) {
-        auto tgtVec = dict.mapTokensToIndices(target);
+        auto tgtVec = dict.mapEntriesToIndices(target);
         if (!FLAGS_surround.empty()) {
           auto idx = dict.getIndex(FLAGS_surround);
           tgtVec.emplace_back(idx);
@@ -153,7 +153,7 @@ W2lFeatureData featurize(
         feat.targets[targetType].resize(batchSz * maxTgtSize, padVal);
         feat.targetDims[targetType] = af::dim4(maxTgtSize, batchSz);
       } else if (targetType == kWordIdx) {
-        auto tgtVec = dict.mapTokensToIndices(target);
+        auto tgtVec = dict.mapEntriesToIndices(target);
         tgtFeat.emplace_back(tgtVec);
         maxTgtSize = std::max(maxTgtSize, tgtVec.size());
 

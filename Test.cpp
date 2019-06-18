@@ -79,8 +79,23 @@ int main(int argc, char** argv) {
   LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   /* ===================== Create Dictionary ===================== */
+  auto dictPath = pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
+  if (dictPath.empty() || !fileExists(dictPath)) {
+    throw std::runtime_error("Invalid dictionary filepath specified.");
+  }
+  Dictionary tokenDict(dictPath);
+  // Setup-specific modifications
+  for (int64_t r = 1; r <= FLAGS_replabel; ++r) {
+    tokenDict.addEntry(std::to_string(r));
+  }
+  // ctc expects the blank label last
+  if (FLAGS_criterion == kCtcCriterion) {
+    tokenDict.addEntry(kBlankToken);
+  }
+  if (FLAGS_eostoken) {
+    tokenDict.addEntry(kEosToken);
+  }
 
-  auto tokenDict = createTokenDict(pathsConcat(FLAGS_tokensdir, FLAGS_tokens));
   int numClasses = tokenDict.indexSize();
   LOG(INFO) << "Number of classes (network): " << numClasses;
 

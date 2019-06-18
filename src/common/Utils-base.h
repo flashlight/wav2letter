@@ -69,9 +69,6 @@ std::vector<std::string> loadTarget(const std::string& filepath);
 
 int64_t loadSize(const std::string& filepath);
 
-Dictionary createTokenDict(const std::string& filepath);
-Dictionary createTokenDict();
-
 Dictionary createWordDict(const LexiconMap& lexicon);
 
 std::vector<std::string> wrd2Target(
@@ -90,8 +87,6 @@ std::vector<std::string> wrd2Target(
 
 /************** Decoder helpers **************/
 LexiconMap loadWords(const std::string& fn, const int64_t maxNumWords);
-
-Dictionary createLMDict(const std::string& filepath);
 
 // split word into tokens abc -> {"a", "b", "c"}
 // Works with ASCII, UTF-8 encodings

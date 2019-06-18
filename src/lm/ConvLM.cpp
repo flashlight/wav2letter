@@ -37,7 +37,7 @@ ConvLM::ConvLM(
   // Note: fairseq vocab should start with:
   // <fairseq_style> - 0 <pad> - 1, </s> - 2, <unk> - 3
   LOG(INFO) << "[ConvLM]: Loading vocabulary from " << tokenVocabPath;
-  vocab_ = createLMDict(tokenVocabPath);
+  Dictionary vocab_(tokenVocabPath);
   vocab_.setDefaultIndex(vocab_.getIndex(kUnkToken));
   vocabSize_ = vocab_.indexSize();
   LOG(INFO) << "[ConvLM]: vocabulary size of convLM " << vocabSize_;
@@ -51,7 +51,7 @@ ConvLM::ConvLM(
   /* Create index map */
   usrToLmIdxMap_.clear();
   for (int i = 0; i < usrTknDict.indexSize(); i++) {
-    auto token = usrTknDict.getToken(i);
+    auto token = usrTknDict.getEntry(i);
     int lmIdx = vocab_.getIndex(token.c_str());
     usrToLmIdxMap_.emplace(i, lmIdx);
   }

@@ -37,7 +37,7 @@ ConvLM::ConvLM(
   // Note: fairseq vocab should start with:
   // <fairseq_style> - 0 <pad> - 1, </s> - 2, <unk> - 3
   LOG(INFO) << "[ConvLM]: Loading vocabulary from " << tokenVocabPath;
-  Dictionary vocab_(tokenVocabPath);
+  vocab_ = Dictionary(tokenVocabPath);
   vocab_.setDefaultIndex(vocab_.getIndex(kUnkToken));
   vocabSize_ = vocab_.indexSize();
   LOG(INFO) << "[ConvLM]: vocabulary size of convLM " << vocabSize_;

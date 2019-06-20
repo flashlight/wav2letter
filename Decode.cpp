@@ -47,8 +47,7 @@ int main(int argc, char** argv) {
   for (int i = 0; i < argc; i++) {
     argvs.emplace_back(argv[i]);
   }
-  gflags::SetUsageMessage(
-      "Usage: \n " + exec + " [data_path] [dataset_name] [flags]");
+  gflags::SetUsageMessage("Usage: Please refer to https://git.io/fjVVq");
   if (argc <= 1) {
     LOG(FATAL) << gflags::ProgramUsage();
   }

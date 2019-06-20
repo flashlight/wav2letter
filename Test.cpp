@@ -35,8 +35,7 @@ int main(int argc, char** argv) {
   for (int i = 0; i < argc; i++) {
     argvs.emplace_back(argv[i]);
   }
-  gflags::SetUsageMessage(
-      "Usage: \n " + exec + " [data_path] [dataset_name] [flags]");
+  gflags::SetUsageMessage("Usage: Please refer to https://git.io/fjVVq");
   if (argc <= 1) {
     LOG(FATAL) << gflags::ProgramUsage();
   }
@@ -168,10 +167,10 @@ int main(int argc, char** argv) {
                 << "\%, total LER: " << meters.lerSlice.value()[0]
                 << "\%, progress: " << static_cast<float>(cnt) / nSamples * 100
                 << "\%]" << std::endl;
-      ++cnt;
-      if (cnt == FLAGS_maxload) {
-        break;
-      }
+    }
+    ++cnt;
+    if (cnt == FLAGS_maxload) {
+      break;
     }
 
     /* Save emission and targets */

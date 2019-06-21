@@ -56,7 +56,7 @@ template <typename T>
 std::vector<T> TriFilterbank<T>::apply(
     const std::vector<T>& input,
     T melfloor /* = 0.0 */) const {
-  std::vector<T> output = mklGemm(input, H_, numFilters_, filterLen_);
+  std::vector<T> output = cblasGemm(input, H_, numFilters_, filterLen_);
   std::transform(
       output.begin(), output.end(), output.begin(), [melfloor](T n) -> T {
         return std::max(n, melfloor);

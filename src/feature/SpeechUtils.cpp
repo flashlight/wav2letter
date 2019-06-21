@@ -10,6 +10,12 @@
 
 #include <stdexcept>
 
+#if W2L_LIBRARIES_USE_MKL
+#include <mkl_cblas.h>
+#else
+#include <cblas.h>
+#endif
+
 namespace speech {
 
 template <typename T>
@@ -32,17 +38,17 @@ std::vector<T> frameSignal(
 }
 
 template <>
-std::vector<float> mklGemm(
+std::vector<float> cblasGemm(
     const std::vector<float>& matA,
     const std::vector<float>& matB,
-    MKL_INT n,
-    MKL_INT k) {
+    int n,
+    int k) {
   if (n <= 0 || k <= 0 || matA.empty() || (matA.size() % k != 0) ||
       (matB.size() != n * k)) {
-    throw std::invalid_argument("mklGemm: invalid arguments");
+    throw std::invalid_argument("cblasGemm: invalid arguments");
   }
 
-  MKL_INT m = matA.size() / k;
+  int m = matA.size() / k;
 
   std::vector<float> matC(m * n);
 
@@ -65,17 +71,17 @@ std::vector<float> mklGemm(
 };
 
 template <>
-std::vector<double> mklGemm(
+std::vector<double> cblasGemm(
     const std::vector<double>& matA,
     const std::vector<double>& matB,
-    MKL_INT n,
-    MKL_INT k) {
+    int n,
+    int k) {
   if (n <= 0 || k <= 0 || matA.empty() || (matA.size() % k != 0) ||
       (matB.size() != n * k)) {
-    throw std::invalid_argument("mklGemm: invalid arguments");
+    throw std::invalid_argument("cblasGemm: invalid arguments");
   }
 
-  MKL_INT m = matA.size() / k;
+  int m = matA.size() / k;
 
   std::vector<double> matC(m * n);
 

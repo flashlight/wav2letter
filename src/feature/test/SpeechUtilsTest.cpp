@@ -24,7 +24,7 @@ TEST(SpeechUtilsTest, SimpleMatmul) {
   */
   std::vector<double> A = {2, 3, 4, 3, 4, 5, 4, 5, 6, 5, 6, 7};
   std::vector<double> B = {2, 3, 3, 4, 4, 5};
-  auto op = mklGemm(A, B, 2, 3);
+  auto op = cblasGemm(A, B, 2, 3);
   std::vector<double> expectedOp = {29, 38, 38, 50, 47, 62, 56, 74};
   EXPECT_TRUE(compareVec(op, expectedOp, 1E-10));
 }
@@ -37,16 +37,16 @@ TEST(SpeechUtilsTest, AfMatmulCompare) {
     return vec;
   };
   while (numTests--) {
-    MKL_INT m = (rand() % 64) + 1;
-    MKL_INT n = (rand() % 128) + 1;
-    MKL_INT k = (rand() % 256) + 1;
+    int m = (rand() % 64) + 1;
+    int n = (rand() % 128) + 1;
+    int k = (rand() % 256) + 1;
     // Note: Arrayfire is column major
     af::array a = af::randu(k, m);
     af::array b = af::randu(n, k);
     af::array c = af::matmul(a, b, AF_MAT_TRANS, AF_MAT_TRANS).T();
     auto aVec = afToVec(a);
     auto bVec = afToVec(b);
-    auto cVec = mklGemm(aVec, bVec, n, k);
+    auto cVec = cblasGemm(aVec, bVec, n, k);
     ASSERT_TRUE(compareVec(cVec, afToVec(c), 1E-4));
   }
 }

@@ -10,8 +10,6 @@
 
 #include <vector>
 
-#include <mkl.h>
-
 #include "FeatureParams.h"
 
 namespace speech {
@@ -24,10 +22,7 @@ std::vector<T> frameSignal(
 
 // row major;  matA - m x k , matB - k x n
 template <typename T>
-extern std::vector<T> mklGemm(
-    const std::vector<T>& matA,
-    const std::vector<T>& matB,
-    MKL_INT n,
-    MKL_INT k);
+std::vector<T>
+cblasGemm(const std::vector<T>& matA, const std::vector<T>& matB, int n, int k);
 
 } // namespace speech

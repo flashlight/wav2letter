@@ -30,7 +30,7 @@ Dct<T>::Dct(int64_t numfilters, int64_t numceps)
 
 template <typename T>
 std::vector<T> Dct<T>::apply(const std::vector<T>& input) const {
-  return mklGemm(input, dctMat_, numCeps_, numFilters_);
+  return cblasGemm(input, dctMat_, numCeps_, numFilters_);
 }
 
 template class Dct<float>;

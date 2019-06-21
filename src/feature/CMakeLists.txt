@@ -1,13 +1,14 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 # ----------------------------- Dependencies -----------------------------
-# MKL
-find_package(MKL REQUIRED)
-if (MKL_FOUND)
-  message(STATUS "MKL found")
-else()
-  message(STATUS "MKL not found")
-endif()
+# CBLAS
+if (W2L_LIBRARIES_USE_MKL)
+  find_package(MKL REQUIRED)
+  set(CBLAS_LIBRARIES ${MKL_LIBRARIES})
+  set(CBLAS_INCLUDE_DIR ${MKL_INCLUDE_DIR})
+else ()
+  find_package(CBLAS REQUIRED)
+endif ()
 
 # FFTW
 find_package(FFTW REQUIRED)
@@ -43,7 +44,7 @@ target_link_libraries(
   feature
   INTERFACE
   common
-  ${MKL_LIBRARIES}
+  ${CBLAS_LIBRARIES}
   ${FFTW_LIBRARIES}
   )
 
@@ -51,5 +52,5 @@ target_include_directories(
   feature
   INTERFACE
   src/feature
-  ${MKL_INCLUDE_DIR}
+  ${CBLAS_INCLUDE_DIR}
   )

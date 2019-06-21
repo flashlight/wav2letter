@@ -12,11 +12,22 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(W2L_BUILD_LIBRARIES_ONLY "Build wav2letter-libraries only" OFF)
 option(W2L_LIBRARIES_USE_CUDA "Use CUDA in libraries-only build" ON)
 option(W2L_LIBRARIES_USE_KENLM "Use KenLM in libraries-only build" ON)
+option(W2L_LIBRARIES_USE_MKL "Use MKL in libraries-only build" ON)
 option(W2L_BUILD_FOR_PYTHON "Build Python bindings" OFF)
 option(W2L_BUILD_TESTS "Build tests for wav2letter++" ON)
 option(W2L_BUILD_EXAMPLES "Build examples for wav2letter++" ON)
 option(W2L_BUILD_EXPERIMENTAL "Build internal experimental components for wav2letter++" OFF)
 option(W2L_BUILD_SCRIPTS "Build internal scripts for wav2letter++" OFF)
+
+# ------------------------- Dependency Fallback -------------------------
+
+if (W2L_LIBRARIES_USE_MKL)
+  find_package(MKL)
+  if (NOT MKL_FOUND)
+    message(WARNING "MKL not found; forcing W2L_LIBRARIES_USE_MKL=OFF.")
+    set(W2L_LIBRARIES_USE_MKL OFF CACHE BOOL "" FORCE)
+  endif ()
+endif ()
 
 # ------------------------- Libraries-Only Build ------------------------------
 
@@ -24,6 +35,7 @@ function(build_w2l_libraries)
   set(W2L_COMPILE_DEFINITIONS
     $<$<BOOL:${W2L_LIBRARIES_USE_CUDA}>:W2L_LIBRARIES_USE_CUDA>
     $<$<BOOL:${W2L_LIBRARIES_USE_KENLM}>:W2L_LIBRARIES_USE_KENLM>
+    $<$<BOOL:${W2L_LIBRARIES_USE_MKL}>:W2L_LIBRARIES_USE_MKL>
     )
   add_subdirectory(${PROJECT_SOURCE_DIR}/src/libraries)
   if (W2L_BUILD_FOR_PYTHON)

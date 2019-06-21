@@ -11,8 +11,13 @@
   audio. If using wav2letter++ with `flac` files, `libsndfile`
   [must be built](https://github.com/erikd/libsndfile#requirements) with `Ogg`,
   `Vorbis` and `FLAC` libraries.
-- [Intel's Math Kernel Library](https://software.intel.com/en-us/mkl) is
-  required for featurization.
+- Any CBLAS library, such as
+  [ATLAS](http://math-atlas.sourceforge.net/),
+  [OpenBLAS](https://www.openblas.net/),
+  [Accelerate](https://developer.apple.com/documentation/accelerate/blas), or
+  [Intel MKL](https://software.intel.com/en-us/mkl),
+  is required for featurization. Intel MKL will be used preferentially unless
+  otherwise specified.
 - [FFTW](http://www.fftw.org/) is required for featurization.
 - [KenLM](https://github.com/kpu/kenlm) is required for the decoder. One of
   LZMA, BZip2, or Z is required for LM compression with KenLM.
@@ -33,6 +38,7 @@ The following dependencies are automatically downloaded/built on build:
 |--------------------------|---------------------|---------------|
 | W2L_BUILD_LIBRARIES_ONLY | ON, OFF             | OFF           |
 | W2L_LIBRARIES_USE_CUDA   | ON, OFF             | ON            |
+| W2L_LIBRARIES_USE_MKL    | ON, OFF             | ON            |
 | W2L_BUILD_FOR_PYTHON     | ON, OFF             | OFF           |
 | W2L_BUILD_TESTS          | ON, OFF             | ON            |
 | W2L_BUILD_EXAMPLES       | ON, OFF             | ON            |

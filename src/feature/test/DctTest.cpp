@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 
 #include "TestUtils.h"
-#include "feature/Dct.h"
+#include "libraries/feature/Dct.h"
 
 using w2l::Dct;
 

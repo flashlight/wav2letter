@@ -137,9 +137,6 @@ build_w2l_libraries()
 # Common
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/common)
 
-# Feature
-add_subdirectory(${PROJECT_SOURCE_DIR}/src/feature)
-
 # Runtime
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/runtime)
 

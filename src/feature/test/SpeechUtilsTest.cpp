@@ -10,7 +10,7 @@
 #include <gtest/gtest.h>
 
 #include "TestUtils.h"
-#include "feature/SpeechUtils.h"
+#include "libraries/feature/SpeechUtils.h"
 
 using namespace w2l;
 

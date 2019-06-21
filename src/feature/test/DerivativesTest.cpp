@@ -10,7 +10,7 @@
 #include <numeric>
 
 #include "TestUtils.h"
-#include "feature/Derivatives.h"
+#include "libraries/feature/Derivatives.h"
 
 using w2l::Derivatives;
 

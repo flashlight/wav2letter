@@ -8,6 +8,9 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/common)
 # criterion-library
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/criterion)
 
+# feature-library
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/feature)
+
 # ------------------------- Library -------------------------
 
 add_library(
@@ -27,6 +30,7 @@ target_link_libraries(
   PUBLIC
   common-library
   criterion-library
+  feature-library
   )
 
 target_include_directories(

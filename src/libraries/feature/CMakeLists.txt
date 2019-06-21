@@ -20,12 +20,12 @@ endif()
 
 # ----------------------------- Lib -----------------------------
 add_library(
-  feature
+  feature-library
   INTERFACE
   )
 
 target_sources(
-  feature
+  feature-library
   INTERFACE
   ${CMAKE_CURRENT_SOURCE_DIR}/Ceplifter.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Dct.cpp
@@ -41,16 +41,15 @@ target_sources(
   )
 
 target_link_libraries(
-  feature
+  feature-library
   INTERFACE
-  common
   ${CBLAS_LIBRARIES}
   ${FFTW_LIBRARIES}
   )
 
 target_include_directories(
-  feature
+  feature-library
   INTERFACE
-  src/feature
+  src/libraries/feature
   ${CBLAS_INCLUDE_DIR}
   )

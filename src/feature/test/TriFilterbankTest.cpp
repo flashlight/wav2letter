@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 
 #include "TestUtils.h"
-#include "feature/TriFilterbank.h"
+#include "libraries/feature/TriFilterbank.h"
 
 using w2l::FrequencyScale;
 using w2l::TriFilterbank;

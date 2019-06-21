@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 
 #include "TestUtils.h"
-#include "feature/PreEmphasis.h"
+#include "libraries/feature/PreEmphasis.h"
 
 using w2l::PreEmphasis;
 

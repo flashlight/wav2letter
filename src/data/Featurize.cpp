@@ -17,9 +17,9 @@
 #include "common/Defines.h"
 #include "common/Transforms.h"
 #include "common/Utils.h"
-#include "feature/Mfcc.h"
-#include "feature/Mfsc.h"
-#include "feature/PowerSpectrum.h"
+#include "libraries/feature/Mfcc.h"
+#include "libraries/feature/Mfsc.h"
+#include "libraries/feature/PowerSpectrum.h"
 
 namespace w2l {
 

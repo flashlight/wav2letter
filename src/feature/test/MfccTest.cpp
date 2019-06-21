@@ -15,8 +15,8 @@
 
 #include "TestUtils.h"
 #include "common/Utils.h"
-#include "feature/FeatureParams.h"
-#include "feature/Mfcc.h"
+#include "libraries/feature/FeatureParams.h"
+#include "libraries/feature/Mfcc.h"
 
 namespace {
 std::string loadPath = "";

@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 
 #include "TestUtils.h"
-#include "feature/Ceplifter.h"
+#include "libraries/feature/Ceplifter.h"
 
 using w2l::Ceplifter;
 

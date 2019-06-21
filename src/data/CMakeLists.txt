@@ -52,7 +52,7 @@ target_link_libraries(
   data
   INTERFACE
   common
-  feature
+  feature-library
   flashlight::flashlight
   ${GLOG_LIBRARIES}
   ${MKL_LIBRARIES}

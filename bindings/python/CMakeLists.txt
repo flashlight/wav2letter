@@ -8,15 +8,20 @@ set_target_properties(
   TRUE
   )
 
-pybind11_add_module(
-  _criterion
-  ${CMAKE_CURRENT_SOURCE_DIR}/wav2letter/_criterion.cpp
-  )
+function (add_pybind11_extension ext_name)
+  pybind11_add_module(
+    ${ext_name}
+    ${CMAKE_CURRENT_SOURCE_DIR}/wav2letter/${ext_name}.cpp
+    )
 
-target_link_libraries(
-  _criterion
-  PRIVATE
-  wav2letter-libraries
-  )
+  target_link_libraries(
+    ${ext_name}
+    PRIVATE
+    wav2letter-libraries
+    )
 
-add_dependencies(_criterion pybind11)
+  add_dependencies(${ext_name} pybind11)
+endfunction ()
+
+add_pybind11_extension(_criterion)
+add_pybind11_extension(_feature)

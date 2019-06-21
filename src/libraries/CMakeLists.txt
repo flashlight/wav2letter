@@ -15,6 +15,13 @@ add_library(
   ""
   )
 
+set_target_properties(
+  wav2letter-libraries
+  PROPERTIES
+  LINKER_LANGUAGE CXX
+  CXX_STANDARD 11
+  )
+
 target_link_libraries(
   wav2letter-libraries
   PUBLIC
@@ -26,4 +33,10 @@ target_include_directories(
   wav2letter-libraries
   PUBLIC
   ${PROJECT_SOURCE_DIR}/src
+  )
+
+target_compile_definitions(
+  wav2letter-libraries
+  PUBLIC
+  ${W2L_COMPILE_DEFINITIONS}
   )

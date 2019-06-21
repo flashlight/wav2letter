@@ -39,9 +39,13 @@ function (set_cuda_arch_nvcc_flags)
   cuda_select_nvcc_arch_flags(cuda_arch_flags ${CUDA_architecture_build_targets})
   message(STATUS "CUDA_architecture_build_targets detected: " ${CUDA_architecture_build_targets})
   # Add to flag list
-  set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};${cuda_arch_flags})
+  set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};${cuda_arch_flags}" PARENT_SCOPE)
   mark_as_advanced(CUDA_architecture_build_targets)
 endfunction()
+
+function (cuda_enable_position_independent_code)
+  set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-Xcompiler;-fPIC" PARENT_SCOPE)
+endfunction ()
 
 
 ### Taken from FindCUDA.cmake

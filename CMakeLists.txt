@@ -9,8 +9,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ----------------------------- Configuration -----------------------------
 
-option(W2L_LIBRARIES_ONLY "Build only wav2letter-libraries" OFF)
-option(W2L_LIBRARIES_BUILD_CUDA "Build CUDA components of wav2letter-libraries" OFF)
+option(W2L_BUILD_LIBRARIES_ONLY "Build wav2letter-libraries only" OFF)
+option(W2L_LIBRARIES_USE_CUDA "Use CUDA in libraries-only build" ON)
+option(W2L_LIBRARIES_USE_KENLM "Use KenLM in libraries-only build" ON)
+option(W2L_BUILD_FOR_PYTHON "Build Python bindings" OFF)
 option(W2L_BUILD_TESTS "Build tests for wav2letter++" ON)
 option(W2L_BUILD_EXAMPLES "Build examples for wav2letter++" ON)
 option(W2L_BUILD_EXPERIMENTAL "Build internal experimental components for wav2letter++" OFF)
@@ -18,8 +20,19 @@ option(W2L_BUILD_SCRIPTS "Build internal scripts for wav2letter++" OFF)
 
 # ------------------------- Libraries-Only Build ------------------------------
 
-if (W2L_LIBRARIES_ONLY)
+function(build_w2l_libraries)
+  set(W2L_COMPILE_DEFINITIONS
+    $<$<BOOL:${W2L_LIBRARIES_USE_CUDA}>:W2L_LIBRARIES_USE_CUDA>
+    $<$<BOOL:${W2L_LIBRARIES_USE_KENLM}>:W2L_LIBRARIES_USE_KENLM>
+    )
   add_subdirectory(${PROJECT_SOURCE_DIR}/src/libraries)
+  if (W2L_BUILD_FOR_PYTHON)
+    add_subdirectory(${PROJECT_SOURCE_DIR}/bindings/python)
+  endif ()
+endfunction ()
+
+if (W2L_BUILD_LIBRARIES_ONLY)
+  build_w2l_libraries()
   return()
 endif ()
 
@@ -97,16 +110,17 @@ else ()
   message(FATAL_ERROR "could not determine flashlight backend")
 endif ()
 
-# --------------------- Additional Configuration -------------------------
+# ------------------ Configure Full Build ----------------------
 
 if (FLASHLIGHT_USE_CUDA)
-  set(W2L_LIBRARIES_BUILD_CUDA ON CACHE BOOL "" FORCE)
+  set(W2L_LIBRARIES_USE_CUDA ON CACHE BOOL "" FORCE)
 endif ()
+set(W2L_LIBRARIES_USE_KENLM ON CACHE BOOL "" FORCE)
 
 # ------------------------ Components ------------------------
 
 # wav2letter-libraries
-add_subdirectory(${PROJECT_SOURCE_DIR}/src/libraries)
+build_w2l_libraries()
 
 # Common
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/common)

@@ -29,11 +29,16 @@ The following dependencies are automatically downloaded/built on build:
 - If building with the `CPU` criterion backend, wav2letter++ will try to compile with [OpenMP](https://www.openmp.org/), for better performance.
 
 ## Build Options
-| Options               | Configuration     | Default Value |
-|-----------------------|-------------------|---------------|
-| W2L_CRITERION_BACKEND | CUDA, CPU         | CUDA          |
-| W2L_BUILD_TESTS       | ON, OFF           | ON            |
-| CMAKE_BUILD_TYPE      | CMake build types | Debug         |
+| Option                   | Configuration       | Default Value |
+|--------------------------|---------------------|---------------|
+| W2L_BUILD_LIBRARIES_ONLY | ON, OFF             | OFF           |
+| W2L_LIBRARIES_USE_CUDA   | ON, OFF             | ON            |
+| W2L_BUILD_FOR_PYTHON     | ON, OFF             | OFF           |
+| W2L_BUILD_TESTS          | ON, OFF             | ON            |
+| W2L_BUILD_EXAMPLES       | ON, OFF             | ON            |
+| W2L_BUILD_EXPERIMENTAL   | ON, OFF             | OFF           |
+| W2L_BUILD_SCRIPTS        | ON, OFF             | OFF           |
+| CMAKE_BUILD_TYPE         | <CMake build types> | Debug         |
 
 ## General Build Instructions
 First, clone the repository:

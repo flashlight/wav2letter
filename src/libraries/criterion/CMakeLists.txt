@@ -22,12 +22,17 @@ target_link_libraries(
 
 # ------------------------- CUDA-specific -------------------------
 
-if (W2L_LIBRARIES_BUILD_CUDA)
+if (W2L_LIBRARIES_USE_CUDA)
   include(${CMAKE_MODULE_PATH}/BuildCUB.cmake)
   include(${CMAKE_MODULE_PATH}/CUDAUtils.cmake)
 
   set_cuda_cxx_compile_flags()
   set_cuda_arch_nvcc_flags()
+
+  # hacky: add -fPIC to nvcc flags if needed
+  if (W2L_BUILD_FOR_PYTHON OR CMAKE_POSITION_INDEPENDENT_CODE)
+    cuda_enable_position_independent_code()
+  endif ()
 
   cuda_include_directories(
     ${CUB_INCLUDE_DIRS}

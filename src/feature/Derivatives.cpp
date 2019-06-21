@@ -12,7 +12,7 @@
 
 #include "SpeechUtils.h"
 
-namespace speech {
+namespace w2l {
 
 template <typename T>
 Derivatives<T>::Derivatives(int64_t deltawindow, int64_t accwindow)
@@ -89,4 +89,4 @@ std::vector<T> Derivatives<T>::computeDerivative(
 
 template class Derivatives<float>;
 template class Derivatives<double>;
-} // namespace speech
+} // namespace w2l

@@ -14,7 +14,7 @@
 
 #include "SpeechUtils.h"
 
-namespace speech {
+namespace w2l {
 
 template <typename T>
 TriFilterbank<T>::TriFilterbank(
@@ -101,4 +101,4 @@ T TriFilterbank<T>::warpedToHertzScale(T wrp, FrequencyScale freqscale) const {
 
 template class TriFilterbank<float>;
 template class TriFilterbank<double>;
-} // namespace speech
+} // namespace w2l

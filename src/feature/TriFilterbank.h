@@ -13,7 +13,7 @@
 
 #include "FeatureParams.h"
 
-namespace speech {
+namespace w2l {
 
 template <typename T>
 class TriFilterbank {
@@ -43,4 +43,4 @@ class TriFilterbank {
   T hertzToWarpedScale(T hz, FrequencyScale freqscale) const;
   T warpedToHertzScale(T wrp, FrequencyScale freqscale) const;
 };
-} // namespace speech
+} // namespace w2l

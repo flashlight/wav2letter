@@ -11,8 +11,8 @@
 #include "TestUtils.h"
 #include "feature/Windowing.h"
 
-using speech::Windowing;
-using speech::WindowType;
+using w2l::Windowing;
+using w2l::WindowType;
 
 TEST(WindowingTest, hammingCoeffsTest) {
   int64_t N = 64;

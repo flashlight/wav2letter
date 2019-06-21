@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <vector>
 
-namespace speech {
+namespace w2l {
 
 // Re-scale the cepstral coefficients using liftering
 //    c'(n) = c(n) * (1 + 0.5 * L * sin(pi * n/ L)) where L is lifterparam
@@ -29,4 +29,4 @@ class Ceplifter {
   int64_t lifterParam_; // liftering parameter
   std::vector<T> coefs_; // coefficients to scale cepstral coefficients
 };
-} // namespace speech
+} // namespace w2l

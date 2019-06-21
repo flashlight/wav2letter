@@ -12,7 +12,7 @@
 #include "TestUtils.h"
 #include "feature/SpeechUtils.h"
 
-using namespace speech;
+using namespace w2l;
 
 TEST(SpeechUtilsTest, SimpleMatmul) {
   /*

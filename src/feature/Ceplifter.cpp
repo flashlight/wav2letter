@@ -12,7 +12,7 @@
 #include <numeric>
 #include <stdexcept>
 
-namespace speech {
+namespace w2l {
 
 template <typename T>
 Ceplifter<T>::Ceplifter(int64_t numfilters, int64_t lifterparam)
@@ -47,4 +47,4 @@ void Ceplifter<T>::applyInPlace(std::vector<T>& input) const {
 
 template class Ceplifter<float>;
 template class Ceplifter<double>;
-} // namespace speech
+} // namespace w2l

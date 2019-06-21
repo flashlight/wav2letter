@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <vector>
 
-namespace speech {
+namespace w2l {
 
 // Compute Discrete Cosine Transform
 //    c(i) = sqrt(2/N)  SUM_j (m(j) * cos(pi * i * (j - 0.5)/ N))
@@ -28,4 +28,4 @@ class Dct {
   int64_t numCeps_; // Number of cepstral coefficients
   std::vector<T> dctMat_; // Dct matrix
 };
-} // namespace speech
+} // namespace w2l

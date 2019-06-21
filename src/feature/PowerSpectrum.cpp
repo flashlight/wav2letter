@@ -13,7 +13,7 @@
 
 #include "SpeechUtils.h"
 
-namespace speech {
+namespace w2l {
 
 template <typename T>
 PowerSpectrum<T>::PowerSpectrum(const FeatureParams& params)
@@ -146,4 +146,4 @@ PowerSpectrum<T>::~PowerSpectrum() {
 
 template class PowerSpectrum<float>;
 template class PowerSpectrum<double>;
-} // namespace speech
+} // namespace w2l

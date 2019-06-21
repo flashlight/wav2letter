@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <vector>
 
-namespace speech {
+namespace w2l {
 
 // Pre-emphasise the signal by applying the first order difference equation
 //    s'(n) = s(n) - k * s(n-1)  where k in [0, 1)
@@ -28,4 +28,4 @@ class PreEmphasis {
   T preemCoef_;
   int64_t windowLength_;
 };
-} // namespace speech
+} // namespace w2l

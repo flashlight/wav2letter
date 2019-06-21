@@ -12,7 +12,7 @@
 
 #include "FeatureParams.h"
 
-namespace speech {
+namespace w2l {
 
 // Convert the speech signal into frames
 template <typename T>
@@ -25,4 +25,4 @@ template <typename T>
 std::vector<T>
 cblasGemm(const std::vector<T>& matA, const std::vector<T>& matB, int n, int k);
 
-} // namespace speech
+} // namespace w2l

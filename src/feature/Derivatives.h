@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <vector>
 
-namespace speech {
+namespace w2l {
 
 // Compute first order (deltas) and second order (acceleration) derivatives of
 //  cepstral coefficients
@@ -35,4 +35,4 @@ class Derivatives {
       int64_t windowlen,
       int64_t numfeat) const;
 };
-} // namespace speech
+} // namespace w2l

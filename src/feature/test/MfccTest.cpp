@@ -31,7 +31,7 @@ auto loadData = [](const std::string& filepath) {
 };
 } // namespace
 
-using namespace speech;
+using namespace w2l;
 
 // HTK Code used -
 //    HCopy -C config.mfcc sa1.wav sa1-mfcc.htk

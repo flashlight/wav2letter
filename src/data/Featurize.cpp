@@ -25,20 +25,21 @@ namespace w2l {
 
 namespace {
 
-speech::Mfcc<float>& getMfcc() {
-  static speech::Mfcc<float> mfcc(defineSpeechFeatureParams());
+Mfcc<float>& getMfcc() {
+  static Mfcc<float> mfcc(defineSpeechFeatureParams());
   return mfcc;
 }
 
-speech::Mfsc<float>& getMfsc() {
-  static speech::Mfsc<float> mfsc(defineSpeechFeatureParams());
+Mfsc<float>& getMfsc() {
+  static Mfsc<float> mfsc(defineSpeechFeatureParams());
   return mfsc;
 }
 
-speech::PowerSpectrum<float>& getPowerSpectrum() {
-  static speech::PowerSpectrum<float> powspec(defineSpeechFeatureParams());
+PowerSpectrum<float>& getPowerSpectrum() {
+  static PowerSpectrum<float> powspec(defineSpeechFeatureParams());
   return powspec;
 }
+
 } // namespace
 
 W2lFeatureData featurize(
@@ -207,8 +208,8 @@ W2lFeatureData featurize(
   return feat;
 }
 
-speech::FeatureParams defineSpeechFeatureParams() {
-  speech::FeatureParams params;
+FeatureParams defineSpeechFeatureParams() {
+  FeatureParams params;
 
   // PowerSpectrum, Mfsc, Mfcc
   params.samplingFreq = FLAGS_samplerate;

@@ -12,7 +12,7 @@
 #include "TestUtils.h"
 #include "feature/Derivatives.h"
 
-using speech::Derivatives;
+using w2l::Derivatives;
 
 // Reference C++ code taken from HTK - http://htk.eng.cam.ac.uk/
 //   float *fp,*fp1,*fp2, *back, *forw;

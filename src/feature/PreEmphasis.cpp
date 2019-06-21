@@ -10,7 +10,7 @@
 
 #include <stdexcept>
 
-namespace speech {
+namespace w2l {
 
 template <typename T>
 PreEmphasis<T>::PreEmphasis(T alpha, int64_t N)
@@ -49,4 +49,4 @@ void PreEmphasis<T>::applyInPlace(std::vector<T>& input) const {
 
 template class PreEmphasis<float>;
 template class PreEmphasis<double>;
-} // namespace speech
+} // namespace w2l

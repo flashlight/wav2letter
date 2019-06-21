@@ -10,7 +10,7 @@
 
 #include <time.h>
 
-namespace speech {
+namespace w2l {
 
 template <typename T>
 Dither<T>::Dither(T ditherVal)
@@ -33,4 +33,4 @@ void Dither<T>::applyInPlace(std::vector<T>& input) {
 
 template class Dither<float>;
 template class Dither<double>;
-} // namespace speech
+} // namespace w2l

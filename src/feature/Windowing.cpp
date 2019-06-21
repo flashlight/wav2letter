@@ -12,7 +12,7 @@
 #include <numeric>
 #include <stdexcept>
 
-namespace speech {
+namespace w2l {
 template <typename T>
 Windowing<T>::Windowing(int64_t N, WindowType windowtype)
     : windowLength_(N), windowType_(windowtype), coefs_(N) {
@@ -60,4 +60,4 @@ void Windowing<T>::applyInPlace(std::vector<T>& input) const {
 
 template class Windowing<float>;
 template class Windowing<double>;
-} // namespace speech
+} // namespace w2l

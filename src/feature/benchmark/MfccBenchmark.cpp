@@ -14,7 +14,7 @@
 
 #include "feature/Mfcc.h"
 
-using namespace speech;
+using namespace w2l;
 
 int main() {
   FeatureParams params;

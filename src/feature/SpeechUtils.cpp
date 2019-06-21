@@ -16,7 +16,7 @@
 #include <cblas.h>
 #endif
 
-namespace speech {
+namespace w2l {
 
 template <typename T>
 std::vector<T> frameSignal(
@@ -110,4 +110,4 @@ template std::vector<float> frameSignal(
 template std::vector<double> frameSignal(
     const std::vector<double>&,
     const FeatureParams&);
-} // namespace speech
+} // namespace w2l

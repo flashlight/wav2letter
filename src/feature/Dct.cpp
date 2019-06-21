@@ -13,7 +13,7 @@
 
 #include "SpeechUtils.h"
 
-namespace speech {
+namespace w2l {
 
 template <typename T>
 Dct<T>::Dct(int64_t numfilters, int64_t numceps)
@@ -35,4 +35,4 @@ std::vector<T> Dct<T>::apply(const std::vector<T>& input) const {
 
 template class Dct<float>;
 template class Dct<double>;
-} // namespace speech
+} // namespace w2l

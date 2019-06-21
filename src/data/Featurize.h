@@ -34,7 +34,7 @@ W2lFeatureData featurize(
     const std::vector<W2lLoaderData>& data,
     const DictionaryMap& dicts);
 
-speech::FeatureParams defineSpeechFeatureParams();
+FeatureParams defineSpeechFeatureParams();
 
 int64_t getSpeechFeatureSize();
 

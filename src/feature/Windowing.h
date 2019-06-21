@@ -13,7 +13,7 @@
 
 #include "FeatureParams.h"
 
-namespace speech {
+namespace w2l {
 
 // Applies a given window on input
 //    s'(n) = w(n) * s(n) where w(n) are the window coefficients
@@ -31,4 +31,4 @@ class Windowing {
   WindowType windowType_;
   std::vector<T> coefs_;
 };
-} // namespace speech
+} // namespace w2l

@@ -10,7 +10,7 @@
 
 #include "SpeechUtils.h"
 
-namespace speech {
+namespace w2l {
 
 template <typename T>
 Mfcc<T>::Mfcc(const FeatureParams& params)
@@ -76,4 +76,4 @@ void Mfcc<T>::validateMfccParams() const {
 
 template class Mfcc<float>;
 template class Mfcc<double>;
-} // namespace speech
+} // namespace w2l

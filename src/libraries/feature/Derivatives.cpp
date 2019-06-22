@@ -8,6 +8,7 @@
 
 #include "Derivatives.h"
 
+#include <cstddef>
 #include <stdexcept>
 
 #include "SpeechUtils.h"

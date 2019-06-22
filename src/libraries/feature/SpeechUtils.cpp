@@ -8,6 +8,7 @@
 
 #include "SpeechUtils.h"
 
+#include <cstddef>
 #include <stdexcept>
 
 #if W2L_LIBRARIES_USE_MKL

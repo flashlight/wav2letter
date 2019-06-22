@@ -8,6 +8,7 @@
 
 #include "PreEmphasis.h"
 
+#include <cstddef>
 #include <stdexcept>
 
 namespace w2l {

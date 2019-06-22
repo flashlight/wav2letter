@@ -8,6 +8,8 @@
 
 #include "Mfcc.h"
 
+#include <cstddef>
+
 #include "SpeechUtils.h"
 
 namespace w2l {

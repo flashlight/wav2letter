@@ -9,6 +9,7 @@
 #include "Windowing.h"
 
 #include <cmath>
+#include <cstddef>
 #include <numeric>
 #include <stdexcept>
 

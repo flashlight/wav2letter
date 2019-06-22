@@ -9,6 +9,7 @@
 #include "Mfsc.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <numeric>
 
 #include "SpeechUtils.h"

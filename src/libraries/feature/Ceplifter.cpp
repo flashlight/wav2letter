@@ -9,6 +9,7 @@
 #include "Ceplifter.h"
 
 #include <cmath>
+#include <cstddef>
 #include <numeric>
 #include <stdexcept>
 

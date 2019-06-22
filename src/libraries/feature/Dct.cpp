@@ -9,6 +9,7 @@
 #include "Dct.h"
 
 #include <cmath>
+#include <cstddef>
 #include <numeric>
 
 #include "SpeechUtils.h"

@@ -10,6 +10,8 @@
 
 #include "lm/KenLM.h"
 
+#include <lm/model.hh>
+
 namespace w2l {
 
 KenLM::KenLM(const std::string& path, const Dictionary& usrTknDict) {

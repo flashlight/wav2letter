@@ -10,7 +10,17 @@
 
 #include "common/Dictionary.h"
 #include "decoder/LM.h"
-#include "lm/model.hh"
+
+// KenLM forward declarations
+namespace lm {
+namespace base {
+class Model;
+class Vocabulary;
+} // namespace base
+namespace ngram {
+class State;
+} // namespace ngram
+} // namespace lm
 
 namespace w2l {
 /**

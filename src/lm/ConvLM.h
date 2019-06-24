@@ -9,6 +9,7 @@
 #pragma once
 
 #include <flashlight/flashlight.h>
+
 #include "common/Dictionary.h"
 #include "decoder/LM.h"
 

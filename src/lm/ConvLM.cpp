@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#include <glog/logging.h>
+#include <iostream>
 
 #include "common/Defines.h"
 #include "common/Utils-base.h"
@@ -25,28 +25,28 @@ ConvLM::ConvLM(
     int historySize)
     : lmMemory_(lmMemory), beamSize_(beamSize), maxHistorySize_(historySize) {
   if (historySize < 1) {
-    LOG(FATAL) << "[ConvLM] History size is too small.";
+    throw std::invalid_argument("[ConvLM] History size is too small.");
   }
 
   if (!fileExists(modelPath)) {
-    LOG(FATAL) << "[ConvLM] File with ConvLM model '" << modelPath
-               << "' doesn't exist";
+    throw std::runtime_error(
+        "[ConvLM] File with ConvLM model '" + modelPath + "' doesn't exist");
   }
 
   /* Load token vocabulary */
   // Note: fairseq vocab should start with:
   // <fairseq_style> - 0 <pad> - 1, </s> - 2, <unk> - 3
-  LOG(INFO) << "[ConvLM]: Loading vocabulary from " << tokenVocabPath;
+  std::cerr << "[ConvLM]: Loading vocabulary from " << tokenVocabPath << "\n";
   vocab_ = Dictionary(tokenVocabPath);
   vocab_.setDefaultIndex(vocab_.getIndex(kUnkToken));
   vocabSize_ = vocab_.indexSize();
-  LOG(INFO) << "[ConvLM]: vocabulary size of convLM " << vocabSize_;
+  std::cerr << "[ConvLM]: vocabulary size of convLM " << vocabSize_ << "\n";
 
   /* Load LM */
-  LOG(INFO) << "[ConvLM]: Loading LM from " << modelPath;
+  std::cerr << "[ConvLM]: Loading LM from " << modelPath << "\n";
   W2lSerializer::load(modelPath, network_);
   network_->eval();
-  LOG(INFO) << "[ConvLM]: Finish loading LM from " << modelPath;
+  std::cerr << "[ConvLM]: Finish loading LM from " << modelPath << "\n";
 
   /* Create index map */
   usrToLmIdxMap_.clear();
@@ -69,7 +69,8 @@ LMStatePtr ConvLM::start(bool startWithNothing) {
     outState->length = 1;
     outState->tokens[0] = vocab_.getIndex(kLmEosToken);
   } else {
-    LOG(FATAL) << "[ConvLM] Only support using EOS to start the sentence";
+    throw std::invalid_argument(
+        "[ConvLM] Only support using EOS to start the sentence");
   }
   return outState;
 }
@@ -101,14 +102,16 @@ std::pair<LMStatePtr, float> ConvLM::scoreWithLmIdx(
   // Prepare score
   float score = 0;
   if (tokenIdx < 0 || tokenIdx >= vocabSize_) {
-    LOG(FATAL) << "[ConvLM] Invalid query word: " << tokenIdx;
+    throw std::out_of_range(
+        "[ConvLM] Invalid query word: " + std::to_string(tokenIdx));
   }
 
   if (cacheIndices_.find(inState) != cacheIndices_.end()) {
     // Cache hit
     auto cacheInd = cacheIndices_[inState];
     if (cacheInd < 0 || cacheInd >= beamSize_) {
-      LOG(FATAL) << "[ConvLM] Invalid cache access: " << cacheInd;
+      throw std::logic_error(
+          "[ConvLM] Invalid cache access: " + std::to_string(cacheInd));
     }
     score = cache_[cacheInd][tokenIdx];
   } else {
@@ -124,7 +127,8 @@ std::pair<LMStatePtr, float> ConvLM::scoreWithLmIdx(
     score = cache_[newIdx][tokenIdx];
   }
   if (std::isnan(score) || !std::isfinite(score)) {
-    LOG(FATAL) << "[ConvLM] Wrong scoring from ConvLM: " << score;
+    throw std::runtime_error(
+        "[ConvLM] Bad scoring from ConvLM: " + std::to_string(score));
   }
   return std::make_pair(std::move(outState), score);
 }
@@ -133,7 +137,8 @@ std::pair<LMStatePtr, float> ConvLM::score(
     const LMStatePtr& state,
     const int usrTokenIdx) {
   if (usrToLmIdxMap_.find(usrTokenIdx) == usrToLmIdxMap_.end()) {
-    LOG(FATAL) << "[KenLM] Invalid user token index" << usrTokenIdx;
+    throw std::out_of_range(
+        "[KenLM] Invalid user token index: " + std::to_string(usrTokenIdx));
   }
   return scoreWithLmIdx(state, usrToLmIdxMap_[usrTokenIdx]);
 }
@@ -145,8 +150,8 @@ std::pair<LMStatePtr, float> ConvLM::finish(const LMStatePtr& state) {
 void ConvLM::updateCache(std::vector<LMStatePtr> states) {
   int longestHistory = -1, nStates = states.size();
   if (nStates > beamSize_) {
-    LOG(FATAL)
-        << "[ConvLM] Cache size too small (consider larger than beam size).";
+    throw std::invalid_argument(
+        "[ConvLM] Cache size too small (consider larger than beam size).");
   }
 
   // Refresh cache, store LM states that did not changed
@@ -214,8 +219,9 @@ void ConvLM::updateCache(std::vector<LMStatePtr> states) {
 
     // Feed forward
     if (nBatchStates < 1 || longestHistory < 1) {
-      LOG(FATAL) << "[ConvLM] Invalid batch: [" << nBatchStates << " x "
-                 << longestHistory << "]";
+      throw std::logic_error(
+          "[ConvLM] Invalid batch: [" + std::to_string(nBatchStates) + " x " +
+          std::to_string(longestHistory) + "]");
     }
     auto batchedProb = getLogProb(
         batchedTokens_, lastTokenPositions, longestHistory, nBatchStates);
@@ -223,9 +229,10 @@ void ConvLM::updateCache(std::vector<LMStatePtr> states) {
     // Place probabilities in cache
     for (int i = 0; i < nBatchStates; i++, cacheSize++) {
       if (batchedProb[i].size() != vocabSize_) {
-        LOG(FATAL) << "[ConvLM] Batch probability size "
-                   << batchedProb[i].size() << " mismatch with vocab size "
-                   << vocabSize_;
+        throw std::logic_error(
+            "[ConvLM] Batch probability size " +
+            std::to_string(batchedProb[i].size()) +
+            " mismatch with vocab size " + std::to_string(vocabSize_));
       }
       std::memcpy(
           cache_[cacheSize].data(),
@@ -242,28 +249,32 @@ std::vector<std::vector<float>> ConvLM::getLogProb(
     int batchSize) {
   sampleSize = sampleSize > 0 ? sampleSize : inputs.size();
   if (sampleSize * batchSize > inputs.size()) {
-    LOG(FATAL) << "[ConvLm] Incorrect sample size (" << sampleSize
-               << ") / batch size (" << batchSize << ").";
+    throw std::invalid_argument(
+        "[ConvLM] Incorrect sample size (" + std::to_string(sampleSize) +
+        ") or batch size (" + std::to_string(batchSize) + ").");
   }
   af::array inputData(sampleSize, batchSize, inputs.data());
   fl::Variable output = network_->forward({fl::input(inputData)})[0];
 
   if (af::count<int>(af::isNaN(output.array())) != 0) {
-    LOG(FATAL) << "Wrong propagation";
-  };
+    throw std::runtime_error("[ConvLM] Encountered NaNs in propagation");
+  }
   std::vector<std::vector<float>> chosenFramePred(batchSize);
   auto preds = af::reorder(output.array(), 2, 1, 0); // (b t c)
   if (preds.dims(0) != batchSize) {
-    LOG(FATAL) << "[ConvLM]: incorrect predictions: batch should be "
-               << batchSize << " but it is " << preds.dims(0);
+    throw std::logic_error(
+        "[ConvLM]: incorrect predictions: batch should be " +
+        std::to_string(batchSize) + " but it is " +
+        std::to_string(preds.dims(0)));
   }
   for (int idx = 0; idx < batchSize; idx++) {
     if ((lastTokenPositions[idx] < 0) ||
         (lastTokenPositions[idx] >= preds.dims(1))) {
-      LOG(FATAL) << "[ConvLM]: trying the access to batch idx " << idx
-                 << " and time idx " << lastTokenPositions[idx]
-                 << " while thwe sizes are b: " << preds.dims(0)
-                 << " t: " << preds.dims(1);
+      throw std::logic_error(
+          "[ConvLM]: trying the access to batch idx " + std::to_string(idx) +
+          " and time idx " + std::to_string(lastTokenPositions[idx]) +
+          " while the sizes are b: " + std::to_string(preds.dims(0)) +
+          " t: " + std::to_string(preds.dims(1)));
     }
     chosenFramePred[idx] =
         afToVector<float>(preds.row(idx).col(lastTokenPositions[idx]));

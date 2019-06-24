@@ -17,15 +17,3 @@ target_sources(
   ${CMAKE_CURRENT_SOURCE_DIR}/Utils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/WordLMDecoder.cpp
   )
-
-target_link_libraries(
-  decoder
-  INTERFACE
-  ${GLOG_LIBRARIES}
-  )
-
-target_include_directories(
-  decoder
-  INTERFACE
-  ${GLOG_INCLUDE_DIRS}
-  )

@@ -6,9 +6,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <glog/logging.h>
 #include <math.h>
 #include <stdlib.h>
+#include <iostream>
 #include <limits>
 
 #include "decoder/Trie.h"
@@ -31,7 +31,8 @@ Trie::insert(const std::vector<int>& indices, int label, float score) {
   for (int i = 0; i < indices.size(); i++) {
     int idx = indices[i];
     if (idx < 0 || idx >= maxChildren_) {
-      LOG(FATAL) << "[Trie] Invalid letter index: " << idx;
+      throw std::out_of_range(
+          "[Trie] Invalid letter index: " + std::to_string(idx));
     }
     if (node->children.find(idx) == node->children.end()) {
       node->children[idx] = std::make_shared<TrieNode>(idx);
@@ -43,7 +44,8 @@ Trie::insert(const std::vector<int>& indices, int label, float score) {
     node->score[node->nLabel] = score;
     node->nLabel++;
   } else {
-    LOG(INFO) << "[Trie] Trie label number reached limit: " << kTrieMaxLabel;
+    std::cerr << "[Trie] Trie label number reached limit: " << kTrieMaxLabel
+              << "\n";
   }
   return node;
 }
@@ -52,7 +54,8 @@ TrieNodePtr Trie::search(const std::vector<int>& indices) {
   TrieNodePtr node = root_;
   for (auto idx : indices) {
     if (idx < 0 || idx >= maxChildren_) {
-      LOG(FATAL) << "[Trie] Invalid letter index: " << idx;
+      throw std::out_of_range(
+          "[Trie] Invalid letter index: " + std::to_string(idx));
     }
     if (node->children.find(idx) == node->children.end()) {
       return nullptr;

@@ -6,8 +6,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <glog/logging.h>
-
 #include "lm/KenLM.h"
 
 #include <lm/model.hh>
@@ -18,11 +16,11 @@ KenLM::KenLM(const std::string& path, const Dictionary& usrTknDict) {
   // Load LM
   model_.reset(lm::ngram::LoadVirtual(path.c_str()));
   if (!model_) {
-    LOG(FATAL) << "[KenLM] LM loading failed.";
+    throw std::runtime_error("[KenLM] LM loading failed.");
   }
   vocab_ = &model_->BaseVocabulary();
   if (!vocab_) {
-    LOG(FATAL) << "[KenLM] LM vocabulary loading failed.";
+    throw std::runtime_error("[KenLM] LM vocabulary loading failed.");
   }
 
   // Create index map
@@ -49,7 +47,8 @@ std::pair<LMStatePtr, float> KenLM::score(
     const LMStatePtr& state,
     const int usrTokenIdx) {
   if (usrToLmIdxMap_.find(usrTokenIdx) == usrToLmIdxMap_.end()) {
-    LOG(FATAL) << "[KenLM] Invalid user token index" << usrTokenIdx;
+    throw std::out_of_range(
+        "[KenLM] Invalid user token index " + std::to_string(usrTokenIdx));
   }
   auto inState = getRawState(state);
   auto outState = std::make_shared<KenLMState>();

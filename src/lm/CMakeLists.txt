@@ -68,7 +68,6 @@ target_link_libraries(
   flashlight::flashlight
   runtime
   decoder
-  ${GLOG_LIBRARIES}
   ${KENLM_LIBRARIES}
   ${KENLM_DEP_LIBRARIES}
   )
@@ -76,7 +75,6 @@ target_link_libraries(
 target_include_directories(
   lm
   INTERFACE
-  ${GLOG_INCLUDE_DIRS}
   ${KENLM_INCLUDE_DIRS}
   ${KENLM_DEP_INCLUDE_DIRS}
   )

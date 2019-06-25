@@ -68,7 +68,7 @@ void WordLMDecoder::decodeStep(const float* emissions, int T, int N) {
       const TrieNode* prevLex = prevHyp.lex;
       const int prevIdx = prevLex->idx;
       const float lexMaxScore =
-          prevLex == lexicon_->getRoot().get() ? 0 : prevLex->maxScore;
+          prevLex == lexicon_->getRoot() ? 0 : prevLex->maxScore;
       const LMStatePtr& prevLmState = prevHyp.lmState;
 
       /* (1) Try children */
@@ -102,15 +102,13 @@ void WordLMDecoder::decodeStep(const float* emissions, int T, int N) {
 
         // If we got a true word
         for (int i = 0; i < lex->nLabel; i++) {
-          float lmScore;
-          LMStatePtr newLmState;
-          std::tie(newLmState, lmScore) =
-              lm_->score(prevLmState, lex->label[i]);
+          auto lmScoreReturn = lm_->score(prevLmState, lex->label[i]);
           candidatesAdd(
-              newLmState,
-              lexicon_->getRoot().get(),
+              lmScoreReturn.first,
+              lexicon_->getRoot(),
               &prevHyp,
-              score + opt_.lmWeight * (lmScore - lexMaxScore) + opt_.wordScore,
+              score + opt_.lmWeight * (lmScoreReturn.second - lexMaxScore) +
+                  opt_.wordScore,
               n,
               lex->label[i],
               false // prevBlank
@@ -119,14 +117,13 @@ void WordLMDecoder::decodeStep(const float* emissions, int T, int N) {
 
         // If we got an unknown word
         if (lex->nLabel == 0 && (opt_.unkScore > kNegativeInfinity)) {
-          float lmScore;
-          LMStatePtr newLmState;
-          std::tie(newLmState, lmScore) = lm_->score(prevLmState, unk_);
+          auto lmScoreReturn = lm_->score(prevLmState, unk_);
           candidatesAdd(
-              newLmState,
-              lexicon_->getRoot().get(),
+              lmScoreReturn.first,
+              lexicon_->getRoot(),
               &prevHyp,
-              score + opt_.lmWeight * (lmScore - lexMaxScore) + opt_.unkScore,
+              score + opt_.lmWeight * (lmScoreReturn.second - lexMaxScore) +
+                  opt_.unkScore,
               n,
               unk_,
               false // prevBlank

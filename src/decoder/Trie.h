@@ -67,10 +67,7 @@ class Trie {
       : root_(std::make_shared<TrieNode>(rootIdx)), maxChildren_(maxChildren) {}
 
   /* Return the root node pointer */
-  TrieNodePtr getRoot();
-
-  /* Returns the number of childern for a given lexicon */
-  int getNumChildren();
+  const TrieNode* getRoot() const;
 
   /* Insert a token into trie with label */
   TrieNodePtr insert(const std::vector<int>& indices, int label, float score);

@@ -6,6 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <stdexcept>
+
 #include "lm/KenLM.h"
 
 #include <lm/model.hh>
@@ -24,11 +26,11 @@ KenLM::KenLM(const std::string& path, const Dictionary& usrTknDict) {
   }
 
   // Create index map
-  usrToLmIdxMap_.clear();
+  usrToLmIdxMap_.resize(usrTknDict.indexSize());
   for (int i = 0; i < usrTknDict.indexSize(); i++) {
     auto token = usrTknDict.getEntry(i);
     int lmIdx = vocab_->Index(token.c_str());
-    usrToLmIdxMap_.emplace(i, lmIdx);
+    usrToLmIdxMap_[i] = lmIdx;
   }
 }
 
@@ -46,9 +48,9 @@ LMStatePtr KenLM::start(bool startWithNothing) {
 std::pair<LMStatePtr, float> KenLM::score(
     const LMStatePtr& state,
     const int usrTokenIdx) {
-  if (usrToLmIdxMap_.find(usrTokenIdx) == usrToLmIdxMap_.end()) {
-    throw std::out_of_range(
-        "[KenLM] Invalid user token index " + std::to_string(usrTokenIdx));
+  if (usrTokenIdx < 0 || usrTokenIdx >= usrToLmIdxMap_.size()) {
+    throw std::runtime_error(
+        "[KenLM] Invalid user token index: " + std::to_string(usrTokenIdx));
   }
   auto inState = getRawState(state);
   auto outState = std::make_shared<KenLMState>();
@@ -69,6 +71,9 @@ int KenLM::compareState(const LMStatePtr& state1, const LMStatePtr& state2)
     const {
   auto inState1 = getRawState(state1);
   auto inState2 = getRawState(state2);
+  if (inState1 == inState2) {
+    return 0;
+  }
   return inState1->Compare(*inState2);
 }
 

@@ -17,12 +17,8 @@ namespace w2l {
 
 const double kMinusLogThreshold = -39.14;
 
-TrieNodePtr Trie::getRoot() {
-  return root_;
-}
-
-int Trie::getNumChildren() {
-  return maxChildren_;
+const TrieNode* Trie::getRoot() const {
+  return root_.get();
 }
 
 TrieNodePtr

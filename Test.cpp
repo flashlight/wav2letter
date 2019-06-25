@@ -168,10 +168,6 @@ int main(int argc, char** argv) {
                 << "\%, progress: " << static_cast<float>(cnt) / nSamples * 100
                 << "\%]" << std::endl;
     }
-    ++cnt;
-    if (cnt == FLAGS_maxload) {
-      break;
-    }
 
     /* Save emission and targets */
     int N = rawEmission.dims(0);
@@ -186,6 +182,11 @@ int main(int argc, char** argv) {
 
     emissionSet.emissionT.emplace_back(T);
     emissionSet.emissionN = N;
+
+    ++cnt;
+    if (cnt == FLAGS_maxload) {
+      break;
+    }
   }
   if (FLAGS_criterion == kAsgCriterion) {
     emissionSet.transition = afToVector<float>(criterion->param(0).array());

@@ -64,7 +64,7 @@ void LexiconDecoder::decodeBegin() {
 
   /* note: the lm reset itself with :start() */
   hyp_[0].emplace_back(
-      lm_->start(0), lexicon_->getRoot().get(), nullptr, 0.0, sil_, -1);
+      lm_->start(0), lexicon_->getRoot(), nullptr, 0.0, sil_, -1);
   nDecodedFrames_ = 0;
   nPrunedFrames_ = 0;
 }

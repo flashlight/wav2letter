@@ -68,7 +68,7 @@ void TokenLMDecoder::decodeStep(const float* emissions, int T, int N) {
       /* (1) Try children */
       for (auto& child : prevLex->children) {
         int n = child.first;
-        const TrieNodePtr& lex = child.second;
+        const TrieNode* lex = child.second.get();
         float score = prevHyp.score + emissions[t * N + n];
         if (nDecodedFrames_ + t > 0 &&
             opt_.criterionType == CriterionType::ASG) {
@@ -78,18 +78,16 @@ void TokenLMDecoder::decodeStep(const float* emissions, int T, int N) {
           score += opt_.silWeight;
         }
 
-        float lmScore = 0;
-        LMStatePtr newLmState;
-        std::tie(newLmState, lmScore) = lm_->score(prevLmState, n);
-        score += lmScore * opt_.lmWeight;
+        auto lmScoreReturn = lm_->score(prevLmState, n);
+        score += lmScoreReturn.second * opt_.lmWeight;
 
         // We eat-up a new token
         if (opt_.criterionType != CriterionType::CTC || prevHyp.prevBlank ||
             n != prevIdx) {
           if (!lex->children.empty()) {
             candidatesAdd(
-                newLmState,
-                lex.get(),
+                lmScoreReturn.first,
+                lex,
                 &prevHyp,
                 score,
                 n,
@@ -102,8 +100,8 @@ void TokenLMDecoder::decodeStep(const float* emissions, int T, int N) {
         // If we got a true word
         for (int i = 0; i < lex->nLabel; i++) {
           candidatesAdd(
-              newLmState,
-              lexicon_->getRoot().get(),
+              lmScoreReturn.first,
+              lexicon_->getRoot(),
               &prevHyp,
               score + opt_.wordScore,
               n,
@@ -115,8 +113,8 @@ void TokenLMDecoder::decodeStep(const float* emissions, int T, int N) {
         // If we got an unknown word and we want to emit
         if (lex->nLabel == 0 && (opt_.unkScore > kNegativeInfinity)) {
           candidatesAdd(
-              newLmState,
-              lexicon_->getRoot().get(),
+              lmScoreReturn.first,
+              lexicon_->getRoot(),
               &prevHyp,
               score + opt_.unkScore,
               n,

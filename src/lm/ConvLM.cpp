@@ -49,11 +49,11 @@ ConvLM::ConvLM(
   std::cerr << "[ConvLM]: Finish loading LM from " << modelPath << "\n";
 
   /* Create index map */
-  usrToLmIdxMap_.clear();
+  usrToLmIdxMap_.resize(usrTknDict.indexSize());
   for (int i = 0; i < usrTknDict.indexSize(); i++) {
     auto token = usrTknDict.getEntry(i);
     int lmIdx = vocab_.getIndex(token.c_str());
-    usrToLmIdxMap_.emplace(i, lmIdx);
+    usrToLmIdxMap_[i] = lmIdx;
   }
 
   /* Refresh cache */
@@ -136,7 +136,7 @@ std::pair<LMStatePtr, float> ConvLM::scoreWithLmIdx(
 std::pair<LMStatePtr, float> ConvLM::score(
     const LMStatePtr& state,
     const int usrTokenIdx) {
-  if (usrToLmIdxMap_.find(usrTokenIdx) == usrToLmIdxMap_.end()) {
+  if (usrTokenIdx < 0 || usrTokenIdx >= usrToLmIdxMap_.size()) {
     throw std::out_of_range(
         "[KenLM] Invalid user token index: " + std::to_string(usrTokenIdx));
   }
@@ -286,6 +286,9 @@ int ConvLM::compareState(const LMStatePtr& state1, const LMStatePtr& state2)
     const {
   auto inState1 = getRawState(state1);
   auto inState2 = getRawState(state2);
+  if (inState1 == inState2) {
+    return 0;
+  }
   if (inState1->length != inState2->length) {
     return inState1->length < inState2->length ? -1 : 1;
   }

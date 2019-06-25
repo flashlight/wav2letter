@@ -50,7 +50,7 @@ class LM {
   virtual ~LM() = default;
 
   /* Map indices from acoustic model to LM for each valid token. */
-  std::unordered_map<int, int> usrToLmIdxMap_;
+  std::vector<int> usrToLmIdxMap_;
 };
 
 using LMPtr = std::shared_ptr<LM>;

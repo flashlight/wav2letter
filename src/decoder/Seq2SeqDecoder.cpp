@@ -159,18 +159,16 @@ void Seq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
 
       for (int n = 0; n < amScores[validHypo].size(); n++) {
         float score = prevHyp.score + amScores[validHypo][n];
-        float lmScore;
-        LMStatePtr newLmState;
 
         /* (1) Try eos */
         if (n == eos_ &&
             amScores[validHypo][eos_] >= hardSelection_ * maxAmScore) {
-          std::tie(newLmState, lmScore) = lm_->finish(prevLmState);
+          auto lmScoreReturn = lm_->finish(prevLmState);
 
           candidatesAdd(
-              newLmState,
+              lmScoreReturn.first,
               &prevHyp,
-              score + opt_.lmWeight * lmScore,
+              score + opt_.lmWeight * lmScoreReturn.second,
               n,
               nullptr);
         }
@@ -178,11 +176,11 @@ void Seq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
         /* (2) Try normal token */
         if (n != eos_ &&
             amScores[validHypo][n] >= maxAmScore - softSelection_) {
-          std::tie(newLmState, lmScore) = lm_->score(prevLmState, n);
+          auto lmScoreReturn = lm_->score(prevLmState, n);
           candidatesAdd(
-              newLmState,
+              lmScoreReturn.first,
               &prevHyp,
-              score + opt_.wordScore + opt_.lmWeight * lmScore,
+              score + opt_.wordScore + opt_.lmWeight * lmScoreReturn.second,
               n,
               outState);
         }

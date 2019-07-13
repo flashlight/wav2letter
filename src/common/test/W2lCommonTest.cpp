@@ -350,11 +350,11 @@ TEST(W2lCommonTest, localNormalize) {
   }
 }
 
-TEST(W2lCommonTest, AfToVectorString) {
+TEST(W2lCommonTest, AfMatrixToStrings) {
   std::vector<int> arr = {119, 97,  118, -1,  -1,  -1,  -1,  -1, -1, -1, -1,
                           -1,  108, 101, 116, 116, 101, 114, -1, -1, -1};
   af::array afArr(6, 3, arr.data());
-  auto stringVec = afToVector<std::string>(afArr);
+  auto stringVec = afMatrixToStrings<int>(afArr, -1);
   ASSERT_EQ(stringVec.size(), 3);
   ASSERT_EQ(stringVec[0], "wav");
   ASSERT_EQ(stringVec[1], "");

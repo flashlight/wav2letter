@@ -10,6 +10,8 @@
 
 #include <random>
 
+#include "common/Utils.h"
+
 namespace w2l {
 
 std::unordered_set<int64_t>
@@ -23,6 +25,10 @@ getTrainEvalIds(int64_t dsSize, double pctTrainEval, int64_t seed) {
     }
   }
   return result;
+}
+
+std::vector<std::string> readSampleIds(const af::array& arr) {
+  return afMatrixToStrings<int>(arr, -1);
 }
 
 } // namespace w2l

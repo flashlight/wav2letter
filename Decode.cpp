@@ -178,7 +178,7 @@ int main(int argc, char** argv) {
 
       // while decoding we use batchsize 1 and hence ds only has 1 sampleid
       emissionSet.sampleIds.emplace_back(
-          afToVector<std::string>(sample[kSampleIdx]).front());
+          readSampleIds(sample[kSampleIdx]).front());
 
       ++cnt;
       if (cnt == FLAGS_maxload) {

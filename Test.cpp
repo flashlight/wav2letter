@@ -130,7 +130,7 @@ int main(int argc, char** argv) {
     auto emission = afToVector<float>(rawEmission);
     auto tokenTarget = afToVector<int>(sample[kTargetIdx]);
     auto wordTarget = afToVector<int>(sample[kWordIdx]);
-    auto sampleId = afToVector<std::string>(sample[kSampleIdx]).front();
+    auto sampleId = readSampleIds(sample[kSampleIdx]).front();
 
     auto letterTarget = tknTarget2Ltr(tokenTarget, tokenDict);
     std::vector<std::string> wordTargetStr;
@@ -176,7 +176,7 @@ int main(int argc, char** argv) {
 
     // while testing we use batchsize 1 and hence ds only has 1 sampleid
     emissionSet.sampleIds.emplace_back(
-        afToVector<std::string>(sample[kSampleIdx]).front());
+        readSampleIds(sample[kSampleIdx]).front());
 
     emissionSet.emissionT.emplace_back(T);
     emissionSet.emissionN = N;

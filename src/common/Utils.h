@@ -34,33 +34,33 @@ std::vector<T> afToVector(const af::array& arr) {
   return vec;
 }
 
-// Converts an integer array to corresponding ascii representation.
-// "-1"s are ignored.
-template <>
-inline std::vector<std::string> afToVector(const af::array& arr) {
-  auto maxLen = arr.dims(0);
-  auto batchSz = arr.dims(1);
-  auto intVec = afToVector<int>(arr);
-
-  std::vector<std::string> vec(batchSz);
-  std::vector<char> charVec(maxLen);
-  int curLen;
-  for (int b = 0; b < batchSz; ++b) {
-    auto offset = maxLen * b;
-    for (curLen = 0; curLen < maxLen; ++curLen) {
-      if (intVec[offset + curLen] == -1) {
-        break;
-      }
-      charVec[curLen] = static_cast<char>(intVec[offset + curLen]);
-    }
-    vec[b] = std::string(charVec.begin(), charVec.begin() + curLen);
-  }
-  return vec;
-}
-
 template <typename T>
 std::vector<T> afToVector(const fl::Variable& var) {
   return afToVector<T>(var.array());
+}
+
+/**
+ * Reads a 2D padded character matrix from an `af::array` into a `std::vector`
+ * of strings. Each column is read until the first `terminator` and then
+ * converted to an `std::string`.
+ * - `T` must correspond to `arr.type()`
+ * - matrix values (except terminator) must be representable as `char`
+ */
+template <class T>
+std::vector<std::string> afMatrixToStrings(const af::array& arr, T terminator) {
+  int L = arr.dims(0); // padded length of string
+  int N = arr.dims(1); // number of strings
+  std::vector<std::string> result;
+  auto values = afToVector<T>(arr);
+  for (int i = 0; i < N; ++i) {
+    const T* row = &values[i * L];
+    int len = 0;
+    while (len < L && row[len] != terminator) {
+      ++len;
+    }
+    result.emplace_back(row, row + len);
+  }
+  return result;
 }
 
 /**

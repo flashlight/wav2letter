@@ -525,7 +525,7 @@ int main(int argc, char** argv) {
         if (af::anyTrue<bool>(af::isNaN(sample[kInputIdx])) ||
             af::anyTrue<bool>(af::isNaN(sample[kTargetIdx]))) {
           LOG(FATAL) << "Sample has NaN values - "
-                     << join(",", afToVector<std::string>(sample[kSampleIdx]));
+                     << join(",", readSampleIds(sample[kSampleIdx]));
         }
 
         // forward
@@ -541,7 +541,7 @@ int main(int argc, char** argv) {
 
         if (af::anyTrue<bool>(af::isNaN(loss.array()))) {
           LOG(FATAL) << "Loss has NaN values. Samples - "
-                     << join(",", afToVector<std::string>(sample[kSampleIdx]));
+                     << join(",", readSampleIds(sample[kSampleIdx]));
         }
         meters.train.loss.add(loss.array());
 

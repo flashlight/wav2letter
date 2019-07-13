@@ -77,6 +77,28 @@ struct W2lSerializer {
   }
 };
 
+// Convenience struct for serializing emissions and targets
+struct EmissionSet {
+  std::vector<std::vector<float>> emissions;
+  std::vector<std::vector<std::string>> wordTargets;
+  std::vector<std::vector<int>> tokenTargets;
+  std::vector<std::string> sampleIds;
+  std::vector<float> transition;
+  std::vector<int> emissionT;
+  int emissionN; // Assume alphabet size to be identical for all the samples
+  std::string gflags; // Saving all the flags used in model training
+
+  FL_SAVE_LOAD(
+      emissions,
+      wordTargets,
+      tokenTargets,
+      sampleIds,
+      transition,
+      emissionT,
+      emissionN,
+      gflags)
+};
+
 std::string newRunPath(
     const std::string& root,
     const std::string& runname = "",

@@ -10,4 +10,5 @@ target_sources(
   INTERFACE
   ${CMAKE_CURRENT_SOURCE_DIR}/Dictionary.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Utils.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/WordUtils.cpp
   )

@@ -17,14 +17,15 @@
 #include <vector>
 
 #include "common/Defines.h"
-#include "libraries/common/Dictionary.h"
 #include "libraries/common/Utils.h"
+#include "libraries/common/WordUtils.h"
 
 namespace w2l {
 
 // ============================== Dataset helpers ==============================
 
-// TODO: these should be moved to a more relevant location
+// TODO: these should be cleaned up (de-FLAGS-ified) and
+// moved to a more relevant location
 
 std::vector<std::string> loadTarget(const std::string& filepath);
 
@@ -44,20 +45,10 @@ std::vector<std::string> wrd2Target(
 
 // ============================== Decoder helpers ==============================
 
-// TODO: these should be moved to a more relevant location
-
-Dictionary createWordDict(const LexiconMap& lexicon);
-
-LexiconMap loadWords(const std::string& fn, const int64_t maxNumWords);
-
-// split word into tokens abc -> {"a", "b", "c"}
-// Works with ASCII, UTF-8 encodings
-std::vector<std::string> splitWrd(const std::string& word);
+// TODO: these should be cleaned up (de-FLAGS-ified) and
+// moved to a more relevant location, probably libraries/common/WordUtils.h
 
 /* A series of vector to vector mapping operations */
-std::vector<int> tkn2Idx(const std::vector<std::string>&, const Dictionary&);
-
-std::vector<int> validateIdx(std::vector<int>, const int);
 
 std::vector<std::string> tknIdx2Ltr(const std::vector<int>&, const Dictionary&);
 

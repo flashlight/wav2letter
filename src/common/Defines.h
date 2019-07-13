@@ -10,6 +10,8 @@
 
 #include <gflags/gflags.h>
 
+#include "libraries/common/Defines.h"
+
 #define W2L_VERSION "0.1"
 
 namespace w2l {
@@ -42,10 +44,6 @@ constexpr const char* kAdadeltaOptimizer = "adadelta";
 constexpr const char* kCtcCriterion = "ctc";
 constexpr const char* kAsgCriterion = "asg";
 constexpr const char* kSeq2SeqCriterion = "seq2seq";
-constexpr const char* kEosToken = "$";
-constexpr const char* kBlankToken = "#";
-constexpr const char* kSilToken = "|";
-constexpr const char* kUnkToken = "<unk>";
 constexpr int kTargetPadValue = -1;
 constexpr int kMaxDevicePerNode = 8;
 
@@ -54,10 +52,6 @@ constexpr int kFrameSizeMs = 25;
 constexpr int kFrameStrideMs = 10;
 constexpr int kLifterParam = 22;
 constexpr int kPrefetchSize = 2;
-
-// Decoder
-constexpr const char* kLmEosToken = "</s>";
-constexpr const char* kLmPadToken = "<pad>";
 
 /* ========== DATA OPTIONS ========== */
 

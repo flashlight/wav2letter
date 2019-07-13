@@ -19,9 +19,6 @@ namespace w2l {
 
 // ============================ Types and Templates ============================
 
-using LexiconMap =
-    std::unordered_map<std::string, std::vector<std::vector<std::string>>>;
-
 template <typename It>
 using DecayDereference =
     typename std::decay<decltype(*std::declval<It>())>::type;

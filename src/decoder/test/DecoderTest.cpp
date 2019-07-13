@@ -45,11 +45,15 @@ std::vector<int> tokens2Tensor(
   for (const auto& tkn : tokens) {
     ret.push_back(tokenDict.getIndex(tkn));
   }
-  replaceReplabels(ret, FLAGS_replabel, tokenDict);
+  ret = packReplabels(ret, tokenDict, FLAGS_replabel);
   return ret;
 }
 
 TEST(DecoderTest, run) {
+  // TODO: It seems that emissions were generated with `--replabel=1` but the
+  // expected results of DecoderTest were generated with FLAGS_replabel
+  // at the default value, 0. Leaving it this way for now...
+  // FLAGS_replabel = 1;
   FLAGS_criterion = kAsgCriterion;
   std::string dataDir = "";
 #ifdef DECODER_TEST_DATADIR
@@ -133,7 +137,7 @@ TEST(DecoderTest, run) {
     std::tie(dummyState, score) = lm->score(startState, usrIdx);
 
     for (const auto& tokens : it.second) {
-      auto tokensTensor = tkn2Idx(tokens, tokenDict);
+      auto tokensTensor = tkn2Idx(tokens, tokenDict, FLAGS_replabel);
       trie->insert(tokensTensor, usrIdx, score);
     }
   }

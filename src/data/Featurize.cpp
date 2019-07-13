@@ -137,7 +137,7 @@ W2lFeatureData featurize(
           }
         }
         if (FLAGS_replabel > 0) {
-          replaceReplabels(tgtVec, FLAGS_replabel, dict);
+          tgtVec = packReplabels(tgtVec, dict, FLAGS_replabel);
         }
         if (FLAGS_criterion == kAsgCriterion) {
           uniq(tgtVec);

@@ -303,7 +303,7 @@ int main(int argc, char** argv) {
         std::tie(dummyState, score) = lm->score(startState, usrIdx);
       }
       for (auto& tokens : it.second) {
-        auto tokensTensor = tkn2Idx(tokens, tokenDict);
+        auto tokensTensor = tkn2Idx(tokens, tokenDict, FLAGS_replabel);
         trie->insert(tokensTensor, usrIdx, score);
       }
     }

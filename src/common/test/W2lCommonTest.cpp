@@ -16,6 +16,7 @@
 #include "common/FlashlightUtils.h"
 #include "common/Transforms.h"
 #include "libraries/common/Dictionary.h"
+#include "libraries/common/WordUtils.h"
 
 using namespace w2l;
 
@@ -189,37 +190,20 @@ TEST(W2lCommonTest, Replabel) {
   dict.addEntry("1", 1);
   dict.addEntry("2", 2);
   dict.addEntry("3", 3);
-  std::vector<int> lab = {5, 6, 6, 6, 10, 8, 8, 10, 10, 10, 10, 10};
 
-  auto lab0 = lab;
-  replaceReplabels(lab0, 0, dict);
-  ASSERT_THAT(
-      lab0,
-      ::testing::ElementsAreArray({5, 6, 6, 6, 10, 8, 8, 10, 10, 10, 10, 10}));
-  invReplaceReplabels(lab0, 0, dict);
-  ASSERT_THAT(lab0, ::testing::ElementsAreArray(lab));
+  std::vector<int> labels = {5, 6, 6, 6, 10, 8, 8, 10, 10, 10, 10, 10};
+  std::vector<std::vector<int>> packedCheck(4);
+  packedCheck[0] = {5, 6, 6, 6, 10, 8, 8, 10, 10, 10, 10, 10};
+  packedCheck[1] = {5, 6, 1, 6, 10, 8, 1, 10, 1, 10, 1, 10};
+  packedCheck[2] = {5, 6, 2, 10, 8, 1, 10, 2, 10, 1};
+  packedCheck[3] = {5, 6, 2, 10, 8, 1, 10, 3, 10};
 
-  auto lab1 = lab;
-  replaceReplabels(lab1, 1, dict);
-  ASSERT_THAT(
-      lab1,
-      ::testing::ElementsAreArray({5, 6, 1, 6, 10, 8, 1, 10, 1, 10, 1, 10}));
-  invReplaceReplabels(lab1, 1, dict);
-  ASSERT_THAT(lab1, ::testing::ElementsAreArray(lab));
-
-  auto lab2 = lab;
-  replaceReplabels(lab2, 2, dict);
-  ASSERT_THAT(
-      lab2, ::testing::ElementsAreArray({5, 6, 2, 10, 8, 1, 10, 2, 10, 1}));
-  invReplaceReplabels(lab2, 2, dict);
-  ASSERT_THAT(lab2, ::testing::ElementsAreArray(lab));
-
-  auto lab3 = lab;
-  replaceReplabels(lab3, 3, dict);
-  ASSERT_THAT(
-      lab3, ::testing::ElementsAreArray({5, 6, 2, 10, 8, 1, 10, 3, 10}));
-  invReplaceReplabels(lab3, 3, dict);
-  ASSERT_THAT(lab3, ::testing::ElementsAreArray(lab));
+  for (int i = 0; i <= 3; ++i) {
+    auto packed = packReplabels(labels, dict, i);
+    ASSERT_EQ(packed, packedCheck[i]);
+    auto unpacked = unpackReplabels(packed, dict, i);
+    ASSERT_EQ(unpacked, labels);
+  }
 }
 
 TEST(W2lCommonTest, Dictionary) {
@@ -252,19 +236,16 @@ TEST(W2lCommonTest, InvReplabel) {
   dict.addEntry("1", 1);
   dict.addEntry("2", 2);
   dict.addEntry("3", 3);
-  std::vector<int> lab = {6, 3, 7, 2, 8, 0, 1};
+  std::vector<int> labels = {6, 3, 7, 2, 8, 0, 1};
 
-  auto lab1 = lab;
-  invReplaceReplabels(lab1, 1, dict);
-  ASSERT_THAT(lab1, ::testing::ElementsAre(6, 3, 7, 2, 8, 0, 0));
+  auto unpacked1 = unpackReplabels(labels, dict, 1);
+  ASSERT_THAT(unpacked1, ::testing::ElementsAre(6, 3, 7, 2, 8, 0, 0));
 
-  auto lab2 = lab;
-  invReplaceReplabels(lab2, 2, dict);
-  ASSERT_THAT(lab2, ::testing::ElementsAre(6, 3, 7, 7, 7, 8, 0, 0));
+  auto unpacked2 = unpackReplabels(labels, dict, 2);
+  ASSERT_THAT(unpacked2, ::testing::ElementsAre(6, 3, 7, 7, 7, 8, 0, 0));
 
-  auto lab3 = lab;
-  invReplaceReplabels(lab3, 3, dict);
-  ASSERT_THAT(lab3, ::testing::ElementsAre(6, 6, 6, 6, 7, 7, 7, 8, 0, 0));
+  auto unpacked3 = unpackReplabels(labels, dict, 3);
+  ASSERT_THAT(unpacked3, ::testing::ElementsAre(6, 6, 6, 6, 7, 7, 7, 8, 0, 0));
 }
 
 TEST(W2lCommonTest, Uniq) {

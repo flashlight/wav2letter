@@ -28,9 +28,7 @@
 #include "lm/ConvLM.h"
 #include "lm/KenLM.h"
 #include "module/module.h"
-#include "runtime/Data.h"
-#include "runtime/Logger.h"
-#include "runtime/Serial.h"
+#include "runtime/runtime.h"
 
 #include "decoder/LexiconFreeDecoder.h"
 #include "decoder/Seq2SeqDecoder.h"

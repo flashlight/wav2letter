@@ -8,6 +8,7 @@
 
 #include <cstdlib>
 #include <fstream>
+#include <random>
 #include <string>
 #include <vector>
 
@@ -418,7 +419,7 @@ int main(int argc, char** argv) {
   };
 
   auto trainEvalIds =
-      randomSubset(FLAGS_seed, trainds->size(), FLAGS_pcttraineval);
+      getTrainEvalIds(trainds->size(), FLAGS_pcttraineval, FLAGS_seed);
 
   auto train = [&meters,
                 &test,

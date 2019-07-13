@@ -23,8 +23,7 @@
 #include "decoder/WordLMDecoder.h"
 #include "lm/KenLM.h"
 #include "module/module.h"
-#include "runtime/Logger.h"
-#include "runtime/Serial.h"
+#include "runtime/runtime.h"
 
 using namespace w2l;
 

@@ -25,19 +25,6 @@
 
 namespace w2l {
 
-std::set<int64_t>
-randomSubset(int64_t seed, int64_t size, double keepFraction) {
-  std::mt19937 gen(seed);
-  std::uniform_real_distribution<> dis(0, 100);
-  std::set<int64_t> keepSet;
-  for (int64_t i = 0; i < size; i++) {
-    if (dis(gen) < keepFraction) {
-      keepSet.insert(i);
-    }
-  }
-  return keepSet;
-}
-
 std::string join(
     const std::string& delim,
     const std::vector<std::string>& vec) {

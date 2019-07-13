@@ -14,6 +14,7 @@ target_sources(
   ${CMAKE_CURRENT_SOURCE_DIR}/SpeechStatMeter.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Distributed.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Optimizer.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/Helpers.cpp
   )
 
 target_link_libraries(

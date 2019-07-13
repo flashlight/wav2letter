@@ -27,8 +27,6 @@
 
 namespace w2l {
 
-std::set<int64_t> randomSubset(int64_t seed, int64_t size, double keepFraction);
-
 template <typename T>
 std::vector<T> afToVector(const af::array& arr) {
   std::vector<T> vec(arr.elements());

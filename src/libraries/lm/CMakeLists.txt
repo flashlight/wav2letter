@@ -42,7 +42,6 @@ if (W2L_LIBRARIES_USE_KENLM)
   target_compile_definitions(
     lm-library
     INTERFACE
-    BMR_USE_QUICKSELECT
     KENLM_MAX_ORDER=${KENLM_MAX_ORDER}
     )
 endif ()

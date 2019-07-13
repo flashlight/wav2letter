@@ -55,4 +55,6 @@ class KenLM : public LM {
   static KenLMState* getRawState(const LMStatePtr& state);
 };
 
+using KenLMPtr = std::shared_ptr<KenLM>;
+
 } // namespace w2l

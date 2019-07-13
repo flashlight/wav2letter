@@ -46,10 +46,9 @@ class LM {
   /* Update LM caches (optional) given a bunch of new states generated */
   virtual void updateCache(std::vector<LMStatePtr> stateIdices) {}
 
- protected:
-  LM() = default;
   virtual ~LM() = default;
 
+ protected:
   /* Map indices from acoustic model to LM for each valid token. */
   std::vector<int> usrToLmIdxMap_;
 };

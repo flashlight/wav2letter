@@ -21,6 +21,8 @@
 - [FFTW](http://www.fftw.org/) is required for featurization.
 - [KenLM](https://github.com/kpu/kenlm) is required for the decoder. One of
   LZMA, BZip2, or Z is required for LM compression with KenLM.
+  * **NB:** KenLM should be built with position-independent code (`-fPIC`) enabled, otherwise wav2letter++ python bindings for decoder will not work.
+  * In KenLM build directory: `cmake .. -DCMAKE_BUILD_TYPE=Release -DKENLM_MAX_ORDER=6 -DCMAKE_POSITION_INDEPENDENT_CODE=ON`
 - [gflags](https://github.com/gflags/gflags) is required.
 - [glog](https://github.com/google/glog) is required.
 
@@ -30,14 +32,15 @@ The following dependencies are automatically downloaded/built on build:
 - If using the CUDA criterion backend (see below), [NVIDIA cub](https://github.com/NVlabs/cub) 1.8.0 is downloaded and linked to criterion CUDA kernels.
 
 ### Optional Dependencies
-- `flashlight` requires CUDA >= 9.2; if building wav2letter++ with the `CUDA` criterion backend, CUDA >= 9.2 is required. Using [CUDA 9.2](https://developer.nvidia.com/cuda-92-download-archive) is recommended.
-- If building with the `CPU` criterion backend, wav2letter++ will try to compile with [OpenMP](https://www.openmp.org/), for better performance.
+- If `flashlight` was built with CUDA backend, then CUDA >= 9.2 is required to build custom CUDA kernels for wav2letter++ criterions. Using [CUDA 9.2](https://developer.nvidia.com/cuda-92-download-archive) is recommended.
+- wav2letter++ will try to compile with [OpenMP](https://www.openmp.org/) for better performance.
 
 ## Build Options
 | Option                   | Configuration       | Default Value |
 |--------------------------|---------------------|---------------|
 | W2L_BUILD_LIBRARIES_ONLY | ON, OFF             | OFF           |
 | W2L_LIBRARIES_USE_CUDA   | ON, OFF             | ON            |
+| W2L_LIBRARIES_USE_KENLM  | ON, OFF             | ON            |
 | W2L_LIBRARIES_USE_MKL    | ON, OFF             | ON            |
 | W2L_BUILD_FOR_PYTHON     | ON, OFF             | OFF           |
 | W2L_BUILD_TESTS          | ON, OFF             | ON            |
@@ -101,7 +104,7 @@ Once you've downloaded wav2letter++ and built and installed the required depende
 # in your wav2letter++ directory
 mkdir -p build
 cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DW2L_CRITERION_BACKEND=[backend] # Replace backend with CUDA or CPU
+cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j4 # (or any number of threads)
 ```
 

@@ -23,5 +23,7 @@ function (add_pybind11_extension ext_name)
   add_dependencies(${ext_name} pybind11)
 endfunction ()
 
+add_pybind11_extension(_common)
 add_pybind11_extension(_criterion)
+add_pybind11_extension(_decoder)
 add_pybind11_extension(_feature)

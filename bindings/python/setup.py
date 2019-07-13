@@ -13,6 +13,7 @@ from setuptools.command.build_ext import build_ext
 
 # Environment variables:
 # - `USE_CUDA=0` disables building CUDA components
+# - `USE_KENLM=0` disables building KenLM
 # - `USE_MKL=1` enables MKL (may cause errors)
 
 
@@ -50,6 +51,7 @@ class CMakeBuild(build_ext):
         extdir = os.path.abspath("wav2letter")
         sourcedir = os.path.abspath("../..")
         use_cuda = "OFF" if check_negative_env_flag("USE_CUDA") else "ON"
+        use_kenlm = "OFF" if check_negative_env_flag("USE_KENLM") else "ON"
         use_mkl = "ON" if check_env_flag("USE_MKL") else "OFF"
         cmake_args = [
             "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + extdir,
@@ -57,6 +59,7 @@ class CMakeBuild(build_ext):
             "-DW2L_BUILD_LIBRARIES_ONLY=ON",
             "-DW2L_BUILD_FOR_PYTHON=ON",
             "-DW2L_LIBRARIES_USE_CUDA=" + use_cuda,
+            "-DW2L_LIBRARIES_USE_KENLM=" + use_kenlm,
             "-DW2L_LIBRARIES_USE_MKL=" + use_mkl,
         ]
 
@@ -97,7 +100,9 @@ setup(
     description="wav2letter bindings for python",
     long_description="",
     ext_modules=[
+        CMakeExtension("wav2letter._common"),
         CMakeExtension("wav2letter._criterion"),
+        CMakeExtension("wav2letter._decoder"),
         CMakeExtension("wav2letter._feature"),
     ],
     cmdclass={"build_ext": CMakeBuild},

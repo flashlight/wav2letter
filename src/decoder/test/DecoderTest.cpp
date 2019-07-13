@@ -93,7 +93,7 @@ TEST(DecoderTest, run) {
   LOG(INFO) << "[Serialization] Loaded emissions [" << T << " x " << N << ']';
 
   /* ===================== Create Dictionary ===================== */
-  auto lexicon = loadWords(pathsConcat(dataDir, "words.lst"), -1);
+  auto lexicon = loadWords(pathsConcat(dataDir, "words.lst"));
   Dictionary tokenDict(pathsConcat(dataDir, "letters.lst"));
   tokenDict.addEntry("1"); // replabel
   auto wordDict = createWordDict(lexicon);

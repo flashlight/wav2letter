@@ -16,6 +16,9 @@
 
 namespace w2l {
 
+// TODO: ConvLM should not depend on `runtime/Serial.h`. This ctor should take
+// fl::Module and Dictionary directly instead of path strings.
+
 ConvLM::ConvLM(
     const std::string& modelPath,
     const std::string& tokenVocabPath,

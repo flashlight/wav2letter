@@ -6,9 +6,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <stdexcept>
+#include "libraries/lm/KenLM.h"
 
-#include "lm/KenLM.h"
+#include <stdexcept>
 
 #include <lm/model.hh>
 

@@ -10,54 +10,45 @@
 
 #include <unordered_map>
 
-#include "decoder/Decoder.h"
-#include "decoder/LM.h"
-#include "decoder/Trie.h"
+#include "libraries/decoder/Decoder.h"
+#include "libraries/lm/LM.h"
 
 namespace w2l {
 /**
- * LexiconDecoderState stores information for each hypothesis in the beam.
+ * LexiconFreeDecoderState stores information for each hypothesis in the beam.
  */
-struct LexiconDecoderState {
+struct LexiconFreeDecoderState {
   LMStatePtr lmState; // Language model state
-  const TrieNode* lex; // Trie node in the lexicon
-  const LexiconDecoderState* parent; // Parent hypothesis
+  const LexiconFreeDecoderState* parent; // Parent hypothesis
   float score; // Score so far
   int token; // Label of token
-  int word; // Label of word (-1 if incomplete)
   bool prevBlank; // If previous hypothesis is blank (for CTC only)
 
-  LexiconDecoderState(
+  LexiconFreeDecoderState(
       const LMStatePtr& lmState,
-      const TrieNode* lex,
-      const LexiconDecoderState* parent,
+      const LexiconFreeDecoderState* parent,
       const float score,
       const int token,
-      const int word,
       const bool prevBlank = false)
       : lmState(lmState),
-        lex(lex),
         parent(parent),
         score(score),
         token(token),
-        word(word),
         prevBlank(prevBlank) {}
 
-  LexiconDecoderState()
+  LexiconFreeDecoderState()
       : lmState(nullptr),
-        lex(nullptr),
         parent(nullptr),
         score(0),
         token(-1),
-        word(-1),
         prevBlank(false) {}
 
   int getWord() const {
-    return word;
+    return -1;
   }
 
   bool isComplete() const {
-    return !parent || parent->word >= 0;
+    return true;
   }
 };
 
@@ -65,34 +56,31 @@ struct LexiconDecoderState {
  * Decoder implements a beam seach decoder that finds the word transcription
  * W maximizing:
  *
- * AM(W) + lmWeight_ * log(P_{lm}(W)) + wordScore_ * |W_known| + unkScore_ *
- * |W_unknown| - silWeight_ * |{i| pi_i = <sil>}|
+ * AM(W) + lmWeight_ * log(P_{lm}(W)) + wordScore_ * |W_known| - silWeight_ *
+ * |{i| pi_i = <sil>}|
  *
  * where P_{lm}(W) is the language model score, pi_i is the value for the i-th
  * frame in the path leading to W and AM(W) is the (unnormalized) acoustic model
- * score of the transcription W. Note that the lexicon is used to limit the
- * search space and all candidate words are generated from it if unkScore is
- * -inf, otherwise <UNK> will be generated for OOVs.
+ * score of the transcription W. We are allowed to generate words from all the
+ * possible combination of tokens.
  */
-class LexiconDecoder : public Decoder {
+class LexiconFreeDecoder : public Decoder {
  public:
-  LexiconDecoder(
+  LexiconFreeDecoder(
       const DecoderOptions& opt,
-      const TriePtr& lexicon,
       const LMPtr& lm,
       const int sil,
       const int blank,
-      const int unk,
       const std::vector<float>& transitions)
       : Decoder(opt),
-        lexicon_(lexicon),
         lm_(lm),
         transitions_(transitions),
         sil_(sil),
-        blank_(blank),
-        unk_(unk) {}
+        blank_(blank) {}
 
   void decodeBegin() override;
+
+  void decodeStep(const float* emissions, int T, int N) override;
 
   void decodeEnd() override;
 
@@ -107,17 +95,16 @@ class LexiconDecoder : public Decoder {
   std::vector<DecodeResult> getAllFinalHypothesis() const override;
 
  protected:
-  TriePtr lexicon_;
   LMPtr lm_;
   std::vector<float> transitions_;
 
   // All the hypothesis new candidates (can be larger than beamsize) proposed
   // based on the ones from previous frame
-  std::vector<LexiconDecoderState> candidates_;
+  std::vector<LexiconFreeDecoderState> candidates_;
 
   // This vector is designed for efficient sorting and merging the candidates_,
   // so instead of moving around objects, we only need to sort pointers
-  std::vector<LexiconDecoderState*> candidatePtrs_;
+  std::vector<LexiconFreeDecoderState*> candidatePtrs_;
 
   // Best candidate score of current frame
   float candidatesBestScore_;
@@ -128,11 +115,8 @@ class LexiconDecoder : public Decoder {
   // Index of blank label (for CTC)
   int blank_;
 
-  // Index of unknown word
-  int unk_;
-
   // Vector of hypothesis for all the frames so far
-  std::unordered_map<int, std::vector<LexiconDecoderState>> hyp_;
+  std::unordered_map<int, std::vector<LexiconFreeDecoderState>> hyp_;
 
   // These 2 variables are used for online decoding, for hypothesis pruning
   int nDecodedFrames_; // Total number of decoded frames.
@@ -144,21 +128,19 @@ class LexiconDecoder : public Decoder {
   // Add a new candidate to the buffer
   void candidatesAdd(
       const LMStatePtr& lmState,
-      const TrieNode* lex,
-      const LexiconDecoderState* parent,
+      const LexiconFreeDecoderState* parent,
       const float score,
       const int token,
-      const int label,
       const bool prevBlank);
 
   // Merge and sort candidates proposed in the current frame and place them into
   // the `hyp_` buffer
   void candidatesStore(
-      std::vector<LexiconDecoderState>& nextHyp,
+      std::vector<LexiconFreeDecoderState>& nextHyp,
       const bool isSort);
 
   // Merge hypothesis getting into same state from different path
-  virtual void mergeCandidates() = 0;
+  void mergeCandidates();
 };
 
 } // namespace w2l

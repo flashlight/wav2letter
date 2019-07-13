@@ -13,7 +13,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "decoder/LM.h"
+#include "libraries/lm/LM.h"
 
 namespace w2l {
 

@@ -11,7 +11,7 @@
 #include <iostream>
 #include <limits>
 
-#include "decoder/Trie.h"
+#include "libraries/decoder/Trie.h"
 
 namespace w2l {
 

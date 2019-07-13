@@ -11,9 +11,9 @@
 #include <arrayfire.h>
 #include <unordered_map>
 
-#include "common/Dictionary.h"
 #include "data/NumberedFilesLoader.h"
 #include "data/Sound.h"
+#include "libraries/common/Dictionary.h"
 #include "libraries/feature/FeatureParams.h"
 
 namespace w2l {

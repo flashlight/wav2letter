@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "common/Defines.h"
-#include "common/Dictionary.h"
+#include "libraries/common/Dictionary.h"
 
 namespace w2l {
 

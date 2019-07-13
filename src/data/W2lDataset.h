@@ -13,9 +13,9 @@
 
 #include <flashlight/flashlight.h>
 
-#include "common/Dictionary.h"
 #include "data/Featurize.h"
 #include "data/NumberedFilesLoader.h"
+#include "libraries/common/Dictionary.h"
 
 namespace w2l {
 

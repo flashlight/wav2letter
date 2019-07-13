@@ -16,10 +16,10 @@
 #include <glog/logging.h>
 
 #include "common/Defines.h"
-#include "common/Dictionary.h"
 #include "common/FlashlightUtils.h"
 #include "common/Transforms.h"
 #include "criterion/criterion.h"
+#include "libraries/common/Dictionary.h"
 #include "module/module.h"
 #include "runtime/runtime.h"
 

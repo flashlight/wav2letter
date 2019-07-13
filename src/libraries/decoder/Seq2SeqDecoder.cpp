@@ -15,7 +15,7 @@
 #include <functional>
 #include <iostream>
 
-#include "decoder/Seq2SeqDecoder.h"
+#include "libraries/decoder/Seq2SeqDecoder.h"
 
 namespace w2l {
 

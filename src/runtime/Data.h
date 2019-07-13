@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include "common/Dictionary.h"
 #include "common/Utils.h"
 #include "data/W2lDataset.h"
+#include "libraries/common/Dictionary.h"
 
 namespace w2l {
 std::shared_ptr<W2lDataset> createDataset(

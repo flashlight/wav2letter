@@ -6,13 +6,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "common/Dictionary.h"
+#include "libraries/common/Dictionary.h"
 
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
 
-#include "common/Utils.h"
+#include "libraries/common/Utils.h"
 
 namespace w2l {
 

@@ -11,8 +11,8 @@
 #include <functional>
 #include <string>
 
-#include "common/Dictionary.h"
 #include "data/Sound.h"
+#include "libraries/common/Dictionary.h"
 
 namespace w2l {
 

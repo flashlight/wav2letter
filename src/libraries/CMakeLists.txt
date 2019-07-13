@@ -8,8 +8,14 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/common)
 # criterion-library
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/criterion)
 
+# decoder-library
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/decoder)
+
 # feature-library
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/feature)
+
+# lm-library
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lm)
 
 # ------------------------- Library -------------------------
 
@@ -30,7 +36,9 @@ target_link_libraries(
   PUBLIC
   common-library
   criterion-library
+  decoder-library
   feature-library
+  lm-library
   )
 
 target_include_directories(

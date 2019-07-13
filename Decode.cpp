@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iomanip>
@@ -19,21 +19,19 @@
 #include <glog/logging.h>
 
 #include "common/Defines.h"
-#include "common/Dictionary.h"
 #include "common/FlashlightUtils.h"
 #include "common/Transforms.h"
 #include "criterion/criterion.h"
 #include "data/Featurize.h"
-#include "decoder/Trie.h"
+#include "libraries/common/Dictionary.h"
+#include "libraries/decoder/LexiconFreeDecoder.h"
+#include "libraries/decoder/Seq2SeqDecoder.h"
+#include "libraries/decoder/TokenLMDecoder.h"
+#include "libraries/decoder/WordLMDecoder.h"
+#include "libraries/lm/KenLM.h"
 #include "lm/ConvLM.h"
-#include "lm/KenLM.h"
 #include "module/module.h"
 #include "runtime/runtime.h"
-
-#include "decoder/LexiconFreeDecoder.h"
-#include "decoder/Seq2SeqDecoder.h"
-#include "decoder/TokenLMDecoder.h"
-#include "decoder/WordLMDecoder.h"
 
 using namespace w2l;
 

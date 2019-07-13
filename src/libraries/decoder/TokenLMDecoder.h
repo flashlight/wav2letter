@@ -10,9 +10,9 @@
 
 #include <unordered_map>
 
-#include "decoder/LM.h"
-#include "decoder/LexiconDecoder.h"
-#include "decoder/Trie.h"
+#include "libraries/decoder/LexiconDecoder.h"
+#include "libraries/decoder/Trie.h"
+#include "libraries/lm/LM.h"
 
 namespace w2l {
 

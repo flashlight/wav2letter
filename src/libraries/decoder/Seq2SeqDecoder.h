@@ -11,8 +11,8 @@
 #include <memory>
 #include <unordered_map>
 
-#include "decoder/Decoder.h"
-#include "decoder/LM.h"
+#include "libraries/decoder/Decoder.h"
+#include "libraries/lm/LM.h"
 
 namespace w2l {
 using AMStatePtr = std::shared_ptr<void>;

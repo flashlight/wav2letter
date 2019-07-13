@@ -13,9 +13,9 @@
 #include <future>
 #include <memory>
 
-#include "common/Dictionary.h"
 #include "common/FlashlightUtils.h"
 #include "common/Transforms.h"
+#include "libraries/common/Dictionary.h"
 
 using namespace w2l;
 

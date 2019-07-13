@@ -12,8 +12,8 @@
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 
-#include "common/Dictionary.h"
 #include "common/FlashlightUtils.h"
+#include "libraries/common/Dictionary.h"
 
 using namespace w2l;
 

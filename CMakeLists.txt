@@ -18,6 +18,7 @@ option(W2L_BUILD_TESTS "Build tests for wav2letter++" ON)
 option(W2L_BUILD_EXAMPLES "Build examples for wav2letter++" ON)
 option(W2L_BUILD_EXPERIMENTAL "Build internal experimental components for wav2letter++" OFF)
 option(W2L_BUILD_SCRIPTS "Build internal scripts for wav2letter++" OFF)
+set(KENLM_MAX_ORDER 6 CACHE STRING "Maximum ngram order for KenLM")
 
 # ------------------------- Dependency Fallback -------------------------
 
@@ -31,7 +32,7 @@ endif ()
 
 # ------------------------- Libraries-Only Build ------------------------------
 
-function(build_w2l_libraries)
+function (build_w2l_libraries)
   set(W2L_COMPILE_DEFINITIONS
     $<$<BOOL:${W2L_LIBRARIES_USE_CUDA}>:W2L_LIBRARIES_USE_CUDA>
     $<$<BOOL:${W2L_LIBRARIES_USE_KENLM}>:W2L_LIBRARIES_USE_KENLM>
@@ -137,15 +138,6 @@ build_w2l_libraries()
 # Common
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/common)
 
-# Runtime
-add_subdirectory(${PROJECT_SOURCE_DIR}/src/runtime)
-
-# Module
-add_subdirectory(${PROJECT_SOURCE_DIR}/src/module)
-
-# Decoder
-add_subdirectory(${PROJECT_SOURCE_DIR}/src/decoder)
-
 # Criterion
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/criterion)
 
@@ -154,6 +146,12 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/src/data)
 
 # LM
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/lm)
+
+# Module
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/module)
+
+# Runtime
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/runtime)
 
 # Tests
 if (W2L_BUILD_TESTS)
@@ -178,9 +176,10 @@ set_target_properties(
 target_link_libraries(
   wav2letter++
   PUBLIC
+  wav2letter-libraries
   common
   criterion
-  decoder
+  data
   lm
   module
   runtime

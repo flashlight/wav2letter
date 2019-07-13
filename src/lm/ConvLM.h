@@ -10,8 +10,8 @@
 
 #include <flashlight/flashlight.h>
 
-#include "common/Dictionary.h"
-#include "decoder/LM.h"
+#include "libraries/common/Dictionary.h"
+#include "libraries/lm/LM.h"
 
 namespace w2l {
 

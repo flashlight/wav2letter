@@ -15,13 +15,13 @@
 #include <gtest/gtest.h>
 
 #include "common/Defines.h"
-#include "common/Dictionary.h"
 #include "common/FlashlightUtils.h"
 #include "common/Transforms.h"
 #include "criterion/criterion.h"
-#include "decoder/Trie.h"
-#include "decoder/WordLMDecoder.h"
-#include "lm/KenLM.h"
+#include "libraries/common/Dictionary.h"
+#include "libraries/decoder/Trie.h"
+#include "libraries/decoder/WordLMDecoder.h"
+#include "libraries/lm/KenLM.h"
 #include "module/module.h"
 #include "runtime/runtime.h"
 

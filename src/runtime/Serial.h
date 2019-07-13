@@ -113,4 +113,6 @@ getRunFile(const std::string& name, int runidx, const std::string& runpath);
  */
 std::string cleanFilepath(const std::string& in);
 
+std::string serializeGflags(const std::string& separator = "\n");
+
 } // namespace w2l

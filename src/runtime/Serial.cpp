@@ -54,4 +54,16 @@ std::string cleanFilepath(const std::string& in) {
   return replace;
 }
 
+std::string serializeGflags(const std::string& separator /* = "\n" */) {
+  std::string serialized;
+  std::vector<gflags::CommandLineFlagInfo> allFlags;
+  gflags::GetAllFlags(&allFlags);
+  std::string currVal;
+  for (auto itr = allFlags.begin(); itr != allFlags.end(); ++itr) {
+    gflags::GetCommandLineOption(itr->name.c_str(), &currVal);
+    serialized += "--" + itr->name + "=" + currVal + separator;
+  }
+  return serialized;
+}
+
 } // namespace w2l

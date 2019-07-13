@@ -180,18 +180,6 @@ std::string getCurrentTime() {
   return buf;
 }
 
-std::string serializeGflags(const std::string& separator /* = "\n" */) {
-  std::string serialized;
-  std::vector<gflags::CommandLineFlagInfo> allFlags;
-  gflags::GetAllFlags(&allFlags);
-  std::string currVal;
-  for (auto itr = allFlags.begin(); itr != allFlags.end(); ++itr) {
-    gflags::GetCommandLineOption(itr->name.c_str(), &currVal);
-    serialized += "--" + itr->name + "=" + currVal + separator;
-  }
-  return serialized;
-}
-
 std::vector<std::string> loadTarget(const std::string& filepath) {
   std::vector<std::string> tokens;
   std::ifstream infile(filepath);

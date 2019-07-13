@@ -59,8 +59,6 @@ std::string getCurrentDate();
 
 std::string getCurrentTime();
 
-std::string serializeGflags(const std::string& separator = "\n");
-
 std::vector<std::string> getFileContent(const std::string& file);
 
 bool startsWith(const std::string& input, const std::string& pattern);

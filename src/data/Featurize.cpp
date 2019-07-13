@@ -15,8 +15,8 @@
 #include <glog/logging.h>
 
 #include "common/Defines.h"
+#include "common/FlashlightUtils.h"
 #include "common/Transforms.h"
-#include "common/Utils.h"
 #include "libraries/feature/Mfcc.h"
 #include "libraries/feature/Mfsc.h"
 #include "libraries/feature/PowerSpectrum.h"

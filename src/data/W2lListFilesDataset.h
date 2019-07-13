@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "common/Utils.h"
+#include "common/FlashlightUtils.h"
 #include "data/Utils.h"
 #include "data/W2lDataset.h"
 

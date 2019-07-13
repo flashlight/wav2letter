@@ -14,7 +14,7 @@
 #include <sstream>
 
 #include "TestUtils.h"
-#include "common/Utils.h"
+#include "common/FlashlightUtils.h"
 #include "libraries/feature/FeatureParams.h"
 #include "libraries/feature/Mfcc.h"
 

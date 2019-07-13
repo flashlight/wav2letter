@@ -55,6 +55,10 @@ constexpr int kFrameStrideMs = 10;
 constexpr int kLifterParam = 22;
 constexpr int kPrefetchSize = 2;
 
+// Decoder
+constexpr const char* kLmEosToken = "</s>";
+constexpr const char* kLmPadToken = "<pad>";
+
 /* ========== DATA OPTIONS ========== */
 
 DECLARE_string(train);
@@ -148,9 +152,6 @@ DECLARE_string(criterion);
 DECLARE_int64(encoderdim);
 
 /* ========== DECODER OPTIONS ========== */
-
-extern const std::string kLmEosToken;
-extern const std::string kLmPadToken;
 
 DECLARE_bool(show);
 DECLARE_bool(showletters);

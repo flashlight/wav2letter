@@ -6,6 +6,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+/**
+ * Generic utilities which should not depend on ArrayFire / flashlight.
+ */
+
 #pragma once
 
 #include <chrono>
@@ -18,50 +22,90 @@
 #include <utility>
 #include <vector>
 
-#include <arrayfire.h>
-#include <flashlight/flashlight.h>
-
 #include "common/Defines.h"
 #include "common/Dictionary.h"
-#include "common/Utils-base.h"
 
 namespace w2l {
 
-template <typename T>
-std::vector<T> afToVector(const af::array& arr) {
-  std::vector<T> vec(arr.elements());
-  arr.host(vec.data());
-  return vec;
-}
+// ============================ Types and Templates ============================
 
-template <typename T>
-std::vector<T> afToVector(const fl::Variable& var) {
-  return afToVector<T>(var.array());
-}
+using LexiconMap =
+    std::unordered_map<std::string, std::vector<std::vector<std::string>>>;
+
+template <typename It>
+using DecayDereference =
+    typename std::decay<decltype(*std::declval<It>())>::type;
+
+template <typename S, typename T>
+using EnableIfSame = typename std::enable_if<std::is_same<S, T>::value>::type;
+
+// ================================== Strings ==================================
+
+std::string trim(const std::string& str);
+
+void replaceAll(
+    std::string& str,
+    const std::string& from,
+    const std::string& repl);
+
+bool startsWith(const std::string& input, const std::string& pattern);
+
+std::vector<std::string>
+split(char delim, const std::string& input, bool ignoreEmpty = false);
+
+std::vector<std::string> split(
+    const std::string& delim,
+    const std::string& input,
+    bool ignoreEmpty = false);
+
+std::vector<std::string> splitOnAnyOf(
+    const std::string& delim,
+    const std::string& input,
+    bool ignoreEmpty = false);
+
+std::vector<std::string> splitOnWhitespace(
+    const std::string& input,
+    bool ignoreEmpty = false);
 
 /**
- * Reads a 2D padded character matrix from an `af::array` into a `std::vector`
- * of strings. Each column is read until the first `terminator` and then
- * converted to an `std::string`.
- * - `T` must correspond to `arr.type()`
- * - matrix values (except terminator) must be representable as `char`
+ * Join a vector of `std::string` inserting `delim` in between.
  */
-template <class T>
-std::vector<std::string> afMatrixToStrings(const af::array& arr, T terminator) {
-  int L = arr.dims(0); // padded length of string
-  int N = arr.dims(1); // number of strings
-  std::vector<std::string> result;
-  auto values = afToVector<T>(arr);
-  for (int i = 0; i < N; ++i) {
-    const T* row = &values[i * L];
-    int len = 0;
-    while (len < L && row[len] != terminator) {
-      ++len;
-    }
-    result.emplace_back(row, row + len);
-  }
-  return result;
-}
+std::string join(const std::string& delim, const std::vector<std::string>& vec);
+
+/**
+ * Join a range of `std::string` specified by iterators.
+ */
+template <
+    typename FwdIt,
+    typename = EnableIfSame<DecayDereference<FwdIt>, std::string>>
+std::string join(const std::string& delim, FwdIt begin, FwdIt end);
+
+/**
+ * Create an output string using a `printf`-style format string and arguments.
+ * Safer than `sprintf` which is vulnerable to buffer overflow.
+ */
+template <class... Args>
+std::string format(const char* fmt, Args&&... args);
+
+// ================================== System ==================================
+
+std::string pathsConcat(const std::string& p1, const std::string& p2);
+
+bool dirExists(const std::string& path);
+
+void dirCreate(const std::string& path);
+
+bool fileExists(const std::string& path);
+
+std::string getEnvVar(const std::string& key, const std::string& dflt = "");
+
+std::string getCurrentDate();
+
+std::string getCurrentTime();
+
+// =============================== Miscellaneous ===============================
+
+std::vector<std::string> getFileContent(const std::string& file);
 
 /**
  * Calls `f(args...)` repeatedly, retrying if an exception is thrown.
@@ -69,26 +113,60 @@ std::vector<std::string> afMatrixToStrings(const af::array& arr, T terminator) {
  * multiplying by `factor` each retry. At most `maxIters` calls are made.
  */
 template <class Fn, class... Args>
-fl::cpp::result_of_t<Fn(Args...)> retryWithBackoff(
+typename std::result_of<Fn(Args...)>::type retryWithBackoff(
     std::chrono::duration<double> initial,
     double factor,
     int64_t maxIters,
     Fn&& f,
     Args&&... args);
 
-template <
-    typename FwdIt,
-    typename = fl::cpp::enable_if_t<std::is_same<
-        fl::cpp::decay_t<decltype(*std::declval<FwdIt>())>,
-        std::string>::value>>
-std::string join(const std::string& delim, FwdIt begin, FwdIt end);
+// ============================== Dataset helpers ==============================
 
-std::string join(const std::string& delim, const std::vector<std::string>& vec);
+// TODO: these should be moved to a more relevant location
 
-template <class... Args>
-std::string format(const char* fmt, Args&&... args);
+std::vector<std::string> loadTarget(const std::string& filepath);
 
-int64_t numTotalParams(std::shared_ptr<fl::Module> module);
+std::vector<std::string> wrd2Target(
+    const std::string& word,
+    const LexiconMap& lexicon,
+    const Dictionary& dict,
+    bool fallback2Ltr = false,
+    bool skipUnk = false);
+
+std::vector<std::string> wrd2Target(
+    const std::vector<std::string>& words,
+    const LexiconMap& lexicon,
+    const Dictionary& dict,
+    bool fallback2Ltr = false,
+    bool skipUnk = false);
+
+// ============================== Decoder helpers ==============================
+
+// TODO: these should be moved to a more relevant location
+
+Dictionary createWordDict(const LexiconMap& lexicon);
+
+LexiconMap loadWords(const std::string& fn, const int64_t maxNumWords);
+
+// split word into tokens abc -> {"a", "b", "c"}
+// Works with ASCII, UTF-8 encodings
+std::vector<std::string> splitWrd(const std::string& word);
+
+/* A series of vector to vector mapping operations */
+std::vector<int> tkn2Idx(const std::vector<std::string>&, const Dictionary&);
+
+std::vector<int> validateIdx(std::vector<int>, const int);
+
+std::vector<std::string> tknIdx2Ltr(const std::vector<int>&, const Dictionary&);
+
+std::vector<std::string> tkn2Wrd(const std::vector<std::string>&);
+
+// will be deprecated soon
+std::vector<std::string> wrdIdx2Wrd(const std::vector<int>&, const Dictionary&);
+
+std::vector<std::string> tknTarget2Ltr(std::vector<int>, const Dictionary&);
+
+std::vector<std::string> tknPrediction2Ltr(std::vector<int>, const Dictionary&);
 
 } // namespace w2l
 

@@ -11,7 +11,7 @@
 #include <memory>
 
 #include "SequenceCriterion.h"
-#include "common/Utils.h"
+#include "common/FlashlightUtils.h"
 #include "criterion/Defines.h"
 #include "criterion/attention/attention.h"
 #include "criterion/attention/window.h"

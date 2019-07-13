@@ -9,12 +9,11 @@
 #pragma once
 
 #include <algorithm>
+#include <cmath>
 #include <numeric>
 #include <stdexcept>
 #include <unordered_map>
 #include <vector>
-
-#include <arrayfire.h>
 
 #include "common/Defines.h"
 #include "common/Dictionary.h"
@@ -71,9 +70,6 @@ void uniq(std::vector<T>& in) {
   auto it = std::unique(in.begin(), in.end());
   in.resize(std::distance(in.begin(), it));
 }
-
-af::array
-pad(const af::array& in, const int size, const int dim = 0, float val = 0.0);
 
 template <class T>
 void remapLabels(std::vector<T>& labels, const Dictionary& dict) {

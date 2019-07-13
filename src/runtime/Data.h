@@ -9,7 +9,7 @@
 #pragma once
 
 #include "common/Dictionary.h"
-#include "common/Utils-base.h"
+#include "common/Utils.h"
 #include "data/W2lDataset.h"
 
 namespace w2l {

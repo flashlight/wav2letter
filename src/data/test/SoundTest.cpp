@@ -11,7 +11,7 @@
 #include <fstream>
 #include <functional>
 
-#include "common/Utils.h"
+#include "common/FlashlightUtils.h"
 #include "data/Sound.h"
 
 namespace {

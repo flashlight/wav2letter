@@ -20,8 +20,8 @@
 
 #include "common/Defines.h"
 #include "common/Dictionary.h"
+#include "common/FlashlightUtils.h"
 #include "common/Transforms.h"
-#include "common/Utils.h"
 #include "criterion/criterion.h"
 #include "data/Featurize.h"
 #include "decoder/Trie.h"

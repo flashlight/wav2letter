@@ -14,7 +14,7 @@
 
 #include <glog/logging.h>
 
-#include "common/Utils.h"
+#include "common/FlashlightUtils.h"
 
 namespace w2l {
 

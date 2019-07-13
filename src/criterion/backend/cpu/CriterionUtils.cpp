@@ -8,7 +8,7 @@
 
 #include "criterion/CriterionUtils.h"
 
-#include "common/Utils.h"
+#include "common/FlashlightUtils.h"
 #include "libraries/criterion/cpu/CriterionUtils.h"
 #include "libraries/criterion/cpu/ViterbiPath.h"
 

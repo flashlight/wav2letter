@@ -13,7 +13,7 @@
 #include <gtest/gtest.h>
 
 #include "common/Dictionary.h"
-#include "common/Utils.h"
+#include "common/FlashlightUtils.h"
 
 using namespace w2l;
 

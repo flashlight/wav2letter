@@ -17,8 +17,8 @@
 
 #include "common/Defines.h"
 #include "common/Dictionary.h"
+#include "common/FlashlightUtils.h"
 #include "common/Transforms.h"
-#include "common/Utils.h"
 #include "criterion/criterion.h"
 #include "module/module.h"
 #include "runtime/runtime.h"

@@ -6,8 +6,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "Defines.h"
-#include <stdlib.h>
+#include "common/Defines.h"
+
+#include <cstdlib>
 #include <limits>
 
 namespace w2l {
@@ -136,8 +137,6 @@ DEFINE_string(criterion, kAsgCriterion, "training criterion");
 DEFINE_int64(encoderdim, 0, "Dimension of encoded hidden state.");
 
 // DECODER OPTIONS
-const std::string kLmEosToken = "</s>";
-const std::string kLmPadToken = "<pad>";
 
 DEFINE_bool(show, false, "show predictions");
 DEFINE_bool(showletters, false, "show letter predictions");

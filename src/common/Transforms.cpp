@@ -6,12 +6,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "Transforms.h"
+#include "common/Transforms.h"
 
 #include <functional>
 
 #include "common/Defines.h"
-#include "common/Utils-base.h"
+#include "common/Utils.h"
 
 namespace w2l {
 
@@ -54,23 +54,4 @@ void replaceReplabels(
   in.resize(ptr0);
 }
 
-af::array pad(
-    const af::array& in,
-    const int size,
-    const int dim /* = 0 */,
-    float val /* = 0.0 */) {
-  if (size < 0) {
-    throw std::invalid_argument(
-        "Size must be non-negative. Given: " + std::to_string(size));
-  }
-  auto opdims = in.dims();
-  opdims[dim] += (size << 1);
-  af::array op = af::constant(val, opdims, in.type());
-
-  std::array<af::seq, 4> sel = {af::span, af::span, af::span, af::span};
-  sel[dim] = af::seq(size, opdims[dim] - size - 1);
-  op(sel[0], sel[1], sel[2], sel[3]) = in;
-
-  return op;
-}
 } // namespace w2l

@@ -14,8 +14,8 @@
 #include <memory>
 
 #include "common/Dictionary.h"
+#include "common/FlashlightUtils.h"
 #include "common/Transforms.h"
-#include "common/Utils.h"
 
 using namespace w2l;
 
@@ -123,7 +123,7 @@ static std::function<int(void)> makeSucceedsAfterMs(double ms) {
 }
 
 template <class Fn>
-std::future<fl::cpp::result_of_t<Fn()>> retryAsync(
+std::future<typename std::result_of<Fn()>::type> retryAsync(
     std::chrono::duration<double> initial,
     double factor,
     int64_t iters,

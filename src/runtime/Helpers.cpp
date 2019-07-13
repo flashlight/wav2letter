@@ -10,7 +10,7 @@
 
 #include <random>
 
-#include "common/Utils.h"
+#include "common/FlashlightUtils.h"
 
 namespace w2l {
 

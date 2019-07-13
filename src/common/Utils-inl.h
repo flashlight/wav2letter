@@ -18,26 +18,6 @@
 
 namespace w2l {
 
-template <class... Args>
-std::string format(const char* fmt, Args&&... args) {
-  auto res = std::snprintf(nullptr, 0, fmt, std::forward<Args>(args)...);
-  if (res < 0) {
-    throw std::runtime_error(std::strerror(errno));
-  }
-  std::string buf(res, '\0');
-  // the size here is fine -- it's legal to write '\0' to buf[res]
-  auto res2 = std::snprintf(&buf[0], res + 1, fmt, std::forward<Args>(args)...);
-  if (res2 < 0) {
-    throw std::runtime_error(std::strerror(errno));
-  }
-
-  if (res2 != res) {
-    throw std::runtime_error(
-        "The size of the formated string is not equal to what it is expected.");
-  }
-  return buf;
-}
-
 template <typename FwdIt, typename>
 std::string join(const std::string& delim, FwdIt begin, FwdIt end) {
   if (begin == end) {
@@ -60,8 +40,28 @@ std::string join(const std::string& delim, FwdIt begin, FwdIt end) {
   return result;
 }
 
+template <class... Args>
+std::string format(const char* fmt, Args&&... args) {
+  auto res = std::snprintf(nullptr, 0, fmt, std::forward<Args>(args)...);
+  if (res < 0) {
+    throw std::runtime_error(std::strerror(errno));
+  }
+  std::string buf(res, '\0');
+  // the size here is fine -- it's legal to write '\0' to buf[res]
+  auto res2 = std::snprintf(&buf[0], res + 1, fmt, std::forward<Args>(args)...);
+  if (res2 < 0) {
+    throw std::runtime_error(std::strerror(errno));
+  }
+
+  if (res2 != res) {
+    throw std::runtime_error(
+        "The size of the formated string is not equal to what it is expected.");
+  }
+  return buf;
+}
+
 template <class Fn, class... Args>
-fl::cpp::result_of_t<Fn(Args...)> retryWithBackoff(
+typename std::result_of<Fn(Args...)>::type retryWithBackoff(
     std::chrono::duration<double> initial,
     double factor,
     int64_t maxIters,

@@ -9,9 +9,9 @@ target_sources(
   INTERFACE
   ${CMAKE_CURRENT_SOURCE_DIR}/Defines.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Dictionary.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/FlashlightUtils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Transforms.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Utils.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/Utils-base.cpp
   )
 
 target_link_libraries(

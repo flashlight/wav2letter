@@ -38,8 +38,8 @@ int main(int argc, char** argv) {
     argvs.emplace_back(argv[i]);
   }
   gflags::SetUsageMessage(
-      "Usage: \n " + exec + " train [flags]\n or " + std::string() +
-      " continue [directory] [flags]\n or " + std::string(argv[0]) +
+      "Usage: \n " + exec + " train [flags]\n or " + exec +
+      " continue [directory] [flags]\n or " + exec +
       " fork [directory/model] [flags]");
 
   /* ===================== Parse Options ===================== */

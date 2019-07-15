@@ -194,6 +194,11 @@ int main(int argc, char** argv) {
       std::ceil(nSample / static_cast<float>(FLAGS_nthread_decoder));
   LOG(INFO) << "[Dataset] Number of samples per thread: " << nSamplePerThread;
 
+  network.reset(); // AM is only used in running forward pass. So we will free
+                   // the space of it on GPU or memory. network.use_count() will
+                   // be 0 after this call.
+  af::deviceGC();
+
   /* ===================== Decode ===================== */
   // Prepare counters
   std::vector<double> sliceWer(FLAGS_nthread_decoder);

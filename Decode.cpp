@@ -469,9 +469,9 @@ int main(int argc, char** argv) {
                  << "\%, LER: " << meters.ler.value()[0]
                  << "\%, slice WER: " << meters.werSlice.value()[0]
                  << "\%, slice LER: " << meters.lerSlice.value()[0]
-                 << "\%, progress: "
-                 << static_cast<float>(s - start + 1) / sliceSize * 100 << "\%]"
-                 << std::endl;
+                 << "\%, progress (slice " << tid
+                 << "): " << static_cast<float>(s - start + 1) / sliceSize * 100
+                 << "\%]" << std::endl;
 
           std::cout << buffer.str();
           if (!FLAGS_sclite.empty()) {

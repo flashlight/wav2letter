@@ -185,7 +185,7 @@ TEST(W2lCommonTest, RetryWithBackoff) {
       retryAsync(ms0, 1.0, 5, alwaysFailsVoid).get(), std::runtime_error);
 }
 
-TEST(W2lCommonTest, Replabel) {
+TEST(W2lCommonTest, PackReplabels) {
   Dictionary dict;
   dict.addEntry("1", 1);
   dict.addEntry("2", 2);
@@ -231,7 +231,7 @@ TEST(W2lCommonTest, Dictionary) {
   ASSERT_EQ(dict.indexSize(), 5);
 }
 
-TEST(W2lCommonTest, InvReplabel) {
+TEST(W2lCommonTest, UnpackReplabels) {
   Dictionary dict;
   dict.addEntry("1", 1);
   dict.addEntry("2", 2);
@@ -246,6 +246,30 @@ TEST(W2lCommonTest, InvReplabel) {
 
   auto unpacked3 = unpackReplabels(labels, dict, 3);
   ASSERT_THAT(unpacked3, ::testing::ElementsAre(6, 6, 6, 6, 7, 7, 7, 8, 0, 0));
+}
+
+TEST(W2lCommonTest, UnpackReplabelsIgnoresInvalid) {
+  Dictionary dict;
+  dict.addEntry("1", 1);
+  dict.addEntry("2", 2);
+
+  // The initial replabel "1", with no prior token to repeat, is ignored.
+  std::vector<int> labels1 = {1, 5, 1, 6};
+  auto unpacked1 = unpackReplabels(labels1, dict, 2);
+  ASSERT_THAT(unpacked1, ::testing::ElementsAre(5, 5, 6));
+
+  // The final replabel "2", whose prior token is a replabel, is ignored.
+  std::vector<int> labels2 = {1, 5, 1, 2, 6};
+  auto unpacked2 = unpackReplabels(labels2, dict, 2);
+  ASSERT_THAT(unpacked2, ::testing::ElementsAre(5, 5, 6));
+  // With maxReps=1, "2" is not considered a replabel, altering the result.
+  auto unpacked2_1 = unpackReplabels(labels2, dict, 1);
+  ASSERT_THAT(unpacked2_1, ::testing::ElementsAre(5, 5, 2, 6));
+
+  // All replabels past the first "1" are ignored here.
+  std::vector<int> labels3 = {5, 1, 2, 1, 2, 6};
+  auto unpacked3 = unpackReplabels(labels3, dict, 2);
+  ASSERT_THAT(unpacked3, ::testing::ElementsAre(5, 5, 6));
 }
 
 TEST(W2lCommonTest, Uniq) {

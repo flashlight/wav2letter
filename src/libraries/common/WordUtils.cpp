@@ -164,10 +164,11 @@ std::vector<int> unpackReplabels(
     auto it = replabelIdxToValue.find(token);
     if (it == replabelIdxToValue.end()) {
       result.push_back(token);
-    } else {
+      prevToken = token;
+    } else if (prevToken != -1) {
       result.insert(result.end(), it->second, prevToken);
+      prevToken = -1;
     }
-    prevToken = token;
   }
   return result;
 }

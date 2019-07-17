@@ -120,8 +120,23 @@ int main(int argc, char** argv) {
   LOG(INFO) << "[Dataset] Dataset loaded.";
 
   /* ===================== Test ===================== */
-  TestMeters meters;
+  // Prepare log writer
+  std::ofstream hypStream, refStream;
+  if (!FLAGS_sclite.empty()) {
+    auto fileName = cleanFilepath(FLAGS_test);
+    auto hypPath = pathsConcat(FLAGS_sclite, fileName + ".hyp");
+    auto refPath = pathsConcat(FLAGS_sclite, fileName + ".viterbi.ref");
+    hypStream.open(hypPath);
+    refStream.open(refPath);
+    if (!hypStream.is_open() || !hypStream.good()) {
+      LOG(FATAL) << "Error opening hypothesis file: " << hypPath;
+    }
+    if (!refStream.is_open() || !refStream.good()) {
+      LOG(FATAL) << "Error opening reference file: " << refPath;
+    }
+  }
 
+  TestMeters meters;
   EmissionSet emissionSet;
   meters.timer.resume();
   int cnt = 0;
@@ -150,6 +165,13 @@ int main(int argc, char** argv) {
     // Words
     std::vector<std::string> wrdPredictionStr = tkn2Wrd(letterPrediction);
     meters.werSlice.add(wrdPredictionStr, wordTargetStr);
+
+    if (!FLAGS_sclite.empty()) {
+      refStream << join(" ", wordTargetStr) + " (" + sampleId + ")"
+                << std::endl;
+      hypStream << join(" ", wrdPredictionStr) + " (" + sampleId + ")"
+                << std::endl;
+    }
 
     if (FLAGS_show) {
       meters.ler.reset();

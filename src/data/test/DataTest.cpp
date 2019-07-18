@@ -219,7 +219,7 @@ TEST(DataTest, W2lListDataset) {
     auto wordFile =
         pathsConcat(loadPath, "dataset/" + std::string(fchar.data()) + "wrd");
 
-    auto info = w2l::loadSoundInfo(audioFile.c_str());
+    auto info = w2l::loadSoundInfo(audioFile);
     auto durationMs =
         (static_cast<double>(info.frames) / info.samplerate) * 1e3;
 

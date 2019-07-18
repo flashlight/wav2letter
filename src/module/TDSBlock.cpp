@@ -12,23 +12,35 @@ namespace w2l {
 
 using namespace fl;
 
-TDSBlock::TDSBlock(int c, int kw, int h, double dropout /* = 0 */) {
+TDSBlock::TDSBlock(
+    int c,
+    int kw,
+    int h,
+    double dropout /* = 0 */,
+    int l2 /* = 0 */) {
   Sequential conv;
   conv.add(Conv2D(c, c, kw, 1, 1, 1, -1, -1));
   conv.add(ReLU());
   conv.add(Dropout(dropout));
 
   int l = c * h;
+  if (l2 == 0) {
+    l2 = l;
+  }
   Sequential fc;
   fc.add(View(af::dim4(-1, l, 1, 0)));
   fc.add(Reorder(1, 0, 2, 3));
-  fc.add(Linear(l, l));
+  fc.add(Linear(l, l2));
   fc.add(ReLU());
-  fc.add(Dropout(dropout));
-  fc.add(Linear(l, l));
+  if (dropout > 0) {
+    fc.add(Dropout(dropout));
+  }
+  fc.add(Linear(l2, l));
   fc.add(Reorder(1, 0, 2, 3));
   fc.add(View(af::dim4(-1, h, c, 0)));
-  fc.add(Dropout(dropout));
+  if (dropout > 0) {
+    fc.add(Dropout(dropout));
+  }
 
   add(conv);
   add(LayerNorm(3));
@@ -51,8 +63,11 @@ std::string TDSBlock::prettyString() const {
   int kw = convW.dims(0);
   int c = convW.dims(2);
   int w = linW.dims(0) / c;
+  int l = linW.dims(1);
+  int l2 = linW.dims(0);
   ss << "Time-Depth Separable Block (";
-  ss << kw << ", " << w << ", " << c << ")";
+  ss << kw << ", " << w << ", " << c << ") [" << l << " -> " << l2 << " -> "
+     << l << "]";
   return ss.str();
 }
 

@@ -18,7 +18,7 @@ class TDSBlock : public fl::Container {
   FL_SAVE_LOAD_WITH_BASE(fl::Container)
 
  public:
-  explicit TDSBlock(int c, int kw, int h, double dropout = 0);
+  explicit TDSBlock(int c, int kw, int h, double dropout = 0, int l2 = 0);
 
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs) override;

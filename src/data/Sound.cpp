@@ -15,7 +15,15 @@
 #include <sndfile.h>
 
 namespace {
-const std::unordered_map<w2l::SoundFormat, int> formats{
+
+struct EnumClassHash {
+  template <typename T>
+  std::size_t operator()(T t) const {
+    return static_cast<std::size_t>(t);
+  }
+};
+
+const std::unordered_map<w2l::SoundFormat, int, EnumClassHash> formats{
     {w2l::SoundFormat::WAV, SF_FORMAT_WAV},
     {w2l::SoundFormat::AIFF, SF_FORMAT_AIFF},
     {w2l::SoundFormat::AU, SF_FORMAT_AU},
@@ -42,7 +50,7 @@ const std::unordered_map<w2l::SoundFormat, int> formats{
     {w2l::SoundFormat::MPC2K, SF_FORMAT_MPC2K},
     {w2l::SoundFormat::RF64, SF_FORMAT_RF64}};
 
-const std::unordered_map<w2l::SoundSubFormat, int> subformats{
+const std::unordered_map<w2l::SoundSubFormat, int, EnumClassHash> subformats{
     {w2l::SoundSubFormat::PCM_S8, SF_FORMAT_PCM_S8},
     {w2l::SoundSubFormat::PCM_16, SF_FORMAT_PCM_16},
     {w2l::SoundSubFormat::PCM_24, SF_FORMAT_PCM_24},

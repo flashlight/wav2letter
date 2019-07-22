@@ -67,6 +67,7 @@ ConvLM::ConvLM(
 }
 
 LMStatePtr ConvLM::start(bool startWithNothing) {
+  cacheIndices_.clear();
   auto outState = std::make_shared<ConvLMState>(1);
   if (!startWithNothing) {
     outState->length = 1;

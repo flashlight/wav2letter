@@ -8,6 +8,7 @@
 
 #include <glog/logging.h>
 
+#include "data/W2lBlobsDataset.h"
 #include "data/W2lListFilesDataset.h"
 #include "data/W2lNumberedFilesDataset.h"
 #include "runtime/Data.h"
@@ -47,6 +48,17 @@ std::shared_ptr<W2lDataset> createDataset(
 #endif
   } else if (FLAGS_listdata) {
     ds = std::make_shared<W2lListFilesDataset>(
+        path,
+        dicts,
+        lexicon,
+        batchSize,
+        worldRank,
+        worldSize,
+        fallback2Ltr,
+        skipUnk,
+        FLAGS_datadir);
+  } else if (FLAGS_blobdata) {
+    ds = std::make_shared<W2lBlobsDataset>(
         path,
         dicts,
         lexicon,

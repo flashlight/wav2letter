@@ -40,6 +40,7 @@ DEFINE_string(
 DEFINE_int64(inputbinsize, 100, "Bin size along audio length axis");
 DEFINE_int64(outputbinsize, 5, "Bin size along transcript length axis");
 DEFINE_bool(listdata, false, "use lists instead of folders as input data");
+DEFINE_bool(blobdata, false, "use blobs instead of folders as input data");
 DEFINE_string(
     wordseparator,
     kSilToken,

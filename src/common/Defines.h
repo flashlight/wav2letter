@@ -72,6 +72,7 @@ DECLARE_string(dataorder);
 DECLARE_int64(inputbinsize);
 DECLARE_int64(outputbinsize);
 DECLARE_bool(listdata);
+DECLARE_bool(blobdata);
 DECLARE_string(wordseparator);
 DECLARE_double(sampletarget);
 

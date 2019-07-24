@@ -41,6 +41,7 @@ target_sources(
   INTERFACE
   ${CMAKE_CURRENT_SOURCE_DIR}/Utils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/W2lDataset.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/W2lBlobsDataset.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/W2lListFilesDataset.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/W2lNumberedFilesDataset.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/NumberedFilesLoader.cpp

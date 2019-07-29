@@ -4,6 +4,7 @@ import struct
 import sys
 
 import torch
+import torch.nn as nn
 import wav2letter._criterion as _C
 
 
@@ -34,22 +35,66 @@ def check_tensor(name, tensor, size, dtype, device):
         raise ValueError(f"{name} tensor is not contiguous")
 
 
+def run_direction(cls, device, direction, *args):
+    """
+    Select and run CPU/CUDA implementation of `forward()` or `backward()`.
+    If CUDA, create the right device context and also pass the CUDA stream.
+    """
+    device = torch.device(device)
+    if device.type == "cuda":
+        with torch.cuda.device(device):
+            fn = getattr(cls.cuda_impl(), direction)
+            fn(*args, get_cuda_stream_as_bytes())
+    elif device.type == "cpu":
+        fn = getattr(cls.cpu_impl(), direction)
+        fn(*args)
+    else:
+        raise ValueError("unknown/unsupported device type")
+
+
+def run_forward(cls, device, *args):
+    run_direction(cls, device, "forward", *args)
+
+
+def run_backward(cls, device, *args):
+    run_direction(cls, device, "backward", *args)
+
+
+def run_getWorkspaceSize(cls, device, *args):
+    device = torch.device(device)
+    if device.type == "cuda":
+        return cls.cuda_impl().getWorkspaceSize(*args)
+    elif device.type == "cpu":
+        return cls.cpu_impl().getWorkspaceSize(*args)
+    else:
+        raise ValueError("unknown/unsupported device type")
+
+
+def create_workspace(cls, device, *args):
+    """
+    Select and run CPU/CUDA implementation of `getWorkspaceSize()`,
+    then return a byte tensor of appropriate size.
+    """
+    workspace_size = run_getWorkspaceSize(cls, device, *args)
+    return torch.empty(workspace_size, dtype=torch.uint8, device=device)
+
+
 class FACFunction(torch.autograd.Function):
     @staticmethod
-    def select_criterion(is_cuda):
-        return (
-            _C.CudaForceAlignmentCriterion if is_cuda else _C.CpuForceAlignmentCriterion
-        )
+    def cuda_impl():
+        return _C.CudaForceAlignmentCriterion
+
+    @staticmethod
+    def cpu_impl():
+        return _C.CpuForceAlignmentCriterion
 
     @classmethod
     def forward(cls, ctx, input, target, target_size, trans, scale_mode):
-        device = input.device
-        criterion = cls.select_criterion(input.is_cuda)
-
         B = input.size(0)
         T = input.size(1)
         N = input.size(2)
         L = target.size(1)
+        device = input.device
 
         check_tensor("input", input, [B, T, N], torch.float, device)
         check_tensor("target", target, [B, L], torch.int, device)
@@ -57,10 +102,10 @@ class FACFunction(torch.autograd.Function):
         check_tensor("trans", trans, [N, N], torch.float, device)
 
         loss = torch.empty(B, dtype=torch.float, device=device)
-        workspace = torch.empty(
-            criterion.getWorkspaceSize(B, T, N, L), dtype=torch.uint8, device=device
-        )
-        args = [
+        workspace = create_workspace(cls, device, B, T, N, L)
+        run_forward(
+            cls,
+            device,
             B,
             T,
             N,
@@ -72,30 +117,27 @@ class FACFunction(torch.autograd.Function):
             get_data_ptr_as_bytes(trans),
             get_data_ptr_as_bytes(loss),
             get_data_ptr_as_bytes(workspace),
-        ]
-        if input.is_cuda:
-            args.append(get_cuda_stream_as_bytes())
-
-        criterion.forward(*args)
+        )
         ctx.save_for_backward(input, target, target_size, trans, workspace)
         return loss
 
     @classmethod
     def backward(cls, ctx, grad):
         input, target, target_size, trans, workspace = ctx.saved_tensors
-        device = input.device
-        criterion = cls.select_criterion(input.is_cuda)
-
         B = input.size(0)
         T = input.size(1)
         N = input.size(2)
         L = target.size(1)
+        device = input.device
 
+        grad = grad.to(dtype=torch.float, device=device).contiguous()
         check_tensor("grad", grad, [B], torch.float, device)
 
         inputGrad = torch.empty(B, T, N, dtype=torch.float, device=device)
         transGrad = torch.empty(N, N, dtype=torch.float, device=device)
-        args = [
+        run_backward(
+            cls,
+            device,
             B,
             T,
             N,
@@ -106,29 +148,25 @@ class FACFunction(torch.autograd.Function):
             get_data_ptr_as_bytes(inputGrad),
             get_data_ptr_as_bytes(transGrad),
             get_data_ptr_as_bytes(workspace),
-        ]
-        if input.is_cuda:
-            args.append(get_cuda_stream_as_bytes())
-
-        criterion.backward(*args)
+        )
         return inputGrad, None, None, transGrad, None
 
 
 class FCCFunction(torch.autograd.Function):
     @staticmethod
-    def select_criterion(is_cuda):
-        return (
-            _C.CudaFullConnectionCriterion if is_cuda else _C.CpuFullConnectionCriterion
-        )
+    def cuda_impl():
+        return _C.CudaFullConnectionCriterion
+
+    @staticmethod
+    def cpu_impl():
+        return _C.CpuFullConnectionCriterion
 
     @classmethod
     def forward(cls, ctx, input, target_size, trans, scale_mode):
-        device = input.device
-        criterion = cls.select_criterion(input.is_cuda)
-
         B = input.size(0)
         T = input.size(1)
         N = input.size(2)
+        device = input.device
 
         check_tensor("input", input, [B, T, N], torch.float, device)
         if scale_mode != _C.CriterionScaleMode.NONE:
@@ -136,10 +174,10 @@ class FCCFunction(torch.autograd.Function):
         check_tensor("trans", trans, [N, N], torch.float, device)
 
         loss = torch.empty(B, dtype=torch.float, device=device)
-        workspace = torch.empty(
-            criterion.getWorkspaceSize(B, T, N), dtype=torch.uint8, device=device
-        )
-        args = [
+        workspace = create_workspace(cls, device, B, T, N)
+        run_forward(
+            cls,
+            device,
             B,
             T,
             N,
@@ -149,29 +187,26 @@ class FCCFunction(torch.autograd.Function):
             get_data_ptr_as_bytes(trans),
             get_data_ptr_as_bytes(loss),
             get_data_ptr_as_bytes(workspace),
-        ]
-        if input.is_cuda:
-            args.append(get_cuda_stream_as_bytes())
-
-        criterion.forward(*args)
+        )
         ctx.save_for_backward(input, trans, workspace)
         return loss
 
     @classmethod
     def backward(cls, ctx, grad):
         input, trans, workspace = ctx.saved_tensors
-        device = input.device
-        criterion = cls.select_criterion(input.is_cuda)
-
         B = input.size(0)
         T = input.size(1)
         N = input.size(2)
+        device = input.device
 
+        grad = grad.to(dtype=torch.float, device=device).contiguous()
         check_tensor("grad", grad, [B], torch.float, device)
 
         inputGrad = torch.empty(B, T, N, dtype=torch.float, device=device)
         transGrad = torch.empty(N, N, dtype=torch.float, device=device)
-        args = [
+        run_backward(
+            cls,
+            device,
             B,
             T,
             N,
@@ -180,18 +215,14 @@ class FCCFunction(torch.autograd.Function):
             get_data_ptr_as_bytes(inputGrad),
             get_data_ptr_as_bytes(transGrad),
             get_data_ptr_as_bytes(workspace),
-        ]
-        if input.is_cuda:
-            args.append(get_cuda_stream_as_bytes())
-
-        criterion.backward(*args)
+        )
         return inputGrad, None, transGrad, None
 
 
-class ASGLoss(torch.nn.Module):
+class ASGLoss(nn.Module):
     def __init__(self, N, scale_mode=_C.CriterionScaleMode.NONE):
         super().__init__()
-        self.trans = torch.nn.Parameter(
+        self.trans = nn.Parameter(
             torch.zeros(N, N, dtype=torch.float, requires_grad=True)
         )
         self.scale_mode = scale_mode

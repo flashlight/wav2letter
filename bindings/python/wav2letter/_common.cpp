@@ -33,6 +33,7 @@ void Dictionary_addEntry_1(Dictionary& dict, const std::string& entry) {
 
 PYBIND11_MODULE(_common, m) {
   py::class_<Dictionary>(m, "Dictionary")
+      .def(py::init<>())
       .def(py::init<const std::string&>(), "filename"_a)
       .def("entrySize", &Dictionary::entrySize)
       .def("indexSize", &Dictionary::indexSize)

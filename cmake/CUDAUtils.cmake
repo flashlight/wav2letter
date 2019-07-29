@@ -4,8 +4,6 @@
 # criterion backend), as it searches for CUDA.
 #
 
-include(${CMAKE_MODULE_PATH}/select_compute_arch.cmake)
-
 ### Find CUDA
 find_package(CUDA 9.2 QUIET) # CUDA 9.2 is required for >= ArrayFire 3.6.1
 if (CUDA_FOUND)
@@ -13,6 +11,9 @@ if (CUDA_FOUND)
 else()
   message(FATAL_ERROR "CUDA required to build CUDA criterion backend")
 endif()
+
+# This line must be placed after find_package(CUDA)
+include(${CMAKE_MODULE_PATH}/select_compute_arch.cmake)
 
 ### Set compilation flags
 # NVCC doesn't properly listen to cxx version flags, so manually override.
@@ -28,16 +29,13 @@ endfunction()
 # Detect architectures (see select_compute_arch.cmake) and
 # add appropriate flags to nvcc for gencode/arch/ptx
 function (set_cuda_arch_nvcc_flags)
-  if(NOT CUDA_architecture_build_targets)
-    cuda_detect_installed_gpus(detected_gpus)
-  endif()
   set(
     CUDA_architecture_build_targets
-    ${detected_gpus}
+    "Common"
     CACHE STRING "Detected CUDA architectures for this build"
     )
   cuda_select_nvcc_arch_flags(cuda_arch_flags ${CUDA_architecture_build_targets})
-  message(STATUS "CUDA_architecture_build_targets detected: " ${CUDA_architecture_build_targets})
+  message(STATUS "CUDA architecture flags: " ${cuda_arch_flags})
   # Add to flag list
   set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};${cuda_arch_flags}" PARENT_SCOPE)
   mark_as_advanced(CUDA_architecture_build_targets)

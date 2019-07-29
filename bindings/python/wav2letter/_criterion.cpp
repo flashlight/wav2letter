@@ -10,10 +10,12 @@
 
 #include "libraries/criterion/cpu/ForceAlignmentCriterion.h"
 #include "libraries/criterion/cpu/FullConnectionCriterion.h"
+#include "libraries/criterion/cpu/ViterbiPath.h"
 
 #ifdef W2L_LIBRARIES_USE_CUDA
 #include "libraries/criterion/cuda/ForceAlignmentCriterion.cuh"
 #include "libraries/criterion/cuda/FullConnectionCriterion.cuh"
+#include "libraries/criterion/cuda/ViterbiPath.cuh"
 #endif // W2L_LIBRARIES_USE_CUDA
 
 namespace py = pybind11;
@@ -33,6 +35,7 @@ static T castBytes(const py::bytes& b) {
 
 using CpuFAC = cpu::ForceAlignmentCriterion<float>;
 using CpuFCC = cpu::FullConnectionCriterion<float>;
+using CpuViterbi = cpu::ViterbiPath<float>;
 
 static void CpuFAC_forward(
     int B,
@@ -126,10 +129,29 @@ static void CpuFCC_backward(
       castBytes<void*>(workspace));
 }
 
+static void CpuViterbi_compute(
+    int B,
+    int T,
+    int N,
+    py::bytes input,
+    py::bytes trans,
+    py::bytes path,
+    py::bytes workspace) {
+  CpuViterbi::compute(
+      B,
+      T,
+      N,
+      castBytes<const float*>(input),
+      castBytes<const float*>(trans),
+      castBytes<int*>(path),
+      castBytes<void*>(workspace));
+}
+
 #ifdef W2L_LIBRARIES_USE_CUDA
 
 using CudaFAC = cuda::ForceAlignmentCriterion<float>;
 using CudaFCC = cuda::FullConnectionCriterion<float>;
+using CudaViterbi = cuda::ViterbiPath<float>;
 
 static void CudaFAC_forward(
     int B,
@@ -231,6 +253,26 @@ static void CudaFCC_backward(
       castBytes<cudaStream_t>(stream));
 }
 
+static void CudaViterbi_compute(
+    int B,
+    int T,
+    int N,
+    py::bytes input,
+    py::bytes trans,
+    py::bytes path,
+    py::bytes workspace,
+    py::bytes stream) {
+  CudaViterbi::compute(
+      B,
+      T,
+      N,
+      castBytes<const float*>(input),
+      castBytes<const float*>(trans),
+      castBytes<int*>(path),
+      castBytes<void*>(workspace),
+      castBytes<cudaStream_t>(stream));
+}
+
 #endif // W2L_LIBRARIES_USE_CUDA
 
 PYBIND11_MODULE(_criterion, m) {
@@ -251,6 +293,10 @@ PYBIND11_MODULE(_criterion, m) {
       .def("forward", &CpuFCC_forward)
       .def("backward", &CpuFCC_backward);
 
+  py::class_<CpuViterbi>(m, "CpuViterbiPath")
+      .def("getWorkspaceSize", &CpuViterbi::getWorkspaceSize)
+      .def("compute", &CpuViterbi_compute);
+
 #ifdef W2L_LIBRARIES_USE_CUDA
   m.attr("sizeof_cuda_stream") = py::int_(sizeof(cudaStream_t));
 
@@ -263,5 +309,9 @@ PYBIND11_MODULE(_criterion, m) {
       .def("getWorkspaceSize", &CudaFCC::getWorkspaceSize)
       .def("forward", &CudaFCC_forward)
       .def("backward", &CudaFCC_backward);
+
+  py::class_<CudaViterbi>(m, "CudaViterbiPath")
+      .def("getWorkspaceSize", &CudaViterbi::getWorkspaceSize)
+      .def("compute", &CudaViterbi_compute);
 #endif // W2L_LIBRARIES_USE_CUDA
 }

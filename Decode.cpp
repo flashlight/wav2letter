@@ -465,14 +465,19 @@ int main(int argc, char** argv) {
         meters.werSlice.add(wordPrediction, wordTarget);
         meters.lerSlice.add(letterPrediction, letterTarget);
 
+        auto wordTargetStr = join(" ", wordTarget);
+        auto wordPredictionStr = join(" ", wordPrediction);
+        if (!FLAGS_sclite.empty()) {
+          std::string suffix = " (" + sampleId + ")\n";
+          writeHyp(wordPredictionStr + suffix);
+          writeRef(wordTargetStr + suffix);
+        }
+
         if (FLAGS_show) {
           meters.wer.reset();
           meters.ler.reset();
           meters.wer.add(wordPrediction, wordTarget);
           meters.ler.add(letterPrediction, letterTarget);
-
-          auto wordTargetStr = join(" ", wordTarget);
-          auto wordPredictionStr = join(" ", wordPrediction);
 
           std::stringstream buffer;
           buffer << "|T|: " << wordTargetStr << std::endl;
@@ -492,9 +497,6 @@ int main(int argc, char** argv) {
 
           std::cout << buffer.str();
           if (!FLAGS_sclite.empty()) {
-            std::string suffix = " (" + sampleId + ")\n";
-            writeHyp(wordPredictionStr + suffix);
-            writeRef(wordTargetStr + suffix);
             writeLog(buffer.str());
           }
         }

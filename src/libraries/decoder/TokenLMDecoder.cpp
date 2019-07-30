@@ -98,20 +98,20 @@ void TokenLMDecoder::decodeStep(const float* emissions, int T, int N) {
         }
 
         // If we got a true word
-        for (int i = 0; i < lex->nLabel; i++) {
+        for (auto label : lex->labels) {
           candidatesAdd(
               lmScoreReturn.first,
               lexicon_->getRoot(),
               &prevHyp,
               score + opt_.wordScore,
               n,
-              lex->label[i],
+              label,
               false // prevBlank
           );
         }
 
         // If we got an unknown word and we want to emit
-        if (lex->nLabel == 0 && (opt_.unkScore > kNegativeInfinity)) {
+        if (lex->labels.empty() && (opt_.unkScore > kNegativeInfinity)) {
           candidatesAdd(
               lmScoreReturn.first,
               lexicon_->getRoot(),

@@ -87,84 +87,91 @@ PYBIND11_MODULE(_feature, m) {
           "use_energy"_a = true,
           "raw_energy"_a = true,
           "zero_mean_frame"_a = true)
-      .def("numFrameSizeSamples", &FeatureParams::numFrameSizeSamples)
-      .def("numFrameStrideSamples", &FeatureParams::numFrameStrideSamples)
-      .def("nFft", &FeatureParams::nFft)
-      .def("filterFreqResponseLen", &FeatureParams::filterFreqResponseLen)
-      .def("powSpecFeatSz", &FeatureParams::powSpecFeatSz)
-      .def("mfscFeatSz", &FeatureParams::mfscFeatSz)
-      .def("mfccFeatSz", &FeatureParams::mfccFeatSz)
-      .def("numFrames", &FeatureParams::numFrames)
-      .def_readwrite("samplingFreq", &FeatureParams::samplingFreq)
-      .def_readwrite("frameSizeMs", &FeatureParams::frameSizeMs)
-      .def_readwrite("frameStrideMs", &FeatureParams::frameStrideMs)
-      .def_readwrite("numFilterbankChans", &FeatureParams::numFilterbankChans)
-      .def_readwrite("lowFreqFilterbank", &FeatureParams::lowFreqFilterbank)
-      .def_readwrite("highFreqFilterbank", &FeatureParams::highFreqFilterbank)
-      .def_readwrite("numCepstralCoeffs", &FeatureParams::numCepstralCoeffs)
-      .def_readwrite("lifterParam", &FeatureParams::lifterParam)
-      .def_readwrite("deltaWindow", &FeatureParams::deltaWindow)
-      .def_readwrite("accWindow", &FeatureParams::accWindow)
-      .def_readwrite("windowType", &FeatureParams::windowType)
-      .def_readwrite("preemCoef", &FeatureParams::preemCoef)
-      .def_readwrite("melFloor", &FeatureParams::melFloor)
-      .def_readwrite("ditherVal", &FeatureParams::ditherVal)
-      .def_readwrite("usePower", &FeatureParams::usePower)
-      .def_readwrite("useEnergy", &FeatureParams::useEnergy)
-      .def_readwrite("rawEnergy", &FeatureParams::rawEnergy)
-      .def_readwrite("zeroMeanFrame", &FeatureParams::zeroMeanFrame);
+      .def("num_frame_size_samples", &FeatureParams::numFrameSizeSamples)
+      .def("num_frame_stride_samples", &FeatureParams::numFrameStrideSamples)
+      .def("n_fft", &FeatureParams::nFft)
+      .def("filter_freq_response_len", &FeatureParams::filterFreqResponseLen)
+      .def("pow_spec_feat_sz", &FeatureParams::powSpecFeatSz)
+      .def("mfsc_feat_sz", &FeatureParams::mfscFeatSz)
+      .def("mfcc_feat_sz", &FeatureParams::mfccFeatSz)
+      .def("num_frames", &FeatureParams::numFrames)
+      .def_readwrite("sampling_freq", &FeatureParams::samplingFreq)
+      .def_readwrite("frame_size_ms", &FeatureParams::frameSizeMs)
+      .def_readwrite("frame_stride_ms", &FeatureParams::frameStrideMs)
+      .def_readwrite("num_filterbank_chans", &FeatureParams::numFilterbankChans)
+      .def_readwrite("low_freq_filterbank", &FeatureParams::lowFreqFilterbank)
+      .def_readwrite("high_freq_filterbank", &FeatureParams::highFreqFilterbank)
+      .def_readwrite("num_cepstral_coeffs", &FeatureParams::numCepstralCoeffs)
+      .def_readwrite("lifter_params", &FeatureParams::lifterParam)
+      .def_readwrite("delta_window", &FeatureParams::deltaWindow)
+      .def_readwrite("acc_window", &FeatureParams::accWindow)
+      .def_readwrite("window_type", &FeatureParams::windowType)
+      .def_readwrite("preem_coef", &FeatureParams::preemCoef)
+      .def_readwrite("mel_floor", &FeatureParams::melFloor)
+      .def_readwrite("dither_val", &FeatureParams::ditherVal)
+      .def_readwrite("use_power", &FeatureParams::usePower)
+      .def_readwrite("use_energy", &FeatureParams::useEnergy)
+      .def_readwrite("raw_energy", &FeatureParams::rawEnergy)
+      .def_readwrite("zero_mean_frame", &FeatureParams::zeroMeanFrame);
 
   py::class_<Ceplifter>(m, "Ceplifter")
-      .def(py::init<int64_t, int64_t>())
-      .def("apply", &Ceplifter::apply)
-      .def("applyInPlace", &Ceplifter::applyInPlace);
+      .def(py::init<int64_t, int64_t>(), "num_filters"_a, "lifter_param"_a)
+      .def("apply", &Ceplifter::apply, "input"_a)
+      .def("apply_in_place", &Ceplifter::applyInPlace, "input"_a);
   py::class_<Dct>(m, "Dct")
-      .def(py::init<int64_t, int64_t>())
-      .def("apply", &Dct::apply);
+      .def(py::init<int64_t, int64_t>(), "num_filters"_a, "num_ceps"_a)
+      .def("apply", &Dct::apply, "input"_a);
   py::class_<Derivatives>(m, "Derivatives")
-      .def(py::init<int64_t, int64_t>())
-      .def("apply", &Derivatives::apply);
+      .def(py::init<int64_t, int64_t>(), "delta_window"_a, "acc_window"_a)
+      .def("apply", &Derivatives::apply, "input"_a, "num_feat"_a);
   py::class_<Dither>(m, "Dither")
-      .def(py::init<float>())
-      .def("apply", &Dither::apply)
-      .def("applyInPlace", &Dither::applyInPlace);
+      .def(py::init<float>(), "dither_val"_a)
+      .def("apply", &Dither::apply, "input"_a)
+      .def("apply_in_place", &Dither::applyInPlace, "input"_a);
   py::class_<Mfcc>(m, "Mfcc")
-      .def(py::init<const FeatureParams&>())
-      .def("apply", &Mfcc::apply)
-      .def("batchApply", &Mfcc::batchApply)
-      .def("outputSize", &Mfcc::outputSize)
-      .def("getFeatureParams", &Mfcc::getFeatureParams);
+      .def(py::init<const FeatureParams&>(), "params"_a)
+      .def("apply", &Mfcc::apply, "input"_a)
+      .def("batch_apply", &Mfcc::batchApply, "input"_a, "batch_sz"_a)
+      .def("output_size", &Mfcc::outputSize, "input_sz"_a)
+      .def("get_feature_params", &Mfcc::getFeatureParams);
   py::class_<Mfsc>(m, "Mfsc")
-      .def(py::init<const FeatureParams&>())
-      .def("apply", &Mfsc::apply)
-      .def("batchApply", &Mfsc::batchApply)
-      .def("outputSize", &Mfsc::outputSize)
-      .def("getFeatureParams", &Mfsc::getFeatureParams);
+      .def(py::init<const FeatureParams&>(), "params"_a)
+      .def("apply", &Mfsc::apply, "input"_a)
+      .def("batch_apply", &Mfsc::batchApply, "input"_a, "batch_sz"_a)
+      .def("output_size", &Mfsc::outputSize, "input_sz"_a)
+      .def("get_feature_params", &Mfsc::getFeatureParams);
   py::class_<PowerSpectrum>(m, "PowerSpectrum")
-      .def(py::init<const FeatureParams&>())
-      .def("apply", &PowerSpectrum::apply)
-      .def("batchApply", &PowerSpectrum::batchApply)
-      .def("outputSize", &PowerSpectrum::outputSize)
-      .def("getFeatureParams", &PowerSpectrum::getFeatureParams);
+      .def(py::init<const FeatureParams&>(), "params"_a)
+      .def("apply", &PowerSpectrum::apply, "input"_a)
+      .def("batch_apply", &PowerSpectrum::batchApply, "input"_a, "batch_sz"_a)
+      .def("output_size", &PowerSpectrum::outputSize, "input_sz"_a)
+      .def("get_feature_params", &PowerSpectrum::getFeatureParams);
   py::class_<PreEmphasis>(m, "PreEmphasis")
-      .def(py::init<float, int64_t>())
-      .def("apply", &PreEmphasis::apply)
-      .def("applyInPlace", &PreEmphasis::applyInPlace);
+      .def(py::init<float, int64_t>(), "alpha"_a, "N"_a)
+      .def("apply", &PreEmphasis::apply, "input"_a)
+      .def("apply_in_place", &PreEmphasis::applyInPlace, "input"_a);
   py::class_<TriFilterbank>(m, "TriFilterbank")
-      .def(py::init<
-           int64_t,
-           int64_t,
-           int64_t,
-           int64_t,
-           int64_t,
-           FrequencyScale>())
-      .def("apply", &TriFilterbank::apply)
+      .def(
+          py::init<
+              int64_t,
+              int64_t,
+              int64_t,
+              int64_t,
+              int64_t,
+              FrequencyScale>(),
+          "num_filters"_a,
+          "filter_len"_a,
+          "sampling_freq"_a,
+          "low_freq"_a = 0,
+          "high_freq"_a = -1,
+          "freq_scale"_a = FrequencyScale::MEL)
+      .def("apply", &TriFilterbank::apply, "input"_a, "mel_floor"_a = 0.0)
       .def("filterbank", &TriFilterbank::filterbank);
   py::class_<Windowing>(m, "Windowing")
-      .def(py::init<int64_t, WindowType>())
-      .def("apply", &Windowing::apply)
-      .def("applyInPlace", &Windowing::applyInPlace);
+      .def(py::init<int64_t, WindowType>(), "N"_a, "window"_a)
+      .def("apply", &Windowing::apply, "input"_a)
+      .def("apply_in_place", &Windowing::applyInPlace, "input"_a);
 
-  m.def("frameSignal", w2l::frameSignal<float>);
-  m.def("cblasGemm", w2l::cblasGemm<float>);
+  m.def("frame_signal", w2l::frameSignal<float>, "input"_a, "params"_a);
+  m.def("cblas_gemm", w2l::cblasGemm<float>, "A"_a, "B"_a, "n"_a, "k"_a);
 }

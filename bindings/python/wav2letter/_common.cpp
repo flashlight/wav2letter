@@ -35,22 +35,28 @@ PYBIND11_MODULE(_common, m) {
   py::class_<Dictionary>(m, "Dictionary")
       .def(py::init<>())
       .def(py::init<const std::string&>(), "filename"_a)
-      .def("entrySize", &Dictionary::entrySize)
-      .def("indexSize", &Dictionary::indexSize)
-      .def("addEntry", &Dictionary_addEntry_0, "entry"_a, "idx"_a)
-      .def("addEntry", &Dictionary_addEntry_1, "entry"_a)
-      .def("getEntry", &Dictionary::getEntry, "idx"_a)
-      .def("setDefaultIndex", &Dictionary::setDefaultIndex, "idx"_a)
-      .def("getIndex", &Dictionary::getIndex, "entry"_a)
+      .def("entry_size", &Dictionary::entrySize)
+      .def("index_size", &Dictionary::indexSize)
+      .def("add_entry", &Dictionary_addEntry_0, "entry"_a, "idx"_a)
+      .def("add_entry", &Dictionary_addEntry_1, "entry"_a)
+      .def("get_entry", &Dictionary::getEntry, "idx"_a)
+      .def("set_default_index", &Dictionary::setDefaultIndex, "idx"_a)
+      .def("get_index", &Dictionary::getIndex, "entry"_a)
       .def("contains", &Dictionary::contains, "entry"_a)
-      .def("isContiguous", &Dictionary::isContiguous)
-      .def("mapEntriesToIndices", &Dictionary::mapEntriesToIndices, "entries"_a)
+      .def("is_contiguous", &Dictionary::isContiguous)
       .def(
-          "mapIndicesToEntries", &Dictionary::mapIndicesToEntries, "indices"_a);
+          "map_entries_to_indices",
+          &Dictionary::mapEntriesToIndices,
+          "entries"_a)
+      .def(
+          "map_indices_to_entries",
+          &Dictionary::mapIndicesToEntries,
+          "indices"_a);
 
-  m.def("createWordDict", &createWordDict, "lexicon"_a);
-  m.def("loadWords", &loadWords, "filename"_a, "maxWords"_a = -1);
-  m.def("tkn2Idx", &tkn2Idx, "spelling"_a, "tokenDict"_a, "maxReps"_a);
-  m.def("packReplabels", &packReplabels, "tokens"_a, "dict"_a, "maxReps"_a);
-  m.def("unpackReplabels", &unpackReplabels, "tokens"_a, "dict"_a, "maxReps"_a);
+  m.def("create_word_dict", &createWordDict, "lexicon"_a);
+  m.def("load_words", &loadWords, "filename"_a, "max_words"_a = -1);
+  m.def("tkn_to_idx", &tkn2Idx, "spelling"_a, "token_dict"_a, "max_reps"_a);
+  m.def("pack_replabels", &packReplabels, "tokens"_a, "dict"_a, "max_reps"_a);
+  m.def(
+      "unpack_replabels", &unpackReplabels, "tokens"_a, "dict"_a, "max_reps"_a);
 }

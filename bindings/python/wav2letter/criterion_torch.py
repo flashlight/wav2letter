@@ -60,22 +60,22 @@ def run_backward(cls, device, *args):
     run_direction(cls, device, "backward", *args)
 
 
-def run_getWorkspaceSize(cls, device, *args):
+def run_get_workspace_size(cls, device, *args):
     device = torch.device(device)
     if device.type == "cuda":
-        return cls.cuda_impl().getWorkspaceSize(*args)
+        return cls.cuda_impl().get_workspace_size(*args)
     elif device.type == "cpu":
-        return cls.cpu_impl().getWorkspaceSize(*args)
+        return cls.cpu_impl().get_workspace_size(*args)
     else:
         raise ValueError("unknown/unsupported device type")
 
 
 def create_workspace(cls, device, *args):
     """
-    Select and run CPU/CUDA implementation of `getWorkspaceSize()`,
+    Select and run CPU/CUDA implementation of `get_workspace_size()`,
     then return a byte tensor of appropriate size.
     """
-    workspace_size = run_getWorkspaceSize(cls, device, *args)
+    workspace_size = run_get_workspace_size(cls, device, *args)
     return torch.empty(workspace_size, dtype=torch.uint8, device=device)
 
 

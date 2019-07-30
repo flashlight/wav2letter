@@ -31,15 +31,14 @@ assert len(wavinput) > 0
 assert len(htkfeat) > 0
 
 params = FeatureParams()
-params.samplingFreq = 16000
-params.lowFreqFilterbank = 0
-params.highFreqFilterbank = 8000
-params.zeroMeanFrame = True
-params.numFilterbankChans = 20
-params.numCepstralCoeffs = 13
-params.useEnergy = False
-params.zeroMeanFrame = False
-params.usePower = False
+params.sampling_freq = 16000
+params.low_freq_filterbank = 0
+params.high_freq_filterbank = 8000
+params.num_filterbank_chans = 20
+params.num_cepstral_coeffs = 13
+params.use_energy = False
+params.zero_mean_frame = False
+params.use_power = False
 
 mfcc = Mfcc(params)
 feat = mfcc.apply(wavinput)

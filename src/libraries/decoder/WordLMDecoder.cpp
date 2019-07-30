@@ -101,8 +101,8 @@ void WordLMDecoder::decodeStep(const float* emissions, int T, int N) {
         }
 
         // If we got a true word
-        for (int i = 0; i < lex->nLabel; i++) {
-          auto lmScoreReturn = lm_->score(prevLmState, lex->label[i]);
+        for (auto label : lex->labels) {
+          auto lmScoreReturn = lm_->score(prevLmState, label);
           candidatesAdd(
               lmScoreReturn.first,
               lexicon_->getRoot(),
@@ -110,13 +110,13 @@ void WordLMDecoder::decodeStep(const float* emissions, int T, int N) {
               score + opt_.lmWeight * (lmScoreReturn.second - lexMaxScore) +
                   opt_.wordScore,
               n,
-              lex->label[i],
+              label,
               false // prevBlank
           );
         }
 
         // If we got an unknown word
-        if (lex->nLabel == 0 && (opt_.unkScore > kNegativeInfinity)) {
+        if (lex->labels.empty() && (opt_.unkScore > kNegativeInfinity)) {
           auto lmScoreReturn = lm_->score(prevLmState, unk_);
           candidatesAdd(
               lmScoreReturn.first,

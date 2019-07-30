@@ -94,31 +94,30 @@ PYBIND11_MODULE(_decoder, m) {
       .def(py::init<int>(), "idx"_a)
       .def_readwrite("children", &TrieNode::children)
       .def_readwrite("idx", &TrieNode::idx)
-      .def_readwrite("nLabel", &TrieNode::nLabel)
-      .def_readwrite("label", &TrieNode::label)
-      .def_readwrite("score", &TrieNode::score)
-      .def_readwrite("maxScore", &TrieNode::maxScore);
+      .def_readwrite("labels", &TrieNode::labels)
+      .def_readwrite("scores", &TrieNode::scores)
+      .def_readwrite("max_score", &TrieNode::maxScore);
 
   py::class_<Trie, TriePtr>(m, "Trie")
-      .def(py::init<int, int>(), "maxChildren"_a, "rootIdx"_a)
-      .def("getRoot", &Trie::getRoot)
+      .def(py::init<int, int>(), "max_children"_a, "root_idx"_a)
+      .def("get_root", &Trie::getRoot)
       .def("insert", &Trie::insert, "indices"_a, "label"_a, "score"_a)
       .def("search", &Trie::search, "indices"_a)
       .def("smear", &Trie::smear, "smear_mode"_a);
 
   py::class_<LM, LMPtr, PyLM>(m, "LM")
       .def(py::init<>())
-      .def("start", &LM::start, "startWithNothing"_a)
-      .def("score", &LM::score, "state"_a, "usrTokenIdx"_a)
+      .def("start", &LM::start, "start_with_nothing"_a)
+      .def("score", &LM::score, "state"_a, "usr_token_idx"_a)
       .def("finish", &LM::finish, "state"_a)
-      .def("compareState", &LM::compareState, "state1"_a, "state2"_a);
+      .def("compare_state", &LM::compareState, "state1"_a, "state2"_a);
 
 #ifdef W2L_LIBRARIES_USE_KENLM
   py::class_<KenLM, KenLMPtr, LM>(m, "KenLM")
       .def(
           py::init<const std::string&, const Dictionary&>(),
           "path"_a,
-          "usrTknDict"_a);
+          "usr_token_dict"_a);
 #endif
 
   py::enum_<CriterionType>(m, "CriterionType")
@@ -136,22 +135,22 @@ PYBIND11_MODULE(_decoder, m) {
               const bool,
               const float,
               const CriterionType>(),
-          "beamSize"_a,
-          "beamThreshold"_a,
-          "lmWeight"_a,
-          "wordScore"_a,
-          "unkScore"_a,
-          "logAdd"_a,
-          "silWeight"_a,
-          "criterionType"_a)
-      .def_readwrite("beamSize", &DecoderOptions::beamSize)
-      .def_readwrite("beamThreshold", &DecoderOptions::beamThreshold)
-      .def_readwrite("lmWeight", &DecoderOptions::lmWeight)
-      .def_readwrite("wordScore", &DecoderOptions::wordScore)
-      .def_readwrite("unkScore", &DecoderOptions::unkScore)
-      .def_readwrite("logAdd", &DecoderOptions::logAdd)
-      .def_readwrite("silWeight", &DecoderOptions::silWeight)
-      .def_readwrite("criterionType", &DecoderOptions::criterionType);
+          "beam_size"_a,
+          "beam_threshold"_a,
+          "lm_weight"_a,
+          "word_score"_a,
+          "unk_score"_a,
+          "log_add"_a,
+          "sil_weight"_a,
+          "criterion_type"_a)
+      .def_readwrite("beam_size", &DecoderOptions::beamSize)
+      .def_readwrite("beam_threshold", &DecoderOptions::beamThreshold)
+      .def_readwrite("lm_weight", &DecoderOptions::lmWeight)
+      .def_readwrite("word_score", &DecoderOptions::wordScore)
+      .def_readwrite("unk_score", &DecoderOptions::unkScore)
+      .def_readwrite("log_add", &DecoderOptions::logAdd)
+      .def_readwrite("sil_weight", &DecoderOptions::silWeight)
+      .def_readwrite("criterion_type", &DecoderOptions::criterionType);
 
   py::class_<DecodeResult>(m, "DecodeResult")
       .def(py::init<int>(), "length"_a)
@@ -169,11 +168,15 @@ PYBIND11_MODULE(_decoder, m) {
            const int,
            const int,
            const std::vector<float>&>())
-      .def("decodeBegin", &WordLMDecoder::decodeBegin)
-      .def("decodeStep", &WordLMDecoder_decodeStep)
-      .def("decodeEnd", &WordLMDecoder::decodeEnd)
-      .def("decode", &WordLMDecoder_decode)
-      .def("prune", &WordLMDecoder::prune)
-      .def("getBestHypothesis", &WordLMDecoder::getBestHypothesis)
-      .def("getAllFinalHypothesis", &WordLMDecoder::getAllFinalHypothesis);
+      .def("decode_begin", &WordLMDecoder::decodeBegin)
+      .def(
+          "decode_step", &WordLMDecoder_decodeStep, "emissions"_a, "T"_a, "N"_a)
+      .def("decode_end", &WordLMDecoder::decodeEnd)
+      .def("decode", &WordLMDecoder_decode, "emissions"_a, "T"_a, "N"_a)
+      .def("prune", &WordLMDecoder::prune, "look_back"_a = 0)
+      .def(
+          "get_best_hypothesis",
+          &WordLMDecoder::getBestHypothesis,
+          "look_back"_a = 0)
+      .def("get_all_final_hypothesis", &WordLMDecoder::getAllFinalHypothesis);
 }

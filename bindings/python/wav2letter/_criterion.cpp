@@ -284,34 +284,34 @@ PYBIND11_MODULE(_criterion, m) {
       .value("TARGET_SZ_SQRT", CriterionScaleMode::TARGET_SZ_SQRT);
 
   py::class_<CpuFAC>(m, "CpuForceAlignmentCriterion")
-      .def("getWorkspaceSize", &CpuFAC::getWorkspaceSize)
+      .def("get_workspace_size", &CpuFAC::getWorkspaceSize)
       .def("forward", &CpuFAC_forward)
       .def("backward", &CpuFAC_backward);
 
   py::class_<CpuFCC>(m, "CpuFullConnectionCriterion")
-      .def("getWorkspaceSize", &CpuFCC::getWorkspaceSize)
+      .def("get_workspace_size", &CpuFCC::getWorkspaceSize)
       .def("forward", &CpuFCC_forward)
       .def("backward", &CpuFCC_backward);
 
   py::class_<CpuViterbi>(m, "CpuViterbiPath")
-      .def("getWorkspaceSize", &CpuViterbi::getWorkspaceSize)
+      .def("get_workspace_size", &CpuViterbi::getWorkspaceSize)
       .def("compute", &CpuViterbi_compute);
 
 #ifdef W2L_LIBRARIES_USE_CUDA
   m.attr("sizeof_cuda_stream") = py::int_(sizeof(cudaStream_t));
 
   py::class_<CudaFAC>(m, "CudaForceAlignmentCriterion")
-      .def("getWorkspaceSize", &CudaFAC::getWorkspaceSize)
+      .def("get_workspace_size", &CudaFAC::getWorkspaceSize)
       .def("forward", &CudaFAC_forward)
       .def("backward", &CudaFAC_backward);
 
   py::class_<CudaFCC>(m, "CudaFullConnectionCriterion")
-      .def("getWorkspaceSize", &CudaFCC::getWorkspaceSize)
+      .def("get_workspace_size", &CudaFCC::getWorkspaceSize)
       .def("forward", &CudaFCC_forward)
       .def("backward", &CudaFCC_backward);
 
   py::class_<CudaViterbi>(m, "CudaViterbiPath")
-      .def("getWorkspaceSize", &CudaViterbi::getWorkspaceSize)
+      .def("get_workspace_size", &CudaViterbi::getWorkspaceSize)
       .def("compute", &CudaViterbi_compute);
 #endif // W2L_LIBRARIES_USE_CUDA
 }

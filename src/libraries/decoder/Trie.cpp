@@ -35,10 +35,9 @@ Trie::insert(const std::vector<int>& indices, int label, float score) {
     }
     node = node->children[idx];
   }
-  if (node->nLabel < kTrieMaxLabel) {
-    node->label[node->nLabel] = label;
-    node->score[node->nLabel] = score;
-    node->nLabel++;
+  if (node->labels.size() < kTrieMaxLabel) {
+    node->labels.push_back(label);
+    node->scores.push_back(score);
   } else {
     std::cerr << "[Trie] Trie label number reached limit: " << kTrieMaxLabel
               << "\n";
@@ -77,8 +76,8 @@ double TrieLogAdd(double log_a, double log_b) {
 
 void smearNode(TrieNodePtr node, SmearingMode smearMode) {
   node->maxScore = -std::numeric_limits<float>::infinity();
-  for (int idx = 0; idx < node->nLabel; idx++) {
-    node->maxScore = TrieLogAdd(node->maxScore, node->score[idx]);
+  for (auto score : node->scores) {
+    node->maxScore = TrieLogAdd(node->maxScore, score);
   }
   for (auto child : node->children) {
     auto childNode = child.second;

@@ -13,7 +13,7 @@
 
 namespace w2l {
 
-const int kTrieMaxLabel = 6;
+constexpr int kTrieMaxLabel = 6;
 
 enum class SmearingMode {
   NONE = 0,
@@ -28,26 +28,23 @@ struct TrieNode {
   explicit TrieNode(int idx)
       : children(std::unordered_map<int, std::shared_ptr<TrieNode>>()),
         idx(idx),
-        nLabel(0),
-        label(kTrieMaxLabel),
-        score(kTrieMaxLabel),
-        maxScore(0) {}
+        maxScore(0) {
+    labels.reserve(kTrieMaxLabel);
+    scores.reserve(kTrieMaxLabel);
+  }
 
-  // Pointers to the childern of a node
+  // Pointers to the children of a node
   std::unordered_map<int, std::shared_ptr<TrieNode>> children;
 
   // Node index
   int idx;
 
-  // Number of labels a node has. Note that nLabel_ is positive
-  // only if the current code represent a completed token.
-  int nLabel;
+  // Labels of words that are constructed from the given path. Note that
+  // `labels` is nonempty only if the current node represents a completed token.
+  std::vector<int> labels;
 
-  // Labels of words that are constructed from the given path
-  std::vector<int> label;
-
-  // Scores (score_ should have the same size as label_)
-  std::vector<float> score;
+  // Scores (`scores` should have the same size as `labels`)
+  std::vector<float> scores;
 
   // Maximum score of all the labels if this node is a leaf,
   // otherwise it will be the value after trie smearing.

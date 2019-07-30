@@ -8,6 +8,7 @@ add_library(
 target_sources(
   module
   INTERFACE
+  ${CMAKE_CURRENT_SOURCE_DIR}/ConvLmModule.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SpecAugment.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/TDSBlock.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/W2lModule.cpp

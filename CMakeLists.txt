@@ -144,9 +144,6 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/src/criterion)
 # Data
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/data)
 
-# LM
-add_subdirectory(${PROJECT_SOURCE_DIR}/src/lm)
-
 # Module
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/module)
 
@@ -180,7 +177,6 @@ target_link_libraries(
   common
   criterion
   data
-  lm
   module
   runtime
   )

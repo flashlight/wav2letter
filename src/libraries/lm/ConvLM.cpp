@@ -7,33 +7,27 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#include <iostream>
+#include "libraries/lm/ConvLM.h"
 
-#include "common/Defines.h"
-#include "common/Utils.h"
-#include "lm/ConvLM.h"
-#include "runtime/Serial.h"
+#include <cmath>
+#include <cstring>
+#include <iostream>
 
 namespace w2l {
 
-// TODO: ConvLM should not depend on `runtime/Serial.h`. This ctor should take
-// fl::Module and Dictionary directly instead of path strings.
-
 ConvLM::ConvLM(
-    const std::string& modelPath,
+    const GetConvLmScoreFunc& getConvLmScoreFunc,
     const std::string& tokenVocabPath,
     const Dictionary& usrTknDict,
     int lmMemory,
     int beamSize,
     int historySize)
-    : lmMemory_(lmMemory), beamSize_(beamSize), maxHistorySize_(historySize) {
+    : lmMemory_(lmMemory),
+      beamSize_(beamSize),
+      getConvLmScoreFunc_(getConvLmScoreFunc),
+      maxHistorySize_(historySize) {
   if (historySize < 1) {
     throw std::invalid_argument("[ConvLM] History size is too small.");
-  }
-
-  if (!fileExists(modelPath)) {
-    throw std::runtime_error(
-        "[ConvLM] File with ConvLM model '" + modelPath + "' doesn't exist");
   }
 
   /* Load token vocabulary */
@@ -44,12 +38,6 @@ ConvLM::ConvLM(
   vocab_.setDefaultIndex(vocab_.getIndex(kUnkToken));
   vocabSize_ = vocab_.indexSize();
   std::cerr << "[ConvLM]: vocabulary size of convLM " << vocabSize_ << "\n";
-
-  /* Load LM */
-  std::cerr << "[ConvLM]: Loading LM from " << modelPath << "\n";
-  W2lSerializer::load(modelPath, network_);
-  network_->eval();
-  std::cerr << "[ConvLM]: Finish loading LM from " << modelPath << "\n";
 
   /* Create index map */
   usrToLmIdxMap_.resize(usrTknDict.indexSize());
@@ -127,7 +115,8 @@ std::pair<LMStatePtr, float> ConvLM::scoreWithLmIdx(
     cacheIndices_[inState] = newIdx;
 
     std::vector<int> lastTokenPositions = {inState->length - 1};
-    cache_[newIdx] = getLogProb(inState->tokens, lastTokenPositions)[0];
+    cache_[newIdx] =
+        getConvLmScoreFunc_(inState->tokens, lastTokenPositions, -1, 1)[0];
     score = cache_[newIdx][tokenIdx];
   }
   if (std::isnan(score) || !std::isfinite(score)) {
@@ -227,7 +216,7 @@ void ConvLM::updateCache(std::vector<LMStatePtr> states) {
           "[ConvLM] Invalid batch: [" + std::to_string(nBatchStates) + " x " +
           std::to_string(longestHistory) + "]");
     }
-    auto batchedProb = getLogProb(
+    auto batchedProb = getConvLmScoreFunc_(
         batchedTokens_, lastTokenPositions, longestHistory, nBatchStates);
 
     // Place probabilities in cache
@@ -244,46 +233,6 @@ void ConvLM::updateCache(std::vector<LMStatePtr> states) {
           vocabSize_ * sizeof(float));
     }
   }
-}
-
-std::vector<std::vector<float>> ConvLM::getLogProb(
-    const std::vector<int>& inputs,
-    const std::vector<int>& lastTokenPositions,
-    int sampleSize,
-    int batchSize) {
-  sampleSize = sampleSize > 0 ? sampleSize : inputs.size();
-  if (sampleSize * batchSize > inputs.size()) {
-    throw std::invalid_argument(
-        "[ConvLM] Incorrect sample size (" + std::to_string(sampleSize) +
-        ") or batch size (" + std::to_string(batchSize) + ").");
-  }
-  af::array inputData(sampleSize, batchSize, inputs.data());
-  fl::Variable output = network_->forward({fl::input(inputData)})[0];
-
-  if (af::count<int>(af::isNaN(output.array())) != 0) {
-    throw std::runtime_error("[ConvLM] Encountered NaNs in propagation");
-  }
-  std::vector<std::vector<float>> chosenFramePred(batchSize);
-  auto preds = af::reorder(output.array(), 2, 1, 0); // (b t c)
-  if (preds.dims(0) != batchSize) {
-    throw std::logic_error(
-        "[ConvLM]: incorrect predictions: batch should be " +
-        std::to_string(batchSize) + " but it is " +
-        std::to_string(preds.dims(0)));
-  }
-  for (int idx = 0; idx < batchSize; idx++) {
-    if ((lastTokenPositions[idx] < 0) ||
-        (lastTokenPositions[idx] >= preds.dims(1))) {
-      throw std::logic_error(
-          "[ConvLM]: trying the access to batch idx " + std::to_string(idx) +
-          " and time idx " + std::to_string(lastTokenPositions[idx]) +
-          " while the sizes are b: " + std::to_string(preds.dims(0)) +
-          " t: " + std::to_string(preds.dims(1)));
-    }
-    chosenFramePred[idx] =
-        afToVector<float>(preds.row(idx).col(lastTokenPositions[idx]));
-  }
-  return chosenFramePred;
 }
 
 int ConvLM::compareState(const LMStatePtr& state1, const LMStatePtr& state2)

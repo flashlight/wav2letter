@@ -28,8 +28,8 @@
 #include "libraries/decoder/Seq2SeqDecoder.h"
 #include "libraries/decoder/TokenLMDecoder.h"
 #include "libraries/decoder/WordLMDecoder.h"
+#include "libraries/lm/ConvLM.h"
 #include "libraries/lm/KenLM.h"
-#include "lm/ConvLM.h"
 #include "module/module.h"
 #include "runtime/runtime.h"
 
@@ -282,9 +282,20 @@ int main(int argc, char** argv) {
       LOG(FATAL) << "[LM constructing] Failed to load LM: " << FLAGS_lm;
     }
   } else if (FLAGS_lmtype == "convlm") {
+    // Non-thread-safe convLM will be constructed independently in each thread.
     af::setDevice(0);
+    LOG(INFO) << "[ConvLM]: Loading LM from " << FLAGS_lm;
+    std::shared_ptr<fl::Module> convLmModel;
+    W2lSerializer::load(FLAGS_lm, convLmModel);
+    convLmModel->eval();
+
+    auto getConvLmScoreFunc = buildGetConvLmScoreFunction(convLmModel);
     lm = std::make_shared<ConvLM>(
-        FLAGS_lm, FLAGS_lm_vocab, usrDict, FLAGS_lm_memory, FLAGS_beamsize);
+        getConvLmScoreFunc,
+        FLAGS_lm_vocab,
+        usrDict,
+        FLAGS_lm_memory,
+        FLAGS_beamsize);
   } else {
     LOG(FATAL) << "[LM constructing] Invalid LM Type: " << FLAGS_lmtype;
   }
@@ -346,8 +357,14 @@ int main(int argc, char** argv) {
       // Make a copy for non-main threads.
       if (tid != 0) {
         if (FLAGS_lmtype == "convlm") {
+          LOG(INFO) << "[ConvLM]: Loading LM from " << FLAGS_lm;
+          std::shared_ptr<fl::Module> convLmModel;
+          W2lSerializer::load(FLAGS_lm, convLmModel);
+          convLmModel->eval();
+
+          auto getConvLmScoreFunc = buildGetConvLmScoreFunction(convLmModel);
           localLm = std::make_shared<ConvLM>(
-              FLAGS_lm,
+              getConvLmScoreFunc,
               FLAGS_lm_vocab,
               usrDict,
               FLAGS_lm_memory,

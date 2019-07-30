@@ -19,6 +19,7 @@ if (W2L_LIBRARIES_USE_KENLM)
     lm-library
     INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/KenLM.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ConvLM.cpp
     )
 
   target_link_libraries(

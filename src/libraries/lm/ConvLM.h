@@ -8,12 +8,16 @@
  */
 #pragma once
 
-#include <flashlight/flashlight.h>
+#include <functional>
 
+#include "libraries/common/Defines.h"
 #include "libraries/common/Dictionary.h"
 #include "libraries/lm/LM.h"
 
 namespace w2l {
+
+using GetConvLmScoreFunc = std::function<std::vector<std::vector<
+    float>>(const std::vector<int>&, const std::vector<int>&, int, int)>;
 
 struct ConvLMState {
   std::vector<int> tokens;
@@ -27,7 +31,7 @@ struct ConvLMState {
 class ConvLM : public LM {
  public:
   ConvLM(
-      const std::string& modelPath,
+      const GetConvLmScoreFunc& getConvLmScoreFunc,
       const std::string& tokenVocabPath,
       const Dictionary& usrTknDict,
       int lmMemory = 10000,
@@ -57,16 +61,10 @@ class ConvLM : public LM {
   std::vector<int> batchedTokens_;
 
   Dictionary vocab_;
-  std::shared_ptr<fl::Module> network_;
+  GetConvLmScoreFunc getConvLmScoreFunc_;
 
   int vocabSize_;
   int maxHistorySize_;
-
-  std::vector<std::vector<float>> getLogProb(
-      const std::vector<int>& input,
-      const std::vector<int>& lastTokenPositions,
-      int sampleSize = -1,
-      int batchSize = 1);
 
   static ConvLMState* getRawState(const LMStatePtr& state);
 

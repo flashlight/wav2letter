@@ -242,6 +242,10 @@ std::shared_ptr<Module> parseLines(
     return std::make_shared<ReLU>();
   }
 
+  if (params[0] == "R6") {
+    return std::make_shared<ReLU6>();
+  }
+
   if (params[0] == "PR") {
     auto numParams = params.size() > 1 ? std::stoi(params[1]) : 1;
     auto initVal = params.size() > 2 ? std::stod(params[2]) : 0.25;

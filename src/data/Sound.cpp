@@ -327,25 +327,25 @@ void saveSound(
       writtenCount = sf_writef_float(
           file,
           const_cast<float*>(reinterpret_cast<const float*>(input.data())) +
-              offsetCount,
+              offsetCount * channels,
           writableCount);
     } else if (std::is_same<T, double>::value) {
       writtenCount = sf_writef_double(
           file,
           const_cast<double*>(reinterpret_cast<const double*>(input.data())) +
-              offsetCount,
+              offsetCount * channels,
           writableCount);
     } else if (std::is_same<T, int>::value) {
       writtenCount = sf_writef_int(
           file,
           const_cast<int*>(reinterpret_cast<const int*>(input.data())) +
-              offsetCount,
+              offsetCount * channels,
           writableCount);
     } else if (std::is_same<T, short>::value) {
       writtenCount = sf_writef_short(
           file,
           const_cast<short*>(reinterpret_cast<const short*>(input.data())) +
-              offsetCount,
+              offsetCount * channels,
           writableCount);
     } else {
       throw std::logic_error("saveSound: called with unsupported T");

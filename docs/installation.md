@@ -1,39 +1,61 @@
 # Building wav2letter++
 
-## Build Requirements
-- A C++ compiler with good C++ 11 support (e.g. g++ >= 4.8)
-- [cmake](https://cmake.org/) — version 3.5.1 or later, make
-
 ## Dependencies
-- [flashlight](https://github.com/facebookresearch/flashlight/) is required.
-  flashlight _must_ be built with distributed training enabled.
-- [libsndfile](https://github.com/erikd/libsndfile) is required for loading
-  audio. If using wav2letter++ with `flac` files, `libsndfile`
-  [must be built](https://github.com/erikd/libsndfile#requirements) with `Ogg`,
-  `Vorbis` and `FLAC` libraries.
-- Any CBLAS library, such as
-  [ATLAS](http://math-atlas.sourceforge.net/),
-  [OpenBLAS](https://www.openblas.net/),
-  [Accelerate](https://developer.apple.com/documentation/accelerate/blas), or
-  [Intel MKL](https://software.intel.com/en-us/mkl),
-  is required for featurization. Intel MKL will be used preferentially unless
-  otherwise specified.
-- [FFTW](http://www.fftw.org/) is required for featurization.
-- [KenLM](https://github.com/kpu/kenlm) is required for the decoder. One of
-  LZMA, BZip2, or Z is required for LM compression with KenLM.
-  * **NB:** KenLM should be built with position-independent code (`-fPIC`) enabled, otherwise wav2letter++ python bindings for decoder will not work.
-  * In KenLM build directory: `cmake .. -DCMAKE_BUILD_TYPE=Release -DKENLM_MAX_ORDER=6 -DCMAKE_POSITION_INDEPENDENT_CODE=ON`
-- [gflags](https://github.com/gflags/gflags) is required.
-- [glog](https://github.com/google/glog) is required.
 
-The following dependencies are automatically downloaded/built on build:
-- [gtest and gmock](https://github.com/google/googletest) 1.8.1 is built if
-  building tests.
-- If using the CUDA criterion backend (see below), [NVIDIA cub](https://github.com/NVlabs/cub) 1.8.0 is downloaded and linked to criterion CUDA kernels.
+### 1. flashlight
 
-### Optional Dependencies
-- If `flashlight` was built with CUDA backend, then CUDA >= 9.2 is required to build custom CUDA kernels for wav2letter++ criterions. Using [CUDA 9.2](https://developer.nvidia.com/cuda-92-download-archive) is recommended.
-- wav2letter++ will try to compile with [OpenMP](https://www.openmp.org/) for better performance.
+`wav2letter++` uses **[flashlight](https://github.com/facebookresearch/flashlight/)** as its core ML backend.
+- Please follow the provided [install procedures](https://fl.readthedocs.io/en/latest/installation.html).
+- wav2letter++ requires flashlight built with distributed training enabled (default).
+
+### 2. KenLM
+
+`wav2letter++` uses [KenLM](https://github.com/kpu/kenlm) to allow beam-search decoding with an n-gram language model.
+- _At least one_ of LZMA, BZip2, or Z is required for LM compression with KenLM.
+- It is highly recommended to build KenLM with position-independent code (`-fPIC`) enabled, to enable python compatibility.
+- After installing, run `export KENLM_ROOT_DIR=...` so that `wav2letter++` can find it. This is needed because KenLM doesn't support a `make install` step.
+
+Example build commands on Ubuntu:
+
+    sudo apt-get install liblzma-dev libbz2-dev libzstd-dev
+    git clone https://github.com/kpu/kenlm.git
+    cd kenlm
+    mkdir -p build && cd build
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DKENLM_MAX_ORDER=20 -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+    make -j16
+    # don't forget to export KENLM_ROOT_DIR
+
+### 3. Additional Dependencies
+
+The following additional packages are required:
+- Any CBLAS library, i.e. _at least one_ of these:
+	- [ATLAS](http://math-atlas.sourceforge.net/)
+	- [OpenBLAS](https://www.openblas.net/)
+	- [Accelerate](https://developer.apple.com/documentation/accelerate/blas)
+	- [Intel MKL](https://software.intel.com/en-us/mkl) (used preferentially if present)
+- [FFTW3](http://www.fftw.org/)
+- [libsndfile](https://github.com/erikd/libsndfile)
+	- Should be built with `Ogg`, `Vorbis`, and `FLAC` libraries.
+- [gflags](https://github.com/gflags/gflags)
+- [glog](https://github.com/google/glog)
+
+Example (Ubuntu). The following command will install all the above packages:
+
+    apt-get install libsndfile1-dev libopenblas-dev libfftw3-dev libgflags-dev libgoogle-glog-dev
+
+### 4. Optional Notes
+
+The following dependencies should be already installed for flashlight:
+- A C++ compiler with good C++11 support (e.g. g++ >= 4.8)
+- [cmake](https://cmake.org/) >= 3.5.1, and `make`
+- [CUDA](https://developer.nvidia.com/cuda-downloads) >= 9.2, only if using CUDA backend
+
+The following dependencies are automatically downloaded and built by cmake:
+- [gtest and gmock](https://github.com/google/googletest) 1.8.1, only if building tests
+- [CUB](https://github.com/NVlabs/cub) 1.8.0, only if using CUDA backend
+
+The following dependencies are optional:
+- [OpenMP](https://www.openmp.org/), if present, will be used for better performance.
 
 ## Build Options
 | Option                   | Configuration       | Default Value |
@@ -66,7 +88,7 @@ produces three binaries in the `build` directory:
   dataset.
 
 ### Building on Linux
-wav2letter++ has been tested on Ubuntu 16.04 and CentOS 7.5.
+wav2letter++ has been tested on many Linux distributions including Ubuntu, Debian, CentOS, Amazon Linux, and RHEL.
 
 Assuming you have [ArrayFire](https://github.com/arrayfire/arrayfire/wiki/Build-Instructions-for-Linux), [flashlight](https://fl.readthedocs.io/en/latest/installation.html), [libsndfile](https://github.com/erikd/libsndfile#hacking), and [KenLM](https://github.com/kpu/kenlm#compiling) built/installed, install the below dependencies with `apt` (or your distribution's package manager):
 ```
@@ -142,3 +164,47 @@ To build wav2letter++ with Docker:
   ```
 
   For logging during training/testing/decoding inside a container, use the `--logtostderr=1` flag.
+
+## Building Python bindings
+
+### Dependencies
+
+We require `python` >= 3.6 with the following packages installed:
+- [packaging](https://pypi.org/project/packaging/)
+- [torch](https://pypi.org/project/torch/)
+
+[Anaconda](https://www.anaconda.com/distribution/) makes this easy. There are plenty of tutorials on how to set this up.
+
+Aside from the above, the dependencies for Python bindings are a **strict subset** of the dependencies for the main wav2letter++ build. So if you already have the dependencies to build wav2letter++, you're all set to build python bindings as well.
+
+The following dependencies **are required** to build python bindings:
+- [KenLM](https://github.com/kpu/kenlm)
+- [ATLAS](http://math-atlas.sourceforge.net/) or [OpenBLAS](https://www.openblas.net/)
+- [FFTW3](http://www.fftw.org/)
+- [cmake](https://cmake.org/) >= 3.5.1, and `make`
+- [CUDA](https://developer.nvidia.com/cuda-downloads) >= 9.2
+
+Please refer to the previous sections for details on how to install the above dependencies.
+
+The following dependencies **are not required** to build python bindings:
+- flashlight
+- libsndfile
+- gflags
+- glog
+
+### Build Instructions
+
+Once the dependencies are satisfied, simply run from wav2letter root:
+
+    cd bindings/python
+    pip install -e .
+
+Note that if you encounter errors, you'll probably have to `rm -rf build` before retrying the install.
+
+### Advanced Options
+
+The following environment variables can be used to control various options:
+- `USE_CUDA=0` removes the CUDA dependency, but you won't be able to use ASG criterion with CUDA tensors.
+- `USE_KENLM=0` removes the KenLM dependency, but you won't be able to use the decoder unless you write C++ pybind11 bindings for your own LM.
+- `USE_MKL=1` will use Intel MKL for featurization but this may cause dynamic loading conflicts.
+- If you do not have `torch`, you'll only have a raw pointer interface to ASG criterion instead of `class ASGLoss(torch.nn.Module)`.

@@ -22,6 +22,8 @@ To get started with wav2letter++, checkout the [tutorials](tutorials) section.
 
 We also provide complete recipes for WSJ, Timit and Librispeech and they can be found in [recipes](recipes) folder.
 
+Finally, we provide [Python bindings](bindings/python) for a subset of wav2letter++ (featurization, decoder, and ASG criterion).
+
 ## Citation
 
 If you use the code in your paper, then please cite it as:

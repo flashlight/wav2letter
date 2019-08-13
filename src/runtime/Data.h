@@ -9,10 +9,21 @@
 #pragma once
 
 #include "common/Utils.h"
+#include "data/ListFileDataset.h"
 #include "data/W2lDataset.h"
 #include "libraries/common/Dictionary.h"
 
 namespace w2l {
+
+std::shared_ptr<fl::Dataset> loadDataset(
+    const std::vector<std::string>& paths,
+    const std::string& rootDir = "",
+    int64_t batchSize = 1,
+    int64_t worldRank = 0,
+    int64_t worldSize = 1,
+    const HostTransformFunction& inputTransform = nullptr,
+    const HostTransformFunction& targetTransform = nullptr);
+
 std::shared_ptr<W2lDataset> createDataset(
     const std::string& path,
     const DictionaryMap& dicts,

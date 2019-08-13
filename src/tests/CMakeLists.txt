@@ -54,6 +54,7 @@ if (W2L_BUILD_TESTS)
   build_test(${CMAKE_SOURCE_DIR}/src/criterion/attention/test/WindowTest.cpp)
   # Data
   build_test(${CMAKE_SOURCE_DIR}/src/data/test/DataTest.cpp)
+  build_test(${CMAKE_SOURCE_DIR}/src/data/test/ListFileDatasetTest.cpp)
   build_test(${CMAKE_SOURCE_DIR}/src/data/test/SoundTest.cpp)
   # Decoder
   build_test(${CMAKE_SOURCE_DIR}/src/decoder/test/DecoderTest.cpp)

@@ -75,4 +75,52 @@ std::shared_ptr<W2lDataset> createDataset(
 
   return ds;
 }
+
+std::shared_ptr<fl::Dataset> loadDataset(
+    const std::vector<std::string>& paths,
+    const std::string& rootDir /*  = "" */,
+    int64_t batchSize /* = 1 */,
+    int64_t worldRank /* = 0 */,
+    int64_t worldSize /* = 1 */,
+    const HostTransformFunction& inputTransform /*  = nullptr */,
+    const HostTransformFunction& targetTransform /* = nullptr */) {
+  std::vector<std::shared_ptr<const fl::Dataset>> listDs;
+  std::vector<double> sizes;
+  for (auto& path : paths) {
+    auto lsDs = std::make_shared<ListFileDataset>(
+        pathsConcat(rootDir, path), inputTransform, targetTransform);
+    listDs.emplace_back(lsDs);
+    const auto& curSizes = lsDs->getSampleSizes();
+    sizes.insert(sizes.end(), curSizes.begin(), curSizes.end());
+  }
+
+  // Order Dataset
+  std::vector<int64_t> sortedIds(sizes.size());
+  std::iota(sortedIds.begin(), sortedIds.end(), 0);
+  auto cmp = [&sizes](const int64_t& l, const int64_t& r) {
+    return sizes[l] < sizes[r];
+  };
+  std::stable_sort(sortedIds.begin(), sortedIds.end(), cmp);
+
+  auto mergedDs = std::make_shared<fl::MergeDataset>(listDs);
+
+  auto sortedDs = std::make_shared<fl::ResampleDataset>(mergedDs, sortedIds);
+
+  // Partition the dataset and distribute
+  auto partitions = fl::partitionByRoundRobin(
+      sortedDs->size(), worldRank, worldSize, batchSize);
+  auto paritionDs = std::make_shared<fl::ResampleDataset>(sortedDs, partitions);
+
+  // Batch the dataset
+  using fl::join;
+  return std::make_shared<fl::BatchDataset>(
+      paritionDs,
+      batchSize,
+      fl::BatchDatasetPolicy::INCLUDE_LAST,
+      std::vector<fl::Dataset::BatchFunction>{
+          [](const std::vector<af::array>& arr) { return join(arr, 0, 3); },
+          [](const std::vector<af::array>& arr) { return join(arr, -1, 1); },
+          [](const std::vector<af::array>& arr) { return join(arr, 0, 1); },
+          [](const std::vector<af::array>& arr) { return join(arr, 0, 1); }});
+}
 } // namespace w2l

@@ -2,13 +2,13 @@
 
 [![CircleCI](https://circleci.com/gh/facebookresearch/wav2letter.svg?style=svg)](https://circleci.com/gh/facebookresearch/wav2letter)
 
-wav2letter++ is a fast open source speech processing toolkit from the Speech Team at Facebook AI Research.
-It is written entirely in C++ and uses the [ArrayFire](https://github.com/arrayfire/arrayfire) tensor library and the [flashlight](https://github.com/facebookresearch/flashlight) machine learning library for maximum efficiency.
-Our approach is detailed in this [arXiv paper](https://arxiv.org/abs/1812.07625).
+wav2letter++ is a fast, open source speech processing toolkit from the Speech team at Facebook AI Research built to facilitate research in end-to-end models for speech recognition. It is written entirely in C++ and uses the [ArrayFire](https://github.com/arrayfire/arrayfire) tensor library and the [flashlight](https://github.com/facebookresearch/flashlight) machine learning library for maximum efficiency. Our approach is detailed in this [arXiv paper](https://arxiv.org/abs/1812.07625).
 
-The goal of this software is to facilitate research in end-to-end models for speech recognition.
+This repository also contains pre-trained models and implementations for various ASR results including:
+- [Likhomanenko et al. (2019): Who Needs Words? Lexicon-free Speech Recognition](models/lexicon_free.md)
+- [Hannun et al. (2019): Sequence-to-Sequence Speech Recognition with Time-Depth Separable Convolutions](models/tds.md)
 
-The previous version of wav2letter (written in Lua) can be found in the "wav2letter-lua" branch under the repository.
+The previous iteration of wav2letter (written in Lua) can be found in the [`wav2letter-lua`](https://github.com/facebookresearch/wav2letter/tree/wav2letter-lua) branch.
 
 ## Building wav2letter++
 See [Building Instructions](docs/installation.md) for details.

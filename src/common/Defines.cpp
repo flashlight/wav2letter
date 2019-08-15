@@ -104,6 +104,14 @@ DEFINE_double(melfloor, 1.0, "specify optional mel floor for mfcc/mfsc/pow");
 DEFINE_int64(filterbanks, 40, "Number of mel-filter bank channels");
 DEFINE_int64(devwin, 0, "Window length for delta and doubledelta derivatives");
 DEFINE_int64(fftcachesize, 1, "number of cached cuFFT plans in GPU memory");
+DEFINE_int64(
+    framesizems,
+    25,
+    "Window size in millisecond for power spectrum features");
+DEFINE_int64(
+    framestridems,
+    10,
+    "Stride millisecond for power spectrum feature");
 
 // RUN OPTIONS
 DEFINE_string(datadir, "", "speech data directory");

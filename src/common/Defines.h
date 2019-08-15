@@ -48,8 +48,6 @@ constexpr int kTargetPadValue = -1;
 constexpr int kMaxDevicePerNode = 8;
 
 // Feature params
-constexpr int kFrameSizeMs = 25;
-constexpr int kFrameStrideMs = 10;
 constexpr int kLifterParam = 22;
 constexpr int kPrefetchSize = 2;
 
@@ -124,6 +122,8 @@ DECLARE_double(melfloor);
 DECLARE_int64(filterbanks);
 DECLARE_int64(devwin);
 DECLARE_int64(fftcachesize);
+DECLARE_int64(framesizems);
+DECLARE_int64(framestridems);
 
 /* ========== RUN OPTIONS ========== */
 

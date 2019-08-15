@@ -213,8 +213,8 @@ FeatureParams defineSpeechFeatureParams() {
 
   // PowerSpectrum, Mfsc, Mfcc
   params.samplingFreq = FLAGS_samplerate;
-  params.frameSizeMs = kFrameSizeMs;
-  params.frameStrideMs = kFrameStrideMs;
+  params.frameSizeMs = FLAGS_framesizems;
+  params.frameStrideMs = FLAGS_framestridems;
   params.lowFreqFilterbank = 0;
   params.highFreqFilterbank = FLAGS_samplerate / 2;
   params.zeroMeanFrame = false;

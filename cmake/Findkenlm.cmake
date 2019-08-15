@@ -62,9 +62,15 @@ find_file(KENLM_MODEL_HEADER
     ${KENLM_DIR}
     ${KENLM_DIR}/lm
     $ENV{KENLM_INC}
+    ${KENLM_INC}
     $ENV{KENLM_ROOT_DIR}
     $ENV{KENLM_ROOT_DIR}/lm
     ${KENLM_LIB}
+  PATHS
+    ${KENLM_INC}
+    $ENV{KENLM_IN}
+    ${KENLM_ROOT_DIR}
+    $ENV{KENLM_ROOT_DIR}
   )
 
 if(KENLM_MODEL_HEADER)

@@ -123,7 +123,7 @@ TEST(SoundTest, OggReadWrite) {
   ASSERT_EQ(vecFloat.size(), vecFloatOut.size());
 
   for (int64_t i = 0; i < vecFloat.size(); ++i) {
-    ASSERT_NEAR(vecFloat[i], vecFloatOut[i], 1E-3);
+    ASSERT_NEAR(vecFloat[i], vecFloatOut[i], 5E-3);
   }
 }
 

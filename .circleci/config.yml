@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+ # Copyright (c) Facebook, Inc. and its affiliates.
  # All rights reserved.
  #
  # This source code is licensed under the BSD-style license found in the
@@ -6,36 +6,87 @@
 
 version: 2.0
 
+gpu: &gpu
+  machine:
+    image: ubuntu-1604:201903-01
+  resource_class: gpu.medium
+
 jobs:
-  build:
-    docker:
-      - image: wav2letter/wav2letter:cuda-base-latest
+  build-cuda:
+    <<: *gpu
     steps:
       - checkout
       - run:
+          name: Setup Docker and nvidia-docker
           command: |
-            cd /root && git clone --recursive https://github.com/facebookresearch/flashlight.git && \
-            cd /root/flashlight && mkdir -p build && \
-            cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CUDA && \
-            make && make install && \
+            # Install CUDA 9.2
+            wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_9.2.148-1_amd64.deb
+            sudo dpkg -i cuda-repo-ubuntu1604_9.2.148-1_amd64.deb
+            sudo apt-get update || true
+            sudo apt-get --yes --force-yes install cuda
+            nvidia-smi
+            # Install Docker
+            sudo apt-get update
+            sudo apt-get install \
+            apt-transport-https \
+            ca-certificates \
+            curl \
+            software-properties-common
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+            sudo apt-key fingerprint 0EBFCD88
+            sudo add-apt-repository \
+            "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+            $(lsb_release -cs) \
+            stable"
+            sudo apt-get update
+            sudo apt-get install docker-ce
+            # Install nvidia-docker
+            curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | \
+            sudo apt-key add -
+            distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+            curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | \
+            sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+            sudo apt-get update
+            # Install nvidia-docker2 and reload the Docker daemon configuration
+            sudo apt-get install -y nvidia-docker2
+            sudo pkill -SIGHUP dockerd
+      - run:
+          name: Build wav2letter with CUDA backend inside nvidia-docker
+          command: |
+            sudo docker run --runtime=nvidia --rm -itd --ipc=host --name wav2letter wav2letter/wav2letter:cuda-base-latest
+            sudo docker exec -it wav2letter bash -c "mkdir /wav2letter"
+            sudo docker cp . wav2letter:/wav2letter
+            sudo docker exec -it wav2letter bash -c "\
+            git clone --recursive https://github.com/facebookresearch/flashlight.git && \
+            cd flashlight && mkdir -p build && cd build && \
+            cmake .. -DCMAKE_BUILD_TYPE=Debug -DFLASHLIGHT_BACKEND=CUDA -DFL_BUILD_CONTRIB=ON -DFL_BUILD_TESTS=OFF -DFL_BUILD_EXAMPLES=OFF && \
+            make install -j$(proc) && \
             export MKLROOT=/opt/intel/mkl && export KENLM_ROOT_DIR=/root/kenlm && \
-            cd /root/project && mkdir -p build && \
-            cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DW2L_CRITERION_BACKEND=CUDA && \
-            make
-
+            cd /wav2letter && mkdir -p build && cd build && \
+            cmake .. -DCMAKE_BUILD_TYPE=Debug -DW2L_LIBRARIES_USE_CUDA=ON && \
+            make -j$(nproc) && make test"
   build-cpu:
     docker:
       - image: wav2letter/wav2letter:cpu-base-latest
     steps:
       - checkout
       - run:
+          name: Build wav2letter with CPU backend
+          # Tests and examples are built in the CUDA backend workflow, and since we're not running CPU tests anyways, ignore
+          # and only build core library components (e.g. CPU criterion, etc)
           command: |
             export MKLROOT=/opt/intel/mkl && mkdir -p build && cd build
             cd /root && git clone --recursive https://github.com/facebookresearch/flashlight.git && \
             cd flashlight && mkdir -p build && cd build && \
-            cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CPU && \
-            make && make install
+            cmake .. -DCMAKE_BUILD_TYPE=Debug -DFLASHLIGHT_BACKEND=CPU -DFL_BUILD_CONTRIB=ON -DFL_BUILD_TESTS=OFF -DFL_BUILD_EXAMPLES=OFF && \
+            make install
             export KENLM_ROOT_DIR=/root/kenlm && \
-            cd /root/project && mkdir -p build && \
-            cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DW2L_CRITERION_BACKEND=CPU && \
+            cd /root/project && mkdir -p build && cd build && \
+            cmake .. -DCMAKE_BUILD_TYPE=Debug -DW2L_LIBRARIES_USE_CUDA=OFF -DW2L_BUILD_EXAMPLES=OFF -DW2L_BUILD_TESTS=OFF && \
             make
+workflows:
+  version: 2
+  build_and_install:
+    jobs:
+      - build-cuda
+      - build-cpu

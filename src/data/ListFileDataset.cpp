@@ -20,8 +20,8 @@ namespace w2l {
 
 ListFileDataset::ListFileDataset(
     const std::string& filename,
-    const HostTransformFunction& inFeatFunc /* = nullptr */,
-    const HostTransformFunction& tgtFeatFunc /* = nullptr */)
+    const DataTransformFunction& inFeatFunc /* = nullptr */,
+    const DataTransformFunction& tgtFeatFunc /* = nullptr */)
     : inFeatFunc_(inFeatFunc), tgtFeatFunc_(tgtFeatFunc), numRows_(0) {
   std::ifstream inFile(filename);
   if (!inFile) {
@@ -57,18 +57,17 @@ std::vector<af::array> ListFileDataset::get(const int64_t idx) const {
   af::array input;
   if (inFeatFunc_) {
     input = inFeatFunc_(
-        static_cast<const void*>(audio.first.data()),
-        audio.second,
-        af::dtype::f32);
+        static_cast<void*>(audio.first.data()), audio.second, af::dtype::f32);
   } else {
     input = af::array(audio.second, audio.first.data());
   }
   af::array transcript = toArray(targets_[idx]);
   af::array target;
   if (tgtFeatFunc_) {
+    auto curTarget = targets_[idx];
     target = tgtFeatFunc_(
-        static_cast<const void*>(targets_[idx].data()),
-        {static_cast<dim_t>(targets_[idx].length())},
+        static_cast<void*>(curTarget.data()),
+        {static_cast<dim_t>(curTarget.length())},
         af::dtype::b8);
   } else {
     target = transcript;

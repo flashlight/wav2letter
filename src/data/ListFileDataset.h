@@ -18,9 +18,6 @@
 
 namespace w2l {
 
-using HostTransformFunction =
-    std::function<af::array(const void*, af::dim4, af::dtype)>;
-
 /**
  *
  * ListFileDataset class encapsulates the loading of dataset files used in
@@ -50,8 +47,8 @@ class ListFileDataset : public fl::Dataset {
  public:
   explicit ListFileDataset(
       const std::string& filename,
-      const HostTransformFunction& inFeatFunc = nullptr,
-      const HostTransformFunction& tgtFeatFunc = nullptr);
+      const DataTransformFunction& inFeatFunc = nullptr,
+      const DataTransformFunction& tgtFeatFunc = nullptr);
 
   int64_t size() const override;
 
@@ -63,7 +60,7 @@ class ListFileDataset : public fl::Dataset {
       const std::string& handle) const;
 
  protected:
-  HostTransformFunction inFeatFunc_, tgtFeatFunc_;
+  DataTransformFunction inFeatFunc_, tgtFeatFunc_;
   int64_t numRows_;
   std::vector<std::string> ids_;
   std::vector<std::string> inputs_;

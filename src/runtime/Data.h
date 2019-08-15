@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include <flashlight/flashlight.h>
+
 #include "common/Utils.h"
 #include "data/ListFileDataset.h"
 #include "data/W2lDataset.h"
@@ -21,8 +23,8 @@ std::shared_ptr<fl::Dataset> loadDataset(
     int64_t batchSize = 1,
     int64_t worldRank = 0,
     int64_t worldSize = 1,
-    const HostTransformFunction& inputTransform = nullptr,
-    const HostTransformFunction& targetTransform = nullptr);
+    const fl::Dataset::DataTransformFunction& inputTransform = nullptr,
+    const fl::Dataset::DataTransformFunction& targetTransform = nullptr);
 
 std::shared_ptr<W2lDataset> createDataset(
     const std::string& path,

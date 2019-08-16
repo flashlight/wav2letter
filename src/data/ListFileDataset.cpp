@@ -64,7 +64,7 @@ std::vector<af::array> ListFileDataset::get(const int64_t idx) const {
   af::array transcript = toArray(targets_[idx]);
   af::array target;
   if (tgtFeatFunc_) {
-    std::string curTarget = targets_[idx];
+    auto curTarget = targets_[idx];
     target = tgtFeatFunc_(
         static_cast<void*>(curTarget.data()),
         {static_cast<dim_t>(curTarget.length())},

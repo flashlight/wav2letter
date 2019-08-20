@@ -68,7 +68,7 @@ find_file(KENLM_MODEL_HEADER
     ${KENLM_LIB}
   PATHS
     ${KENLM_INC}
-    $ENV{KENLM_IN}
+    $ENV{KENLM_INC}
     ${KENLM_ROOT_DIR}
     $ENV{KENLM_ROOT_DIR}
   )

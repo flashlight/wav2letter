@@ -27,6 +27,8 @@ import argparse
 import os
 import sys
 
+import sox
+
 
 def findtranscriptfiles(dir):
     files = []
@@ -35,37 +37,6 @@ def findtranscriptfiles(dir):
             if filename.endswith(".trans.txt"):
                 files.append(os.path.join(dirpath, filename))
     return files
-
-
-def write_sample(line, idx, dst):
-
-    filename, input, lbl = line.split(" ", 2)
-
-    assert filename and input and lbl
-
-    basepath = os.path.join(dst, "%09d" % idx)
-
-    # flac
-    os.system(
-        "cp {src} {dst}".format(
-            src=os.path.join(os.path.dirname(filename), input + ".flac"),
-            dst=basepath + ".flac",
-        )
-    )
-
-    # wrd
-    words = lbl.strip().lower()
-    with open(basepath + ".wrd", "w") as f:
-        f.write(words)
-
-    # ltr
-    spellings = " | ".join([" ".join(w) for w in words.split()])
-    with open(basepath + ".tkn", "w") as f:
-        f.write(spellings)
-
-    # id
-    with open(basepath + ".id", "w") as f:
-        f.write("file_id\t{fid}".format(fid=idx))
 
 
 if __name__ == "__main__":
@@ -83,16 +54,22 @@ if __name__ == "__main__":
 
     os.makedirs(args.dst, exist_ok=True)
 
+    lists_dst = os.path.join(args.dst, "lists")
+    os.makedirs(lists_dst, exist_ok=True)
+
+    am_dst = os.path.join(args.dst, "am")
+    os.makedirs(am_dst, exist_ok=True)
+
+    train_dev_words = {}
+
     for subpath in subpaths:
         src = os.path.join(args.src, subpath)
-        dst = os.path.join(args.dst, "data", subpath)
-        os.makedirs(dst, exist_ok=True)
 
         transcripts = []
         assert os.path.exists(src), "Unable to find the directory - '{src}'".format(
             src=src
         )
-
+        dst = os.path.join(lists_dst, subpath + ".lst")
         sys.stdout.write("analyzing {src}...\n".format(src=src))
         sys.stdout.flush()
         transcriptfiles = findtranscriptfiles(src)
@@ -107,11 +84,27 @@ if __name__ == "__main__":
                     transcripts.append(tf + " " + line.strip())
 
         n_samples = len(transcripts)
-        for n in range(n_samples):
-            write_sample(transcripts[n], n, dst)
+        with open(dst, "w") as f:
+            for n in range(n_samples):
+                filename, handle, lbl = transcripts[n].split(" ", 2)
+
+                assert filename and handle and lbl
+                writeline = []
+                writeline.append(subpath + "-" + handle)  # sampleid
+                audio_path = os.path.join(os.path.dirname(filename), handle + ".flac")
+                writeline.append(audio_path)
+                writeline.append(str(sox.file_info.duration(audio_path)))  # length
+                transcript = lbl.strip().lower()
+                writeline.append(transcript)
+
+                f.write("\t".join(writeline) + "\n")
+
+                if "train" in subpath or "dev" in subpath:
+                    for w in transcript.split():
+                        train_dev_words[w] = True
 
     # create tokens dictionary
-    tkn_file = os.path.join(args.dst, "data", "tokens.txt")
+    tkn_file = os.path.join(am_dst, "tokens.txt")
     sys.stdout.write("creating tokens file {t}...\n".format(t=tkn_file))
     sys.stdout.flush()
     with open(tkn_file, "w") as f:
@@ -120,4 +113,14 @@ if __name__ == "__main__":
         for alphabet in range(ord("a"), ord("z") + 1):
             f.write(chr(alphabet) + "\n")
 
+    # create leixcon
+    lexicon_file = os.path.join(am_dst, "lexicon.txt")
+    sys.stdout.write("creating train lexicon file {t}...\n".format(t=tkn_file))
+    sys.stdout.flush()
+    with open(lexicon_file, "w") as f:
+        for w in train_dev_words.keys():
+            f.write(w)
+            f.write("\t")
+            f.write(" ".join(w))
+            f.write(" |\n")
     sys.stdout.write("Done !\n")

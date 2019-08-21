@@ -46,9 +46,11 @@ their transcripts for train, validation  and test sets respectively.
 
 Before preparing the dataset, we need to decide the sub-word units to be used for training the acoustic model (mode details on acoustic model later). These could be [phonemes](https://en.wikipedia.org/wiki/Phoneme), [graphemes](https://en.wikipedia.org/wiki/Grapheme), word-pieces etc. Each word is represented as a sequence of these chosen sub-word units. In this tutorial, we will use graphemes as the sub-word unit.
 
-Now, we will preprocess this dataset into a format which wav2letter++ pipelines can process. Given training, validation and test sets, we will keep each set in a separate folder within our main dataset directory. We require four different files for each sample – an audio file (`.wav/.flac/...`), its transcription (`.wrd`), a transcription written in sub-word units (`.tkn`), and an identifier file (`.id`) which can be used to represent speaker id and/or speaker gender and/or fileid etc. You can find more details about dataset preparation [here](../../docs/data_prep.md).
+Now, we will preprocess this dataset into a format which wav2letter++ pipelines can process. Given training, validation and test sets, we will keep each set in a separate file with each line corresponding to a single sample. You can find more details about dataset preparation [here](../../docs/data_prep.md).
 
 ```shell
+> pip install sox
+
 > wav2letter/tutorials/librispeech_clean/prepare_data.py --src $W2LDIR/LibriSpeech/ --dst $W2LDIR
 
 > wav2letter/tutorials/librispeech_clean/prepare_lm.py --dst $W2LDIR
@@ -58,11 +60,10 @@ Explore the dataset created
 
 ```shell
 > tree $W2LDIR --filelimit 20
-# ├── data
-# │   ├── dev-clean [10812 entries exceeds filelimit, not opening dir]
-# │   ├── tokens.txt
-# │   ├── test-clean [10480 entries exceeds filelimit, not opening dir]
-# │   └── train-clean-100 [114156 entries exceeds filelimit, not opening dir]
+# .
+# ├── am
+# │   ├── lexicon.txt
+# │   └── tokens.txt
 # ├── LibriSpeech
 # │   ├── BOOKS.TXT
 # │   ├── CHAPTERS.TXT
@@ -72,11 +73,15 @@ Explore the dataset created
 # │   ├── SPEAKERS.TXT
 # │   ├── test-clean [40 entries exceeds filelimit, not opening dir]
 # │   └── train-clean-100 [251 entries exceeds filelimit, not opening dir]
+# ├── lists
+# │   ├── dev-clean.lst
+# │   ├── test-clean.lst
+# │   └── train-clean-100.lst
 # └── lm
 #     ├── 3-gram.arpa
 #     └── lexicon.txt
 #
-# 9 directories, 8 files
+# 7 directories, 12 files
 ```
 
 ### Step 2: Training the Acoustic Model
@@ -134,28 +139,32 @@ Documentation on training the models with wav2letter++  can be found [here](../.
 # ...
 # ...
 # ...
-# I1224 01:19:13.684537 3867118 Train.cpp:443] Epoch 1 started!
-# I1224 01:23:47.824731 3867118 Train.cpp:242] epoch:        1 | lr: 0.100000 | lrcriterion: 0.000000 | runtime: 00:04:25 | bch(ms): 37.22 | smp(ms): 0.37 | fwd(ms): 29.52 | crit-fwd(ms): 26.61 | bwd(ms): 5.11 | optim(ms): 1.25 | loss:   27.76703 | train-LER: 64.01 | librispeech/dev-clean-LER: 46.24 | avg-isz: 1267 | avg-tsz: 213 | max-tsz: 400 | hrs:  100.47 | thrpt(sec/sec): 1361.82
-# I1224 01:23:48.380589 3867118 Train.cpp:436] Shuffling trainset
-# I1224 01:23:48.381211 3867118 Train.cpp:443] Epoch 2 started!
-# I1224 01:28:19.144374 3867118 Train.cpp:242] epoch:        2 | lr: 0.100000 | lrcriterion: 0.000000 | runtime: 00:04:22 | bch(ms): 36.73 | smp(ms): 0.35 | fwd(ms): 29.15 | crit-fwd(ms): 26.57 | bwd(ms): 5.02 | optim(ms): 1.16 | loss:   16.05565 | train-LER: 37.99 | librispeech/dev-clean-LER: 37.11 | avg-isz: 1267 | avg-tsz: 213 | max-tsz: 400 | hrs:  100.47 | thrpt(sec/sec): 1380.25
+# I0821 10:00:13.362344 1587002 Train.cpp:510] Shuffling trainset
+# I0821 10:00:13.362879 1587002 Train.cpp:517] Epoch 1 started!
+# I0821 10:08:34.901075 1587002 Train.cpp:313] epoch:        1 | lr: 0.100000 | lrcriterion: 0.000000 | runtime: 00:08:11 | bch(ms): 68.88 | smp(ms): 0.31 | fwd(ms): 51.86 | crit-fwd(ms): 46.20 | bwd(ms): 13.88 | optim(ms): 1.54 | loss:   27.76495 | train-TER: 64.47 | train-WER: 98.16 | lists/dev-clean.lst-loss:   13.86542 | lists/dev-clean.lst-TER: 45.20 | lists/dev-clean.lst-WER: 90.04 | avg-isz: 1267 | avg-tsz: 213 | max-tsz: 400 | hrs:  100.47 | thrpt(sec/sec): 735.99
+# I0821 10:08:36.011454 1587002 Train.cpp:510] Shuffling trainset
+# I0821 10:08:36.012792 1587002 Train.cpp:517] Epoch 2 started!
+# I0821 10:16:57.047940 1587002 Train.cpp:313] epoch:        2 | lr: 0.100000 | lrcriterion: 0.000000 | runtime: 00:08:11 | bch(ms): 68.87 | smp(ms): 0.33 | fwd(ms): 51.78 | crit-fwd(ms): 46.28 | bwd(ms): 13.81 | optim(ms): 1.46 | loss:   16.06979 | train-TER: 38.11 | train-WER: 85.46 | lists/dev-clean.lst-loss:   10.77253 | lists/dev-clean.lst-TER: 34.69 | lists/dev-clean.lst-WER: 81.71 | avg-isz: 1267 | avg-tsz: 213 | max-tsz: 400 | hrs:  100.47 | thrpt(sec/sec): 736.07
+# I0821 10:16:57.164841 1587002 Train.cpp:510] Shuffling trainset
+# I0821 10:16:57.165771 1587002 Train.cpp:517] Epoch 3 started!
 # ...
 # ...
 # ...
 # ...
 ```
 
-Train the model for 25 epochs and check the run directory (specified by `-rundir`, `-runname` gflags) for logs.
-You can also stop training early (lets say after 5 epochs) if you want to proceed quickly to the decoder stage and
-not concerned about WER performance.
+Train the model for 25 epochs (specified by `-iter` flag) and check the run
+directory (specified by `-rundir`, `-runname` gflags) for logs.
+You can also stop training early (lets say after 5 epochs) if you want to
+proceed quickly to the decoder stage and not concerned about WER performance.
 
 ```shell
 > ls [...]/librispeech_clean_trainlogs
-# 001_config  001_log  001_model_librispeech#dev-clean.bin  001_model_last.bin  001_perf
+# 001_config  001_log  001_model_last.bin  001_model_lists#dev-clean.lst.bin  001_perf
 ```
 `001_config` - config used for training
 
-`001_model_librispeech#dev-clean.bin` - saved model for best validation error rate. We'll use this for decoding.
+`001_model_lists#dev-clean.lst.bin` - saved model for best validation error rate. We'll use this for decoding.
 
 `001_model_last.bin` - model at the end of last epoch
 

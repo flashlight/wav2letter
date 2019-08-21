@@ -39,7 +39,6 @@ DEFINE_string(
     spiral along reference lenth");
 DEFINE_int64(inputbinsize, 100, "Bin size along audio length axis");
 DEFINE_int64(outputbinsize, 5, "Bin size along transcript length axis");
-DEFINE_bool(listdata, false, "use lists instead of folders as input data");
 DEFINE_bool(blobdata, false, "use blobs instead of folders as input data");
 DEFINE_string(
     wordseparator,
@@ -284,4 +283,5 @@ DEFINE_string(
 // FB SPECIFIC
 DEFINE_string(target, "tkn", "target feature");
 DEFINE_bool(everstoredb, false, "use Everstore db for reading data");
+
 } // namespace w2l

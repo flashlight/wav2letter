@@ -19,6 +19,7 @@ command line:
 --arch   <name_of_architecture.arch> \
 --train  <train/datasets/> \
 --valid  <validation/datasets> \
+--lexicon <path/to/lexicon.txt> \
 --lr=0.0001 \
 --lrcrit=0.0001
 ```
@@ -49,6 +50,7 @@ list. More details on dataset preparation can be found [here](data_prep.md).
 Similarly, the `archdir` and `tokensdir` are (optional) base paths to where the
 `arch` and `token` files live. For example, the complete architecture file path
 will be `<archdir>/<arch>`. More details on specifying architecture files can be found [here](arch.md).
+`lexicon` flag is used to specify the lexicon which specifies the token sequence for a give word.
 
 The `rundir` flag is the base directory where the model will be saved and the
 `runname` is the subdirectory that will be created to save the model and

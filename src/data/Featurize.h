@@ -11,7 +11,6 @@
 #include <arrayfire.h>
 #include <unordered_map>
 
-#include "data/NumberedFilesLoader.h"
 #include "data/Sound.h"
 #include "libraries/common/Dictionary.h"
 #include "libraries/feature/FeatureParams.h"
@@ -28,6 +27,13 @@ struct W2lFeatureData {
   DimsMap targetDims;
   std::vector<int> sampleIds;
   af::dim4 sampleIdsDims;
+};
+
+typedef std::unordered_map<int, std::vector<std::string>> TargetMap;
+struct W2lLoaderData {
+  std::vector<float> input;
+  TargetMap targets;
+  std::string sampleId;
 };
 
 W2lFeatureData featurize(

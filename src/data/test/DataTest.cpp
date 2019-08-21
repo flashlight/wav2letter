@@ -14,9 +14,7 @@
 #include "common/Defines.h"
 #include "common/FlashlightUtils.h"
 #include "data/Featurize.h"
-#include "data/NumberedFilesLoader.h"
 #include "data/W2lListFilesDataset.h"
-#include "data/W2lNumberedFilesDataset.h"
 
 using namespace w2l;
 
@@ -134,60 +132,6 @@ TEST(DataTest, targetFeaturizer) {
   ASSERT_EQ(tgtArray(tgtLen - 2, 1).scalar<int>(), eosIdx);
 }
 
-TEST(DataTest, NumberedFilesLoader) {
-  NumberedFilesLoader numfilesds(
-      w2l::pathsConcat(loadPath, "dataset"), "wav", {{kTargetIdx, "tkn"}});
-
-  ASSERT_EQ(numfilesds.size(), 3);
-
-  auto sample = numfilesds.get(1);
-  std::vector<std::string> expectedTarget = {"u", "h", "o", "h"};
-  ASSERT_EQ(sample.targets[kTargetIdx].size(), expectedTarget.size());
-  for (int i = 0; i < expectedTarget.size(); ++i) {
-    ASSERT_EQ(sample.targets[kTargetIdx][i], expectedTarget[i]);
-  }
-
-  // ASSERT_EQ(sample.info.samplerate, 8000);
-  // ASSERT_EQ(sample.info.frames, 10054);
-  // ASSERT_EQ(sample.info.channels, 1);
-
-  ASSERT_EQ(sample.input.size(), 24000);
-
-  ASSERT_NEAR(sample.input[0], 0.03092256002, 1E-6);
-  ASSERT_NEAR(sample.input[10], -0.49759358, 1E-6);
-  ASSERT_NEAR(sample.input[674], 0.49851027, 1E-6);
-  ASSERT_NEAR(sample.input[5000], 0, 1E-6);
-  ASSERT_NEAR(sample.input[10000], 0, 1E-6);
-}
-
-TEST(DataTest, W2lDataset) {
-  gflags::FlagSaver flagsaver;
-  w2l::FLAGS_mfcc = false;
-  w2l::FLAGS_mfsc = false;
-  w2l::FLAGS_pow = false;
-  w2l::FLAGS_nthread = 6;
-  w2l::FLAGS_replabel = 0;
-  w2l::FLAGS_surround = "";
-  w2l::FLAGS_dataorder = "none";
-  w2l::FLAGS_input = "wav";
-
-  auto dict = getDict();
-  DictionaryMap dicts;
-  dicts.insert({kTargetIdx, dict});
-
-  W2lNumberedFilesDataset ds(w2l::pathsConcat(loadPath, "dataset"), dicts, 1);
-
-  auto fields = ds.get(0);
-  auto& input = fields[kInputIdx];
-  auto& target = fields[kTargetIdx];
-  std::vector<int> expectedTarget = {20, 7, 20, 7}; // Tokens are "uh-uh"
-  ASSERT_EQ(target.dims(), af::dim4(expectedTarget.size()));
-  for (int i = 0; i < expectedTarget.size(); ++i) {
-    ASSERT_EQ(target(i).scalar<int>(), expectedTarget[i]);
-  }
-  ASSERT_EQ(input.dims(), af::dim4(24000));
-}
-
 TEST(DataTest, W2lListDataset) {
   gflags::FlagSaver flagsaver;
   w2l::FLAGS_mfcc = false;
@@ -249,37 +193,6 @@ TEST(DataTest, W2lListDataset) {
     ASSERT_EQ(target(i).scalar<int>(), expectedTarget[i]);
   }
   ASSERT_EQ(input.dims(), af::dim4(24000));
-}
-
-TEST(DataTest, W2lDatasetDeterministicSampling) {
-  w2l::FLAGS_input = "wav";
-  w2l::FLAGS_target = "phn";
-  std::string hubPaths = "dataset/train";
-  w2l::Dictionary dict(w2l::pathsConcat(loadPath, "dict39.phn"));
-  DictionaryMap dicts;
-  dicts.insert({kTargetIdx, dict});
-
-  W2lNumberedFilesDataset ds(hubPaths, dicts, 3, 0, 1, loadPath);
-  {
-    gflags::FlagSaver sv;
-    FLAGS_nthread = 2;
-    std::unordered_map<int, int> globalBatchIdxToSampleSize;
-    int test_rounds = 10;
-    for (int round = 0; round < test_rounds; round++) {
-      for (int idx = 0; idx < ds.size(); idx++) {
-        auto sample = ds.get(idx);
-        int batchIdx = ds.getGlobalBatchIdx(idx);
-        if (round == 0) {
-          globalBatchIdxToSampleSize[batchIdx] = sample[kInputIdx].elements();
-        } else {
-          ASSERT_EQ(
-              globalBatchIdxToSampleSize[batchIdx],
-              sample[kInputIdx].elements());
-        }
-      }
-      ds.shuffle(round);
-    }
-  }
 }
 
 TEST(RoundRobinBatchShufflerTest, params) {

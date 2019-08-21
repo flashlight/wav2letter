@@ -8,72 +8,34 @@ For training a Speech Recognition model using wav2letter++, we typically expect 
 
 ### Audio and Transcriptions data
 
-wav2letter++ expects audio and transcription data to prepared in a specific format so that they can be read from the pipelines.
-Each dataset (test/valid/train) needs to be in a separate directory and should contain `.wav` , `.tkn`, `.wrd`, `.id` files
-numbered in the following way - 000000000.wav, 000000000.tkn,  000000000.wrd,  000000000.id, 000000001.wav, 000000001.tkn,  000000001.wrd,  000000001.id and so on.
-The directories for the dataset is specified using `-datadir`, `-train`, `-valid` and `-test`.
+wav2letter++ expects audio and transcription data to prepared in a specific format
+so that they can be read from the pipelines.
+Each dataset (test/valid/train) needs to be in a separate file with one sample per line.
+A sample is specified using 4 columns separated by space (or tabs).
+ - `sample_id` - unique id for the sample
+ - `input_handle` - input audio file path.
+ - `size` - a real number used for sorting the dataset (typically audio duration).
+ - `transcription` - word transcription for this sample
+
+The directories for the dataset is specified using `-datadir` and files are specified
+with `-train`, `-valid` and `-test` corresponding to training, validation and test sets.
 
 ```
-[~/speech/data/train] ls | sort | head -n 30
-000000000.wav
-000000000.id
-000000000.tkn
-000000000.wrd
-000000001.wav
-000000001.id
-000000001.tkn
-000000001.wrd
-000000002.wav
-000000002.id
-000000002.tkn
-000000002.wrd
-000000003.wav
-000000003.id
-000000003.tkn
-000000003.wrd
-000000004.wav
-000000004.id
-000000004.tkn
-000000004.wrd
-000000005.wav
-000000005.id
-000000005.tkn
-000000005.wrd
+// Example input file format
+
+[~/speech/data] head train.lst
+train001 /tmp/000000000.flac 100.03  this is sparta
+train002 /tmp/000000001.flac 360.57  coca cola
+train003 /tmp/000000002.flac 123.53  hello world
+train004 /tmp/000000003.flac 999.99  quick brown fox jumped
 ...
 ...
-```
-
-Each sample will have 4 corresponding files
-- `.flac/.wav` - audio file. The extension is specified using `-input` flag.
-- `.wrd` - words file containing the transcription.
-- `.tkn` - tokens file. The extension is specified using `-target` flag.
-- `.id `- identifiers for the file. Each line is key-value pair separated by tab
-
-Let's say the transcription for first sample is "hello world" and we are using graphemes as the subword units (tokens).
-Here is an example of the contents we would keep in these files
-
-000000000.tkn
-```
-h e l l o | w o r l d
-```
-
-000000000.wrd
-```
-hello world
-```
-
-000000000.id
-```
-file_id 0
-gender  M
-speaker_id      3
 ```
 
 We use [sndfile](https://github.com/erikd/libsndfile/) for loading the audio files.
-It supports many different formats which include .wav, .flac etc. and .
-For samplerate, 16Khz is the default option but you can specify a different one using `-samplerate` flag.
-Note that, we require all the train/valid/test data to have the same format of audio file and the same samplerate for now.
-Transcriptions should be specified in `.tkn` and `.wrd` files as mentioned above.
+It supports many different formats including .wav, .flac etc.
+For samplerate, 16KHz is the default option but you can specify a different one using `-samplerate` flag.
+Note that, we require all the train/valid/test data to have the same samplerate for now.
 
 ### Token dictionary
 

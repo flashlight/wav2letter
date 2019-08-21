@@ -10,7 +10,6 @@
 
 #include "data/W2lBlobsDataset.h"
 #include "data/W2lListFilesDataset.h"
-#include "data/W2lNumberedFilesDataset.h"
 #include "runtime/Data.h"
 
 #ifdef W2L_BUILD_FB_DEPENDENCIES
@@ -46,17 +45,6 @@ std::shared_ptr<W2lDataset> createDataset(
     LOG(FATAL) << "W2lEverstoreDataset not supported: "
                << "build with -DW2L_BUILD_FB_DEPENDENCIES";
 #endif
-  } else if (FLAGS_listdata) {
-    ds = std::make_shared<W2lListFilesDataset>(
-        path,
-        dicts,
-        lexicon,
-        batchSize,
-        worldRank,
-        worldSize,
-        fallback2Ltr,
-        skipUnk,
-        FLAGS_datadir);
   } else if (FLAGS_blobdata) {
     ds = std::make_shared<W2lBlobsDataset>(
         path,
@@ -69,8 +57,16 @@ std::shared_ptr<W2lDataset> createDataset(
         skipUnk,
         FLAGS_datadir);
   } else {
-    ds = std::make_shared<W2lNumberedFilesDataset>(
-        path, dicts, batchSize, worldRank, worldSize, FLAGS_datadir);
+    ds = std::make_shared<W2lListFilesDataset>(
+        path,
+        dicts,
+        lexicon,
+        batchSize,
+        worldRank,
+        worldSize,
+        fallback2Ltr,
+        skipUnk,
+        FLAGS_datadir);
   }
 
   return ds;

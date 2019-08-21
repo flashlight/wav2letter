@@ -93,6 +93,8 @@ class Seq2SeqDecoder : public Decoder {
 
   void prune(int lookBack = 0) override;
 
+  int nDecodedFramesInBuffer() const override;
+
   DecodeResult getBestHypothesis(int lookBack = 0) const override;
 
   std::vector<DecodeResult> getAllFinalHypothesis() const override;

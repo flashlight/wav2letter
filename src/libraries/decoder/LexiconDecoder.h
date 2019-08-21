@@ -98,9 +98,9 @@ class LexiconDecoder : public Decoder {
 
   int nHypothesis() const;
 
-  int nDecodedFramesInBuffer() const;
-
   void prune(int lookBack = 0) override;
+
+  int nDecodedFramesInBuffer() const override;
 
   DecodeResult getBestHypothesis(int lookBack = 0) const override;
 

@@ -236,4 +236,9 @@ void Seq2SeqDecoder::prune(int /* unused */) {
   return;
 }
 
+int Seq2SeqDecoder::nDecodedFramesInBuffer() const {
+  /* unused function */
+  return -1;
+}
+
 } // namespace w2l

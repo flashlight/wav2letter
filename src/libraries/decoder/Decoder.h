@@ -55,6 +55,9 @@ class Decoder {
   /* Prune the hypothesis space */
   virtual void prune(int lookBack = 0) = 0;
 
+  /* Get the number of decoded frame in buffer */
+  virtual int nDecodedFramesInBuffer() const = 0;
+
   /*
    * Get the best completed hypothesis which is `lookBack` frames ahead the last
    * one in buffer. For lexicon requiredd LMs, completed hypothesis means no
@@ -62,9 +65,7 @@ class Decoder {
    */
   virtual DecodeResult getBestHypothesis(int lookBack = 0) const = 0;
 
-  /*
-   * Get all the final hypothesis.
-   */
+  /* Get all the final hypothesis */
   virtual std::vector<DecodeResult> getAllFinalHypothesis() const = 0;
 
  protected:

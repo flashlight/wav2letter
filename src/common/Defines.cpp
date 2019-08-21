@@ -161,8 +161,8 @@ DEFINE_string(am, "", "path/to/acoustic_model");
 DEFINE_string(sclite, "", "path/to/sclite to be written");
 DEFINE_string(decodertype, "wrd", "wrd, tkn");
 
-DEFINE_double(lmweight, 1.0, "language model weight");
-DEFINE_double(wordscore, 1.0, "wordscore");
+DEFINE_double(lmweight, 0.0, "language model weight");
+DEFINE_double(wordscore, 0.0, "wordscore");
 DEFINE_double(silweight, 0.0, "silence weight");
 DEFINE_double(
     unkweight,

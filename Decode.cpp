@@ -30,6 +30,7 @@
 #include "libraries/decoder/WordLMDecoder.h"
 #include "libraries/lm/ConvLM.h"
 #include "libraries/lm/KenLM.h"
+#include "libraries/lm/ZeroLM.h"
 #include "module/module.h"
 #include "runtime/runtime.h"
 
@@ -270,34 +271,35 @@ int main(int argc, char** argv) {
   int unkWordIdx = -1;
 
   Dictionary usrDict = tokenDict;
-  if (FLAGS_decodertype == "wrd") {
+  if (!FLAGS_lm.empty() && FLAGS_decodertype == "wrd") {
     usrDict = wordDict;
     unkWordIdx = wordDict.getIndex(kUnkToken);
   }
 
-  std::shared_ptr<LM> lm;
-  if (FLAGS_lmtype == "kenlm") {
-    lm = std::make_shared<KenLM>(FLAGS_lm, usrDict);
-    if (!lm) {
-      LOG(FATAL) << "[LM constructing] Failed to load LM: " << FLAGS_lm;
-    }
-  } else if (FLAGS_lmtype == "convlm") {
-    // Non-thread-safe convLM will be constructed independently in each thread.
-    af::setDevice(0);
-    LOG(INFO) << "[ConvLM]: Loading LM from " << FLAGS_lm;
-    std::shared_ptr<fl::Module> convLmModel;
-    W2lSerializer::load(FLAGS_lm, convLmModel);
-    convLmModel->eval();
+  std::shared_ptr<LM> lm = std::make_shared<ZeroLM>();
+  if (!FLAGS_lm.empty()) {
+    if (FLAGS_lmtype == "kenlm") {
+      lm = std::make_shared<KenLM>(FLAGS_lm, usrDict);
+      if (!lm) {
+        LOG(FATAL) << "[LM constructing] Failed to load LM: " << FLAGS_lm;
+      }
+    } else if (FLAGS_lmtype == "convlm") {
+      af::setDevice(0);
+      LOG(INFO) << "[ConvLM]: Loading LM from " << FLAGS_lm;
+      std::shared_ptr<fl::Module> convLmModel;
+      W2lSerializer::load(FLAGS_lm, convLmModel);
+      convLmModel->eval();
 
-    auto getConvLmScoreFunc = buildGetConvLmScoreFunction(convLmModel);
-    lm = std::make_shared<ConvLM>(
-        getConvLmScoreFunc,
-        FLAGS_lm_vocab,
-        usrDict,
-        FLAGS_lm_memory,
-        FLAGS_beamsize);
-  } else {
-    LOG(FATAL) << "[LM constructing] Invalid LM Type: " << FLAGS_lmtype;
+      auto getConvLmScoreFunc = buildGetConvLmScoreFunction(convLmModel);
+      lm = std::make_shared<ConvLM>(
+          getConvLmScoreFunc,
+          FLAGS_lm_vocab,
+          usrDict,
+          FLAGS_lm_memory,
+          FLAGS_beamsize);
+    } else {
+      LOG(FATAL) << "[LM constructing] Invalid LM Type: " << FLAGS_lmtype;
+    }
   }
   LOG(INFO) << "[Decoder] LM constructed.\n";
 
@@ -381,7 +383,6 @@ int main(int argc, char** argv) {
 
       // Build Decoder
       std::unique_ptr<Decoder> decoder;
-
       if (FLAGS_decodertype == "wrd") {
         decoder.reset(new WordLMDecoder(
             decoderOpt,

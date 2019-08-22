@@ -1,27 +1,11 @@
-This directory contains data processing scripts and training/decoding configs for
-performing speech recognition using wav2letter++ on popular datasets.
+# Structure
 
-## Preparing data
+## `data`
+This directory contains data preparation instructions for popular benchmarks in speech recognition, like Librispeech, WSJ and others:
+- training/validation/test sets
+- audio in the format of wav2letter to further training/evaluation
 
-Requirements to run scripts:
-- python 3
-- [`sox`](https://pypi.org/project/sox/) and [`tqdm`](https://pypi.org/project/tqdm/) libraries, available through `pip`.
-
-In general, each dataset contains `prepare_data.py` which prepares the Dataset and Tokens file and `prepare_lm.py` which prepares Lexicon and Language Model data. See `README.md` under each dataset directory for extra dataset-specific setups. Each file in the directory has instruction on how to run the python script.
-
-> [...]/prepare_data.py [OPTIONS ...]
-
-> [...]/prepare_lm.py [OPTIONS ...]
-
-## Training/Decoding
-
-The configs for training and decoding can be found under `configs` folder. Make sure to replace `[...]` with appropriate paths.
-
-To run training
-> [...]/wav2letter/build/Train train --flagsfile train.cfg
-
-To run decoding
-> [...]/wav2letter/build/Decode --flagsfile decode.cfg
-
-
-*Replace [...] with appropriate paths*
+## `models`
+This directory contains:
+- steps to reproduce results from the papers published by our team
+- released models obtained in the papers

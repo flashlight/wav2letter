@@ -34,6 +34,9 @@ SpecAugment::SpecAugment(
   if (numTimeMask_ > 0 && timeMaskT_ <= 0) {
     throw std::invalid_argument("invalid arguments for time masking.");
   }
+  if (numTimeMask_ > 0 && (timeMaskP_ <= 0 || timeMaskP_ > 1.0)) {
+    throw std::invalid_argument("invalid arguments for time masking.");
+  }
 }
 
 fl::Variable SpecAugment::forward(const fl::Variable& input) {
@@ -53,7 +56,10 @@ fl::Variable SpecAugment::forward(const fl::Variable& input) {
       ? af::mean<double>(input.array())
       : 0.0;
 
-  auto numFreqChans = input.dims(1); // number of mel frequency channels
+  auto numFreqChans = input.dims(1); // number of frequency channels
+  if (numFreqChans < freqMaskF_) {
+    throw std::runtime_error("Invalid input frequency channels");
+  }
   for (int i = 0; i < numFreqMask_; ++i) {
     auto f = generateRandomInt(0, freqMaskF_);
     auto f0 = generateRandomInt(0, numFreqChans - f);
@@ -63,10 +69,12 @@ fl::Variable SpecAugment::forward(const fl::Variable& input) {
   auto numTimeSteps = input.dims(0); // number of time steps
   // an upper bound on the time mask
   int T = std::min(timeMaskT_, static_cast<int>(numTimeSteps * timeMaskP_));
-  for (int i = 0; i < numTimeMask_; ++i) {
-    auto t = generateRandomInt(0, T);
-    auto t0 = generateRandomInt(0, numTimeSteps - t);
-    opArr(af::seq(t0, t0 + t), af::span, af::span, af::span) = replaceVal;
+  if (T > 0) {
+    for (int i = 0; i < numTimeMask_; ++i) {
+      auto t = generateRandomInt(0, T);
+      auto t0 = generateRandomInt(0, numTimeSteps - t);
+      opArr(af::seq(t0, t0 + t), af::span, af::span, af::span) = replaceVal;
+    }
   }
 
   return output;

@@ -168,7 +168,8 @@ if __name__ == "__main__":
     binary = os.path.join(args.kenlm, "build", "bin", "build_binary")
     lm_file = os.path.join(decoder_path, "lm-4g")
     os.system(
-        "{bin} -T /tmp -S 10G --discount_fallback -o 4 --text {file} > {lm_file}.arpa".format(
+        """{bin} -T /tmp -S 10G --discount_fallback
+        -o 4 --text {file} > {lm_file}.arpa""".format(
             bin=lmplz, lm_file=lm_file, file=train_data
         )
     )

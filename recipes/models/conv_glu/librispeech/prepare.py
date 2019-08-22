@@ -19,10 +19,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import argparse
 import os
-import re
 from collections import defaultdict
-
-import numpy
 
 
 if __name__ == "__main__":
@@ -52,8 +49,6 @@ if __name__ == "__main__":
         "dev": ["dev-clean", "dev-other"],
         "test": ["test-clean", "test-other"],
     }
-
-    path_names = numpy.concatenate(list(subpaths.values()))
 
     lists_path = os.path.join(args.data_dst, "lists")
     am_path = os.path.join(args.model_dst, "am")
@@ -89,48 +84,15 @@ if __name__ == "__main__":
             )
 
     # Generating decoder/*
-    lm = "4-gram"
-    assert os.path.isdir(str(args.kenlm)), "kenlm directory not found - '{d}'".format(
-        d=args.kenlm
-    )
-    print("Downloading Librispeech official LM model...\n", flush=True)
-    arpa_file = os.path.join(decoder_path, lm + ".arpa")
-    if not os.path.exists(arpa_file):
-        os.system(
-            "wget -c -O - http://www.openslr.org/resources/11/{lm}.arpa.gz | "
-            "gunzip -c > {fout}".format(lm=lm, fout=arpa_file)
-        )
-    else:
-        print("Arpa file {} exist, skip its downloading.".format(arpa_file))
-    # temporary arpa file in lowercase
-    print("Saving ARPA LM file in binary format ...\n", flush=True)
+    cmd = [
+        "python3 {}/../../scripts/prepare_librispeech_official_lm.py",
+        "--dst {}",
+        "--kenlm {}",
+    ]
     os.system(
-        "cat {arpa} | tr '[:upper:]' '[:lower:]' > {arpa}.tmp".format(arpa=arpa_file)
-    )
-    binary = os.path.join(args.kenlm, "build", "bin", "build_binary")
-    os.system(
-        "{bin} {farpa}.tmp {fbin}".format(
-            bin=binary, farpa=arpa_file, fbin=arpa_file.replace(".arpa", ".bin")
+        " ".join(cmd).format(
+            os.path.dirname(os.path.abspath(__file__)), decoder_path, args.kenlm
         )
     )
-    os.remove(os.path.join(arpa_file + ".tmp"))
-
-    # prepare lexicon word -> tokens spelling
-    # write words to lexicon.txt file
-    lex_file = os.path.join(decoder_path, "lexicon.txt")
-    print("Writing Lexicon file - {}...".format(lex_file))
-    with open(lex_file, "w") as f:
-        # get all the words in the arpa file
-        with open(arpa_file, "r") as arpa:
-            for line in arpa:
-                # verify if the line corresponds to unigram
-                if not re.match(r"[-]*[0-9\.]+\t\S+\t*[-]*[0-9\.]*$", line):
-                    continue
-                word = line.split("\t")[1]
-                word = word.strip().lower()
-                if word == "<unk>" or word == "<s>" or word == "</s>":
-                    continue
-                assert re.match("^[a-z']+$", word), "invalid word - {w}".format(w=word)
-                f.write("{w}\t{s} |\n".format(w=word, s=" ".join(word)))
 
     print("Done!", flush=True)

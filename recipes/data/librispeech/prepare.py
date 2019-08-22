@@ -67,7 +67,8 @@ if __name__ == "__main__":
         if not os.path.exists(os.path.join(audio_path, "LibriSpeech", pname)):
             print("Downloading and unpacking {}...".format(pname))
             cmd = """wget -c {http}{name}.tar.gz -P {path};
-                     yes n 2>/dev/null | gunzip {path}/{name}.tar.gz; tar -C {path} -xf {path}/{name}.tar"""
+                     yes n 2>/dev/null | gunzip {path}/{name}.tar.gz;
+                     tar -C {path} -xf {path}/{name}.tar"""
             os.system(cmd.format(path=audio_path, http=audio_http, name=pname))
         else:
             log_str = "{} part of data exists, skip its downloading and unpacking"
@@ -75,7 +76,8 @@ if __name__ == "__main__":
     # Downloading text data for language model training
     if not os.path.exists(os.path.join(text_path, "librispeech-lm-norm.txt")):
         print("Downloading and unpacking text data...")
-        cmd = "wget -c {http} -P {path}; yes n 2>/dev/null | gunzip {path}/librispeech-lm-norm.txt.gz"
+        cmd = """wget -c {http} -P {path}; yes n 2>/dev/null |
+                 gunzip {path}/librispeech-lm-norm.txt.gz"""
         os.system(cmd.format(http=text_http, path=text_path))
     else:
         print("Text data exists, skip its downloading." + LOG_STR, flush=True)

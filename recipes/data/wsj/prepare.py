@@ -190,8 +190,8 @@ if __name__ == "__main__":
         data_dst = os.path.join(audio_path, set_name)
         if os.path.exists(data_dst):
             print(
-                "The folder {} exists, existing flac for this folder will be skipped for generation."
-                " Please remove the folder if you want to regenerate the data".format(
+                """The folder {} exists, existing flac for this folder will be skipped for generation.
+                Please remove the folder if you want to regenerate the data""".format(
                     data_dst
                 ),
                 flush=True,
@@ -248,7 +248,8 @@ if __name__ == "__main__":
         "13{}32.1/wsj1/doc/lng_modl/lm_train/np_data/89".format(wsj1_sep),
     ]
     if not os.path.exists(os.path.join(text_path, "cmudict.0.7a")):
-        cmd = "cd {} && wget http://svn.code.sf.net/p/cmusphinx/code/trunk/cmudict/cmudict.0.7a"
+        url = "http://svn.code.sf.net/p/cmusphinx/code/trunk/cmudict/cmudict.0.7a"
+        cmd = "cd {} && wget {}".format(url)
         os.system(cmd.format(text_path))
     else:
         print("CMU dict already exists, skip its downloading", flush=True)
@@ -289,7 +290,8 @@ if __name__ == "__main__":
                     text_data = out.decode("utf-8")
                     text_data = text_data.lower()
                     # split several sentences into sequence (split if word contains
-                    # dot only at the end and this word is absent in the existed words set)
+                    # dot only at the end and this word is absent
+                    # in the existed words set)
                     text_data = " ".join(
                         [
                             word[:-1] + "\n"

@@ -8,6 +8,7 @@
 
 #include "Seq2SeqCriterion.h"
 #include <algorithm>
+#include <numeric>
 #include <queue>
 
 using namespace fl;
@@ -68,6 +69,46 @@ Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx) {
       FLAGS_inputfeeding,
       FLAGS_samplingstrategy,
       FLAGS_gumbeltemperature);
+}
+
+Seq2SeqState concatState(std::vector<Seq2SeqState>& stateVec) {
+  if (stateVec.size() < 1) {
+    throw std::runtime_error("Empty stateVec");
+  }
+
+  Seq2SeqState newState;
+  newState.step = stateVec[0].step;
+  newState.peakAttnPos = stateVec[0].peakAttnPos;
+  newState.isValid = stateVec[0].isValid;
+
+  std::vector<Variable> alphaVec;
+  std::vector<Variable> hiddenVec;
+  std::vector<Variable> summaryVec;
+  for (auto& state : stateVec) {
+    if (state.step != newState.step) {
+      throw std::runtime_error("step unmatched");
+    } else if (state.isValid != newState.isValid) {
+      throw std::runtime_error("isValid unmatched");
+    }
+    alphaVec.push_back(state.alpha);
+    hiddenVec.push_back(state.hidden);
+    summaryVec.push_back(state.summary);
+  }
+  newState.alpha = concatenate(alphaVec, 2);
+  newState.hidden = concatenate(hiddenVec, 1);
+  newState.summary = concatenate(summaryVec, 2);
+  return newState;
+}
+
+Seq2SeqState selectState(Seq2SeqState& state, int batchIdx) {
+  Seq2SeqState newState;
+  newState.step = state.step;
+  newState.peakAttnPos = state.peakAttnPos;
+  newState.isValid = state.isValid;
+  newState.alpha = state.alpha(af::span, af::span, batchIdx);
+  newState.hidden = state.hidden(af::span, batchIdx);
+  newState.summary = state.summary(af::span, af::span, batchIdx);
+  return newState;
 }
 
 Seq2SeqCriterion::Seq2SeqCriterion(
@@ -299,6 +340,7 @@ std::vector<Seq2SeqCriterion::CandidateHypo> Seq2SeqCriterion::beamSearch(
   bool wasTrain = train_;
   eval();
 
+  // input : [hiddenDim, inputLen, 1]
   std::vector<Seq2SeqCriterion::CandidateHypo> complete;
   std::vector<Seq2SeqCriterion::CandidateHypo> newBeam;
   auto cmpfn = [](Seq2SeqCriterion::CandidateHypo& lhs,
@@ -308,45 +350,64 @@ std::vector<Seq2SeqCriterion::CandidateHypo> Seq2SeqCriterion::beamSearch(
 
   for (int l = 0; l < maxLen; l++) {
     newBeam.resize(0);
+
+    std::vector<Variable> prevYVec;
+    std::vector<Seq2SeqState> prevStateVec;
+    std::vector<float> prevScoreVec;
     for (auto& hypo : beam) {
       Variable y;
       if (!hypo.path.empty()) {
         y = constant(hypo.path.back(), 1, s32, false);
       }
-
-      Variable ox;
-      Seq2SeqState state;
-      std::tie(ox, state) = decodeStep(Variable(input, false), y, hypo.state);
-      ox = logSoftmax(ox, 0);
-      auto oxVector = w2l::afToVector<float>(ox.array());
-      for (int idx = 0; idx < oxVector.size(); idx++) {
-        std::vector<int> path_(hypo.path);
-        path_.push_back(idx);
-        newBeam.emplace_back(hypo.score + oxVector[idx], path_, state);
-      }
+      prevYVec.push_back(y);
+      prevStateVec.push_back(hypo.state);
+      prevScoreVec.push_back(hypo.score);
     }
+    auto prevY = concatenate(prevYVec, 1);  // [1, beam.size()]
+    auto prevState = concatState(prevStateVec);
 
+    Variable ox;
+    Seq2SeqState state;
+    std::tie(ox, state) = decodeStep(Variable(input, false), prevY, prevState);
+    ox = logSoftmax(ox, 0);  // [nClass, 1, beam.size()]
+    ox = fl::reorder(ox, 0, 2, 1);
+    
+    auto scoreArr = af::array(
+        1, static_cast<int>(beam.size()), prevScoreVec.data());
+    scoreArr = af::tile(scoreArr, ox.dims()[0]);
+
+    scoreArr = scoreArr + ox.array();  // [nClass, beam.size()]
+    scoreArr = af::flat(scoreArr);  // column-first
+    auto scoreVec = w2l::afToVector<float>(scoreArr);
+
+    std::vector<size_t> indices(scoreVec.size());
+    std::iota(indices.begin(), indices.end(), 0);
     std::partial_sort(
-        newBeam.begin(),
-        newBeam.begin() +
-            std::min(2 * beamSize, static_cast<int>(newBeam.size())),
-        newBeam.end(),
-        cmpfn);
+        indices.begin(), 
+        indices.begin() + 
+            std::min(2 * beamSize, static_cast<int>(scoreVec.size())),
+        indices.end(),
+        [&scoreVec](size_t i1, size_t i2) {return scoreVec[i1] > scoreVec[i2];});
 
-    beam.resize(0);
-    for (int idx = 0; idx < newBeam.size(); idx++) {
-      auto& hypo = newBeam[idx];
-      // We only move the top beamSize hypothesises into complete.
-      if (idx < beamSize && hypo.path.back() == eos_) {
-        hypo.path.pop_back();
-        complete.push_back(hypo);
-      } else if (hypo.path.back() != eos_) {
-        beam.push_back(hypo);
+    int nClass = ox.dims()[0];
+    for (int j = 0; j < indices.size(); j++) {
+      int hypIdx = indices[j] / nClass;
+      int clsIdx = indices[j] % nClass;
+      std::vector<int> path_(beam[hypIdx].path);
+      path_.push_back(clsIdx);
+      if (j < beamSize && clsIdx == eos_) {
+        complete.emplace_back(
+            scoreVec[indices[j]], path_, selectState(state, hypIdx));
+      } else if (clsIdx != eos_) {
+        newBeam.emplace_back(
+            scoreVec[indices[j]], path_, selectState(state, hypIdx));
       }
-      if (beam.size() >= beamSize) {
+      if (newBeam.size() >= beamSize) {
         break;
       }
     }
+    beam.resize(newBeam.size());
+    beam = std::move(newBeam);
 
     if (complete.size() >= beamSize) {
       std::partial_sort(

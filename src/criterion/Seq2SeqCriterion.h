@@ -136,6 +136,10 @@ class Seq2SeqCriterion : public SequenceCriterion {
     gumbelTemperature_ = temperature;
   }
 
+  void setLabelSmooth(double labelSmooth) {
+    labelSmooth_ = labelSmooth;
+  }
+
  private:
   int eos_;
   int maxDecoderOutputLen_;

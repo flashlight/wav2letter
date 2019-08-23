@@ -174,7 +174,7 @@ void LexiconFreeDecoder::decodeEnd() {
         lmScoreReturn.first,
         &prevHyp,
         prevHyp.score + opt_.lmWeight * lmScoreReturn.second,
-        -1,
+        sil_,
         false // prevBlank
     );
   }
@@ -189,7 +189,7 @@ std::vector<DecodeResult> LexiconFreeDecoder::getAllFinalHypothesis() const {
 }
 
 DecodeResult LexiconFreeDecoder::getBestHypothesis(int lookBack) const {
-  int finalFrame = nDecodedFrames_ - nPrunedFrames_ - lookBack;
+  int finalFrame = nDecodedFrames_ - nPrunedFrames_;
   const LexiconFreeDecoderState* bestNode =
       findBestAncestor(hyp_.find(finalFrame)->second, lookBack);
 
@@ -211,7 +211,7 @@ void LexiconFreeDecoder::prune(int lookBack) {
   }
 
   /* (1) Find the last emitted word in the best path */
-  int finalFrame = nDecodedFrames_ - nPrunedFrames_ - lookBack;
+  int finalFrame = nDecodedFrames_ - nPrunedFrames_;
   const LexiconFreeDecoderState* bestNode =
       findBestAncestor(hyp_.find(finalFrame)->second, lookBack);
   if (!bestNode) {

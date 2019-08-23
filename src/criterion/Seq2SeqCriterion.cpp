@@ -363,31 +363,33 @@ std::vector<Seq2SeqCriterion::CandidateHypo> Seq2SeqCriterion::beamSearch(
       prevStateVec.push_back(hypo.state);
       prevScoreVec.push_back(hypo.score);
     }
-    auto prevY = concatenate(prevYVec, 1);  // [1, beam.size()]
+    auto prevY = concatenate(prevYVec, 1); // [1, beam.size()]
     auto prevState = concatState(prevStateVec);
 
     Variable ox;
     Seq2SeqState state;
     std::tie(ox, state) = decodeStep(Variable(input, false), prevY, prevState);
-    ox = logSoftmax(ox, 0);  // [nClass, 1, beam.size()]
+    ox = logSoftmax(ox, 0); // [nClass, 1, beam.size()]
     ox = fl::reorder(ox, 0, 2, 1);
-    
-    auto scoreArr = af::array(
-        1, static_cast<int>(beam.size()), prevScoreVec.data());
+
+    auto scoreArr =
+        af::array(1, static_cast<int>(beam.size()), prevScoreVec.data());
     scoreArr = af::tile(scoreArr, ox.dims()[0]);
 
-    scoreArr = scoreArr + ox.array();  // [nClass, beam.size()]
-    scoreArr = af::flat(scoreArr);  // column-first
+    scoreArr = scoreArr + ox.array(); // [nClass, beam.size()]
+    scoreArr = af::flat(scoreArr); // column-first
     auto scoreVec = w2l::afToVector<float>(scoreArr);
 
     std::vector<size_t> indices(scoreVec.size());
     std::iota(indices.begin(), indices.end(), 0);
     std::partial_sort(
-        indices.begin(), 
-        indices.begin() + 
+        indices.begin(),
+        indices.begin() +
             std::min(2 * beamSize, static_cast<int>(scoreVec.size())),
         indices.end(),
-        [&scoreVec](size_t i1, size_t i2) {return scoreVec[i1] > scoreVec[i2];});
+        [&scoreVec](size_t i1, size_t i2) {
+          return scoreVec[i1] > scoreVec[i2];
+        });
 
     int nClass = ox.dims()[0];
     for (int j = 0; j < indices.size(); j++) {
@@ -396,6 +398,7 @@ std::vector<Seq2SeqCriterion::CandidateHypo> Seq2SeqCriterion::beamSearch(
       std::vector<int> path_(beam[hypIdx].path);
       path_.push_back(clsIdx);
       if (j < beamSize && clsIdx == eos_) {
+        path_.pop_back();
         complete.emplace_back(
             scoreVec[indices[j]], path_, selectState(state, hypIdx));
       } else if (clsIdx != eos_) {

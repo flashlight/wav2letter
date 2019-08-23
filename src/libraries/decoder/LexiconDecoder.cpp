@@ -82,7 +82,7 @@ void LexiconDecoder::decodeEnd() {
         prevLex,
         &prevHyp,
         prevHyp.score + opt_.lmWeight * lmStateScorePair.second,
-        -1,
+        sil_,
         -1,
         false // prevBlank
     );

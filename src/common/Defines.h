@@ -210,6 +210,9 @@ DECLARE_double(softwstd);
 DECLARE_bool(trainWithWindow);
 DECLARE_int64(pretrainWindow);
 DECLARE_double(gumbeltemperature);
+DECLARE_int64(decoderrnnlayer);
+DECLARE_int64(decoderattnround);
+DECLARE_double(decoderdropout);
 
 /* ========== DISTRIBUTED TRAINING ========== */
 DECLARE_bool(enable_distributed);

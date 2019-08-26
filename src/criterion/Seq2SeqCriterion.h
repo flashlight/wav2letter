@@ -20,13 +20,16 @@ namespace w2l {
 
 struct Seq2SeqState {
   fl::Variable alpha;
-  fl::Variable hidden;
+  std::vector<fl::Variable> hidden;
   fl::Variable summary;
   int step;
   int peakAttnPos;
   bool isValid;
 
-  Seq2SeqState() : step(0), peakAttnPos(-1), isValid(false) {}
+  Seq2SeqState() : hidden(1), step(0), peakAttnPos(-1), isValid(false) {}
+
+  explicit Seq2SeqState(int nAttnRound)
+      : hidden(nAttnRound), step(0), peakAttnPos(-1), isValid(false) {}
 };
 
 typedef std::shared_ptr<Seq2SeqState> Seq2SeqStatePtr;
@@ -49,14 +52,17 @@ class Seq2SeqCriterion : public SequenceCriterion {
       int hiddenDim,
       int eos,
       int maxDecoderOutputLen,
-      std::shared_ptr<AttentionBase> attention,
+      const std::vector<std::shared_ptr<AttentionBase>>& attentions,
       std::shared_ptr<WindowBase> window = nullptr,
       bool trainWithWindow = false,
       int pctTeacherForcing = 100,
       double labelSmooth = 0.0,
       bool inputFeeding = false,
       std::string samplingStrategy = w2l::kRandSampling,
-      double gumbelTemperature = 1.0);
+      double gumbelTemperature = 1.0,
+      int nRnnLayer = 1,
+      int nAttnRound = 1,
+      float dropOut = 0.0);
 
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs) override;
@@ -92,16 +98,16 @@ class Seq2SeqCriterion : public SequenceCriterion {
     return std::static_pointer_cast<fl::Embedding>(module(0));
   }
 
-  std::shared_ptr<fl::RNN> decodeRNN() const {
-    return std::static_pointer_cast<fl::RNN>(module(1));
+  std::shared_ptr<fl::RNN> decodeRNN(int n) const {
+    return std::static_pointer_cast<fl::RNN>(module(n + 1));
+  }
+
+  std::shared_ptr<AttentionBase> attention(int n) const {
+    return std::static_pointer_cast<AttentionBase>(module(nAttnRound_ + n + 2));
   }
 
   std::shared_ptr<fl::Linear> linearOut() const {
-    return std::static_pointer_cast<fl::Linear>(module(2));
-  }
-
-  std::shared_ptr<AttentionBase> attention() const {
-    return std::static_pointer_cast<AttentionBase>(module(3));
+    return std::static_pointer_cast<fl::Linear>(module(nAttnRound_ + 1));
   }
 
   fl::Variable startEmbedding() const {
@@ -152,6 +158,7 @@ class Seq2SeqCriterion : public SequenceCriterion {
   int nClass_;
   std::string samplingStrategy_;
   double gumbelTemperature_;
+  int nAttnRound_{1};
 
   FL_SAVE_LOAD_WITH_BASE(
       SequenceCriterion,
@@ -165,7 +172,8 @@ class Seq2SeqCriterion : public SequenceCriterion {
       inputFeeding_,
       nClass_,
       fl::versioned(samplingStrategy_, 1),
-      fl::versioned(gumbelTemperature_, 2))
+      fl::versioned(gumbelTemperature_, 2),
+      fl::versioned(nAttnRound_, 3))
 
   Seq2SeqCriterion() = default;
 
@@ -183,8 +191,14 @@ struct Seq2SeqDecoderBuffer {
   int attentionThreshold;
   double smoothingTemperature;
 
-  Seq2SeqDecoderBuffer(int beamSize, int attnThre, int smootTemp)
-      : attentionThreshold(attnThre), smoothingTemperature(smootTemp) {
+  Seq2SeqDecoderBuffer(
+      int nAttnRound,
+      int beamSize,
+      int attnThre,
+      int smootTemp)
+      : dummyState(nAttnRound),
+        attentionThreshold(attnThre),
+        smoothingTemperature(smootTemp) {
     ys.reserve(beamSize);
     prevStates.reserve(beamSize);
   }
@@ -206,4 +220,4 @@ AMUpdateFunc buildAmUpdateFunction(
 } // namespace w2l
 
 CEREAL_REGISTER_TYPE(w2l::Seq2SeqCriterion)
-CEREAL_CLASS_VERSION(w2l::Seq2SeqCriterion, 2)
+CEREAL_CLASS_VERSION(w2l::Seq2SeqCriterion, 3)

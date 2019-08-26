@@ -15,7 +15,8 @@ using namespace fl;
 
 namespace w2l {
 
-Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx) {
+namespace detail {
+std::shared_ptr<AttentionBase> buildAttention() {
   std::shared_ptr<AttentionBase> attention;
   if (FLAGS_attention == w2l::kContentAttention) {
     attention = std::make_shared<ContentAttention>();
@@ -38,6 +39,10 @@ Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx) {
     throw std::runtime_error("Unimplmented attention: " + FLAGS_attention);
   }
 
+  return attention;
+}
+
+std::shared_ptr<WindowBase> buildWindow() {
   std::shared_ptr<WindowBase> window;
   if (FLAGS_attnWindow == w2l::kNoWindow) {
     window = nullptr;
@@ -55,20 +60,7 @@ Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx) {
   } else {
     throw std::runtime_error("Unimplmented window: " + FLAGS_attnWindow);
   }
-
-  return Seq2SeqCriterion(
-      numClasses,
-      FLAGS_encoderdim,
-      eosIdx,
-      FLAGS_maxdecoderoutputlen,
-      attention,
-      window,
-      FLAGS_trainWithWindow,
-      FLAGS_pctteacherforcing,
-      FLAGS_labelsmooth,
-      FLAGS_inputfeeding,
-      FLAGS_samplingstrategy,
-      FLAGS_gumbeltemperature);
+  return window;
 }
 
 Seq2SeqState concatState(std::vector<Seq2SeqState>& stateVec) {
@@ -76,13 +68,14 @@ Seq2SeqState concatState(std::vector<Seq2SeqState>& stateVec) {
     throw std::runtime_error("Empty stateVec");
   }
 
-  Seq2SeqState newState;
+  int nAttnRound = stateVec[0].hidden.size();
+  Seq2SeqState newState(nAttnRound);
   newState.step = stateVec[0].step;
   newState.peakAttnPos = stateVec[0].peakAttnPos;
   newState.isValid = stateVec[0].isValid;
 
   std::vector<Variable> alphaVec;
-  std::vector<Variable> hiddenVec;
+  std::vector<std::vector<Variable>> hiddenVec(nAttnRound);
   std::vector<Variable> summaryVec;
   for (auto& state : stateVec) {
     if (state.step != newState.step) {
@@ -91,24 +84,56 @@ Seq2SeqState concatState(std::vector<Seq2SeqState>& stateVec) {
       throw std::runtime_error("isValid unmatched");
     }
     alphaVec.push_back(state.alpha);
-    hiddenVec.push_back(state.hidden);
+    for (int i = 0; i < nAttnRound; i++) {
+      hiddenVec[i].push_back(state.hidden[i]);
+    }
     summaryVec.push_back(state.summary);
   }
   newState.alpha = concatenate(alphaVec, 2);
-  newState.hidden = concatenate(hiddenVec, 1);
+  for (int i = 0; i < nAttnRound; i++) {
+    newState.hidden[i] = concatenate(hiddenVec[i], 1);
+  }
   newState.summary = concatenate(summaryVec, 2);
   return newState;
 }
 
 Seq2SeqState selectState(Seq2SeqState& state, int batchIdx) {
-  Seq2SeqState newState;
+  int nAttnRound = state.hidden.size();
+  Seq2SeqState newState(nAttnRound);
   newState.step = state.step;
   newState.peakAttnPos = state.peakAttnPos;
   newState.isValid = state.isValid;
   newState.alpha = state.alpha(af::span, af::span, batchIdx);
-  newState.hidden = state.hidden(af::span, batchIdx);
   newState.summary = state.summary(af::span, af::span, batchIdx);
+  for (int i = 0; i < nAttnRound; i++) {
+    newState.hidden[i] = state.hidden[i](af::span, batchIdx);
+  }
   return newState;
+}
+} // namespace detail
+
+Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx) {
+  std::vector<std::shared_ptr<AttentionBase>> attentions;
+  for (int i = 0; i < FLAGS_decoderattnround; i++) {
+    attentions.push_back(detail::buildAttention());
+  }
+
+  return Seq2SeqCriterion(
+      numClasses,
+      FLAGS_encoderdim,
+      eosIdx,
+      FLAGS_maxdecoderoutputlen,
+      attentions,
+      detail::buildWindow(),
+      FLAGS_trainWithWindow,
+      FLAGS_pctteacherforcing,
+      FLAGS_labelsmooth,
+      FLAGS_inputfeeding,
+      FLAGS_samplingstrategy,
+      FLAGS_gumbeltemperature,
+      FLAGS_decoderrnnlayer,
+      FLAGS_decoderattnround,
+      FLAGS_decoderdropout);
 }
 
 Seq2SeqCriterion::Seq2SeqCriterion(
@@ -116,14 +141,17 @@ Seq2SeqCriterion::Seq2SeqCriterion(
     int hiddenDim,
     int eos,
     int maxDecoderOutputLen,
-    std::shared_ptr<AttentionBase> attention,
-    std::shared_ptr<WindowBase> window /* nullptr */,
+    const std::vector<std::shared_ptr<AttentionBase>>& attentions,
+    std::shared_ptr<WindowBase> window /* = nullptr*/,
     bool trainWithWindow /* false */,
     int pctTeacherForcing /* = 100 */,
     double labelSmooth /* = 0.0 */,
     bool inputFeeding /* = false */,
     std::string samplingStrategy, /* = w2l::kRandSampling */
-    double gumbelTemperature /* = 1.0 */)
+    double gumbelTemperature /* = 1.0 */,
+    int nRnnLayer /* = 1 */,
+    int nAttnRound /* = 1 */,
+    float dropOut /* = 0.0 */)
     : eos_(eos),
       maxDecoderOutputLen_(maxDecoderOutputLen),
       window_(window),
@@ -133,14 +161,40 @@ Seq2SeqCriterion::Seq2SeqCriterion(
       inputFeeding_(inputFeeding),
       nClass_(nClass),
       samplingStrategy_(samplingStrategy),
-      gumbelTemperature_(gumbelTemperature) {
+      gumbelTemperature_(gumbelTemperature),
+      nAttnRound_(nAttnRound) {
+  // 1. Embedding
   add(std::make_shared<Embedding>(hiddenDim, nClass_));
-  add(std::make_shared<RNN>(hiddenDim, hiddenDim, 1, RnnMode::GRU, false, 0.0));
+
+  // 2. RNN
+  for (int i = 0; i < nAttnRound_; i++) {
+    add(std::make_shared<RNN>(
+        hiddenDim, hiddenDim, nRnnLayer, RnnMode::GRU, false, dropOut));
+  }
+
+  // 3. Linear
   add(std::make_shared<Linear>(hiddenDim, nClass_));
-  add(attention);
+  // FIXME: Having a linear layer in between RNN and attention is only for
+  // backward compatibility.
+
+  // 4. Attention
+  for (int i = 0; i < nAttnRound_; i++) {
+    add(attentions[i]);
+  }
+
+  // 5. Initial hidden state
   params_.push_back(uniform(af::dim4{hiddenDim}, -1e-1, 1e-1));
   setUseSequentialDecoder();
 }
+
+/**
+ * Symbols describing tensor shapes used in this file:
+ * - B: batch size
+ * - C: number of class/tokens
+ * - H: hidden dimension
+ * - U: target length
+ * - T: length of the time frames in the encoded X
+ */
 
 std::vector<Variable> Seq2SeqCriterion::forward(
     const std::vector<Variable>& inputs) {
@@ -157,8 +211,7 @@ std::vector<Variable> Seq2SeqCriterion::forward(
     std::tie(out, alpha) = vectorizedDecoder(input, target);
   }
 
-  // [nClass, targetlen, batchsize],
-  out = logSoftmax(out, 0);
+  out = logSoftmax(out, 0); // C x U x B
 
   auto losses = moddims(
       sum(categoricalCrossEntropy(out, target, ReduceMode::NONE), {0}), -1);
@@ -178,7 +231,7 @@ std::pair<Variable, Variable> Seq2SeqCriterion::vectorizedDecoder(
   int B = target.dims(1);
   int T = input.dims(1);
 
-  auto hy = tile(startEmbedding(), {1, 1, B});
+  auto hy = tile(startEmbedding(), {1, 1, B}); // H x 1 x B
 
   if (U > 1) {
     // Slice off eos
@@ -196,34 +249,30 @@ std::pair<Variable, Variable> Seq2SeqCriterion::vectorizedDecoder(
       }
     }
 
-    // [hiddendim, targetlen-1, batchsize]
     auto yEmbed = embedding()->forward(y);
-
-    // [hiddendim, targetlen, batchsize]
-    hy = concatenate({hy, yEmbed}, 1);
+    hy = concatenate({hy, yEmbed}, 1); // H x U x B
   }
 
-  // transpose batch and target just for RNN
-  hy = reorder(hy, 0, 2, 1);
-  hy = decodeRNN()->forward(hy);
-  hy = reorder(hy, 0, 2, 1);
+  Variable alpha, summaries;
+  for (int i = 0; i < nAttnRound_; i++) {
+    hy = reorder(hy, 0, 2, 1); // H x U x B -> H x B x U
+    hy = decodeRNN(i)->forward(hy);
+    hy = reorder(hy, 0, 2, 1); // H x B x U ->  H x U x B
 
-  Variable windowWeight;
-  if (window_ && (!train_ || trainWithWindow_)) {
-    windowWeight = window_->computeWindowMask(U, T, B);
+    Variable windowWeight;
+    if (window_ && (!train_ || trainWithWindow_)) {
+      windowWeight = window_->computeWindowMask(U, T, B);
+    }
+
+    std::tie(alpha, summaries) = attention(i)->forward(
+        hy,
+        input,
+        Variable(), // vectorizedDecoder does not support prev_attn input
+        windowWeight);
+    hy = hy + summaries;
   }
 
-  Variable alpha;
-  Variable summaries;
-  std::tie(alpha, summaries) = attention()->forward(
-      hy,
-      input,
-      Variable(), // vectorizedDecoder does not support prev_attn input
-      windowWeight);
-
-  // [nClass, targetlen, batchsize]
-  auto out = linearOut()->forward(summaries + hy);
-
+  auto out = linearOut()->forward(hy); // C x U x B
   return std::make_pair(out, alpha);
 }
 
@@ -238,7 +287,7 @@ std::pair<Variable, Variable> Seq2SeqCriterion::decoder(
 
   std::vector<Variable> outvec;
   std::vector<Variable> alphaVec;
-  Seq2SeqState state;
+  Seq2SeqState state(nAttnRound_);
   Variable y;
   for (int u = 0; u < U; u++) {
     Variable ox;
@@ -270,11 +319,8 @@ std::pair<Variable, Variable> Seq2SeqCriterion::decoder(
     alphaVec.push_back(state.alpha);
   }
 
-  // [nClass, targetlen, batchsize]
-  auto out = concatenate(outvec, 1);
-
-  // [targetlen, seqlen, batchsize]
-  auto alpha = concatenate(alphaVec, 0);
+  auto out = concatenate(outvec, 1); // C x U x B
+  auto alpha = concatenate(alphaVec, 0); // U x T x B
 
   return std::make_pair(out, alpha);
 }
@@ -286,13 +332,13 @@ af::array Seq2SeqCriterion::viterbiPath(const af::array& input) {
 std::pair<af::array, Variable> Seq2SeqCriterion::viterbiPathBase(
     const af::array& input,
     bool saveAttn) {
-  //  TODO: Extend to batchsize > 1
+  // NB: xEncoded has to be with batchsize 1
   bool wasTrain = train_;
   eval();
   std::vector<int> maxPath;
   std::vector<Variable> alphaVec;
   Variable alpha;
-  Seq2SeqState state;
+  Seq2SeqState state(nAttnRound_);
   Variable y, ox;
   af::array maxIdx, maxValues;
   int pred;
@@ -333,14 +379,13 @@ std::vector<int> Seq2SeqCriterion::beamPath(
 
 // beam are candidates that need to be extended
 std::vector<Seq2SeqCriterion::CandidateHypo> Seq2SeqCriterion::beamSearch(
-    const af::array& input,
+    const af::array& input, // H x T x 1
     std::vector<Seq2SeqCriterion::CandidateHypo> beam,
     int beamSize = 10,
     int maxLen = 200) {
   bool wasTrain = train_;
   eval();
 
-  // input : [hiddenDim, inputLen, 1]
   std::vector<Seq2SeqCriterion::CandidateHypo> complete;
   std::vector<Seq2SeqCriterion::CandidateHypo> newBeam;
   auto cmpfn = [](Seq2SeqCriterion::CandidateHypo& lhs,
@@ -363,20 +408,20 @@ std::vector<Seq2SeqCriterion::CandidateHypo> Seq2SeqCriterion::beamSearch(
       prevStateVec.push_back(hypo.state);
       prevScoreVec.push_back(hypo.score);
     }
-    auto prevY = concatenate(prevYVec, 1); // [1, beam.size()]
-    auto prevState = concatState(prevStateVec);
+    auto prevY = concatenate(prevYVec, 1); // 1 x B
+    auto prevState = detail::concatState(prevStateVec);
 
     Variable ox;
     Seq2SeqState state;
     std::tie(ox, state) = decodeStep(Variable(input, false), prevY, prevState);
-    ox = logSoftmax(ox, 0); // [nClass, 1, beam.size()]
+    ox = logSoftmax(ox, 0); // C x 1 x B
     ox = fl::reorder(ox, 0, 2, 1);
 
     auto scoreArr =
         af::array(1, static_cast<int>(beam.size()), prevScoreVec.data());
     scoreArr = af::tile(scoreArr, ox.dims()[0]);
 
-    scoreArr = scoreArr + ox.array(); // [nClass, beam.size()]
+    scoreArr = scoreArr + ox.array(); // C x B
     scoreArr = af::flat(scoreArr); // column-first
     auto scoreVec = w2l::afToVector<float>(scoreArr);
 
@@ -400,10 +445,10 @@ std::vector<Seq2SeqCriterion::CandidateHypo> Seq2SeqCriterion::beamSearch(
       if (j < beamSize && clsIdx == eos_) {
         path_.pop_back();
         complete.emplace_back(
-            scoreVec[indices[j]], path_, selectState(state, hypIdx));
+            scoreVec[indices[j]], path_, detail::selectState(state, hypIdx));
       } else if (clsIdx != eos_) {
         newBeam.emplace_back(
-            scoreVec[indices[j]], path_, selectState(state, hypIdx));
+            scoreVec[indices[j]], path_, detail::selectState(state, hypIdx));
       }
       if (newBeam.size() >= beamSize) {
         break;
@@ -437,8 +482,6 @@ std::pair<Variable, Seq2SeqState> Seq2SeqCriterion::decodeStep(
     const Variable& xEncoded,
     const Variable& y,
     const Seq2SeqState& inState) const {
-  // xEncoded is shape [hiddendim, seqlen, batchsize]
-  // y (if not empty) is shape [1, batchsize]
   size_t stepSize = af::getMemStepSize();
   af::setMemStepSize(10 * (1 << 10));
   Variable hy;
@@ -453,28 +496,30 @@ std::pair<Variable, Seq2SeqState> Seq2SeqCriterion::decodeStep(
   if (inputFeeding_ && !y.isempty()) {
     hy = hy + moddims(inState.summary, hy.dims());
   }
+  hy = moddims(hy, {hy.dims(0), -1}); // H x B
 
-  // [hiddendim, batchsize]
-  hy = moddims(hy, {hy.dims(0), -1});
-
-  Seq2SeqState outState;
+  Seq2SeqState outState(nAttnRound_);
   outState.step = inState.step + 1;
-  std::tie(hy, outState.hidden) = decodeRNN()->forward(hy, inState.hidden);
 
-  // [hiddendim, 1, batchsize]
-  hy = moddims(hy, {hy.dims(0), 1, hy.dims(1)});
+  Variable summaries;
+  for (int i = 0; i < nAttnRound_; i++) {
+    hy = moddims(hy, {hy.dims(0), -1}); // H x 1 x B -> H x B
+    std::tie(hy, outState.hidden[i]) =
+        decodeRNN(i)->forward(hy, inState.hidden[i]);
+    hy = moddims(hy, {hy.dims(0), 1, hy.dims(1)}); // H x B -> H x 1 x B
 
-  Variable windowWeight;
-  if (window_ && (!train_ || trainWithWindow_)) {
-    windowWeight = window_->computeSingleStepWindow(
-        inState.alpha, xEncoded.dims(1), xEncoded.dims(2), inState.step);
+    Variable windowWeight;
+    if (window_ && (!train_ || trainWithWindow_)) {
+      windowWeight = window_->computeSingleStepWindow(
+          inState.alpha, xEncoded.dims(1), xEncoded.dims(2), inState.step);
+    }
+    std::tie(outState.alpha, summaries) =
+        attention(i)->forward(hy, xEncoded, inState.alpha, windowWeight);
+    hy = hy + summaries;
   }
+  outState.summary = summaries;
 
-  std::tie(outState.alpha, outState.summary) =
-      attention()->forward(hy, xEncoded, inState.alpha, windowWeight);
-
-  // [nClass, 1, batchsize]
-  auto out = linearOut()->forward(outState.summary + hy);
+  auto out = linearOut()->forward(hy); // C x 1 x B
   af::setMemStepSize(stepSize);
   return std::make_pair(out, outState);
 }
@@ -486,8 +531,7 @@ Seq2SeqCriterion::decodeBatchStep(
     const std::vector<Seq2SeqState*>& inStates,
     const int attentionThreshold,
     const float smoothingTemperature) const {
-  // xEncoded is shape [hiddendim, seqlen, batchsize]
-  // y (if not empty) is shape [1, batchsize]
+  // NB: xEncoded has to be with batchsize 1
   size_t stepSize = af::getMemStepSize();
   af::setMemStepSize(10 * (1 << 10));
   int batchSize = ys.size();
@@ -505,41 +549,47 @@ Seq2SeqCriterion::decodeBatchStep(
     }
     ys[i] = moddims(ys[i], {ys[i].dims(0), -1});
   }
-  // yBatched [hiddendim, batchsize]
-  Variable yBatched = concatenate(ys, 1);
-
-  // Batch inState
-  for (int i = 0; i < batchSize; i++) {
-    statesVector[i] = inStates[i]->hidden;
-  }
-  Variable inStateHiddenBatched = concatenate(statesVector, 1);
-
-  /* (1) RNN forward */
-  Variable outStateBatched;
-  std::tie(yBatched, outStateBatched) =
-      decodeRNN()->forward(yBatched, inStateHiddenBatched);
+  Variable yBatched = concatenate(ys, 1); // H x B
 
   std::vector<Seq2SeqStatePtr> outstates(batchSize);
   for (int i = 0; i < batchSize; i++) {
-    outstates[i] = std::make_shared<Seq2SeqState>();
+    outstates[i] = std::make_shared<Seq2SeqState>(nAttnRound_);
     outstates[i]->step = inStates[i]->step + 1;
-    outstates[i]->hidden = outStateBatched.col(i);
   }
+  Variable outStateBatched;
 
-  /* (2) Attention forward */
-  if (window_ && (!train_ || trainWithWindow_)) {
-    throw std::runtime_error(
-        "Batched decoding does not support models with window");
-  } else {
-    Variable alphaBatched;
-    // DEBUG: Third Variable is set to empty since no attention use it.
-    std::tie(alphaBatched, outStateBatched) =
-        attention()->forward(yBatched, xEncoded, Variable(), Variable());
-    // alphaBatched [T, 1, batchSize]
-    alphaBatched = reorder(alphaBatched, 1, 2, 0);
-    // outStateBatched [hidden_dim, 1, batchSize]
-    outStateBatched = moddims(
-        outStateBatched, {outStateBatched.dims(0), 1, outStateBatched.dims(1)});
+  for (int n = 0; n < nAttnRound_; n++) {
+    /* (1) RNN forward */
+    if (inStates[0]->hidden[n].isempty()) {
+      std::tie(yBatched, outStateBatched) =
+          decodeRNN(n)->forward(yBatched, Variable());
+    } else {
+      for (int i = 0; i < batchSize; i++) {
+        statesVector[i] = inStates[i]->hidden[n];
+      }
+      Variable inStateHiddenBatched = concatenate(statesVector, 1);
+      std::tie(yBatched, outStateBatched) =
+          decodeRNN(n)->forward(yBatched, inStateHiddenBatched);
+    }
+
+    for (int i = 0; i < batchSize; i++) {
+      outstates[i]->hidden[n] = outStateBatched.col(i);
+    }
+
+    /* (2) Attention forward */
+    if (window_ && (!train_ || trainWithWindow_)) {
+      throw std::runtime_error(
+          "Batched decoding does not support models with window");
+    }
+
+    Variable summaries, alphaBatched;
+    // NB:
+    // - Third Variable is set to empty since no attention use it.
+    // - Only ContentAttention is supported
+    std::tie(alphaBatched, summaries) =
+        attention(n)->forward(yBatched, xEncoded, Variable(), Variable());
+    alphaBatched = reorder(alphaBatched, 1, 0); // B x T -> T x B
+    yBatched = yBatched + summaries; // H x B
 
     af::array bestpath, maxvalues;
     af::max(maxvalues, bestpath, alphaBatched.array(), 0);
@@ -550,19 +600,17 @@ Seq2SeqCriterion::decodeBatchStep(
       outstates[i]->isValid =
           std::abs(outstates[i]->peakAttnPos - inStates[i]->peakAttnPos) <=
           attentionThreshold;
-      outstates[i]->alpha = alphaBatched(af::span, af::span, i);
-      outstates[i]->summary = outStateBatched(af::span, af::span, i);
+      outstates[i]->alpha = alphaBatched.col(i);
+      outstates[i]->summary = yBatched.col(i);
     }
   }
 
   /* (3) Linear forward */
-  // outBatched [nclass, 1, batchsize]
-  yBatched = moddims(yBatched, {yBatched.dims(0), 1, yBatched.dims(1)});
-  auto outBatched = linearOut()->forward(outStateBatched + yBatched);
+  auto outBatched = linearOut()->forward(yBatched);
   outBatched = logSoftmax(outBatched / smoothingTemperature, 0);
   std::vector<std::vector<float>> out(batchSize);
   for (int i = 0; i < batchSize; i++) {
-    out[i] = w2l::afToVector<float>(outBatched(af::span, af::span, i));
+    out[i] = w2l::afToVector<float>(outBatched.col(i));
   }
 
   af::setMemStepSize(stepSize);
@@ -575,9 +623,9 @@ void Seq2SeqCriterion::setUseSequentialDecoder() {
       samplingStrategy_ == w2l::kGumbelSampling || inputFeeding_) {
     useSequentialDecoder_ = true;
   } else if (
-      std::dynamic_pointer_cast<SimpleLocationAttention>(attention()) ||
-      std::dynamic_pointer_cast<LocationAttention>(attention()) ||
-      std::dynamic_pointer_cast<NeuralLocationAttention>(attention())) {
+      std::dynamic_pointer_cast<SimpleLocationAttention>(attention(0)) ||
+      std::dynamic_pointer_cast<LocationAttention>(attention(0)) ||
+      std::dynamic_pointer_cast<NeuralLocationAttention>(attention(0))) {
     useSequentialDecoder_ = true;
   } else if (
       window_ && trainWithWindow_ &&
@@ -593,7 +641,10 @@ std::string Seq2SeqCriterion::prettyString() const {
 AMUpdateFunc buildAmUpdateFunction(
     std::shared_ptr<SequenceCriterion>& criterion) {
   auto buf = std::make_shared<Seq2SeqDecoderBuffer>(
-      FLAGS_beamsize, FLAGS_attentionthreshold, FLAGS_smoothingtemperature);
+      FLAGS_decoderattnround,
+      FLAGS_beamsize,
+      FLAGS_attentionthreshold,
+      FLAGS_smoothingtemperature);
 
   const Seq2SeqCriterion* s2sCriterion =
       static_cast<Seq2SeqCriterion*>(criterion.get());
@@ -650,4 +701,5 @@ AMUpdateFunc buildAmUpdateFunction(
 
   return amUpdateFunc;
 }
+
 } // namespace w2l

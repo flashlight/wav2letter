@@ -263,6 +263,9 @@ DEFINE_int64(
     0,
     "use window in training for pretrainWindow epochs");
 DEFINE_double(gumbeltemperature, 1.0, "temperature in gumbel softmax");
+DEFINE_int64(decoderrnnlayer, 1, "The number of decoder rnn layers.");
+DEFINE_int64(decoderattnround, 1, "The number of decoder attention rounds.");
+DEFINE_double(decoderdropout, 0.0, "decoder dropout");
 
 // DISTRIBUTED TRAINING
 DEFINE_bool(enable_distributed, false, "enable distributed training");

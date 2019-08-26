@@ -24,13 +24,26 @@ TEST(Seq2SeqTest, Seq2Seq) {
   int inputsteps = 200;
   int outputsteps = 50;
   int maxoutputlen = 100;
+  int nAttnRound = 2;
 
+  std::vector<std::shared_ptr<AttentionBase>> attentions(
+      nAttnRound, std::make_shared<ContentAttention>());
   Seq2SeqCriterion seq2seq(
       nclass,
       hiddendim,
       nclass - 1 /* eos token index */,
       maxoutputlen,
-      std::make_shared<ContentAttention>());
+      attentions,
+      nullptr,
+      false,
+      100,
+      0.0,
+      false,
+      w2l::kRandSampling,
+      1.0,
+      2, // nRnnLayer
+      nAttnRound,
+      0.0);
 
   auto input = af::randn(hiddendim, inputsteps, batchsize, f32);
   auto target = af::randu(outputsteps, batchsize, f32) * 0.99 * nclass;
@@ -88,7 +101,7 @@ TEST(Seq2SeqTest, Seq2SeqViterbi) {
       hiddendim,
       nclass - 1 /* eos token index */,
       maxoutputlen,
-      std::make_shared<ContentAttention>());
+      {std::make_shared<ContentAttention>()});
 
   seq2seq.eval();
   auto input = af::randn(hiddendim, inputsteps, 1, f32);
@@ -109,7 +122,7 @@ TEST(Seq2SeqTest, Seq2SeqBeamSearchViterbi) {
       hiddendim,
       nclass - 1 /* eos token index */,
       maxoutputlen,
-      std::make_shared<ContentAttention>());
+      {std::make_shared<ContentAttention>()});
 
   seq2seq.eval();
   auto input = af::randn(hiddendim, inputsteps, 1, f32);
@@ -133,7 +146,7 @@ TEST(Seq2SeqTest, Seq2SeqMedianWindow) {
       hiddendim,
       nclass - 1 /* eos token index */,
       maxoutputlen,
-      std::make_shared<ContentAttention>(),
+      {std::make_shared<ContentAttention>()},
       std::make_shared<MedianWindow>(10, 10));
 
   seq2seq.eval();
@@ -158,7 +171,7 @@ TEST(Seq2SeqTest, Seq2SeqStepWindow) {
       hiddendim,
       nclass - 1 /* eos token index */,
       maxoutputlen,
-      std::make_shared<ContentAttention>(),
+      {std::make_shared<ContentAttention>()},
       std::make_shared<StepWindow>(1, 20, 2.2, 5.8));
 
   seq2seq.eval();
@@ -185,7 +198,7 @@ TEST(Seq2SeqTest, Seq2SeqStepWindowVectorized) {
       hiddendim,
       nclass - 1 /* eos token index */,
       maxoutputlen,
-      std::make_shared<ContentAttention>(),
+      {std::make_shared<ContentAttention>()},
       std::make_shared<StepWindow>(0, 5, 2.2, 5.8),
       true);
 
@@ -211,7 +224,7 @@ TEST(Seq2SeqTest, Seq2SeqAttn) {
       H,
       N - 1,
       maxoutputlen,
-      std::make_shared<ContentAttention>(),
+      {std::make_shared<ContentAttention>()},
       std::make_shared<MedianWindow>(2, 3));
   seq2seq.eval();
 
@@ -232,15 +245,27 @@ TEST(Seq2SeqTest, Serialization) {
   }
   const std::string path = "/tmp/" + userstr + "_test.mdl";
 
-  int N = 5, H = 8, B = 1, T = 10, U = 5, maxoutputlen = 100;
+  int N = 5, H = 8, B = 1, T = 10, U = 5, maxoutputlen = 100, nAttnRound = 2;
+
+  std::vector<std::shared_ptr<AttentionBase>> attentions(
+      nAttnRound, std::make_shared<ContentAttention>());
 
   auto seq2seq = std::make_shared<Seq2SeqCriterion>(
       N,
       H,
       N - 1,
       maxoutputlen,
-      std::make_shared<ContentAttention>(),
-      std::make_shared<MedianWindow>(2, 3));
+      attentions,
+      std::make_shared<MedianWindow>(2, 3),
+      false,
+      100,
+      0.0,
+      false,
+      w2l::kRandSampling,
+      1.0,
+      2, // nRnnLayer
+      nAttnRound,
+      0.0);
   seq2seq->eval();
 
   auto input = noGrad(af::randn(H, T, B, f32));
@@ -265,20 +290,49 @@ TEST(Seq2SeqTest, Serialization) {
 
 TEST(Seq2SeqTest, BatchedDecoderStep) {
   int N = 5, H = 8, B = 10, T = 20, maxoutputlen = 100;
-  std::vector<Seq2SeqCriterion> criterions{
-      Seq2SeqCriterion(
-          N, H, N - 1, maxoutputlen, std::make_shared<ContentAttention>()),
-      Seq2SeqCriterion(
-          N,
-          H,
-          N - 1,
-          maxoutputlen,
-          std::make_shared<NeuralContentAttention>(H))};
+  int nRnnLayer = 2, nAttnRound = 2;
+  std::vector<std::shared_ptr<AttentionBase>> contentAttentions(
+      nAttnRound, std::make_shared<ContentAttention>());
+  std::vector<std::shared_ptr<AttentionBase>> neuralContentAttentions(
+      nAttnRound, std::make_shared<NeuralContentAttention>(H));
+
+  std::vector<Seq2SeqCriterion> criterions{Seq2SeqCriterion(
+                                               N,
+                                               H,
+                                               N - 1,
+                                               maxoutputlen,
+                                               contentAttentions,
+                                               nullptr,
+                                               false,
+                                               100,
+                                               0.0,
+                                               false,
+                                               w2l::kRandSampling,
+                                               1.0,
+                                               nRnnLayer,
+                                               nAttnRound,
+                                               0.0),
+                                           Seq2SeqCriterion(
+                                               N,
+                                               H,
+                                               N - 1,
+                                               maxoutputlen,
+                                               neuralContentAttentions,
+                                               nullptr,
+                                               false,
+                                               100,
+                                               0.0,
+                                               false,
+                                               w2l::kRandSampling,
+                                               1.0,
+                                               nRnnLayer,
+                                               nAttnRound,
+                                               0.0)};
 
   for (auto& seq2seq : criterions) {
     seq2seq.eval();
     std::vector<Variable> ys;
-    std::vector<Seq2SeqState> inStates(B);
+    std::vector<Seq2SeqState> inStates(B, Seq2SeqState(nAttnRound));
     std::vector<Seq2SeqState*> inStatePtrs(B);
 
     auto input = noGrad(af::randn(H, T, 1, f32));
@@ -290,12 +344,14 @@ TEST(Seq2SeqTest, BatchedDecoderStep) {
       ys.push_back(y);
 
       inStates[i].alpha = noGrad(af::randn(1, T, 1, f32));
-      inStates[i].hidden = noGrad(af::randn(H, 1, 1, f32));
+      for (int j = 0; j < nAttnRound; j++) {
+        inStates[i].hidden[j] = noGrad(af::randn(H, 1, nRnnLayer, f32));
+      }
       inStates[i].summary = noGrad(af::randn(H, 1, 1, f32));
       inStatePtrs[i] = &inStates[i];
 
       // Single forward
-      Seq2SeqState outstate;
+      Seq2SeqState outstate(nAttnRound);
       Variable ox;
       std::tie(ox, outstate) = seq2seq.decodeStep(input, y, inStates[i]);
       ox = logSoftmax(ox, 0);
@@ -330,7 +386,7 @@ TEST(Seq2SeqTest, Seq2SeqSampling) {
         H,
         N - 1,
         maxoutputlen,
-        std::make_shared<ContentAttention>(),
+        {std::make_shared<ContentAttention>()},
         nullptr,
         false,
         0,
@@ -350,7 +406,7 @@ TEST(Seq2SeqTest, Seq2SeqSampling) {
       H,
       N - 1,
       maxoutputlen,
-      std::make_shared<ContentAttention>(),
+      {std::make_shared<ContentAttention>()},
       nullptr,
       false,
       60,
@@ -369,7 +425,7 @@ TEST(Seq2SeqTest, Seq2SeqSampling) {
       H,
       N - 1,
       maxoutputlen,
-      std::make_shared<ContentAttention>(),
+      {std::make_shared<ContentAttention>()},
       nullptr,
       false,
       60,

@@ -60,7 +60,7 @@ if __name__ == "__main__":
     num_wordpieces = 10000
     nbest = 10
     train_all_text = os.path.join(am_path, "train.txt")
-    prefix = "tokens-train-all-unigram-{}".format(num_wordpieces)
+    prefix = "librispeech-train-all-unigram-{}".format(num_wordpieces)
     prefix = os.path.join(am_path, prefix)
     vocab_name = prefix + ".vocab"
     model_name = prefix + ".model"
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     print("Creating word piece list...\n", flush=True)
     exclude_list = {"<unk>", "<s>", "</s>"}
     with open(vocab_name.replace(".vocab", ".tokens"), "w") as fvocab_filt:
-        with open(vocab_name, "r") as fvocab:
+        with open(vocab_name, "r", encoding="utf-8") as fvocab:
             for line in fvocab:
                 val, _ = line.strip().split("\t", 1)
                 if val not in exclude_list:
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     print("Creating word -> word pieces lexicon...\n", flush=True)
     sp = spm.SentencePieceProcessor()
     sp.Load(model_name)
-    lexicon_name = "lexicon-train+dev-unigram-{sz}-nbest{n}.lexicon".format(
+    lexicon_name = "librispeech-train+dev-unigram-{sz}-nbest{n}.lexicon".format(
         sz=num_wordpieces, n=nbest
     )
     with open(os.path.join(am_path, lexicon_name), "w") as f_lexicon:

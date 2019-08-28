@@ -163,7 +163,7 @@ To build wav2letter++ with Docker:
   sudo docker build --no-cache -f ./Dockerfile-CPU -t wav2letter .
   ```
 
-  For logging during training/testing/decoding inside a container, use the `--logtostderr=1` flag.
+  For logging during training/testing/decoding inside a container, use the `--logtostderr=1 --minloglevel=0` flag.
 
 ## Building Python bindings
 

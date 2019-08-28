@@ -5,8 +5,8 @@
 wav2letter++ is a fast, open source speech processing toolkit from the Speech team at Facebook AI Research built to facilitate research in end-to-end models for speech recognition. It is written entirely in C++ and uses the [ArrayFire](https://github.com/arrayfire/arrayfire) tensor library and the [flashlight](https://github.com/facebookresearch/flashlight) machine learning library for maximum efficiency. Our approach is detailed in this [arXiv paper](https://arxiv.org/abs/1812.07625).
 
 This repository also contains pre-trained models and implementations for various ASR results including:
-- [Likhomanenko et al. (2019): Who Needs Words? Lexicon-free Speech Recognition](models/lexicon_free.md)
-- [Hannun et al. (2019): Sequence-to-Sequence Speech Recognition with Time-Depth Separable Convolutions](models/tds.md)
+- [Likhomanenko et al. (2019): Who Needs Words? Lexicon-free Speech Recognition](recipes/models/lexicon_free/README.md)
+- [Hannun et al. (2019): Sequence-to-Sequence Speech Recognition with Time-Depth Separable Convolutions](recipes/models/seq2seq_tds/README.md)
 
 The previous iteration of wav2letter (written in Lua) can be found in the [`wav2letter-lua`](https://github.com/facebookresearch/wav2letter/tree/wav2letter-lua) branch.
 

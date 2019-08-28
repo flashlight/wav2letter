@@ -5,7 +5,7 @@ Below are pre-trained acoustic and language models from [Who Needs Words? Lexico
 ## Acoustic Models
 | File | Dataset | Dev Set | Architecture | Lexicon | Tokens |
 | - | - | - | - | - | - |
-| [baseline_dev-clean+other](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/am/baseline_dev-clean+other.bin) | LibriSpeech | dev-clean+dev-other | [Archfile](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/am.arch) | [Lexicon](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/lexicon.lst) | [Tokens](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/tokens.lst) |
+| [baseline_dev-clean+other](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/am/baseline_dev-clean%2Bother.bin) | LibriSpeech | dev-clean+dev-other | [Archfile](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/am.arch) | [Lexicon](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/lexicon.lst) | [Tokens](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/tokens.lst) |
 | [baseline_nov93dev](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/models/am/baseline_nov93dev.bin) | WSJ | nov93dev | [Archfile](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/am.arch) | [Lexicon](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/lexicon.lst) | [Tokens](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/tokens.lst) |
 
 

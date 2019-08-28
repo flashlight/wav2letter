@@ -29,8 +29,8 @@ Below there is info about pre-trained acoustic and language models, which one ca
 ### Acoustic Models
 | File | Dataset | Dev Set | Architecture | Lexicon | Tokens |
 | - | - | - | - | - | - |
-| [baseline_dev-clean](https://dl.fbaipublicfiles.com/wav2letter/tds/librispeech/models/am/baseline_dev-clean.bin) | LibriSpeech | dev-clean | [Archfile](https://dl.fbaipublicfiles.com/wav2letter/tds/librispeech/am.arch) | [Lexicon](https://dl.fbaipublicfiles.com/wav2letter/tds/librispeech/librispeech-train+dev-unigram-10000-nbest10.lexicon) | [Tokens](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/tokens.lst) |
-| [baseline_dev-other](https://dl.fbaipublicfiles.com/wav2letter/tds/librispeech/models/am/baseline_dev-other.bin) | LibriSpeech | dev-other | [Archfile](https://dl.fbaipublicfiles.com/wav2letter/tds/librispeech/am.arch) | [Lexicon](https://dl.fbaipublicfiles.com/wav2letter/tds/librispeech/librispeech-train+dev-unigram-10000-nbest10.lexicon) | [Tokens](https://dl.fbaipublicfiles.com/wav2letter/tds/librispeech/librispeech-train-all-unigram-10000.tokens) |
+| [baseline_dev-clean](https://dl.fbaipublicfiles.com/wav2letter/tds/librispeech/models/am/baseline_dev-clean.bin) | LibriSpeech | dev-clean | [Archfile](https://dl.fbaipublicfiles.com/wav2letter/tds/librispeech/am.arch) | [Lexicon](https://dl.fbaipublicfiles.com/wav2letter/tds/librispeech/librispeech-train%2Bdev-unigram-10000-nbest10.lexicon) | [Tokens](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/tokens.lst) |
+| [baseline_dev-other](https://dl.fbaipublicfiles.com/wav2letter/tds/librispeech/models/am/baseline_dev-other.bin) | LibriSpeech | dev-other | [Archfile](https://dl.fbaipublicfiles.com/wav2letter/tds/librispeech/am.arch) | [Lexicon](https://dl.fbaipublicfiles.com/wav2letter/tds/librispeech/librispeech-train%2Bdev-unigram-10000-nbest10.lexicon) | [Tokens](https://dl.fbaipublicfiles.com/wav2letter/tds/librispeech/librispeech-train-all-unigram-10000.tokens) |
 
 Here architecture files are the same as `network.arch`, tokens and lexicon files generated in the `$MODEL_DST/am/` are the same as in the table.
 

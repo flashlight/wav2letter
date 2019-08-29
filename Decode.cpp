@@ -308,7 +308,7 @@ int main(int argc, char** argv) {
       FLAGS_criterion == kCtcCriterion ? tokenDict.getIndex(kBlankToken) : -1;
   int silIdx = tokenDict.getIndex(FLAGS_wordseparator);
   std::shared_ptr<Trie> trie = nullptr;
-  if (!FLAGS_lexicon.empty() && FLAGS_criterion != kSeq2SeqCriterion) {
+  if (FLAGS_uselexicon) {
     trie = std::make_shared<Trie>(tokenDict.indexSize(), silIdx);
     auto startState = lm->start(false);
 
@@ -409,7 +409,7 @@ int main(int argc, char** argv) {
           LOG(INFO)
               << "[Decoder] Seq2Seq decoder with token-LM loaded in thread: "
               << tid;
-        } else if (!FLAGS_lexicon.empty()) {
+        } else if (FLAGS_uselexicon) {
           decoder.reset(new TokenLMDecoder(
               decoderOpt,
               trie,
@@ -454,7 +454,7 @@ int main(int argc, char** argv) {
         auto letterPrediction =
             tknPrediction2Ltr(rawTokenPrediction, tokenDict);
         std::vector<std::string> wordPrediction;
-        if (!FLAGS_lexicon.empty() && FLAGS_criterion != kSeq2SeqCriterion) {
+        if (FLAGS_uselexicon) {
           rawWordPrediction =
               validateIdx(rawWordPrediction, wordDict.getIndex(kUnkToken));
           wordPrediction = wrdIdx2Wrd(rawWordPrediction, wordDict);

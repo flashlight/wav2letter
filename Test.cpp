@@ -149,7 +149,7 @@ int main(int argc, char** argv) {
 
     auto letterTarget = tknTarget2Ltr(tokenTarget, tokenDict);
     std::vector<std::string> wordTargetStr;
-    if (!FLAGS_lexicon.empty() && FLAGS_criterion != kSeq2SeqCriterion) {
+    if (FLAGS_uselexicon) {
       wordTargetStr = wrdIdx2Wrd(wordTarget, wordDict);
     } else {
       wordTargetStr = tkn2Wrd(letterTarget);

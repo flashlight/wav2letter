@@ -11,11 +11,13 @@
 #include <cstddef>
 #include <stdexcept>
 
+extern "C" {
 #if W2L_LIBRARIES_USE_MKL
 #include <mkl_cblas.h>
 #else
 #include <cblas.h>
 #endif
+}
 
 namespace w2l {
 

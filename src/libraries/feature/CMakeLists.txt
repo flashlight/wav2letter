@@ -9,6 +9,7 @@ if (W2L_LIBRARIES_USE_MKL)
 else ()
   find_package(CBLAS REQUIRED)
 endif ()
+message(STATUS "CBLAS found (include: ${CBLAS_INCLUDE_DIR}, library: ${CBLAS_LIBRARIES})")
 
 # FFTW
 find_package(FFTW REQUIRED)

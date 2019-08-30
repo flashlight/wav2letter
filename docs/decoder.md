@@ -31,10 +31,10 @@
     words already, and a lexicon is requested to map those words into spellings,
     i.e. a sequence of AM tokens.
   * Lexicon or Lexicon-free?
-    * If `-lexicon` flag is specified, i.e. a lexicon is
+    * If `-uselexicon=true` (by default it is `true`) flag is specified, i.e. a lexicon is
     provided to the decoder, then the decoder will only generate words
     that are present in the lexicon.
-    * Otherwise, all possible combinations of tokens may
+    * Otherwise (`-uselexicon=false`), all possible combinations of tokens may
     appear in the final transcript, and the final word sequence will be
     determined by splitting the transcripts with token `-wordseparator`.
     * Note that the lexicon-free decoder only works with token-level LM because

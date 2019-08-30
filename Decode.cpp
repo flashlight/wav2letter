@@ -163,7 +163,7 @@ int main(int argc, char** argv) {
       // TODO: we will reform the w2l dataset so that the loaded word targets
       // are strings already
       std::vector<std::string> wordTargetStr;
-      if (!FLAGS_lexicon.empty() && FLAGS_criterion != kSeq2SeqCriterion) {
+      if (FLAGS_uselexicon) {
         wordTargetStr = wrdIdx2Wrd(wordTarget, wordDict);
       } else {
         auto letterTarget = tknTarget2Ltr(tokenTarget, tokenDict);

@@ -77,6 +77,7 @@ int main(int argc, char** argv) {
     W2lSerializer::load(loadPath, emissionSet);
     gflags::ReadFlagsFromString(emissionSet.gflags, gflags::GetArgv0(), true);
   }
+
   /* Using acoustic model */
   if (!FLAGS_am.empty()) {
     LOG(INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
@@ -199,7 +200,6 @@ int main(int argc, char** argv) {
                    // the space of it on GPU or memory. network.use_count() will
                    // be 0 after this call.
   af::deviceGC();
-
   /* ===================== Decode ===================== */
   // Prepare counters
   std::vector<double> sliceWer(FLAGS_nthread_decoder);

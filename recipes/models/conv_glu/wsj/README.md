@@ -2,7 +2,7 @@
 
 Run data and auxiliary files (like lexicon, tokens set, etc.) preparation (set necessary paths instead of `[...]`: `data_dst` path to data to store, `model_dst` path to auxiliary path to store, `kenlm` path to prepare language model for decoding; if you are using `B`-version of WSJ then call with `--wsj1_type LDC94S13B`)
 ```
-python3 prepare.py --wsj0 [...]/WSJ0/media --wsj1 [...]/WSJ1/media --wsj1_type LDC94S13A \
+python3 prepare.py --wsj0 [...]/csr_1 --wsj1 [...]/csr_2_comp --wsj1_type LDC94S13A \
   --data_dst [...] --model_dst [...]  --sph2pipe [...]/sph2pipe_v2.5/sph2pipe --kenlm [...]
 ```
 Besides data the auxiliary files for acoustic and language models training/evaluation will be generated:

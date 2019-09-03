@@ -38,7 +38,7 @@ gcc -o sph2pipe *.c -lm
 To prepare the audio and text data for training/evaluation run (set necessary paths instead of `[...]`)
 (if you are using `B`-version of WSJ then call with `--wsj1_type LDC94S13B`)
 ```
-python3 prepare.py --wsj0 [...]/csr_1 --wsj1 [...]/ csr_2_comp --sph2pipe [...]/sph2pipe_v2.5/sph2pipe --dst [...] --wsj1_type LDC94S13A
+python3 prepare.py --wsj0 [...]/csr_1 --wsj1 [...]/csr_2_comp --sph2pipe [...]/sph2pipe_v2.5/sph2pipe --dst [...] --wsj1_type LDC94S13A
 ```
 
 The following structure will be generated

@@ -110,7 +110,7 @@ if __name__ == "__main__":
     with open(os.path.join(am_path, lexicon_name), "w") as f_lexicon:
         for word in lexicon_words:
             wps = sp.NBestEncodeAsPieces(word, nbest)
-            for wp in sorted(wps):
+            for wp in wps: # the order matters for our training 
                 f_lexicon.write(
                     word
                     + "\t"

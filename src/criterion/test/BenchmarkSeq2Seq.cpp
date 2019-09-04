@@ -29,7 +29,7 @@ void timeBeamSearch() {
       H,
       -1,
       200,
-      std::make_shared<ContentAttention>());
+      {std::make_shared<ContentAttention>()});
 
   auto input = af::randn(H, T, 1, f32);
 
@@ -54,7 +54,7 @@ void timeForwardBackward() {
   int N = 40, H = 256, B = 2, T = 200, U = 50;
 
   Seq2SeqCriterion seq2seq(
-      N, H, N - 1, 0, std::make_shared<ContentAttention>());
+      N, H, N - 1, 0, {std::make_shared<ContentAttention>()});
 
   auto input = Variable(af::randn(H, T, B, f32), true);
   auto target = noGrad((af::randu(U, B, f32) * 0.99 * N).as(s32));

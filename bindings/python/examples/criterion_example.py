@@ -8,9 +8,12 @@ from wav2letter.criterion import ASGLoss, CriterionScaleMode
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--cpu", action="store_true")
+parser.add_argument("--double", action="store_true")
 args = parser.parse_args()
 
 device = torch.device("cpu" if args.cpu else "cuda")
+float_type = torch.double if args.double else torch.float
+
 asg = ASGLoss(6, scale_mode=CriterionScaleMode.TARGET_SZ_SQRT).to(device)
 input = torch.tensor(
     [
@@ -36,7 +39,7 @@ input = torch.tensor(
             [-0.3846, 0.1175, 0.1052, 0.2172, -0.0362, 0.3055],
         ],
     ],
-    dtype=torch.float,
+    dtype=float_type,
     device=device,
     requires_grad=True,
 )
@@ -46,7 +49,7 @@ target = torch.tensor(
     device=device,
 )
 target_size = torch.tensor([5, 3, 4], dtype=torch.int, device=device)
-grad = torch.ones(3, dtype=torch.float, device=device)
+grad = torch.ones(3, dtype=float_type, device=device)
 
 print(list(asg.parameters()))
 loss = asg.forward(input, target, target_size)

@@ -17,22 +17,11 @@ def get_cuda_stream_as_bytes():
     return s.to_bytes(_C.sizeof_cuda_stream, byteorder=sys.byteorder)
 
 
-def check_tensor(name, tensor, size, dtype, device):
+def check_tensor(tensor, size, dtype, device):
     shape = torch.Size(size)
     if tensor.shape != shape:
-        raise ValueError(
-            f"wrong size for {name} tensor: expected {shape}, got {tensor.shape}"
-        )
-    elif tensor.dtype != dtype:
-        raise ValueError(
-            f"wrong type for {name} tensor: expected {dtype}, got {tensor.dtype}"
-        )
-    elif tensor.device != device:
-        raise ValueError(
-            f"wrong device for {name} tensor: expected {device}, got {tensor.device}"
-        )
-    elif not tensor.is_contiguous():
-        raise ValueError(f"{name} tensor is not contiguous")
+        raise ValueError(f"wrong tensor size: expected {shape}, got {tensor.shape}")
+    return tensor.to(dtype=dtype, device=device).contiguous()
 
 
 def run_direction(cls, device, direction, *args):
@@ -96,10 +85,10 @@ class FACFunction(torch.autograd.Function):
         L = target.size(1)
         device = input.device
 
-        check_tensor("input", input, [B, T, N], torch.float, device)
-        check_tensor("target", target, [B, L], torch.int, device)
-        check_tensor("target_size", target_size, [B], torch.int, device)
-        check_tensor("trans", trans, [N, N], torch.float, device)
+        input_float = check_tensor(input, [B, T, N], torch.float, device)
+        target = check_tensor(target, [B, L], torch.int, device)
+        target_size = check_tensor(target_size, [B], torch.int, device)
+        trans_float = check_tensor(trans, [N, N], torch.float, device)
 
         loss = torch.empty(B, dtype=torch.float, device=device)
         workspace = create_workspace(cls, device, B, T, N, L)
@@ -111,15 +100,15 @@ class FACFunction(torch.autograd.Function):
             N,
             L,
             scale_mode,
-            get_data_ptr_as_bytes(input),
+            get_data_ptr_as_bytes(input_float),
             get_data_ptr_as_bytes(target),
             get_data_ptr_as_bytes(target_size),
-            get_data_ptr_as_bytes(trans),
+            get_data_ptr_as_bytes(trans_float),
             get_data_ptr_as_bytes(loss),
             get_data_ptr_as_bytes(workspace),
         )
         ctx.save_for_backward(input, target, target_size, trans, workspace)
-        return loss
+        return loss.to(input)
 
     @classmethod
     def backward(cls, ctx, grad):
@@ -130,11 +119,10 @@ class FACFunction(torch.autograd.Function):
         L = target.size(1)
         device = input.device
 
-        grad = grad.to(dtype=torch.float, device=device).contiguous()
-        check_tensor("grad", grad, [B], torch.float, device)
+        grad = check_tensor(grad, [B], torch.float, device)
 
-        inputGrad = torch.empty(B, T, N, dtype=torch.float, device=device)
-        transGrad = torch.empty(N, N, dtype=torch.float, device=device)
+        input_grad = torch.empty(B, T, N, dtype=torch.float, device=device)
+        trans_grad = torch.empty(N, N, dtype=torch.float, device=device)
         run_backward(
             cls,
             device,
@@ -145,11 +133,12 @@ class FACFunction(torch.autograd.Function):
             get_data_ptr_as_bytes(target),
             get_data_ptr_as_bytes(target_size),
             get_data_ptr_as_bytes(grad),
-            get_data_ptr_as_bytes(inputGrad),
-            get_data_ptr_as_bytes(transGrad),
+            get_data_ptr_as_bytes(input_grad),
+            get_data_ptr_as_bytes(trans_grad),
             get_data_ptr_as_bytes(workspace),
         )
-        return inputGrad, None, None, transGrad, None
+
+        return input_grad.to(input), None, None, trans_grad.to(trans), None
 
 
 class FCCFunction(torch.autograd.Function):
@@ -168,10 +157,10 @@ class FCCFunction(torch.autograd.Function):
         N = input.size(2)
         device = input.device
 
-        check_tensor("input", input, [B, T, N], torch.float, device)
+        input_float = check_tensor(input, [B, T, N], torch.float, device)
         if scale_mode != _C.CriterionScaleMode.NONE:
-            check_tensor("target_size", target_size, [B], torch.int, device)
-        check_tensor("trans", trans, [N, N], torch.float, device)
+            target_size = check_tensor(target_size, [B], torch.int, device)
+        trans_float = check_tensor(trans, [N, N], torch.float, device)
 
         loss = torch.empty(B, dtype=torch.float, device=device)
         workspace = create_workspace(cls, device, B, T, N)
@@ -182,14 +171,14 @@ class FCCFunction(torch.autograd.Function):
             T,
             N,
             scale_mode,
-            get_data_ptr_as_bytes(input),
+            get_data_ptr_as_bytes(input_float),
             get_data_ptr_as_bytes(target_size),
-            get_data_ptr_as_bytes(trans),
+            get_data_ptr_as_bytes(trans_float),
             get_data_ptr_as_bytes(loss),
             get_data_ptr_as_bytes(workspace),
         )
         ctx.save_for_backward(input, trans, workspace)
-        return loss
+        return loss.to(input)
 
     @classmethod
     def backward(cls, ctx, grad):
@@ -199,11 +188,10 @@ class FCCFunction(torch.autograd.Function):
         N = input.size(2)
         device = input.device
 
-        grad = grad.to(dtype=torch.float, device=device).contiguous()
-        check_tensor("grad", grad, [B], torch.float, device)
+        grad = check_tensor(grad, [B], torch.float, device)
 
-        inputGrad = torch.empty(B, T, N, dtype=torch.float, device=device)
-        transGrad = torch.empty(N, N, dtype=torch.float, device=device)
+        input_grad = torch.empty(B, T, N, dtype=torch.float, device=device)
+        trans_grad = torch.empty(N, N, dtype=torch.float, device=device)
         run_backward(
             cls,
             device,
@@ -212,11 +200,11 @@ class FCCFunction(torch.autograd.Function):
             N,
             get_data_ptr_as_bytes(trans),
             get_data_ptr_as_bytes(grad),
-            get_data_ptr_as_bytes(inputGrad),
-            get_data_ptr_as_bytes(transGrad),
+            get_data_ptr_as_bytes(input_grad),
+            get_data_ptr_as_bytes(trans_grad),
             get_data_ptr_as_bytes(workspace),
         )
-        return inputGrad, None, transGrad, None
+        return input_grad.to(input), None, trans_grad.to(trans), None
 
 
 class ASGLoss(nn.Module):

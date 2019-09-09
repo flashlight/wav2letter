@@ -85,7 +85,7 @@ if __name__ == "__main__":
 
     # Generating decoder/*
     cmd = [
-        "python3 {}/../../scripts/prepare_librispeech_official_lm.py",
+        "python3 {}/../../utilities/prepare_librispeech_official_lm.py",
         "--dst {}",
         "--kenlm {}",
     ]

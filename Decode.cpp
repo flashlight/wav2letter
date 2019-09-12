@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
   if (!flagsfile.empty()) {
     gflags::ReadFromFlagsFile(flagsfile, argv[0], true);
     // Re-parse command line flags to override values in the flag file.
-    gflags::ParseCommandLineFlags(&argc, &argv, false);    
+    gflags::ParseCommandLineFlags(&argc, &argv, false);
   }
 
   LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");

@@ -56,6 +56,8 @@ int main(int argc, char** argv) {
   if (!flagsfile.empty()) {
     LOG(INFO) << "Reading flags from file " << flagsfile;
     gflags::ReadFromFlagsFile(flagsfile, argv[0], true);
+    // Re-parse command line flags to override values in the flag file.
+    gflags::ParseCommandLineFlags(&argc, &argv, false);
   }
 
   /* ===================== Create Network ===================== */
@@ -103,6 +105,8 @@ int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, false);
   if (!flagsfile.empty()) {
     gflags::ReadFromFlagsFile(flagsfile, argv[0], true);
+    // Re-parse command line flags to override values in the flag file.
+    gflags::ParseCommandLineFlags(&argc, &argv, false);
   }
 
   LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");

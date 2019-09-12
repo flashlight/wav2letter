@@ -4,7 +4,6 @@ The architecture and flags files are provided to reproduce results from the pape
 Considered benchmarks:
 - Librispeech
 
-To reproduce training by yourself use commit *TODO*.
 
 ## Citation
 ```

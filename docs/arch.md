@@ -23,14 +23,18 @@ The first token in each line represents a specific flashlight/wav2letter module 
 Here, we describe how to specify different flashlight/wav2letter modules in the architecture files.
 
 **fl::Conv2D** `C2 [inputChannels] [outputChannels] [xFilterSz] [yFilterSz] [xStride] [yStride] [xPadding <OPTIONAL>] [yPadding <OPTIONAL>] [xDilation <OPTIONAL>] [yDilation <OPTIONAL>]`
+(input is expected to be `[Time, Width=1, inputChannels, Batch]`, and the output `[Time, Width=1, outputChannels, Batch]`)
 
 *(Use padding `= -1` for `fl::PaddingMode::SAME`)* <br/>
 
 **fl::Linear** `L [inputChannels] [outputChannels]` <br/>
+(input is expected to be `[inputChannels, *, * , *]`, and the output `[outputChannels, *, * , *]`)
 
 **fl::BatchNorm** `BN [totalFeatSize] [firstDim] [secondDim <OPTIONAL>] [thirdDim <OPTIONAL>]` <br/>
+(dimensions which are not presented in the list will be reduced for statistics computation)
 
 **fl::LayerNorm** `LN [firstDim] [secondDim <OPTIONAL>] [thirdDim <OPTIONAL>]` <br/>
+(dimensions which are not presented in the list will be reduced for statistics computation)
 
 **fl::WeightNorm** `WN [normDim] [Layer]` <br/>
 
@@ -72,6 +76,7 @@ Here, we describe how to specify different flashlight/wav2letter modules in the 
 **fl::Embedding**  `E [embeddingSize] [nTokens]`
 
 **fl::AsymmetricConv1D**  `AC [inputChannels] [outputChannels] [xFilterSz] [xStride] [xPadding <OPTIONAL>] [xFuturePart <OPTIONAL>] [xDilation <OPTIONAL>]`
+(input is expected to be `[Time, Width=1, inputChannels, Batch]`, and the output `[Time, Width=1, outputChannels, Batch]`)
 
 **w2l::Residual**
 ```
@@ -106,5 +111,5 @@ where `scale` is the value by which the final output is multiplied (`(x + f(x)) 
 
 **w2l::TDSBlock**
 ```
-TDS [kernel width] [input width] [channels] [drop prob]
+TDS [input channels] [kernel width] [input width] [drop prob <OPTIONAL, DEFAULT=0>] [output channels <OPTIONAL, DEFAULT=0>]
 ```

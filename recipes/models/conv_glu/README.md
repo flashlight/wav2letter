@@ -4,5 +4,3 @@ The architecture and flags files are provided for each dataset to reproduce resu
 Considered benchmarks:
 - Librispeech
 - WSJ
-
-These results could be obtained with the commit **

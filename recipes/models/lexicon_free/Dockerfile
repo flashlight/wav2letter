@@ -30,7 +30,7 @@ RUN cd /root && git clone --recursive https://github.com/facebookresearch/flashl
     cd /root && git clone --recursive https://github.com/facebookresearch/wav2letter.git && \
     export MKLROOT=/opt/intel/mkl && export KENLM_ROOT_DIR=/root/kenlm && \
     cd /root/wav2letter && mkdir -p build && cd build && \
-    cmake .. -DCMAKE_BUILD_TYPE=Release -DW2L_CRITERION_BACKEND=CUDA -DKENLM_MAX_ORDER=20 && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DW2L_LIBRARIES_USE_CUDA=ON -DKENLM_MAX_ORDER=20 && \
     make -j8 && \
 # ==================================================================
 # fairseq

@@ -126,9 +126,7 @@ endif ()
 
 # ------------------ Configure Full Build ----------------------
 
-if (FLASHLIGHT_USE_CUDA)
-  set(W2L_LIBRARIES_USE_CUDA ON CACHE BOOL "" FORCE)
-endif ()
+set(W2L_LIBRARIES_USE_CUDA ${FLASHLIGHT_USE_CUDA} CACHE BOOL "" FORCE)
 set(W2L_LIBRARIES_USE_KENLM ON CACHE BOOL "" FORCE)
 
 # ------------------------ Components ------------------------

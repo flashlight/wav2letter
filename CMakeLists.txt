@@ -18,6 +18,7 @@ option(W2L_BUILD_TESTS "Build tests for wav2letter++" ON)
 option(W2L_BUILD_EXAMPLES "Build examples for wav2letter++" ON)
 option(W2L_BUILD_EXPERIMENTAL "Build internal experimental components for wav2letter++" OFF)
 option(W2L_BUILD_SCRIPTS "Build internal scripts for wav2letter++" OFF)
+option(W2L_BUILD_RECIPES "Build recipes" ON)
 set(KENLM_MAX_ORDER 6 CACHE STRING "Maximum ngram order for KenLM")
 
 # ------------------------- Dependency Fallback -------------------------
@@ -200,6 +201,10 @@ if (W2L_BUILD_SCRIPTS)
   add_subdirectory(${PROJECT_SOURCE_DIR}/scripts)
 endif ()
 
+if (W2L_BUILD_RECIPES)
+  message(STATUS "Building recipes.")
+  add_subdirectory(${PROJECT_SOURCE_DIR}/recipes)
+endif ()
 # ----------------------------- Train -----------------------------
 add_executable(
   Train

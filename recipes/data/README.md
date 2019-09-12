@@ -3,4 +3,4 @@ This directory contains data processing scripts to perform speech recognition us
 
 ## Requirements to run scripts
 - python3
-- `pip install sox tqdm`
+- `pip install sox tqdm numpy`

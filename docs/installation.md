@@ -68,6 +68,7 @@ The following dependencies are optional:
 | W2L_BUILD_TESTS          | ON, OFF             | ON            |
 | W2L_BUILD_EXAMPLES       | ON, OFF             | ON            |
 | W2L_BUILD_EXPERIMENTAL   | ON, OFF             | OFF           |
+| W2L_BUILD_RECIPES        | ON, OFF             | ON            |
 | W2L_BUILD_SCRIPTS        | ON, OFF             | OFF           |
 | CMAKE_BUILD_TYPE         | <CMake build types> | Debug         |
 

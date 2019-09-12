@@ -1,31 +1,28 @@
-# Who Needs Words? Lexicon-free Speech Recognition (Likhomanenko et al., 2019)
+# [Who Needs Words? Lexicon-Free Speech Recognition](https://arxiv.org/abs/1904.04479)
 
-Below are pre-trained acoustic and language models from [Who Needs Words? Lexicon-free Speech Recognition (Likhomanenko et al., 2019)](https://arxiv.org/abs/1904.04479).
+## Abstract
+Lexicon-free speech recognition naturally deals with the problem of out-of-vocabulary (OOV) words. In this paper, we show that character-based language models (LM) can perform as well as word-based LMs for speech recognition, in word error rates (WER), even without restricting the decoding to a lexicon. We study character-based LMs and show that convolutional LMs can effectively leverage large (character) contexts, which is key for good speech recognition performance downstream. We specifically show that the lexicon-free decoding performance (WER) on utterances with OOV words using character-based LMs is better than lexicon-based decoding, both with character or word-based LMs.
 
-## Acoustic Models
-| File | Dataset | Dev Set | Architecture | Lexicon | Tokens |
-| - | - | - | - | - | - |
-| [baseline_dev-clean+other](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/am/baseline_dev-clean%2Bother.bin) | LibriSpeech | dev-clean+dev-other | [Archfile](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/am.arch) | [Lexicon](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/lexicon.lst) | [Tokens](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/tokens.lst) |
-| [baseline_nov93dev](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/models/am/baseline_nov93dev.bin) | WSJ | nov93dev | [Archfile](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/am.arch) | [Lexicon](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/lexicon.lst) | [Tokens](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/tokens.lst) |
+## Reproducing
+Acoustic models architectures flags files are provided for each dataset to reproduce results from the paper (training and decoding steps).
+Besides this language models training steps are listed to reproduce ngram and ConvLM language models.
+
+Considered benchmarks (acoustic models are char-based):
+- Librispeech
+- WSJ
+
+Acoustic models are char-based. Decoding step is considered for the following cases:
+- word language model
+- char language model
+- char language model without lexicon
 
 
-## Language Models
-
-Convolutional language models (ConvLM) are trained with the [fairseq](https://github.com/pytorch/fairseq) toolkit. n-gram language models are trained with the [KenLM](https://github.com/kpu/kenlm) toolkit. The below language models are converted into a binary format compatible with the wav2letter++ decoder.
-
-| Name |	Dataset | Type | Vocab |
-| - | - | - | - |
-[lm_librispeech_convlm_char_20B](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/lm/lm_librispeech_convlm_char_20B.bin) | LibriSpeech | ConvLM 20B | [LM Vocab](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/lm/lm_librispeech_convlm_char_20B.vocab)
-[lm_librispeech_convlm_word_14B](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/lm/lm_librispeech_convlm_word_14B.bin) | LibriSpeech | ConvLM 14B | [LM Vocab](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/lm/lm_librispeech_convlm_word_14B.vocab)
-[lm_librispeech_kenlm_char_15g_pruned](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/lm/lm_librispeech_kenlm_char_15g_pruned.bin) | LibriSpeech | 15-gram | -
-[lm_librispeech_kenlm_char_20g_pruned](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/lm/lm_librispeech_kenlm_char_20g_pruned.bin) | LibriSpeech | 20-gram | -
-[lm_librispeech_kenlm_word_4g_200kvocab](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/lm/lm_librispeech_kenlm_word_4g_200kvocab.bin) | LibriSpeech | 4-gram | -
-[lm_wsj_convlm_char_20B](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/models/lm/lm_wsj_convlm_char_20B.bin) | WSJ | ConvLM 20B | [LM Vocab](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/models/lm/lm_wsj_convlm_char_20B.vocab)
-[lm_wsj_convlm_word_14B](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/models/lm/lm_wsj_convlm_word_14B.bin) | WSJ | ConvLM 14B | [LM Vocab](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/models/lm/lm_wsj_convlm_word_14B.vocab)
-[lm_wsj_kenlm_char_15g_pruned](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/models/lm/lm_wsj_kenlm_char_15g_pruned.bin) | WSJ | 15-gram | -
-[lm_wsj_kenlm_char_20g_pruned](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/models/lm/lm_wsj_kenlm_char_20g_pruned.bin) | WSJ | 20-gram | -
-[lm_wsj_kenlm_word_4g](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/models/lm/lm_wsj_kenlm_word_4g.bin) | WSJ | 4-gram | -
-
+## Dependencies
+All dependencies are listed in the `Dockerfile`. To use docker image run
+```
+sudo docker run --runtime=nvidia --rm -itd --ipc=host --name lexfree wav2letter/wav2letter:lexfree
+sudo docker exec -it lexfree bash
+```
 
 ## Citation
 ```

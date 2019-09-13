@@ -24,6 +24,8 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         cpio \
         # FFTW
         libfftw3-dev \
+        # OpenBlas
+        libopenblas-dev \
         # for kenlm
         zlib1g-dev libbz2-dev liblzma-dev libboost-all-dev \
         # gflags
@@ -55,7 +57,10 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         && \
     $PIP_INSTALL \
         sox \
-        tqdm && \
+        tqdm \
+        numpy \
+        torch==1.2.0 \
+        packaging==19.1 && \
 # ==================================================================
 # libsndfile https://github.com/erikd/libsndfile.git
 # ------------------------------------------------------------------
@@ -77,7 +82,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     cd /root && git clone https://github.com/kpu/kenlm.git && \
     cd kenlm && git checkout e47088ddfae810a5ee4c8a9923b5f8071bed1ae8 && \
     mkdir build && cd build && \
-    cmake .. && \
+    cmake .. -DCMAKE_POSITION_INDEPENDENT_CODE=ON && \
     make -j8 && make install && \
 # ==================================================================
 # config & cleanup

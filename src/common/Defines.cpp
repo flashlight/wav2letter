@@ -112,6 +112,9 @@ DEFINE_int64(
     10,
     "Stride millisecond for power spectrum feature");
 
+// FEATURE DATA OPTIONS
+DEFINE_string(featext, "hdf5", "file extension of feature files");
+
 // RUN OPTIONS
 DEFINE_string(datadir, "", "speech data directory");
 DEFINE_string(tokensdir, "", "dictionary directory");

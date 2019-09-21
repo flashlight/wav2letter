@@ -40,6 +40,7 @@ target_sources(
   data
   INTERFACE
   ${CMAKE_CURRENT_SOURCE_DIR}/Featurize.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/HDF5Data.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ListFileDataset.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Sound.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Utils.cpp

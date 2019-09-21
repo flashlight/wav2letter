@@ -9,9 +9,11 @@
 #include <glog/logging.h>
 #include <functional>
 #include <numeric>
+#include <string>
 
 #include "common/Defines.h"
 #include "data/W2lListFilesDataset.h"
+#include "data/HDF5Data.h"
 
 namespace w2l {
 
@@ -78,7 +80,17 @@ std::vector<W2lLoaderData> W2lListFilesDataset::getLoaderData(
     }
 
     data[id].sampleId = data_[i].getSampleId();
-    data[id].input = loadSound(data_[i].getAudioFile());
+    auto audioFile = data_[i].getAudioFile();
+
+    size_t fileExtDot = audioFile.find_last_of('.');
+    std::string fileExt = audioFile.substr(fileExtDot);
+    if (fileExt == "." + FLAGS_featext) {
+      data[id].input = loadData(audioFile);
+    }
+    else {
+      data[id].input = loadSound(audioFile);
+    }
+
     data[id].targets[kTargetIdx] = wrd2Target(
         data_[i].getTranscript(),
         lexicon_,

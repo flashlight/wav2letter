@@ -124,6 +124,9 @@ DECLARE_int64(fftcachesize);
 DECLARE_int64(framesizems);
 DECLARE_int64(framestridems);
 
+/* ========== FEATURE DATA OPTIONS ========== */
+DECLARE_string(featext);
+
 /* ========== RUN OPTIONS ========== */
 
 DECLARE_string(datadir);

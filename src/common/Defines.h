@@ -209,6 +209,13 @@ DECLARE_int64(memstepsize);
 DECLARE_int64(reportiters);
 DECLARE_double(pcttraineval);
 
+/* ========== Mixed Precision OPTIONS ========== */
+
+DECLARE_bool(mixedprecision);
+DECLARE_int32(scalefactor);
+DECLARE_int32(scalefactorupdateinterval);
+DECLARE_int32(maxscalefactor);
+
 /* ========== ARCHITECTURE OPTIONS ========== */
 
 DECLARE_string(arch);

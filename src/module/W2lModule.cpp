@@ -424,6 +424,13 @@ std::shared_ptr<Module> parseLines(
         std::stoi(params[6]));
   }
 
+  /* ========== Precision Cast  ========== */
+  if (params[0] == "PC") {
+    LOG_IF(FATAL, params.size() != 2) << "Failed parsing - " << line;
+    auto targetType = fl::stringToAfType(params[1]);
+    return std::make_shared<PrecisionCast>(targetType);
+  }
+
 #ifdef W2L_BUILD_FB_DEPENDENCIES
 
   /* ========== Trainable frontend ========== */

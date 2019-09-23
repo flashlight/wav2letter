@@ -440,6 +440,8 @@ int main(int argc, char** argv) {
 
     for (auto& batch : *testds) {
       auto output = ntwrk->forward({fl::input(batch[kInputIdx])}).front();
+      output.cast(batch[kInputIdx].type());
+      af::sync();
       auto loss =
           crit->forward({output, fl::Variable(batch[kTargetIdx], false)})
               .front();
@@ -541,6 +543,10 @@ int main(int argc, char** argv) {
     };
 
     int64_t curBatch = startUpdate;
+    unsigned int scaleFactor = FLAGS_mixedprecision ? FLAGS_scalefactor : 1;
+    unsigned int kScaleFactorUpdateInterval = FLAGS_scalefactorupdateinterval;
+    unsigned int kMaxScaleFactor = FLAGS_maxscalefactor;
+    unsigned short scaleCounter = 1;
     while (curBatch < nbatches) {
       ++curEpoch; // counts partial epochs too!
       if (curEpoch >= FLAGS_lr_decay &&
@@ -587,6 +593,47 @@ int main(int argc, char** argv) {
           LOG(FATAL) << "Sample has NaN values - "
                      << join(",", readSampleIds(batch[kSampleIdx]));
         }
+        // This loop is required to ensure no training example is skipped while
+        // adjusting the loss scale factor. Note that when the gradient values
+        // are Inf/NaN, the results are skipped and the program tries to adjust
+        // the scale factor accordingly. The loop can help making the train
+        // process more deterministic. Also, it's reasonable to use these
+        // samples since they are already loaded in the memory hierarchy
+        // (ram/cache) and we are done computing their features.
+        bool retrySample = false;
+        do {
+          retrySample = false;
+
+          // forward
+          meters.fwdtimer.resume();
+          auto output = ntwrk->forward({fl::input(sample[kInputIdx])}).front();
+          output.cast(sample[kInputIdx].type());
+          af::sync();
+          meters.critfwdtimer.resume();
+          auto loss =
+              crit->forward({output, fl::noGrad(sample[kTargetIdx])}).front();
+          af::sync();
+          if (FLAGS_mixedprecision) {
+            ++scaleCounter;
+            loss = loss * scaleFactor;
+          }
+          meters.fwdtimer.stopAndIncUnit();
+          meters.critfwdtimer.stopAndIncUnit();
+
+          if (af::anyTrue<bool>(af::isNaN(loss.array())) ||
+              af::anyTrue<bool>(af::isInf(loss.array()))) {
+            if (FLAGS_mixedprecision && scaleFactor >= 2) {
+              scaleFactor = scaleFactor / 2.0f;
+              LOG(INFO) << "Scale factor decreased. New value:\t"
+                        << scaleFactor;
+              scaleCounter = 1;
+              retrySample = true;
+              continue;
+            } else {
+              LOG(FATAL) << "Loss has NaN values. Samples - "
+                         << join(",", readSampleIds(sample[kSampleIdx]));
+            }
+          }
 
         // forward
         meters.fwdtimer.resume();
@@ -616,42 +663,79 @@ int main(int argc, char** argv) {
           evalOutput(output.array(), batch[kTargetIdx], meters.train);
         }
 
-        // backward
-        meters.bwdtimer.resume();
-        netopt->zeroGrad();
-        critopt->zeroGrad();
-        loss.backward();
-        if (reducer) {
-          reducer->finalize();
-        }
-        af::sync();
-        meters.bwdtimer.stopAndIncUnit();
+          // backward
+          meters.bwdtimer.resume();
+          netopt->zeroGrad();
+          critopt->zeroGrad();
+          loss.backward();
+          if (reducer) {
+            reducer->finalize();
+          }
+          af::sync();
+          meters.bwdtimer.stopAndIncUnit();
 
-        // optimizer
-        meters.optimtimer.resume();
+          // optimizer
+          meters.optimtimer.resume();
 
-        // scale down gradients by batchsize
-        for (const auto& p : ntwrk->params()) {
-          if (!p.isGradAvailable()) {
+          // scale down gradients by batchsize
+          for (const auto& p : ntwrk->params()) {
+            if (!p.isGradAvailable()) {
+              continue;
+            }
+            p.grad() = p.grad() / (FLAGS_batchsize * scaleFactor);
+            if (FLAGS_mixedprecision) {
+              if (af::anyTrue<bool>(af::isNaN(p.grad().array())) ||
+                  af::anyTrue<bool>(af::isInf(p.grad().array()))) {
+                if (scaleFactor >= 2) {
+                  scaleFactor = scaleFactor / 2.0f;
+                  LOG(INFO)
+                      << "Scale factor decreased. New value:\t" << scaleFactor;
+                  retrySample = true;
+                }
+                scaleCounter = 1;
+                break;
+              }
+            }
+          }
+          if (retrySample) {
+            meters.optimtimer.stop();
             continue;
           }
-          p.grad() = p.grad() / FLAGS_batchsize;
-        }
-        for (const auto& p : crit->params()) {
-          if (!p.isGradAvailable()) {
-            continue;
-          }
-          p.grad() = p.grad() / FLAGS_batchsize;
-        }
 
-        // clamp gradients
-        if (FLAGS_maxgradnorm > 0) {
-          auto params = ntwrk->params();
-          if (clampCrit) {
-            auto critparams = crit->params();
-            params.insert(params.end(), critparams.begin(), critparams.end());
+          meters.train.loss.add((loss / scaleFactor).array());
+
+          for (const auto& p : crit->params()) {
+            if (!p.isGradAvailable()) {
+              continue;
+            }
+            p.grad() = p.grad() / (FLAGS_batchsize * scaleFactor);
           }
-          fl::clipGradNorm(params, FLAGS_maxgradnorm);
+
+          // clamp gradients
+          if (FLAGS_maxgradnorm > 0) {
+            auto params = ntwrk->params();
+            if (clampCrit) {
+              auto critparams = crit->params();
+              params.insert(params.end(), critparams.begin(), critparams.end());
+            }
+            fl::clipGradNorm(params, FLAGS_maxgradnorm);
+          }
+
+          // update weights
+          critopt->step();
+          netopt->step();
+          af::sync();
+          meters.optimtimer.stopAndIncUnit();
+        } while (retrySample);
+
+        // update scale fcator
+        if (FLAGS_mixedprecision && scaleFactor < kMaxScaleFactor) {
+          if (scaleCounter % kScaleFactorUpdateInterval == 0) {
+            scaleFactor *= 2;
+            LOG(INFO) << "Scale factor increased. New value:\t" << scaleFactor;
+          } else {
+            scaleFactor += 2;
+          }
         }
 
         // update weights

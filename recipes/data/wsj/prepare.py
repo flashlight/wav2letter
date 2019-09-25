@@ -249,8 +249,8 @@ if __name__ == "__main__":
     ]
     if not os.path.exists(os.path.join(text_path, "cmudict.0.7a")):
         url = "http://svn.code.sf.net/p/cmusphinx/code/trunk/cmudict/cmudict.0.7a"
-        cmd = "cd {} && wget {}".format(url)
-        os.system(cmd.format(text_path))
+        cmd = "cd {} && wget {}".format(text_path, url)
+        os.system(cmd)
     else:
         print("CMU dict already exists, skip its downloading", flush=True)
 

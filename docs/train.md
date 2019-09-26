@@ -17,8 +17,8 @@ command line:
 --archdir <path/to/architecture/files/> \
 --rundir <path/to/save/models/> \
 --arch   <name_of_architecture.arch> \
---train  <train/datasets/> \
---valid  <validation/datasets> \
+--train  <train/datasets/ds1.lst,train/datasets/ds2.lst> \
+--valid  <validation/datasets/ds1.lst,validation/datasets/ds2.lst> \
 --lexicon <path/to/lexicon.txt> \
 --lr=0.0001 \
 --lrcrit=0.0001
@@ -43,7 +43,7 @@ complete list of the flag definitions and short descriptions of their meaning
 can be found [here](../src/common/Defines.cpp).
 
 The `datadir` flag is the base path to where all the `train` and `valid`
-dataset directories live. Every `train` path will be prefixed by `datadir`.
+dataset list files live. Every `train` path will be prefixed by `datadir`.
 Multiple datasets can be passed to `train` and `valid` as a comma-separated
 list. More details on dataset preparation can be found [here](data_prep.md).
 

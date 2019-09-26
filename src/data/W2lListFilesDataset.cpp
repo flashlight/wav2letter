@@ -134,6 +134,10 @@ std::vector<SpeechSampleMetaInfo> W2lListFilesDataset::loadListFile(
     ++idx;
   }
 
+  if (samplesMetaInfo.size() < 1) {
+    throw std::runtime_error("Train files not found from " + filename);
+  }
+
   LOG(INFO) << samplesMetaInfo.size() << " files found. ";
 
   return samplesMetaInfo;

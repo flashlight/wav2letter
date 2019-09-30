@@ -86,6 +86,7 @@ DECLARE_int64(localnrmlleftctx);
 DECLARE_int64(localnrmlrightctx);
 DECLARE_string(onorm);
 DECLARE_bool(sqnorm);
+DECLARE_bool(lrcosine);
 
 /* ========== LEARNING HYPER-PARAMETER OPTIONS ========== */
 

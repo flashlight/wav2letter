@@ -69,6 +69,7 @@ DEFINE_int64(
     "right context size for local normalization");
 DEFINE_string(onorm, "none", "output norm (none");
 DEFINE_bool(sqnorm, false, "use square-root while normalizing criterion loss");
+DEFINE_bool(lrcosine, false, "use cosine learning rate schedule");
 
 // LEARNING HYPER-PARAMETER OPTIONS
 DEFINE_int64(iter, 1000000, "number of iterations");

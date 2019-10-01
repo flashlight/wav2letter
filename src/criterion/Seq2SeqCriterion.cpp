@@ -35,6 +35,18 @@ std::shared_ptr<AttentionBase> buildAttention() {
         FLAGS_attndim,
         FLAGS_attnconvchannel,
         FLAGS_attnconvkernel);
+  } else if (FLAGS_attention == w2l::kMultiHeadContentAttention) {
+    attention = std::make_shared<MultiHeadContentAttention>(
+        FLAGS_encoderdim, FLAGS_numattnhead);
+  } else if (FLAGS_attention == w2l::kMultiHeadKeyValueContentAttention) {
+    attention = std::make_shared<MultiHeadContentAttention>(
+        FLAGS_encoderdim, FLAGS_numattnhead, true);
+  } else if (FLAGS_attention == w2l::kMultiHeadSplitContentAttention) {
+    attention = std::make_shared<MultiHeadContentAttention>(
+        FLAGS_encoderdim, FLAGS_numattnhead, false, true);
+  } else if (FLAGS_attention == w2l::kMultiHeadKeyValueSplitContentAttention) {
+    attention = std::make_shared<MultiHeadContentAttention>(
+        FLAGS_encoderdim, FLAGS_numattnhead, true, true);
   } else {
     throw std::runtime_error("Unimplmented attention: " + FLAGS_attention);
   }

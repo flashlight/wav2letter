@@ -200,6 +200,7 @@ DECLARE_string(attnWindow);
 DECLARE_int64(attndim);
 DECLARE_int64(attnconvchannel);
 DECLARE_int64(attnconvkernel);
+DECLARE_int64(numattnhead);
 DECLARE_int64(leftWindowSize);
 DECLARE_int64(rightWindowSize);
 DECLARE_int64(maxsil);

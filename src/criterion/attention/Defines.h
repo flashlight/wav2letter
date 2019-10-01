@@ -16,6 +16,10 @@ namespace w2l {
 const std::string kContentAttention = "content";
 const std::string kKeyValueAttention = "keyvalue";
 const std::string kLocationAttention = "location";
+const std::string kMultiHeadContentAttention = "multi";
+const std::string kMultiHeadKeyValueContentAttention = "multikv";
+const std::string kMultiHeadSplitContentAttention = "multisplit";
+const std::string kMultiHeadKeyValueSplitContentAttention = "multikvsplit";
 const std::string kNeuralContentAttention = "neural";
 const std::string kNeuralLocationAttention = "neuralloc";
 const std::string kSimpleLocationAttention = "simpleloc";

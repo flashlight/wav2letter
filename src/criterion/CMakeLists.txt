@@ -98,6 +98,7 @@ target_sources(
   INTERFACE
   ${CMAKE_CURRENT_SOURCE_DIR}/attention/ContentAttention.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/attention/LocationAttention.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/attention/MultiHeadAttention.cpp
   )
 
 target_include_directories(

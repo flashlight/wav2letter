@@ -86,6 +86,29 @@ TEST(AttentionTest, NeuralLocationAttention) {
   sequential_test(std::make_shared<NeuralLocationAttention>(H, A, C, K), H);
 }
 
+TEST(AttentionTest, MultiHeadContentAttention) {
+  int H = 512, B = 2, T = 10, U = 5, NH = 8;
+
+  for (bool keyValue : {true, false}) {
+    for (bool splitInput : {true, false}) {
+      MultiHeadContentAttention attention(H, NH, keyValue, splitInput);
+
+      auto Hencode = keyValue ? H * 2 : H;
+      Variable encodedx(af::randn(Hencode, T, B), true);
+      Variable encodedy(af::randn(H, U, B), true);
+
+      Variable alphas, summaries;
+      std::tie(alphas, summaries) = attention(encodedy, encodedx, Variable{});
+      ASSERT_EQ(alphas.dims(), af::dim4(U * NH, T, B));
+      ASSERT_EQ(summaries.dims(), af::dim4(H, U, B));
+
+      auto alphasum = sum(alphas.array(), 1);
+      auto ones = af::constant(1.0, alphasum.dims(), alphasum.type());
+      ASSERT_TRUE(allClose(alphasum, ones, 1e-5));
+    }
+  }
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

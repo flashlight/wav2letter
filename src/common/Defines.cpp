@@ -229,6 +229,7 @@ DEFINE_int64(
     0,
     "Number of convolutional channels for location attention");
 DEFINE_int64(attnconvkernel, 0, "Kernel width for location attention");
+DEFINE_int64(numattnhead, 8, "number of heads for multihead attention");
 DEFINE_int64(leftWindowSize, 50, "left median window width");
 DEFINE_int64(rightWindowSize, 50, "right median window width");
 DEFINE_int64(

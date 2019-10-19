@@ -86,6 +86,7 @@ DECLARE_int64(localnrmlleftctx);
 DECLARE_int64(localnrmlrightctx);
 DECLARE_string(onorm);
 DECLARE_bool(sqnorm);
+DECLARE_bool(lrcosine);
 
 /* ========== LEARNING HYPER-PARAMETER OPTIONS ========== */
 
@@ -202,6 +203,7 @@ DECLARE_string(attnWindow);
 DECLARE_int64(attndim);
 DECLARE_int64(attnconvchannel);
 DECLARE_int64(attnconvkernel);
+DECLARE_int64(numattnhead);
 DECLARE_int64(leftWindowSize);
 DECLARE_int64(rightWindowSize);
 DECLARE_int64(maxsil);

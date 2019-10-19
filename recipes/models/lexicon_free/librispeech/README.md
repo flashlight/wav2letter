@@ -130,7 +130,7 @@ Here `am.arch`, generated `$MODEL_DST/am/tokens.lst` and `$MODEL_DST/decoder/lex
 ## Acoustic Model
 | File | Dataset | Dev Set | Architecture | Decoder Lexicon | Tokens |
 | - | - | - | - | - | - |
-| [baseline_dev-clean+other](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/am/baseline_dev-clean+other.bin) | LibriSpeech | dev-clean+dev-other | [Archfile](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/am.arch) | [Decoder lexicon](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/lexicon.lst) | [Tokens](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/tokens.lst) |
+| [baseline_dev-clean+other](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/am/baseline_dev-clean%2Bother.bin) | LibriSpeech | dev-clean+dev-other | [Archfile](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/am.arch) | [Decoder lexicon](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/lexicon.lst) | [Tokens](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/tokens.lst) |
 
 ## Language Models
 

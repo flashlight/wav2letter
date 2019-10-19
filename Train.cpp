@@ -496,7 +496,13 @@ int main(int argc, char** argv) {
     int64_t curEpoch = startEpoch;
     int64_t sampleIdx = 0;
     while (curEpoch < nepochs) {
-      double lrScale = std::pow(FLAGS_gamma, curEpoch / FLAGS_stepsize);
+      double lrScale = 1;
+      if (FLAGS_lrcosine) {
+        const double pi = std::acos(-1);
+        lrScale = std::cos(((double)curEpoch) / ((double)nepochs) * pi / 2.0);
+      } else {
+        lrScale = std::pow(FLAGS_gamma, curEpoch / FLAGS_stepsize);
+      }
       netopt->setLr(lrScale * initlr);
       critopt->setLr(lrScale * initcritlr);
 

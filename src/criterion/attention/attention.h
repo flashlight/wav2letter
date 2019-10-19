@@ -12,3 +12,4 @@
 #include "criterion/attention/ContentAttention.h"
 #include "criterion/attention/Defines.h"
 #include "criterion/attention/LocationAttention.h"
+#include "criterion/attention/MultiHeadAttention.h"

@@ -237,6 +237,34 @@ TEST(Seq2SeqTest, Seq2SeqAttn) {
   ASSERT_EQ(attention.dims(), af::dim4({U, T, B}));
 }
 
+TEST(Seq2SeqTest, Seq2SeqMixedAttn) {
+  int N = 5, H = 8, B = 1, T = 10, U = 5, maxoutputlen = 100, nHead = 2;
+  Seq2SeqCriterion seq2seq(
+      N,
+      H,
+      N - 1,
+      maxoutputlen,
+      {std::make_shared<ContentAttention>(),
+       std::make_shared<MultiHeadContentAttention>(H, nHead)},
+      std::make_shared<StepWindow>(1, 20, 2.2, 5.8),
+      false,
+      100,
+      0.0,
+      false,
+      w2l::kRandSampling,
+      1.0,
+      1,
+      2);
+  seq2seq.eval();
+
+  auto input = noGrad(af::randn(H, T, B, f32));
+  auto target = noGrad((af::randu(U, B, f32) * 0.99 * N).as(s32));
+
+  Variable output, attention;
+  std::tie(output, attention) = seq2seq.decoder(input, target);
+  ASSERT_EQ(attention.dims(), af::dim4({U * nHead, T, B}));
+}
+
 TEST(Seq2SeqTest, Serialization) {
   char* user = getenv("USER");
   std::string userstr = "unknown";

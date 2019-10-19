@@ -69,6 +69,7 @@ DEFINE_int64(
     "right context size for local normalization");
 DEFINE_string(onorm, "none", "output norm (none");
 DEFINE_bool(sqnorm, false, "use square-root while normalizing criterion loss");
+DEFINE_bool(lrcosine, false, "use cosine learning rate schedule");
 
 // LEARNING HYPER-PARAMETER OPTIONS
 DEFINE_int64(iter, 1000000, "number of iterations");
@@ -231,6 +232,7 @@ DEFINE_int64(
     0,
     "Number of convolutional channels for location attention");
 DEFINE_int64(attnconvkernel, 0, "Kernel width for location attention");
+DEFINE_int64(numattnhead, 8, "number of heads for multihead attention");
 DEFINE_int64(leftWindowSize, 50, "left median window width");
 DEFINE_int64(rightWindowSize, 50, "right median window width");
 DEFINE_int64(

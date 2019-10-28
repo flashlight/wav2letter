@@ -226,5 +226,6 @@ DECLARE_string(rndv_filepath);
 /* ========== FB SPECIFIC ========== */
 DECLARE_string(target);
 DECLARE_bool(everstoredb);
+DECLARE_bool(use_memcache);
 
 } // namespace w2l

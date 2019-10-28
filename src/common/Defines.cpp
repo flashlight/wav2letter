@@ -289,5 +289,6 @@ DEFINE_string(
 // FB SPECIFIC
 DEFINE_string(target, "tkn", "target feature");
 DEFINE_bool(everstoredb, false, "use Everstore db for reading data");
+DEFINE_bool(use_memcache, false, "use Memcache for reading data");
 
 } // namespace w2l

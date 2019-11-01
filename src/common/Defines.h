@@ -126,7 +126,8 @@ DECLARE_int64(framesizems);
 DECLARE_int64(framestridems);
 
 /* ========== FEATURE DATA OPTIONS ========== */
-DECLARE_string(featext);
+DECLARE_bool(wav2vec);
+DECLARE_int64(wav2vecfeat);
 
 /* ========== RUN OPTIONS ========== */
 

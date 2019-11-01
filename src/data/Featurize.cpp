@@ -102,6 +102,9 @@ W2lFeatureData featurize(
     // After: FRAMES X FEAT X CHANNELS X BATCHSIZE (Col Major)
     feat.inputDims = af::dim4(T, featSz, FLAGS_channels, batchSz);
   }
+  else if (FLAGS_wav2vec) {
+    feat.inputDims = af::dim4(T / FLAGS_wav2vecfeat, FLAGS_wav2vecfeat, FLAGS_channels, batchSz);
+  }
 
   if (FLAGS_localnrmlleftctx > 0 || FLAGS_localnrmlrightctx > 0) {
     feat.input = localNormalize(
@@ -244,6 +247,8 @@ int64_t getSpeechFeatureSize() {
     numFeatures = featparams.mfscFeatSz();
   } else if (FLAGS_mfcc) {
     numFeatures = featparams.mfccFeatSz();
+  } else if (FLAGS_wav2vec) {
+    numFeatures = FLAGS_wav2vecfeat;
   }
   return numFeatures;
 }

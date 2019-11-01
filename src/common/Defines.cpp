@@ -113,8 +113,9 @@ DEFINE_int64(
     10,
     "Stride millisecond for power spectrum feature");
 
-// FEATURE DATA OPTIONS
-DEFINE_string(featext, "hdf5", "file extension of feature files");
+// WAV2VEC OPTIONS
+DEFINE_bool(wav2vec, false, "use wav2vec embeddings from hdf5 files");
+DEFINE_int64(wav2vecfeat, 512, "number of wav2vec features");
 
 // RUN OPTIONS
 DEFINE_string(datadir, "", "speech data directory");

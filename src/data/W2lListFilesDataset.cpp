@@ -82,9 +82,7 @@ std::vector<W2lLoaderData> W2lListFilesDataset::getLoaderData(
     data[id].sampleId = data_[i].getSampleId();
     auto audioFile = data_[i].getAudioFile();
 
-    size_t fileExtDot = audioFile.find_last_of('.');
-    std::string fileExt = audioFile.substr(fileExtDot);
-    if (fileExt == "." + FLAGS_featext) {
+    if (FLAGS_wav2vec) {
       data[id].input = loadData(audioFile);
     }
     else {

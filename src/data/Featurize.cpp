@@ -103,7 +103,8 @@ W2lFeatureData featurize(
     feat.inputDims = af::dim4(T, featSz, FLAGS_channels, batchSz);
   }
   else if (FLAGS_wav2vec) {
-    feat.inputDims = af::dim4(T / FLAGS_wav2vecfeat, FLAGS_wav2vecfeat, FLAGS_channels, batchSz);
+    T = maxInSize / FLAGS_wav2vecfeat;
+    feat.inputDims = af::dim4(T, FLAGS_wav2vecfeat, FLAGS_channels, batchSz);
   }
 
   if (FLAGS_localnrmlleftctx > 0 || FLAGS_localnrmlrightctx > 0) {

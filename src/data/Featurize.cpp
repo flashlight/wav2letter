@@ -103,7 +103,8 @@ W2lFeatureData featurize(
     feat.inputDims = af::dim4(T, featSz, FLAGS_channels, batchSz);
   }
   else if (FLAGS_wav2vec) {
-    T = maxInSize / FLAGS_wav2vecfeat;
+    T = T / FLAGS_wav2vecfeat;
+    inFeat = transpose2d<float>(inFeat, T, FLAGS_wav2vecfeat, FLAGS_channels * batchSz);
     feat.inputDims = af::dim4(T, FLAGS_wav2vecfeat, FLAGS_channels, batchSz);
   }
 

@@ -26,7 +26,8 @@ const char* ctcGetStatusString(ctcStatus_t status) {
         return "invalid value";
     case CTC_STATUS_EXECUTION_FAILED:
         return "execution failed";
-
+    case CTC_STATUS_LABEL_LENGTH_TOO_LARGE:
+        return "label length >639 is not supported";
     case CTC_STATUS_UNKNOWN_ERROR:
     default:
         return "unknown error";

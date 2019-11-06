@@ -322,7 +322,7 @@ GpuCTC<ProbT>::create_metadata_and_choose_config(const int* const flat_labels,
     }
 
     if (best_config >= num_configs)
-        return CTC_STATUS_UNKNOWN_ERROR;
+        return CTC_STATUS_LABEL_LENGTH_TOO_LARGE;
 
     return CTC_STATUS_SUCCESS;
 }

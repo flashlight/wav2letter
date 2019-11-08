@@ -76,6 +76,8 @@ std::pair<std::string, std::string> getStatus(
   double audioProcSec = isztotal * FLAGS_batchsize;
   if (FLAGS_pow || FLAGS_mfcc || FLAGS_mfsc) {
     audioProcSec = audioProcSec * FLAGS_framestridems / 1000.0;
+  } else if (FLAGS_wav2vec) {
+    audioProcSec = audioProcSec * 10.0 / 1000.0;
   } else {
     audioProcSec /= FLAGS_samplerate;
   }

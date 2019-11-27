@@ -54,7 +54,7 @@ struct DecoderOptions {
 };
 
 struct DecodeResult {
-  float score;
+  double score;
   std::vector<int> words;
   std::vector<int> tokens;
 
@@ -67,9 +67,9 @@ void mergeStates(
     DecoderState* oldNode,
     const DecoderState* newNode,
     bool logAdd) {
-  float maxScore = std::max(oldNode->score, newNode->score);
+  double maxScore = std::max(oldNode->score, newNode->score);
   if (logAdd) {
-    float minScore = std::min(oldNode->score, newNode->score);
+    double minScore = std::min(oldNode->score, newNode->score);
     oldNode->score = maxScore + std::log1p(std::exp(minScore - maxScore));
   } else {
     oldNode->score = maxScore;
@@ -77,9 +77,9 @@ void mergeStates(
 }
 
 bool isValidCandidate(
-    float& bestScore,
-    const float score,
-    const float beamThreshold);
+    double& bestScore,
+    const double score,
+    const double beamThreshold);
 
 template <class DecoderState>
 void pruneCandidates(
@@ -171,7 +171,7 @@ const DecoderState* findBestAncestor(
     return nullptr;
   }
 
-  float bestScore = finalHyps.front().score;
+  double bestScore = finalHyps.front().score;
   const DecoderState* bestNode = finalHyps.data();
   for (int r = 1; r < nHyp; r++) {
     const DecoderState* node = &finalHyps[r];
@@ -223,7 +223,7 @@ void pruneAndNormalize(
 
   // (3) For each hypothesis in the last frame, subtract the largest score so as
   // to avoid underflow/overflow.
-  float largestScore = hypothesis[lookBack].front().score;
+  double largestScore = hypothesis[lookBack].front().score;
   for (int i = 1; i < hypothesis[lookBack].size(); i++) {
     if (largestScore < hypothesis[lookBack][i].score) {
       largestScore = hypothesis[lookBack][i].score;

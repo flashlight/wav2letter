@@ -75,7 +75,7 @@ void WordLMDecoder::decodeStep(const float* emissions, int T, int N) {
       for (auto& child : prevLex->children) {
         int n = child.first;
         const TrieNodePtr& lex = child.second;
-        float score = prevHyp.score + emissions[t * N + n];
+        double score = prevHyp.score + emissions[t * N + n];
         if (nDecodedFrames_ + t > 0 &&
             opt_.criterionType == CriterionType::ASG) {
           score += transitions_[n * N + prevIdx];
@@ -134,7 +134,7 @@ void WordLMDecoder::decodeStep(const float* emissions, int T, int N) {
       /* (2) Try same lexicon node */
       if (opt_.criterionType != CriterionType::CTC || !prevHyp.prevBlank) {
         int n = prevIdx;
-        float score = prevHyp.score + emissions[t * N + n];
+        double score = prevHyp.score + emissions[t * N + n];
         if (nDecodedFrames_ + t > 0 &&
             opt_.criterionType == CriterionType::ASG) {
           score += transitions_[n * N + prevIdx];
@@ -157,7 +157,7 @@ void WordLMDecoder::decodeStep(const float* emissions, int T, int N) {
       /* (3) CTC only, try blank */
       if (opt_.criterionType == CriterionType::CTC) {
         int n = blank_;
-        float score = prevHyp.score + emissions[t * N + n];
+        double score = prevHyp.score + emissions[t * N + n];
         candidatesAdd(
             prevLmState,
             prevLex,

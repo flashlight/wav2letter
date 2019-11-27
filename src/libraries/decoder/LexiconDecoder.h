@@ -22,7 +22,7 @@ struct LexiconDecoderState {
   LMStatePtr lmState; // Language model state
   const TrieNode* lex; // Trie node in the lexicon
   const LexiconDecoderState* parent; // Parent hypothesis
-  float score; // Score so far
+  double score; // Score so far
   int token; // Label of token
   int word; // Label of word (-1 if incomplete)
   bool prevBlank; // If previous hypothesis is blank (for CTC only)
@@ -31,7 +31,7 @@ struct LexiconDecoderState {
       const LMStatePtr& lmState,
       const TrieNode* lex,
       const LexiconDecoderState* parent,
-      const float score,
+      const double score,
       const int token,
       const int word,
       const bool prevBlank = false)
@@ -120,7 +120,7 @@ class LexiconDecoder : public Decoder {
   std::vector<LexiconDecoderState*> candidatePtrs_;
 
   // Best candidate score of current frame
-  float candidatesBestScore_;
+  double candidatesBestScore_;
 
   // Index of silence label
   int sil_;
@@ -146,7 +146,7 @@ class LexiconDecoder : public Decoder {
       const LMStatePtr& lmState,
       const TrieNode* lex,
       const LexiconDecoderState* parent,
-      const float score,
+      const double score,
       const int token,
       const int label,
       const bool prevBlank);

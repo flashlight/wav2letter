@@ -56,7 +56,7 @@ void LexiconFreeDecoder::mergeCandidates() {
 void LexiconFreeDecoder::candidatesAdd(
     const LMStatePtr& lmState,
     const LexiconFreeDecoderState* parent,
-    const float score,
+    const double score,
     const int token,
     const bool prevBlank) {
   if (isValidCandidate(candidatesBestScore_, score, opt_.beamThreshold)) {
@@ -111,7 +111,7 @@ void LexiconFreeDecoder::decodeStep(const float* emissions, int T, int N) {
 
       const int prevIdx = prevHyp.token;
       for (int n = 0; n < N; n++) {
-        float score = prevHyp.score + emissions[t * N + n];
+        double score = prevHyp.score + emissions[t * N + n];
         if (nDecodedFrames_ + t > 0 &&
             opt_.criterionType == CriterionType::ASG) {
           score += transitions_[n * N + prevIdx];

@@ -20,14 +20,14 @@ namespace w2l {
 struct LexiconFreeDecoderState {
   LMStatePtr lmState; // Language model state
   const LexiconFreeDecoderState* parent; // Parent hypothesis
-  float score; // Score so far
+  double score; // Score so far
   int token; // Label of token
   bool prevBlank; // If previous hypothesis is blank (for CTC only)
 
   LexiconFreeDecoderState(
       const LMStatePtr& lmState,
       const LexiconFreeDecoderState* parent,
-      const float score,
+      const double score,
       const int token,
       const bool prevBlank = false)
       : lmState(lmState),
@@ -107,7 +107,7 @@ class LexiconFreeDecoder : public Decoder {
   std::vector<LexiconFreeDecoderState*> candidatePtrs_;
 
   // Best candidate score of current frame
-  float candidatesBestScore_;
+  double candidatesBestScore_;
 
   // Index of silence label
   int sil_;
@@ -129,7 +129,7 @@ class LexiconFreeDecoder : public Decoder {
   void candidatesAdd(
       const LMStatePtr& lmState,
       const LexiconFreeDecoderState* parent,
-      const float score,
+      const double score,
       const int token,
       const bool prevBlank);
 

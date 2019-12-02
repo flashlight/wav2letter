@@ -57,7 +57,7 @@ void Seq2SeqDecoder::mergeCandidates() {
 void Seq2SeqDecoder::candidatesAdd(
     const LMStatePtr& lmState,
     const Seq2SeqDecoderState* parent,
-    const float score,
+    const double score,
     const int token,
     const AMStatePtr& amState) {
   if (isValidCandidate(candidatesBestScore_, score, opt_.beamThreshold)) {
@@ -158,7 +158,7 @@ void Seq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
           amScores[validHypo].begin(), amScores[validHypo].end());
 
       for (int n = 0; n < amScores[validHypo].size(); n++) {
-        float score = prevHyp.score + amScores[validHypo][n];
+        double score = prevHyp.score + amScores[validHypo][n];
 
         /* (1) Try eos */
         if (n == eos_ &&

@@ -29,7 +29,7 @@ void LexiconDecoder::candidatesAdd(
     const LMStatePtr& lmState,
     const TrieNode* lex,
     const LexiconDecoderState* parent,
-    const float score,
+    const double score,
     const int token,
     const int word,
     const bool prevBlank) {

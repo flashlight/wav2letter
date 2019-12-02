@@ -31,14 +31,14 @@ using AMUpdateFunc = std::function<
 struct Seq2SeqDecoderState {
   LMStatePtr lmState; // Language model state
   const Seq2SeqDecoderState* parent; // Parent hypothesis
-  float score; // Score so far
+  double score; // Score so far
   int token; // Label of token
   AMStatePtr amState; // Acoustic model state
 
   Seq2SeqDecoderState(
       const LMStatePtr& lmState,
       const Seq2SeqDecoderState* parent,
-      const float score,
+      const double score,
       const int token,
       const AMStatePtr& amState = nullptr)
       : lmState(lmState),
@@ -111,7 +111,7 @@ class Seq2SeqDecoder : public Decoder {
 
   std::vector<Seq2SeqDecoderState> candidates_;
   std::vector<Seq2SeqDecoderState*> candidatePtrs_;
-  float candidatesBestScore_;
+  double candidatesBestScore_;
 
   std::unordered_map<int, std::vector<Seq2SeqDecoderState>> hyp_;
 
@@ -122,7 +122,7 @@ class Seq2SeqDecoder : public Decoder {
   void candidatesAdd(
       const LMStatePtr& lmState,
       const Seq2SeqDecoderState* parent,
-      const float score,
+      const double score,
       const int token,
       const AMStatePtr& amState);
 

@@ -11,9 +11,9 @@
 namespace w2l {
 
 bool isValidCandidate(
-    float& bestScore,
-    const float score,
-    const float beamThreshold) {
+    double& bestScore,
+    const double score,
+    const double beamThreshold) {
   if (score >= bestScore) {
     bestScore = score;
   }

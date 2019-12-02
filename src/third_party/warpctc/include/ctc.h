@@ -18,7 +18,8 @@ typedef enum {
     CTC_STATUS_MEMOPS_FAILED = 1,
     CTC_STATUS_INVALID_VALUE = 2,
     CTC_STATUS_EXECUTION_FAILED = 3,
-    CTC_STATUS_UNKNOWN_ERROR = 4
+    CTC_STATUS_LABEL_LENGTH_TOO_LARGE = 4,
+    CTC_STATUS_UNKNOWN_ERROR = 5
 } ctcStatus_t;
 
 /** Returns a single integer which specifies the API version of the warpctc library */

@@ -228,6 +228,7 @@ int main(int argc, char** argv) {
   // Prepare decoder options
   DecoderOptions decoderOpt(
       FLAGS_beamsize,
+      FLAGS_beamsizetoken,
       static_cast<float>(FLAGS_beamthreshold),
       static_cast<float>(FLAGS_lmweight),
       static_cast<float>(FLAGS_wordscore),

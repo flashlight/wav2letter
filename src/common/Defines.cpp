@@ -173,7 +173,8 @@ DEFINE_double(beamthreshold, 25, "beam score threshold");
 
 DEFINE_int32(maxload, -1, "max number of testing examples.");
 DEFINE_int32(maxword, -1, "maximum number of words to use");
-DEFINE_int32(beamsize, 2500, "max beam size");
+DEFINE_int32(beamsize, 2500, "max overall beam size");
+DEFINE_int32(beamsizetoken, 250000, "max beam for token selection");
 DEFINE_int32(nthread_decoder, 1, "number of threads for decoding");
 DEFINE_int32(
     lm_memory,

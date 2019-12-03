@@ -24,6 +24,7 @@ enum class CriterionType { ASG = 0, CTC = 1, S2S = 2 };
 
 struct DecoderOptions {
   int beamSize; // Maximum number of hypothesis we hold after each step
+  int beamSizeToken; // Maximum number of tokens we consider at each step
   float beamThreshold; // Threshold to prune hypothesis
   float lmWeight; // Weight of lm
   float wordScore; // Score for inserting a word
@@ -34,6 +35,7 @@ struct DecoderOptions {
 
   DecoderOptions(
       const int beamSize,
+      const int beamSizeToken,
       const float beamThreshold,
       const float lmWeight,
       const float wordScore,
@@ -42,6 +44,7 @@ struct DecoderOptions {
       const float silWeight,
       const CriterionType criterionType)
       : beamSize(beamSize),
+        beamSizeToken(beamSizeToken),
         beamThreshold(beamThreshold),
         lmWeight(lmWeight),
         wordScore(wordScore),

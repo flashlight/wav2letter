@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <cmath>
 #include <functional>
+#include <numeric>
 #include <unordered_map>
 
 #include "libraries/decoder/WordLMDecoder.h"
@@ -62,7 +63,19 @@ void WordLMDecoder::decodeStep(const float* emissions, int T, int N) {
     }
   }
 
+  std::vector<size_t> idx(N);
   for (int t = 0; t < T; t++) {
+    std::iota(idx.begin(), idx.end(), 0);
+    if (N > opt_.beamSizeToken) {
+      std::partial_sort(
+          idx.begin(),
+          idx.begin() + opt_.beamSizeToken,
+          idx.end(),
+          [&t, &N, &emissions](const size_t& l, const size_t& r) {
+            return emissions[t * N + l] > emissions[t * N + r];
+          });
+    }
+
     candidatesReset();
     for (const LexiconDecoderState& prevHyp : hyp_[startFrame + t]) {
       const TrieNode* prevLex = prevHyp.lex;
@@ -72,9 +85,13 @@ void WordLMDecoder::decodeStep(const float* emissions, int T, int N) {
       const LMStatePtr& prevLmState = prevHyp.lmState;
 
       /* (1) Try children */
-      for (auto& child : prevLex->children) {
-        int n = child.first;
-        const TrieNodePtr& lex = child.second;
+      for (int r = 0; r < std::min(opt_.beamSizeToken, N); ++r) {
+        int n = idx[r];
+        auto iter = prevLex->children.find(n);
+        if (iter == prevLex->children.end()) {
+          continue;
+        }
+        const TrieNodePtr& lex = iter->second;
         double score = prevHyp.score + emissions[t * N + n];
         if (nDecodedFrames_ + t > 0 &&
             opt_.criterionType == CriterionType::ASG) {

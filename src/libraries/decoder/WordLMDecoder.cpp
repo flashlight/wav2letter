@@ -29,6 +29,12 @@ void WordLMDecoder::mergeCandidates() {
     } else if (node1->lex != node2->lex) {
       /* same LmState */
       return node1->lex > node2->lex;
+    } else if (node1->word != node2->word) {
+      return node1->word > node2->word;
+    } else if (node1->token != node2->token) {
+      return node1->token > node2->token;
+    } else if (node1->prevBlank != node2->prevBlank) {
+      return node1->prevBlank > node2->prevBlank;
     } else {
       /* same LmState, same lex */
       return node1->score > node2->score;
@@ -42,7 +48,12 @@ void WordLMDecoder::mergeCandidates() {
     if (lm_->compareState(
             candidatePtrs_[i]->lmState,
             candidatePtrs_[nHypAfterMerging - 1]->lmState) ||
-        candidatePtrs_[i]->lex != candidatePtrs_[nHypAfterMerging - 1]->lex) {
+        candidatePtrs_[i]->lex != candidatePtrs_[nHypAfterMerging - 1]->lex ||
+        candidatePtrs_[i]->word != candidatePtrs_[nHypAfterMerging - 1]->word ||
+        candidatePtrs_[i]->token !=
+            candidatePtrs_[nHypAfterMerging - 1]->token ||
+        candidatePtrs_[i]->prevBlank !=
+            candidatePtrs_[nHypAfterMerging - 1]->prevBlank) {
       candidatePtrs_[nHypAfterMerging] = candidatePtrs_[i];
       nHypAfterMerging++;
     } else {
@@ -79,7 +90,7 @@ void WordLMDecoder::decodeStep(const float* emissions, int T, int N) {
     candidatesReset();
     for (const LexiconDecoderState& prevHyp : hyp_[startFrame + t]) {
       const TrieNode* prevLex = prevHyp.lex;
-      const int prevIdx = prevLex->idx;
+      const int prevIdx = prevHyp.token;
       const float lexMaxScore =
           prevLex == lexicon_->getRoot() ? 0 : prevLex->maxScore;
       const LMStatePtr& prevLmState = prevHyp.lmState;

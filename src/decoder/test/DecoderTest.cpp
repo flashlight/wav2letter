@@ -159,6 +159,7 @@ TEST(DecoderTest, run) {
   /* -------- Build Decoder --------*/
   DecoderOptions decoderOpt(
       2500, // FLAGS_beamsize
+      25000, // FLAGS_beamsizetoken
       100.0, // FLAGS_beamthreshold
       2.0, // FLAGS_lmweight
       2.0, // FLAGS_lexiconcore
@@ -185,11 +186,10 @@ TEST(DecoderTest, run) {
 
   int n_hyp = results.size();
 
-  ASSERT_EQ(n_hyp, 1452);
+  ASSERT_EQ(n_hyp, 1); // only one with nice ending
 
-  std::vector<float> hypScoreTarget{
-      -278.111, -278.652, -279.275, -279.847, -280.01};
-  for (int i = 0; i < 5; i++) {
+  std::vector<float> hypScoreTarget{-282.275};
+  for (int i = 0; i < std::min(n_hyp, 5); i++) {
     ASSERT_NEAR(results[i].score, hypScoreTarget[i], 1e-3);
   }
 }

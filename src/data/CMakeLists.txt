@@ -47,6 +47,7 @@ target_sources(
   ${CMAKE_CURRENT_SOURCE_DIR}/W2lDataset.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/W2lBlobsDataset.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/W2lListFilesDataset.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/W2lDirectDataset.cpp
   )
 
 target_link_libraries(

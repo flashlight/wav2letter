@@ -238,3 +238,15 @@ target_link_libraries(
   Decoder
   wav2letter++
   )
+
+# -------------------------- Live Decoder ---------------------------
+add_executable(
+  LiveDecoder
+  LiveDecode.cpp
+  )
+
+target_link_libraries(
+  LiveDecoder
+  wav2letter++
+  beanstalk
+  )

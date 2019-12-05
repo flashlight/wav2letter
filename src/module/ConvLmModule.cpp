@@ -12,7 +12,6 @@
 
 #include "common/FlashlightUtils.h"
 
-using namespace fl;
 
 namespace w2l {
 GetConvLmScoreFunc buildGetConvLmScoreFunction(

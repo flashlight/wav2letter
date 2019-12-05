@@ -11,7 +11,6 @@
 #include <string>
 
 #include <arrayfire.h>
-#include <flashlight/flashlight.h>
 #include <gtest/gtest.h>
 
 #include "common/Utils.h"

@@ -165,8 +165,8 @@ DECLARE_string(decodertype);
 
 DECLARE_double(lmweight);
 DECLARE_double(wordscore);
-DECLARE_double(silweight);
-DECLARE_double(unkweight);
+DECLARE_double(silscore);
+DECLARE_double(unkscore);
 DECLARE_double(beamthreshold);
 
 DECLARE_int32(maxload);

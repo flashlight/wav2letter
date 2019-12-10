@@ -128,28 +128,31 @@ PYBIND11_MODULE(_decoder, m) {
       .def(
           py::init<
               const int,
+              const int,
+              const float,
               const float,
               const float,
               const float,
               const float,
               const bool,
-              const float,
               const CriterionType>(),
           "beam_size"_a,
+          "beam_size_token"_a,
           "beam_threshold"_a,
           "lm_weight"_a,
           "word_score"_a,
           "unk_score"_a,
+          "sil_score"_a,
           "log_add"_a,
-          "sil_weight"_a,
           "criterion_type"_a)
       .def_readwrite("beam_size", &DecoderOptions::beamSize)
+      .def_readwrite("beam_size_token", &DecoderOptions::beamSizeToken)
       .def_readwrite("beam_threshold", &DecoderOptions::beamThreshold)
       .def_readwrite("lm_weight", &DecoderOptions::lmWeight)
       .def_readwrite("word_score", &DecoderOptions::wordScore)
       .def_readwrite("unk_score", &DecoderOptions::unkScore)
+      .def_readwrite("sil_score", &DecoderOptions::silScore)
       .def_readwrite("log_add", &DecoderOptions::logAdd)
-      .def_readwrite("sil_weight", &DecoderOptions::silWeight)
       .def_readwrite("criterion_type", &DecoderOptions::criterionType);
 
   py::class_<DecodeResult>(m, "DecodeResult")

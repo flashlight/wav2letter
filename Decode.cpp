@@ -232,9 +232,9 @@ int main(int argc, char** argv) {
       static_cast<float>(FLAGS_beamthreshold),
       static_cast<float>(FLAGS_lmweight),
       static_cast<float>(FLAGS_wordscore),
-      static_cast<float>(FLAGS_unkweight),
+      static_cast<float>(FLAGS_unkscore),
+      static_cast<float>(FLAGS_silscore),
       FLAGS_logadd,
-      static_cast<float>(FLAGS_silweight),
       criterionType);
 
   // Prepare log writer

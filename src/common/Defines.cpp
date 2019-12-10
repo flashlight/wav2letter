@@ -163,12 +163,12 @@ DEFINE_string(sclite, "", "path/to/sclite to be written");
 DEFINE_string(decodertype, "wrd", "wrd, tkn");
 
 DEFINE_double(lmweight, 0.0, "language model weight");
-DEFINE_double(wordscore, 0.0, "wordscore");
-DEFINE_double(silweight, 0.0, "silence weight");
+DEFINE_double(wordscore, 0.0, "word insertion score");
+DEFINE_double(silscore, 0.0, "silence insertion score");
 DEFINE_double(
-    unkweight,
+    unkscore,
     -std::numeric_limits<float>::infinity(),
-    "unknown word weight");
+    "unknown word insertion score");
 DEFINE_double(beamthreshold, 25, "beam score threshold");
 
 DEFINE_int32(maxload, -1, "max number of testing examples.");

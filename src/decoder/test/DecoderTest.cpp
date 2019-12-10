@@ -163,9 +163,9 @@ TEST(DecoderTest, run) {
       100.0, // FLAGS_beamthreshold
       2.0, // FLAGS_lmweight
       2.0, // FLAGS_lexiconcore
-      -std::numeric_limits<float>::infinity(), // FLAGS_unkweight
+      -std::numeric_limits<float>::infinity(), // FLAGS_unkscore
+      -1, // FLAGS_silscore
       false, // FLAGS_logadd
-      -1, // FLAGS_silweight
       CriterionType::ASG);
 
   WordLMDecoder decoder(

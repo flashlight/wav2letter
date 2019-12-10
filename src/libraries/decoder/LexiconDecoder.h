@@ -66,7 +66,7 @@ struct LexiconDecoderState {
  * W maximizing:
  *
  * AM(W) + lmWeight_ * log(P_{lm}(W)) + wordScore_ * |W_known| + unkScore_ *
- * |W_unknown| - silWeight_ * |{i| pi_i = <sil>}|
+ * |W_unknown| + silScore_ * |{i| pi_i = <sil>}|
  *
  * where P_{lm}(W) is the language model score, pi_i is the value for the i-th
  * frame in the path leading to W and AM(W) is the (unnormalized) acoustic model

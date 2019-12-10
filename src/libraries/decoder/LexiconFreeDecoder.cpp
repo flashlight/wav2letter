@@ -114,7 +114,7 @@ void LexiconFreeDecoder::decodeStep(const float* emissions, int T, int N) {
           score += transitions_[n * N + prevIdx];
         }
         if (n == sil_) {
-          score += opt_.silWeight;
+          score += opt_.silScore;
           if (prevIdx != sil_) {
             score += opt_.wordScore;
           }

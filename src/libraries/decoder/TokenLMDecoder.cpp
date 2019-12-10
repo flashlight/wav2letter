@@ -72,7 +72,7 @@ void TokenLMDecoder::decodeStep(const float* emissions, int T, int N) {
           score += transitions_[n * N + prevIdx];
         }
         if (n == sil_) {
-          score += opt_.silWeight;
+          score += opt_.silScore;
         }
 
         auto lmScoreReturn = lm_->score(prevLmState, n);
@@ -130,7 +130,7 @@ void TokenLMDecoder::decodeStep(const float* emissions, int T, int N) {
           score += transitions_[n * N + prevIdx];
         }
         if (n == sil_) {
-          score += opt_.silWeight;
+          score += opt_.silScore;
         }
 
         candidatesAdd(

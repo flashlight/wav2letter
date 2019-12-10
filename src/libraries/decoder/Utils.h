@@ -27,10 +27,10 @@ struct DecoderOptions {
   int beamSizeToken; // Maximum number of tokens we consider at each step
   float beamThreshold; // Threshold to prune hypothesis
   float lmWeight; // Weight of lm
-  float wordScore; // Score for inserting a word
-  float unkScore; // Score for inserting a unknown word
+  float wordScore; // Word insertion score
+  float unkScore; // Unknown word insertion score
+  float silScore; // Silence insertion score
   bool logAdd; // If or not use logadd when merging hypothesis
-  float silWeight; // Silence is golden
   CriterionType criterionType; // CTC or ASG
 
   DecoderOptions(
@@ -40,8 +40,8 @@ struct DecoderOptions {
       const float lmWeight,
       const float wordScore,
       const float unkScore,
+      const float silScore,
       const bool logAdd,
-      const float silWeight,
       const CriterionType criterionType)
       : beamSize(beamSize),
         beamSizeToken(beamSizeToken),
@@ -49,8 +49,8 @@ struct DecoderOptions {
         lmWeight(lmWeight),
         wordScore(wordScore),
         unkScore(unkScore),
+        silScore(silScore),
         logAdd(logAdd),
-        silWeight(silWeight),
         criterionType(criterionType) {}
 
   DecoderOptions() {}

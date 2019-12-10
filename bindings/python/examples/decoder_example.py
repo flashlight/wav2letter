@@ -110,14 +110,14 @@ for i in range(len(sentence)):
     node = trie.search(word_tensor)
     assert_near(node.max_score, trie_score_target[i], 1e-5)
 
-opts = DecoderOptions(2500, 100.0, 2.0, 2.0, -math.inf, False, -1, CriterionType.ASG)
+opts = DecoderOptions(2500, 25000, 100.0, 2.0, 2.0, -math.inf, -1, False, CriterionType.ASG)
 
 decoder = WordLMDecoder(opts, trie, lm, sil_idx, -1, unk_idx, transitions)
 results = decoder.decode(emissions.ctypes.data, T, N)
 
 print(f"Decoding complete, obtained {len(results)} results")
 print("Showing top 5 results:")
-for i in range(5):
+for i in range(min(5, len(results))):
     prediction = []
     for idx in results[i].tokens:
         if idx < 0:
@@ -126,7 +126,7 @@ for i in range(5):
     prediction = " ".join(prediction)
     print(f"score={results[i].score} prediction='{prediction}'")
 
-assert len(results) == 1452
-hyp_score_target = [-278.111, -278.652, -279.275, -279.847, -280.01]
-for i in range(5):
+assert len(results) == 1
+hyp_score_target = [-282.275]
+for i in range(min(5, len(results))):
     assert_near(results[i].score, hyp_score_target[i], 1e-3)

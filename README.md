@@ -5,18 +5,13 @@
 wav2letter++ is a fast, open source speech processing toolkit from the Speech team at Facebook AI Research built to facilitate research in end-to-end models for speech recognition. It is written entirely in C++ and uses the [ArrayFire](https://github.com/arrayfire/arrayfire) tensor library and the [flashlight](https://github.com/facebookresearch/flashlight) machine learning library for maximum efficiency. Our approach is detailed in this [arXiv paper](https://arxiv.org/abs/1812.07625).
 
 This repository also contains pre-trained models and implementations for various ASR results including:
-- [Likhomanenko et al. (2019): Who Needs Words? Lexicon-free Speech Recognition](recipes/models/lexicon_free/README.md)
-- [Hannun et al. (2019): Sequence-to-Sequence Speech Recognition with Time-Depth Separable Convolutions](recipes/models/seq2seq_tds/README.md)
+- [Likhomanenko et al. (2019): Who Needs Words? Lexicon-free Speech Recognition](recipes/models/lexicon_free/)
+- [Hannun et al. (2019): Sequence-to-Sequence Speech Recognition with Time-Depth Separable Convolutions](recipes/models/seq2seq_tds/)
 
 The previous iteration of wav2letter (written in Lua) can be found in the [`wav2letter-lua`](https://github.com/facebookresearch/wav2letter/tree/wav2letter-lua) branch.
 
-## Building wav2letter++
-See [Building Instructions](docs/installation.md) for details.
-
-## Full documentation
-- [Data Preparation](docs/data_prep.md)
-- [Training](docs/train.md)
-- [Testing / Decoding](docs/decoder.md)
+## Building wav2letter++ and full documentation
+All details and docs can be found on the [wiki](https://github.com/facebookresearch/wav2letter/wiki):
 
 To get started with wav2letter++, checkout the [tutorials](tutorials) section.
 

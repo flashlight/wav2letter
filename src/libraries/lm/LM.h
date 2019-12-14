@@ -8,16 +8,49 @@
 
 #pragma once
 
+#include <cstring>
 #include <memory>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
 namespace w2l {
+
+struct LMState {
+  std::unordered_map<int, std::shared_ptr<LMState>> children;
+
+  template <typename T>
+  std::shared_ptr<T> child(int usrIdx) {
+    auto s = children.find(usrIdx);
+    if (s == children.end()) {
+      auto state = std::make_shared<T>();
+      children[usrIdx] = state;
+      return state;
+    } else {
+      return std::static_pointer_cast<T>(s->second);
+    }
+  }
+
+  /* Compare two language model states. */
+  int compare(const std::shared_ptr<LMState>& state) const {
+    LMState* inState = state.get();
+    if (!state) {
+      throw std::runtime_error("a state is null");
+    }
+    if (this == inState) {
+      return 0;
+    } else if (this < inState) {
+      return -1;
+    } else {
+      return 1;
+    }
+  };
+};
+
 /**
- * LMStatePtr is a shared void* tracking LM states generated during decoding.
+ * LMStatePtr is a shared LMState* tracking LM states generated during decoding.
  */
-using LMStatePtr = std::shared_ptr<void>;
+using LMStatePtr = std::shared_ptr<LMState>;
 
 /**
  * LM is a thin wrapper for laguage models. We abstrct several common methods
@@ -38,10 +71,6 @@ class LM {
 
   /* Query the language model and finish decoding. */
   virtual std::pair<LMStatePtr, float> finish(const LMStatePtr& state) = 0;
-
-  /* Compare two language model states. */
-  virtual int compareState(const LMStatePtr& state1, const LMStatePtr& state2)
-      const = 0;
 
   /* Update LM caches (optional) given a bunch of new states generated */
   virtual void updateCache(std::vector<LMStatePtr> stateIdices) {}

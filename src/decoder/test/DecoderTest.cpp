@@ -187,9 +187,14 @@ TEST(DecoderTest, run) {
 
   int n_hyp = results.size();
 
-  ASSERT_EQ(n_hyp, 1); // only one with nice ending
+  ASSERT_EQ(n_hyp, 16); // only one with nice ending
 
-  std::vector<float> hypScoreTarget{-282.275};
+  for (int i = 0; i < std::min(n_hyp, 5); i++) {
+    LOG(INFO) << results[i].score;
+  }
+
+  std::vector<float> hypScoreTarget{
+      -284.0998, -284.108, -284.119, -284.127, -284.296};
   for (int i = 0; i < std::min(n_hyp, 5); i++) {
     ASSERT_NEAR(results[i].score, hypScoreTarget[i], 1e-3);
   }

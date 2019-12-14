@@ -127,7 +127,7 @@ for i in range(min(5, len(results))):
     prediction = " ".join(prediction)
     print(f"score={results[i].score} prediction='{prediction}'")
 
-assert len(results) == 1
-hyp_score_target = [-282.275]
+assert len(results) == 16
+hyp_score_target = [-284.0998, -284.108, -284.119, -284.127, -284.296]
 for i in range(min(5, len(results))):
     assert_near(results[i].score, hyp_score_target[i], 1e-3)

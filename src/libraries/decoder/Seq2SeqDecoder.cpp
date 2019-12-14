@@ -23,9 +23,9 @@ void Seq2SeqDecoder::candidatesReset() {
 }
 
 void Seq2SeqDecoder::mergeCandidates() {
-  auto compareNodesShortList = [&](const Seq2SeqDecoderState* node1,
-                                   const Seq2SeqDecoderState* node2) {
-    int lmCmp = lm_->compareState(node1->lmState, node2->lmState);
+  auto compareNodesShortList = [](const Seq2SeqDecoderState* node1,
+                                  const Seq2SeqDecoderState* node2) {
+    int lmCmp = node1->lmState->compare(node2->lmState);
     if (lmCmp != 0) {
       return lmCmp > 0;
     } else { /* same LmState */
@@ -37,8 +37,7 @@ void Seq2SeqDecoder::mergeCandidates() {
 
   int nHypAfterMerging = 1;
   for (int i = 1; i < candidatePtrs_.size(); i++) {
-    if (lm_->compareState(
-            candidatePtrs_[i]->lmState,
+    if (candidatePtrs_[i]->lmState->compare(
             candidatePtrs_[nHypAfterMerging - 1]->lmState)) {
       candidatePtrs_[nHypAfterMerging] = candidatePtrs_[i];
       nHypAfterMerging++;

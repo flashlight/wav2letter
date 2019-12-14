@@ -13,31 +13,17 @@
 namespace w2l {
 
 LMStatePtr ZeroLM::start(bool /* unused */) {
-  return std::make_shared<ZeroLMState>(-1);
+  return std::make_shared<LMState>();
 }
 
 std::pair<LMStatePtr, float> ZeroLM::score(
-    const LMStatePtr& /* unused */,
+    const LMStatePtr& state /* unused */,
     const int usrTokenIdx) {
-  return std::make_pair(std::make_shared<ZeroLMState>(usrTokenIdx), 0.0);
+  return std::make_pair(state->child<LMState>(usrTokenIdx), 0.0);
 }
 
-std::pair<LMStatePtr, float> ZeroLM::finish(const LMStatePtr& /* unused */) {
-  return std::make_pair(std::make_shared<ZeroLMState>(-1), 0.0);
-}
-
-int ZeroLM::compareState(const LMStatePtr& state1, const LMStatePtr& state2)
-    const {
-  auto inState1 = getRawState(state1);
-  auto inState2 = getRawState(state2);
-  if (inState1->token == inState2->token) {
-    return 0;
-  }
-  return inState1->token < inState2->token ? -1 : 1;
-}
-
-ZeroLMState* ZeroLM::getRawState(const LMStatePtr& state) {
-  return static_cast<ZeroLMState*>(state.get());
+std::pair<LMStatePtr, float> ZeroLM::finish(const LMStatePtr& state) {
+  return std::make_pair(state, 0.0);
 }
 
 } // namespace w2l

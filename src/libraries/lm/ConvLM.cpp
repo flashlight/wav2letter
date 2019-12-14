@@ -70,23 +70,23 @@ LMStatePtr ConvLM::start(bool startWithNothing) {
 std::pair<LMStatePtr, float> ConvLM::scoreWithLmIdx(
     const LMStatePtr& state,
     const int tokenIdx) {
-  auto inState = getRawState(state);
-  int inStateLength = inState->length;
+  auto rawInState = std::static_pointer_cast<ConvLMState>(state).get();
+  int inStateLength = rawInState->length;
   std::shared_ptr<ConvLMState> outState;
 
   // Prepare output state
   if (inStateLength == maxHistorySize_) {
     outState = std::make_shared<ConvLMState>(maxHistorySize_);
     std::copy(
-        inState->tokens.begin() + 1,
-        inState->tokens.end(),
+        rawInState->tokens.begin() + 1,
+        rawInState->tokens.end(),
         outState->tokens.begin());
     outState->tokens[maxHistorySize_ - 1] = tokenIdx;
   } else {
     outState = std::make_shared<ConvLMState>(inStateLength + 1);
     std::copy(
-        inState->tokens.begin(),
-        inState->tokens.end(),
+        rawInState->tokens.begin(),
+        rawInState->tokens.end(),
         outState->tokens.begin());
     outState->tokens[inStateLength] = tokenIdx;
   }
@@ -98,9 +98,9 @@ std::pair<LMStatePtr, float> ConvLM::scoreWithLmIdx(
         "[ConvLM] Invalid query word: " + std::to_string(tokenIdx));
   }
 
-  if (cacheIndices_.find(inState) != cacheIndices_.end()) {
+  if (cacheIndices_.find(rawInState) != cacheIndices_.end()) {
     // Cache hit
-    auto cacheInd = cacheIndices_[inState];
+    auto cacheInd = cacheIndices_[rawInState];
     if (cacheInd < 0 || cacheInd >= beamSize_) {
       throw std::logic_error(
           "[ConvLM] Invalid cache access: " + std::to_string(cacheInd));
@@ -112,11 +112,11 @@ std::pair<LMStatePtr, float> ConvLM::scoreWithLmIdx(
       cacheIndices_.clear();
     }
     int newIdx = cacheIndices_.size();
-    cacheIndices_[inState] = newIdx;
+    cacheIndices_[rawInState] = newIdx;
 
-    std::vector<int> lastTokenPositions = {inState->length - 1};
+    std::vector<int> lastTokenPositions = {rawInState->length - 1};
     cache_[newIdx] =
-        getConvLmScoreFunc_(inState->tokens, lastTokenPositions, -1, 1)[0];
+        getConvLmScoreFunc_(rawInState->tokens, lastTokenPositions, -1, 1)[0];
     score = cache_[newIdx][tokenIdx];
   }
   if (std::isnan(score) || !std::isfinite(score)) {
@@ -151,12 +151,12 @@ void ConvLM::updateCache(std::vector<LMStatePtr> states) {
   slot_.clear();
   slot_.resize(beamSize_, nullptr);
   for (const auto& state : states) {
-    auto state_ = getRawState(state);
-    if (cacheIndices_.find(state_) != cacheIndices_.end()) {
-      slot_[cacheIndices_[state_]] = state_;
-    } else if (state_->length > longestHistory) {
+    auto rawState = std::static_pointer_cast<ConvLMState>(state).get();
+    if (cacheIndices_.find(rawState) != cacheIndices_.end()) {
+      slot_[cacheIndices_[rawState]] = rawState;
+    } else if (rawState->length > longestHistory) {
       // prepare intest history only for those which should be predicted
-      longestHistory = state_->length;
+      longestHistory = rawState->length;
     }
   }
   cacheIndices_.clear();
@@ -188,21 +188,21 @@ void ConvLM::updateCache(std::vector<LMStatePtr> states) {
     std::vector<int> lastTokenPositions;
     for (int i = batchStart; (nBatchStates < maxBatchSize) && (i < nStates);
          i++, batchStart++) {
-      auto state = getRawState(states[i]);
-      if (cacheIndices_.find(state) != cacheIndices_.end()) {
+      auto rawState = std::static_pointer_cast<ConvLMState>(states[i]).get();
+      if (cacheIndices_.find(rawState) != cacheIndices_.end()) {
         continue;
       }
-      cacheIndices_[state] = cacheSize + nBatchStates;
+      cacheIndices_[rawState] = cacheSize + nBatchStates;
       int start = nBatchStates * longestHistory;
 
-      for (int j = 0; j < state->length; j++) {
-        batchedTokens_[start + j] = state->tokens[j];
+      for (int j = 0; j < rawState->length; j++) {
+        batchedTokens_[start + j] = rawState->tokens[j];
       }
-      start += state->length;
-      for (int j = 0; j < longestHistory - state->length; j++) {
+      start += rawState->length;
+      for (int j = 0; j < longestHistory - rawState->length; j++) {
         batchedTokens_[start + j] = vocab_.getIndex(kLmPadToken);
       }
-      lastTokenPositions.push_back(state->length - 1);
+      lastTokenPositions.push_back(rawState->length - 1);
       ++nBatchStates;
     }
     if (nBatchStates == 0 && batchStart >= nStates) {
@@ -233,26 +233,6 @@ void ConvLM::updateCache(std::vector<LMStatePtr> states) {
           vocabSize_ * sizeof(float));
     }
   }
-}
-
-int ConvLM::compareState(const LMStatePtr& state1, const LMStatePtr& state2)
-    const {
-  auto inState1 = getRawState(state1);
-  auto inState2 = getRawState(state2);
-  if (inState1 == inState2) {
-    return 0;
-  }
-  if (inState1->length != inState2->length) {
-    return inState1->length < inState2->length ? -1 : 1;
-  }
-  return std::memcmp(
-      inState1->tokens.data(),
-      inState2->tokens.data(),
-      inState1->length * sizeof(int));
-}
-
-ConvLMState* ConvLM::getRawState(const LMStatePtr& state) {
-  return static_cast<ConvLMState*>(state.get());
 }
 
 } // namespace w2l

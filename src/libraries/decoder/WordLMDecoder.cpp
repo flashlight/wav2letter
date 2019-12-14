@@ -18,16 +18,14 @@
 namespace w2l {
 
 void WordLMDecoder::mergeCandidates() {
-  auto compareNodesShortList = [&](const LexiconDecoderState* node1,
-                                   const LexiconDecoderState* node2) {
-    int lmCmp = lm_->compareState(node1->lmState, node2->lmState);
+  auto compareNodesShortList = [](const LexiconDecoderState* node1,
+                                  const LexiconDecoderState* node2) {
+    int lmCmp = node1->lmState->compare(node2->lmState);
     if (lmCmp != 0) {
       return lmCmp > 0;
     } else if (node1->lex != node2->lex) {
       /* same LmState */
       return node1->lex > node2->lex;
-    } else if (node1->word != node2->word) {
-      return node1->word > node2->word;
     } else if (node1->token != node2->token) {
       return node1->token > node2->token;
     } else if (node1->prevBlank != node2->prevBlank) {
@@ -42,11 +40,9 @@ void WordLMDecoder::mergeCandidates() {
 
   int nHypAfterMerging = 1;
   for (int i = 1; i < candidatePtrs_.size(); i++) {
-    if (lm_->compareState(
-            candidatePtrs_[i]->lmState,
+    if (candidatePtrs_[i]->lmState->compare(
             candidatePtrs_[nHypAfterMerging - 1]->lmState) ||
         candidatePtrs_[i]->lex != candidatePtrs_[nHypAfterMerging - 1]->lex ||
-        candidatePtrs_[i]->word != candidatePtrs_[nHypAfterMerging - 1]->word ||
         candidatePtrs_[i]->token !=
             candidatePtrs_[nHypAfterMerging - 1]->token ||
         candidatePtrs_[i]->prevBlank !=

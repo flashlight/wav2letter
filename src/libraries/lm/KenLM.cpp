@@ -37,9 +37,9 @@ KenLM::KenLM(const std::string& path, const Dictionary& usrTknDict) {
 LMStatePtr KenLM::start(bool startWithNothing) {
   auto outState = std::make_shared<KenLMState>();
   if (startWithNothing) {
-    model_->NullContextWrite(outState.get());
+    model_->NullContextWrite(outState->ken());
   } else {
-    model_->BeginSentenceWrite(outState.get());
+    model_->BeginSentenceWrite(outState->ken());
   }
 
   return outState;
@@ -52,33 +52,19 @@ std::pair<LMStatePtr, float> KenLM::score(
     throw std::runtime_error(
         "[KenLM] Invalid user token index: " + std::to_string(usrTokenIdx));
   }
-  auto inState = getRawState(state);
-  auto outState = std::make_shared<KenLMState>();
-  float score =
-      model_->BaseScore(inState, usrToLmIdxMap_[usrTokenIdx], outState.get());
+  auto inState = std::static_pointer_cast<KenLMState>(state);
+  auto outState = inState->child<KenLMState>(usrTokenIdx);
+  float score = model_->BaseScore(
+      inState->ken(), usrToLmIdxMap_[usrTokenIdx], outState->ken());
   return std::make_pair(std::move(outState), score);
 }
 
 std::pair<LMStatePtr, float> KenLM::finish(const LMStatePtr& state) {
-  auto inState = getRawState(state);
-  auto outState = std::make_shared<KenLMState>();
+  auto inState = std::static_pointer_cast<KenLMState>(state);
+  auto outState = inState->child<KenLMState>(-1);
   float score =
-      model_->BaseScore(inState, vocab_->EndSentence(), outState.get());
+      model_->BaseScore(inState->ken(), vocab_->EndSentence(), outState->ken());
   return std::make_pair(std::move(outState), score);
-}
-
-int KenLM::compareState(const LMStatePtr& state1, const LMStatePtr& state2)
-    const {
-  auto inState1 = getRawState(state1);
-  auto inState2 = getRawState(state2);
-  if (inState1 == inState2) {
-    return 0;
-  }
-  return inState1->Compare(*inState2);
-}
-
-KenLMState* KenLM::getRawState(const LMStatePtr& state) {
-  return static_cast<KenLMState*>(state.get());
 }
 
 } // namespace w2l

@@ -25,6 +25,7 @@
 #include "data/Featurize.h"
 #include "libraries/common/Dictionary.h"
 #include "libraries/decoder/LexiconFreeDecoder.h"
+#include "libraries/decoder/LexiconSeq2SeqDecoder.h"
 #include "libraries/decoder/Seq2SeqDecoder.h"
 #include "libraries/decoder/TokenLMDecoder.h"
 #include "libraries/decoder/WordLMDecoder.h"
@@ -314,7 +315,7 @@ int main(int argc, char** argv) {
       FLAGS_criterion == kCtcCriterion ? tokenDict.getIndex(kBlankToken) : -1;
   int silIdx = tokenDict.getIndex(FLAGS_wordseparator);
   std::shared_ptr<Trie> trie = nullptr;
-  if (FLAGS_uselexicon) {
+  if (FLAGS_decodertype == "wrd" || FLAGS_uselexicon) {
     trie = std::make_shared<Trie>(tokenDict.indexSize(), silIdx);
     auto startState = lm->start(false);
 
@@ -389,32 +390,52 @@ int main(int argc, char** argv) {
 
       // Build Decoder
       std::unique_ptr<Decoder> decoder;
-      if (FLAGS_decodertype == "wrd") {
-        decoder.reset(new WordLMDecoder(
-            decoderOpt,
-            trie,
-            localLm,
-            silIdx,
-            blankIdx,
-            unkWordIdx,
-            transition));
-        LOG(INFO) << "[Decoder] Decoder with word-LM loaded in thread: " << tid;
-      } else if (FLAGS_decodertype == "tkn") {
-        if (criterionType == CriterionType::S2S) {
-          auto amUpdateFunc = buildAmUpdateFunction(localCriterion);
-          int eosIdx = tokenDict.getIndex(kEosToken);
+      if (criterionType == CriterionType::S2S) {
+        auto amUpdateFunc = buildAmUpdateFunction(localCriterion);
+        int eosIdx = tokenDict.getIndex(kEosToken);
 
-          decoder.reset(new Seq2SeqDecoder(
+        if (FLAGS_decodertype == "wrd") {
+          decoder.reset(new LexiconSeq2SeqDecoder(
               decoderOpt,
+              trie,
               localLm,
               eosIdx,
               amUpdateFunc,
-              FLAGS_maxdecoderoutputlen));
+              FLAGS_maxdecoderoutputlen,
+              false));
           LOG(INFO)
-              << "[Decoder] Seq2Seq decoder with token-LM loaded in thread: "
+              << "[Decoder] LexiconSeq2Seq decoder with word-LM loaded in thread: "
               << tid;
-        } else if (FLAGS_uselexicon) {
-          decoder.reset(new TokenLMDecoder(
+        } else if (FLAGS_decodertype == "tkn") {
+          if (FLAGS_uselexicon) {
+            decoder.reset(new LexiconSeq2SeqDecoder(
+                decoderOpt,
+                trie,
+                localLm,
+                eosIdx,
+                amUpdateFunc,
+                FLAGS_maxdecoderoutputlen,
+                true));
+            LOG(INFO)
+                << "[Decoder] LexiconSeq2Seq decoder with token-LM loaded in thread: "
+                << tid;
+          } else {
+            decoder.reset(new Seq2SeqDecoder(
+                decoderOpt,
+                localLm,
+                eosIdx,
+                amUpdateFunc,
+                FLAGS_maxdecoderoutputlen));
+            LOG(INFO)
+                << "[Decoder] LexiconFreeSeq2Seq decoder with token-LM loaded in thread: "
+                << tid;
+          }
+        } else {
+          LOG(FATAL) << "Unsupported decoder type: " << FLAGS_decodertype;
+        }
+      } else {
+        if (FLAGS_decodertype == "wrd") {
+          decoder.reset(new WordLMDecoder(
               decoderOpt,
               trie,
               localLm,
@@ -422,17 +443,30 @@ int main(int argc, char** argv) {
               blankIdx,
               unkWordIdx,
               transition));
-          LOG(INFO) << "[Decoder] Decoder with token-LM loaded in thread: "
+          LOG(INFO) << "[Decoder] Decoder with word-LM loaded in thread: "
                     << tid;
+        } else if (FLAGS_decodertype == "tkn") {
+          if (FLAGS_uselexicon) {
+            decoder.reset(new TokenLMDecoder(
+                decoderOpt,
+                trie,
+                localLm,
+                silIdx,
+                blankIdx,
+                unkWordIdx,
+                transition));
+            LOG(INFO) << "[Decoder] Decoder with token-LM loaded in thread: "
+                      << tid;
+          } else {
+            decoder.reset(new LexiconFreeDecoder(
+                decoderOpt, localLm, silIdx, blankIdx, transition));
+            LOG(INFO)
+                << "[Decoder] Lexicon-free decoder with token-LM loaded in thread: "
+                << tid;
+          }
         } else {
-          decoder.reset(new LexiconFreeDecoder(
-              decoderOpt, localLm, silIdx, blankIdx, transition));
-          LOG(INFO)
-              << "[Decoder] Lexicon-free decoder with token-LM loaded in thread: "
-              << tid;
+          LOG(FATAL) << "Unsupported decoder type: " << FLAGS_decodertype;
         }
-      } else {
-        LOG(FATAL) << "Unsupported decoder type: " << FLAGS_decodertype;
       }
 
       // Get data and run decoder

@@ -169,6 +169,7 @@ DEFINE_double(
     unkscore,
     -std::numeric_limits<float>::infinity(),
     "unknown word insertion score");
+DEFINE_double(eosscore, 0.0, "EOS insertion score");
 DEFINE_double(beamthreshold, 25, "beam score threshold");
 
 DEFINE_int32(maxload, -1, "max number of testing examples.");
@@ -189,11 +190,6 @@ DEFINE_int32(
     attentionthreshold,
     std::numeric_limits<int>::infinity(),
     "hard attention limit");
-DEFINE_double(hardselection, 1.0, "end-of-sentence threshold");
-DEFINE_double(
-    softselection,
-    std::numeric_limits<double>::infinity(),
-    "threshold to keep new candidate from being proposed");
 
 // ASG OPTIONS
 DEFINE_int64(linseg, 0, "# of epochs of LinSeg to init transitions for ASG");

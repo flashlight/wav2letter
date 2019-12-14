@@ -10,7 +10,7 @@
 #include <algorithm>
 #include <cmath>
 #include <functional>
-#include <iostream>
+#include <numeric>
 
 #include "libraries/decoder/Seq2SeqDecoder.h"
 
@@ -98,7 +98,6 @@ void Seq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
                     const Seq2SeqDecoderState& n2) {
     return n1.score > n2.score;
   };
-  completedCandidates_.resize(0);
 
   // Decode frame by frame
   int t = 0;
@@ -111,21 +110,12 @@ void Seq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
     for (const Seq2SeqDecoderState& prevHyp : hyp_[t]) {
       const AMStatePtr& prevState = prevHyp.amState;
       if (prevHyp.token == eos_) {
-        completedCandidates_.push_back(prevHyp);
         continue;
       }
       rawY_.push_back(prevHyp.token);
       rawPrevStates_.push_back(prevState);
     }
     if (rawY_.size() == 0) {
-      if (completedCandidates_.size() >= opt_.beamSize) {
-        std::partial_sort(
-            completedCandidates_.begin(),
-            completedCandidates_.begin() + opt_.beamSize,
-            completedCandidates_.end(),
-            compare);
-        completedCandidates_.resize(opt_.beamSize);
-      }
       break;
     }
 
@@ -135,11 +125,14 @@ void Seq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
     std::tie(amScores, outStates) =
         amUpdateFunc_(emissions, N, T, rawY_, rawPrevStates_, t);
 
+    std::vector<size_t> idx(amScores.back().size());
+
     // Generate new hypothesis
     for (int hypo = 0, validHypo = 0; hypo < hyp_[t].size(); hypo++) {
       const Seq2SeqDecoderState& prevHyp = hyp_[t][hypo];
-      // Move away completed hypothesis
+      // Change nothing for completed hypothesis
       if (prevHyp.token == eos_) {
+        candidatesAdd(prevHyp.lmState, &prevHyp, prevHyp.score, eos_, nullptr);
         continue;
       }
 
@@ -149,35 +142,38 @@ void Seq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
         continue;
       }
 
-      auto prevLmState = prevHyp.lmState;
+      std::iota(idx.begin(), idx.end(), 0);
+      if (amScores[validHypo].size() > opt_.beamSizeToken) {
+        std::partial_sort(
+            idx.begin(),
+            idx.begin() + opt_.beamSizeToken,
+            idx.end(),
+            [&amScores, &validHypo](const size_t& l, const size_t& r) {
+              return amScores[validHypo][l] > amScores[validHypo][r];
+            });
+      }
 
-      const float maxAmScore = *std::max_element(
-          amScores[validHypo].begin(), amScores[validHypo].end());
-
-      for (int n = 0; n < amScores[validHypo].size(); n++) {
+      for (int r = 0;
+           r < std::min(amScores[validHypo].size(), (size_t)opt_.beamSizeToken);
+           r++) {
+        int n = idx[r];
         double score = prevHyp.score + amScores[validHypo][n];
 
-        /* (1) Try eos */
-        if (n == eos_ &&
-            amScores[validHypo][eos_] >= hardSelection_ * maxAmScore) {
-          auto lmScoreReturn = lm_->finish(prevLmState);
+        if (n == eos_) { /* (1) Try eos */
+          auto lmScoreReturn = lm_->finish(prevHyp.lmState);
 
+          candidatesAdd(
+              lmScoreReturn.first,
+              &prevHyp,
+              score + opt_.eosScore + opt_.lmWeight * lmScoreReturn.second,
+              n,
+              nullptr);
+        } else { /* (2) Try normal token */
+          auto lmScoreReturn = lm_->score(prevHyp.lmState, n);
           candidatesAdd(
               lmScoreReturn.first,
               &prevHyp,
               score + opt_.lmWeight * lmScoreReturn.second,
-              n,
-              nullptr);
-        }
-
-        /* (2) Try normal token */
-        if (n != eos_ &&
-            amScores[validHypo][n] >= maxAmScore - softSelection_) {
-          auto lmScoreReturn = lm_->score(prevLmState, n);
-          candidatesAdd(
-              lmScoreReturn.first,
-              &prevHyp,
-              score + opt_.wordScore + opt_.lmWeight * lmScoreReturn.second,
               n,
               outState);
         }
@@ -187,36 +183,14 @@ void Seq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
     candidatesStore(hyp_[t + 1], true);
     updateLMCache(lm_, hyp_[t + 1]);
 
-    // Sort completed candidates if necessary
-    if (completedCandidates_.size() >= opt_.beamSize) {
-      std::partial_sort(
-          completedCandidates_.begin(),
-          completedCandidates_.begin() + opt_.beamSize,
-          completedCandidates_.end(),
-          compare);
-      completedCandidates_.resize(opt_.beamSize);
-    }
   } // End of decoding
 
-  if (completedCandidates_.size() < opt_.beamSize) {
-    std::sort(
-        completedCandidates_.begin(), completedCandidates_.end(), compare);
+  while (t > 0 && hyp_[t].empty()) {
+    --t;
   }
-
-  if (completedCandidates_.size() > 0) {
-    hyp_[maxOutputLength_ + 1].resize(completedCandidates_.size());
-    for (int i = 0; i < completedCandidates_.size(); i++) {
-      hyp_[maxOutputLength_ + 1][i] = std::move(completedCandidates_[i]);
-    }
-  } else {
-    std::cout << "[WARNING] No completed candidates.\n";
-    while (t > 0 && hyp_[t].empty()) {
-      --t;
-    }
-    hyp_[maxOutputLength_ + 1].resize(hyp_[t].size());
-    for (int i = 0; i < hyp_[t].size(); i++) {
-      hyp_[maxOutputLength_ + 1][i] = std::move(hyp_[t][i]);
-    }
+  hyp_[maxOutputLength_ + 1].resize(hyp_[t].size());
+  for (int i = 0; i < hyp_[t].size(); i++) {
+    hyp_[maxOutputLength_ + 1][i] = std::move(hyp_[t][i]);
   }
 }
 

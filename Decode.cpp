@@ -234,6 +234,7 @@ int main(int argc, char** argv) {
       static_cast<float>(FLAGS_wordscore),
       static_cast<float>(FLAGS_unkscore),
       static_cast<float>(FLAGS_silscore),
+      static_cast<float>(FLAGS_eosscore),
       FLAGS_logadd,
       criterionType);
 
@@ -408,9 +409,7 @@ int main(int argc, char** argv) {
               localLm,
               eosIdx,
               amUpdateFunc,
-              FLAGS_maxdecoderoutputlen,
-              static_cast<float>(FLAGS_hardselection),
-              static_cast<float>(FLAGS_softselection)));
+              FLAGS_maxdecoderoutputlen));
           LOG(INFO)
               << "[Decoder] Seq2Seq decoder with token-LM loaded in thread: "
               << tid;

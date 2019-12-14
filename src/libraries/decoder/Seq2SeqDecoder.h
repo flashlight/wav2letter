@@ -60,13 +60,14 @@ struct Seq2SeqDecoderState {
 };
 
 /**
- * Decoder implements a beam seach decoder that finds the word transcription
+ * Decoder implements a beam seach decoder that finds the token transcription
  * W maximizing:
  *
- * AM(W) + lmWeight_ * log(P_{lm}(W)) + wordScore_ * |W_known|
+ * AM(W) + lmWeight_ * log(P_{lm}(W)) + eosScore_ * |W_last == EOS|
  *
- * where P_{lm}(W) is the language model score. Note that the transcription is
- * made up of word-pieces, no real `word` is included.
+ * where P_{lm}(W) is the language model score. The sequence of tokens is not
+ * constrained by a lexicon, and thus the language model must operate at
+ * token-level.
  *
  * TODO: Doesn't support online decoding now.
  *
@@ -78,16 +79,12 @@ class Seq2SeqDecoder : public Decoder {
       const LMPtr& lm,
       const int eos,
       AMUpdateFunc amUpdateFunc,
-      const int maxOutputLength,
-      const float hardSelection,
-      const float softSelection)
+      const int maxOutputLength)
       : Decoder(opt),
         lm_(lm),
         eos_(eos),
         amUpdateFunc_(amUpdateFunc),
-        maxOutputLength_(maxOutputLength),
-        hardSelection_(hardSelection),
-        softSelection_(softSelection) {}
+        maxOutputLength_(maxOutputLength) {}
 
   void decodeStep(const float* emissions, int T, int N) override;
 
@@ -106,16 +103,12 @@ class Seq2SeqDecoder : public Decoder {
   std::vector<int> rawY_;
   std::vector<AMStatePtr> rawPrevStates_;
   int maxOutputLength_;
-  float hardSelection_;
-  float softSelection_;
 
   std::vector<Seq2SeqDecoderState> candidates_;
   std::vector<Seq2SeqDecoderState*> candidatePtrs_;
   double candidatesBestScore_;
 
   std::unordered_map<int, std::vector<Seq2SeqDecoderState>> hyp_;
-
-  std::vector<Seq2SeqDecoderState> completedCandidates_;
 
   void candidatesReset();
 

@@ -110,7 +110,8 @@ for i in range(len(sentence)):
     node = trie.search(word_tensor)
     assert_near(node.max_score, trie_score_target[i], 1e-5)
 
-opts = DecoderOptions(2500, 25000, 100.0, 2.0, 2.0, -math.inf, -1, False, CriterionType.ASG)
+opts = DecoderOptions(2500, 25000, 100.0, 2.0, 2.0, -math.inf, -1, 0,
+                      False, CriterionType.ASG)
 
 decoder = WordLMDecoder(opts, trie, lm, sil_idx, -1, unk_idx, transitions)
 results = decoder.decode(emissions.ctypes.data, T, N)

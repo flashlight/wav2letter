@@ -165,6 +165,7 @@ TEST(DecoderTest, run) {
       2.0, // FLAGS_lexiconcore
       -std::numeric_limits<float>::infinity(), // FLAGS_unkscore
       -1, // FLAGS_silscore
+      0, // FLAGS_eosscore
       false, // FLAGS_logadd
       CriterionType::ASG);
 

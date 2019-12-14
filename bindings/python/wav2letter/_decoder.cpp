@@ -134,6 +134,7 @@ PYBIND11_MODULE(_decoder, m) {
               const float,
               const float,
               const float,
+              const float,
               const bool,
               const CriterionType>(),
           "beam_size"_a,
@@ -143,6 +144,7 @@ PYBIND11_MODULE(_decoder, m) {
           "word_score"_a,
           "unk_score"_a,
           "sil_score"_a,
+          "eos_score"_a,
           "log_add"_a,
           "criterion_type"_a)
       .def_readwrite("beam_size", &DecoderOptions::beamSize)
@@ -152,6 +154,7 @@ PYBIND11_MODULE(_decoder, m) {
       .def_readwrite("word_score", &DecoderOptions::wordScore)
       .def_readwrite("unk_score", &DecoderOptions::unkScore)
       .def_readwrite("sil_score", &DecoderOptions::silScore)
+      .def_readwrite("eos_score", &DecoderOptions::silScore)
       .def_readwrite("log_add", &DecoderOptions::logAdd)
       .def_readwrite("criterion_type", &DecoderOptions::criterionType);
 

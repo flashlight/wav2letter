@@ -30,6 +30,7 @@ struct DecoderOptions {
   float wordScore; // Word insertion score
   float unkScore; // Unknown word insertion score
   float silScore; // Silence insertion score
+  float eosScore; // Score for inserting an EOS
   bool logAdd; // If or not use logadd when merging hypothesis
   CriterionType criterionType; // CTC or ASG
 
@@ -41,6 +42,7 @@ struct DecoderOptions {
       const float wordScore,
       const float unkScore,
       const float silScore,
+      const float eosScore,
       const bool logAdd,
       const CriterionType criterionType)
       : beamSize(beamSize),
@@ -50,6 +52,7 @@ struct DecoderOptions {
         wordScore(wordScore),
         unkScore(unkScore),
         silScore(silScore),
+        eosScore(eosScore),
         logAdd(logAdd),
         criterionType(criterionType) {}
 

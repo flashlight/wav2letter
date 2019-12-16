@@ -94,9 +94,9 @@ class CMakeBuild(build_ext):
 
 setup(
     name="wav2letter",
-    version="0.0.1",
+    version="0.0.2",
     author="Jeff Cai",
-    author_email="jcai@fb.com",
+    author_email="jcai@fb.com, antares@fb.com",
     description="wav2letter bindings for python",
     long_description="",
     ext_modules=[

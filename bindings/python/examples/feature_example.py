@@ -9,14 +9,6 @@ import sys
 from wav2letter.feature import FeatureParams, Mfcc
 
 
-if len(sys.argv) != 2:
-    print(f"usage: {sys.argv[0]} feature_test_data_path", file=sys.stderr)
-    print("  (usually: <wav2letter_root>/src/feature/test/data)", file=sys.stderr)
-    sys.exit(1)
-
-data_path = sys.argv[1]
-
-
 def load_data(filename):
     path = os.path.join(data_path, filename)
     path = os.path.abspath(path)
@@ -24,36 +16,48 @@ def load_data(filename):
         return [float(x) for x in it.chain.from_iterable(line.split() for line in f)]
 
 
-wavinput = load_data("sa1.dat")
-htkfeat = load_data("sa1-mfcc.htk")
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print(f"usage: {sys.argv[0]} feature_test_data_path", file=sys.stderr)
+        print("  (usually: <wav2letter_root>/src/feature/test/data)", file=sys.stderr)
+        sys.exit(1)
 
-assert len(wavinput) > 0
-assert len(htkfeat) > 0
+    data_path = sys.argv[1]
 
-params = FeatureParams()
-params.sampling_freq = 16000
-params.low_freq_filterbank = 0
-params.high_freq_filterbank = 8000
-params.num_filterbank_chans = 20
-params.num_cepstral_coeffs = 13
-params.use_energy = False
-params.zero_mean_frame = False
-params.use_power = False
+    wavinput = load_data("sa1.dat")
+    # golden features to compare
+    htkfeatures = load_data("sa1-mfcc.htk")
 
-mfcc = Mfcc(params)
-feat = mfcc.apply(wavinput)
+    assert len(wavinput) > 0
+    assert len(htkfeatures) > 0
 
-assert len(feat) == len(htkfeat)
-assert len(feat) % 39 == 0
-numframes = len(feat) // 39
-featcopy = feat.copy()
-for f in range(numframes):
-    for i in range(1, 39):
-        feat[f * 39 + i - 1] = feat[f * 39 + i]
-    feat[f * 39 + 12] = featcopy[f * 39 + 0]
-    feat[f * 39 + 25] = featcopy[f * 39 + 13]
-    feat[f * 39 + 38] = featcopy[f * 39 + 26]
-differences = [abs(x[0] - x[1]) for x in zip(feat, htkfeat)]
+    params = FeatureParams()
+    # define parameters of the featurization
+    params.sampling_freq = 16000
+    params.low_freq_filterbank = 0
+    params.high_freq_filterbank = 8000
+    params.num_filterbank_chans = 20
+    params.num_cepstral_coeffs = 13
+    params.use_energy = False
+    params.zero_mean_frame = False
+    params.use_power = False
 
-print(f"max_diff={max(differences)}")
-print(f"avg_diff={sum(differences)/len(differences)}")
+    # apply MFCC featurization
+    mfcc = Mfcc(params)
+    features = mfcc.apply(wavinput)
+
+    # check that obtained features are the same as golden one
+    assert len(features) == len(htkfeatures)
+    assert len(features) % 39 == 0
+    numframes = len(features) // 39
+    featurescopy = features.copy()
+    for f in range(numframes):
+        for i in range(1, 39):
+            features[f * 39 + i - 1] = features[f * 39 + i]
+        features[f * 39 + 12] = featurescopy[f * 39 + 0]
+        features[f * 39 + 25] = featurescopy[f * 39 + 13]
+        features[f * 39 + 38] = featurescopy[f * 39 + 26]
+    differences = [abs(x[0] - x[1]) for x in zip(features, htkfeatures)]
+
+    print(f"max_diff={max(differences)}")
+    print(f"avg_diff={sum(differences)/len(differences)}")

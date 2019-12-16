@@ -69,16 +69,49 @@ def create_workspace(cls, device, *args):
 
 
 class FACFunction(torch.autograd.Function):
+    """
+    torch.autograd.Function for ForceAlignmentCriterion
+    Supports CPU and CUDA backends, compute the probability of the correct paths
+    in the ASG graph (the nominator of the ASG loss)
+    """
+
     @staticmethod
     def cuda_impl():
+        """
+        Get CUDA implementation of forward/backward for the criterion
+        """
         return _C.CudaForceAlignmentCriterion
 
     @staticmethod
     def cpu_impl():
+        """
+        Get CPU implementation of forward/backward for the criterion
+        """
         return _C.CpuForceAlignmentCriterion
 
     @classmethod
-    def forward(cls, ctx, input, target, target_size, trans, scale_mode):
+    def forward(cls, ctx, input, target, target_size, transitions, scale_mode):
+        """
+        Forward pass of the criterion.
+
+        Parameters:
+        -----------
+        input: float torch.tensor of the size [Batch, Time, Ntokens]
+               (output of the network with scores for all frames and all tokens)
+        target: int torch.tensor of the size [Batch, Length]
+               (padded target transcription encoded with indices of tokens)
+        target_size: int torch.tensor of the size [Batch]
+               (original length of each target transcription in the bacth)
+        transitions: float torch.tensor of size [Ntokens, Ntokens]
+               (transitions matrix for ASG loss function,
+                scores of moving from state of token_i to token_j)
+        scale_mode: int, scaling factor of the output, possible values
+                  NONE = 0,
+                  INPUT_SZ = 1,
+                  INPUT_SZ_SQRT = 2,
+                  TARGET_SZ = 3,
+                  TARGET_SZ_SQRT = 4,
+        """
         B = input.size(0)
         T = input.size(1)
         N = input.size(2)
@@ -88,7 +121,7 @@ class FACFunction(torch.autograd.Function):
         input_float = check_tensor(input, [B, T, N], torch.float, device)
         target = check_tensor(target, [B, L], torch.int, device)
         target_size = check_tensor(target_size, [B], torch.int, device)
-        trans_float = check_tensor(trans, [N, N], torch.float, device)
+        transitions_float = check_tensor(transitions, [N, N], torch.float, device)
 
         loss = torch.empty(B, dtype=torch.float, device=device)
         workspace = create_workspace(cls, device, B, T, N, L)
@@ -103,16 +136,16 @@ class FACFunction(torch.autograd.Function):
             get_data_ptr_as_bytes(input_float),
             get_data_ptr_as_bytes(target),
             get_data_ptr_as_bytes(target_size),
-            get_data_ptr_as_bytes(trans_float),
+            get_data_ptr_as_bytes(transitions_float),
             get_data_ptr_as_bytes(loss),
             get_data_ptr_as_bytes(workspace),
         )
-        ctx.save_for_backward(input, target, target_size, trans, workspace)
+        ctx.save_for_backward(input, target, target_size, transitions, workspace)
         return loss.to(input)
 
     @classmethod
     def backward(cls, ctx, grad):
-        input, target, target_size, trans, workspace = ctx.saved_tensors
+        input, target, target_size, transitions, workspace = ctx.saved_tensors
         B = input.size(0)
         T = input.size(1)
         N = input.size(2)
@@ -122,7 +155,7 @@ class FACFunction(torch.autograd.Function):
         grad = check_tensor(grad, [B], torch.float, device)
 
         input_grad = torch.empty(B, T, N, dtype=torch.float, device=device)
-        trans_grad = torch.empty(N, N, dtype=torch.float, device=device)
+        transitions_grad = torch.empty(N, N, dtype=torch.float, device=device)
         run_backward(
             cls,
             device,
@@ -134,24 +167,57 @@ class FACFunction(torch.autograd.Function):
             get_data_ptr_as_bytes(target_size),
             get_data_ptr_as_bytes(grad),
             get_data_ptr_as_bytes(input_grad),
-            get_data_ptr_as_bytes(trans_grad),
+            get_data_ptr_as_bytes(transitions_grad),
             get_data_ptr_as_bytes(workspace),
         )
 
-        return input_grad.to(input), None, None, trans_grad.to(trans), None
+        return input_grad.to(input), None, None, transitions_grad.to(transitions), None
 
 
 class FCCFunction(torch.autograd.Function):
+    """
+    torch.autograd.Function for FullConnectionCriterion
+    Supports CPU and CUDA backends, compute the probability of the full ASG graph
+    (the denominator of the ASG loss)
+    """
+
     @staticmethod
     def cuda_impl():
+        """
+        Get CUDA implementation of forward/backward for the criterion
+        """
         return _C.CudaFullConnectionCriterion
 
     @staticmethod
     def cpu_impl():
+        """
+        Get CPU implementation of forward/backward for the criterion
+        """
         return _C.CpuFullConnectionCriterion
 
     @classmethod
-    def forward(cls, ctx, input, target_size, trans, scale_mode):
+    def forward(cls, ctx, input, target_size, transitions, scale_mode):
+        """
+        Forward pass of the criterion.
+
+        Parameters:
+        -----------
+        input: float torch.tensor of the size [Batch, Time, Ntokens]
+               (output of the network with scores for all frames and all tokens)
+        target: int torch.tensor of the size [Batch, Length]
+               (padded target transcription encoded with indices of tokens)
+        target_size: int torch.tensor of the size [Batch]
+               (original length of each target transcription in the bacth)
+        transitions: float torch.tensor of size [Ntokens, Ntokens]
+               (transitions matrix for ASG loss function,
+                scores of moving from state of token_i to token_j)
+        scale_mode: int, scaling factor of the output, possible values
+                  NONE = 0,
+                  INPUT_SZ = 1,
+                  INPUT_SZ_SQRT = 2,
+                  TARGET_SZ = 3,
+                  TARGET_SZ_SQRT = 4,
+        """
         B = input.size(0)
         T = input.size(1)
         N = input.size(2)
@@ -160,7 +226,7 @@ class FCCFunction(torch.autograd.Function):
         input_float = check_tensor(input, [B, T, N], torch.float, device)
         if scale_mode != _C.CriterionScaleMode.NONE:
             target_size = check_tensor(target_size, [B], torch.int, device)
-        trans_float = check_tensor(trans, [N, N], torch.float, device)
+        transitions_float = check_tensor(transitions, [N, N], torch.float, device)
 
         loss = torch.empty(B, dtype=torch.float, device=device)
         workspace = create_workspace(cls, device, B, T, N)
@@ -173,16 +239,16 @@ class FCCFunction(torch.autograd.Function):
             scale_mode,
             get_data_ptr_as_bytes(input_float),
             get_data_ptr_as_bytes(target_size),
-            get_data_ptr_as_bytes(trans_float),
+            get_data_ptr_as_bytes(transitions_float),
             get_data_ptr_as_bytes(loss),
             get_data_ptr_as_bytes(workspace),
         )
-        ctx.save_for_backward(input, trans, workspace)
+        ctx.save_for_backward(input, transitions, workspace)
         return loss.to(input)
 
     @classmethod
     def backward(cls, ctx, grad):
-        input, trans, workspace = ctx.saved_tensors
+        input, transitions, workspace = ctx.saved_tensors
         B = input.size(0)
         T = input.size(1)
         N = input.size(2)
@@ -191,31 +257,61 @@ class FCCFunction(torch.autograd.Function):
         grad = check_tensor(grad, [B], torch.float, device)
 
         input_grad = torch.empty(B, T, N, dtype=torch.float, device=device)
-        trans_grad = torch.empty(N, N, dtype=torch.float, device=device)
+        transitions_grad = torch.empty(N, N, dtype=torch.float, device=device)
         run_backward(
             cls,
             device,
             B,
             T,
             N,
-            get_data_ptr_as_bytes(trans),
+            get_data_ptr_as_bytes(transitions),
             get_data_ptr_as_bytes(grad),
             get_data_ptr_as_bytes(input_grad),
-            get_data_ptr_as_bytes(trans_grad),
+            get_data_ptr_as_bytes(transitions_grad),
             get_data_ptr_as_bytes(workspace),
         )
-        return input_grad.to(input), None, trans_grad.to(trans), None
+        return input_grad.to(input), None, transitions_grad.to(transitions), None
 
 
 class ASGLoss(nn.Module):
     def __init__(self, N, scale_mode=_C.CriterionScaleMode.NONE):
+        """
+        ASG loss implementation. It is similar to CTC, but there is no blanks.
+        There are also repetitions like ann -> an1 and transition matrix of scores
+        from token_i to token_j.
+
+        Parameters:
+        -----------
+        N: int, number of tokens to predict for each frame
+        scale_mode: int, scaling factor of the loss function, possible values
+                  NONE = 0,
+                  INPUT_SZ = 1,
+                  INPUT_SZ_SQRT = 2,
+                  TARGET_SZ = 3,
+                  TARGET_SZ_SQRT = 4,
+        """
         super().__init__()
-        self.trans = nn.Parameter(
+        self.transitions = nn.Parameter(
             torch.zeros(N, N, dtype=torch.float, requires_grad=True)
         )
         self.scale_mode = scale_mode
 
     def forward(self, input, target, target_size):
+        """
+        Forward pass of the ASG loss.
+
+        Parameters:
+        -----------
+        input: float torch.tensor of the size [Batch, Time, Ntokens]
+               (output of the network with scores for all frames and all tokens)
+        target: int torch.tensor of the size [Batch, Length]
+               (padded target transcription encoded with indices of tokens)
+        target_size: int torch.tensor of the size [Batch]
+               (original length of each target transcription in the bacth)
+
+        """
         return FCCFunction.apply(
-            input, target_size, self.trans, self.scale_mode
-        ) - FACFunction.apply(input, target, target_size, self.trans, self.scale_mode)
+            input, target_size, self.transitions, self.scale_mode
+        ) - FACFunction.apply(
+            input, target, target_size, self.transitions, self.scale_mode
+        )

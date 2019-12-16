@@ -25,8 +25,8 @@
 #include "data/Featurize.h"
 #include "libraries/common/Dictionary.h"
 #include "libraries/decoder/LexiconFreeDecoder.h"
+#include "libraries/decoder/LexiconFreeSeq2SeqDecoder.h"
 #include "libraries/decoder/LexiconSeq2SeqDecoder.h"
-#include "libraries/decoder/Seq2SeqDecoder.h"
 #include "libraries/decoder/TokenLMDecoder.h"
 #include "libraries/decoder/WordLMDecoder.h"
 #include "libraries/lm/ConvLM.h"
@@ -420,7 +420,7 @@ int main(int argc, char** argv) {
                 << "[Decoder] LexiconSeq2Seq decoder with token-LM loaded in thread: "
                 << tid;
           } else {
-            decoder.reset(new Seq2SeqDecoder(
+            decoder.reset(new LexiconFreeSeq2SeqDecoder(
                 decoderOpt,
                 localLm,
                 eosIdx,

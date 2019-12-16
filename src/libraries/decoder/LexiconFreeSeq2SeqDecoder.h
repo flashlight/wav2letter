@@ -26,18 +26,19 @@ using AMUpdateFunc = std::function<
         int&)>;
 
 /**
- * Seq2SeqDecoderState stores information for each hypothesis in the beam.
+ * LexiconFreeSeq2SeqDecoderState stores information for each hypothesis in the
+ * beam.
  */
-struct Seq2SeqDecoderState {
+struct LexiconFreeSeq2SeqDecoderState {
   LMStatePtr lmState; // Language model state
-  const Seq2SeqDecoderState* parent; // Parent hypothesis
+  const LexiconFreeSeq2SeqDecoderState* parent; // Parent hypothesis
   double score; // Score so far
   int token; // Label of token
   AMStatePtr amState; // Acoustic model state
 
-  Seq2SeqDecoderState(
+  LexiconFreeSeq2SeqDecoderState(
       const LMStatePtr& lmState,
-      const Seq2SeqDecoderState* parent,
+      const LexiconFreeSeq2SeqDecoderState* parent,
       const double score,
       const int token,
       const AMStatePtr& amState = nullptr)
@@ -47,7 +48,7 @@ struct Seq2SeqDecoderState {
         token(token),
         amState(amState) {}
 
-  Seq2SeqDecoderState()
+  LexiconFreeSeq2SeqDecoderState()
       : lmState(nullptr),
         parent(nullptr),
         score(0),
@@ -72,9 +73,9 @@ struct Seq2SeqDecoderState {
  * TODO: Doesn't support online decoding now.
  *
  */
-class Seq2SeqDecoder : public Decoder {
+class LexiconFreeSeq2SeqDecoder : public Decoder {
  public:
-  Seq2SeqDecoder(
+  LexiconFreeSeq2SeqDecoder(
       const DecoderOptions& opt,
       const LMPtr& lm,
       const int eos,
@@ -104,23 +105,23 @@ class Seq2SeqDecoder : public Decoder {
   std::vector<AMStatePtr> rawPrevStates_;
   int maxOutputLength_;
 
-  std::vector<Seq2SeqDecoderState> candidates_;
-  std::vector<Seq2SeqDecoderState*> candidatePtrs_;
+  std::vector<LexiconFreeSeq2SeqDecoderState> candidates_;
+  std::vector<LexiconFreeSeq2SeqDecoderState*> candidatePtrs_;
   double candidatesBestScore_;
 
-  std::unordered_map<int, std::vector<Seq2SeqDecoderState>> hyp_;
+  std::unordered_map<int, std::vector<LexiconFreeSeq2SeqDecoderState>> hyp_;
 
   void candidatesReset();
 
   void candidatesAdd(
       const LMStatePtr& lmState,
-      const Seq2SeqDecoderState* parent,
+      const LexiconFreeSeq2SeqDecoderState* parent,
       const double score,
       const int token,
       const AMStatePtr& amState);
 
   void candidatesStore(
-      std::vector<Seq2SeqDecoderState>& nextHyp,
+      std::vector<LexiconFreeSeq2SeqDecoderState>& nextHyp,
       const bool isSort);
 
   void mergeCandidates();

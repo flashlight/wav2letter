@@ -12,19 +12,19 @@
 #include <functional>
 #include <numeric>
 
-#include "libraries/decoder/Seq2SeqDecoder.h"
+#include "libraries/decoder/LexiconFreeSeq2SeqDecoder.h"
 
 namespace w2l {
 
-void Seq2SeqDecoder::candidatesReset() {
+void LexiconFreeSeq2SeqDecoder::candidatesReset() {
   candidatesBestScore_ = kNegativeInfinity;
   candidates_.clear();
   candidatePtrs_.clear();
 }
 
-void Seq2SeqDecoder::mergeCandidates() {
-  auto compareNodesShortList = [](const Seq2SeqDecoderState* node1,
-                                  const Seq2SeqDecoderState* node2) {
+void LexiconFreeSeq2SeqDecoder::mergeCandidates() {
+  auto compareNodesShortList = [](const LexiconFreeSeq2SeqDecoderState* node1,
+                                  const LexiconFreeSeq2SeqDecoderState* node2) {
     int lmCmp = node1->lmState->compare(node2->lmState);
     if (lmCmp != 0) {
       return lmCmp > 0;
@@ -50,20 +50,20 @@ void Seq2SeqDecoder::mergeCandidates() {
   candidatePtrs_.resize(nHypAfterMerging);
 }
 
-void Seq2SeqDecoder::candidatesAdd(
+void LexiconFreeSeq2SeqDecoder::candidatesAdd(
     const LMStatePtr& lmState,
-    const Seq2SeqDecoderState* parent,
+    const LexiconFreeSeq2SeqDecoderState* parent,
     const double score,
     const int token,
     const AMStatePtr& amState) {
   if (isValidCandidate(candidatesBestScore_, score, opt_.beamThreshold)) {
     candidates_.emplace_back(
-        Seq2SeqDecoderState(lmState, parent, score, token, amState));
+        LexiconFreeSeq2SeqDecoderState(lmState, parent, score, token, amState));
   }
 }
 
-void Seq2SeqDecoder::candidatesStore(
-    std::vector<Seq2SeqDecoderState>& nextHyp,
+void LexiconFreeSeq2SeqDecoder::candidatesStore(
+    std::vector<LexiconFreeSeq2SeqDecoderState>& nextHyp,
     const bool isSort) {
   if (candidates_.empty()) {
     nextHyp.clear();
@@ -81,22 +81,20 @@ void Seq2SeqDecoder::candidatesStore(
   storeTopCandidates(nextHyp, candidatePtrs_, opt_.beamSize, isSort);
 }
 
-void Seq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
+void LexiconFreeSeq2SeqDecoder::decodeStep(
+    const float* emissions,
+    int T,
+    int N) {
   // Extend hyp_ buffer
   if (hyp_.size() < maxOutputLength_ + 2) {
     for (int i = hyp_.size(); i < maxOutputLength_ + 2; i++) {
-      hyp_.emplace(i, std::vector<Seq2SeqDecoderState>());
+      hyp_.emplace(i, std::vector<LexiconFreeSeq2SeqDecoderState>());
     }
   }
 
   // Start from here.
   hyp_[0].clear();
   hyp_[0].emplace_back(lm_->start(0), nullptr, 0.0, -1, nullptr);
-
-  auto compare = [](const Seq2SeqDecoderState& n1,
-                    const Seq2SeqDecoderState& n2) {
-    return n1.score > n2.score;
-  };
 
   // Decode frame by frame
   int t = 0;
@@ -106,7 +104,7 @@ void Seq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
     // Batch forwarding
     rawY_.clear();
     rawPrevStates_.clear();
-    for (const Seq2SeqDecoderState& prevHyp : hyp_[t]) {
+    for (const LexiconFreeSeq2SeqDecoderState& prevHyp : hyp_[t]) {
       const AMStatePtr& prevState = prevHyp.amState;
       if (prevHyp.token == eos_) {
         continue;
@@ -128,7 +126,7 @@ void Seq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
 
     // Generate new hypothesis
     for (int hypo = 0, validHypo = 0; hypo < hyp_[t].size(); hypo++) {
-      const Seq2SeqDecoderState& prevHyp = hyp_[t][hypo];
+      const LexiconFreeSeq2SeqDecoderState& prevHyp = hyp_[t][hypo];
       // Change nothing for completed hypothesis
       if (prevHyp.token == eos_) {
         candidatesAdd(prevHyp.lmState, &prevHyp, prevHyp.score, eos_, nullptr);
@@ -193,20 +191,22 @@ void Seq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
   }
 }
 
-std::vector<DecodeResult> Seq2SeqDecoder::getAllFinalHypothesis() const {
+std::vector<DecodeResult> LexiconFreeSeq2SeqDecoder::getAllFinalHypothesis()
+    const {
   return getAllHypothesis(hyp_.find(maxOutputLength_ + 1)->second, hyp_.size());
 }
 
-DecodeResult Seq2SeqDecoder::getBestHypothesis(int /* unused */) const {
+DecodeResult LexiconFreeSeq2SeqDecoder::getBestHypothesis(
+    int /* unused */) const {
   return getHypothesis(
       hyp_.find(maxOutputLength_ + 1)->second.data(), hyp_.size());
 }
 
-void Seq2SeqDecoder::prune(int /* unused */) {
+void LexiconFreeSeq2SeqDecoder::prune(int /* unused */) {
   return;
 }
 
-int Seq2SeqDecoder::nDecodedFramesInBuffer() const {
+int LexiconFreeSeq2SeqDecoder::nDecodedFramesInBuffer() const {
   /* unused function */
   return -1;
 }

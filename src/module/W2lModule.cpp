@@ -200,6 +200,13 @@ std::shared_ptr<Module> parseLines(
     for (int i = 1; i < params.size(); ++i) {
       featDims.emplace_back(std::stoi(params[i]));
     }
+    if (featDims == std::vector<int>{3}) {
+      LOG(FATAL)
+          << "flashlight LayerNorm API for specifying `featAxes` is modified "
+          << "recently - https://git.io/Je70U. You probably would want to "
+          << "specify LN 0 1 2 instead of LN 3. If you really know what you're "
+          << "doing, comment out this check and build again.";
+    }
     return std::make_shared<LayerNorm>(featDims);
   }
 

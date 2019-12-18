@@ -43,9 +43,9 @@ TDSBlock::TDSBlock(
   }
 
   add(conv);
-  add(LayerNorm(3));
+  add(LayerNorm(std::vector<int>{0, 1, 2}));
   add(fc);
-  add(LayerNorm(3));
+  add(LayerNorm(std::vector<int>{0, 1, 2}));
 }
 
 std::vector<Variable> TDSBlock::forward(const std::vector<Variable>& inputs) {

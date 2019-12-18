@@ -8,13 +8,63 @@
 
 #pragma once
 
-#include <gflags/gflags.h>
-
 #include "libraries/common/Defines.h"
+
+#include <memory>
+#include <unordered_map>
+
+#include <gflags/gflags.h>
 
 #define W2L_VERSION "0.1"
 
 namespace w2l {
+
+namespace detail {
+
+using DeprecatedFlagsMap = std::unordered_map<std::string, std::string>;
+
+/**
+ * Creates and maintains a map of deprecated flags. The map takes
+ * a deprecated flag name to a new flag name; for instance, the entry:
+ * ---> {myOldFlag, myNewFlag}
+ * corresponds to the deprecation of myOldFlag
+ */
+DeprecatedFlagsMap& getDeprecatedFlags();
+
+// Adds a flag to the global deprecated map
+void addDeprecatedFlag(
+    const std::string& depreactedFlagName,
+    const std::string& newFlagName);
+
+// Whether the flag has been explicitly set either from the cmd line or
+// de-serialization
+bool isFlagSet(const std::string& name);
+
+} // namespace detail
+
+/**
+ * Globally-accessible and recommended to be called immediately after gflags
+ * have been parsed and initialized. Does a few things:
+ * - Sets the value of the new flag to be the value of the old flag
+ * - Displays a message indicating that the old flag is deprecated and the new
+ * flag shoule be used.
+ *
+ * Behavior is as follows:
+ * - Throws if the user set both the deprecated flag and the new flag.
+ * - Sets the new flag equal to the deprecated flag if the user only set the
+ * deprecated flag.
+ * - Does nothing if the user set neither the new nor the deprecated flag, or if
+ * the user correctly set only the new flag and not the deprecated flag.
+ */
+void handleDeprecatedFlags();
+
+/**
+ * Deprecate a command line flag.
+ *
+ * USAGE:
+ *   DEPRECATE_FLAGS(myOldFlagName, my_new_flag_name)
+ */
+#define DEPRECATE_FLAGS(DEPRECATED, NEW) addDeprecatedFlag(#DEPRECATED, #NEW);
 
 // Dataset indices
 // If a new field is added, `kNumDataIdx` should be modified accordingly.

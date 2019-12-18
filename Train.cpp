@@ -118,6 +118,10 @@ int main(int argc, char** argv) {
   } else {
     LOG(FATAL) << gflags::ProgramUsage();
   }
+  // Only new flags are re-serialized. Copy any values from deprecated flags to
+  // new flags when deprecated flags are present and corresponding new flags
+  // aren't
+  w2l::handleDeprecatedFlags();
 
   af::setMemStepSize(FLAGS_memstepsize);
   af::setSeed(FLAGS_seed);

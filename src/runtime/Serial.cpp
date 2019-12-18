@@ -11,6 +11,7 @@
 #include "common/FlashlightUtils.h"
 
 #include <fstream>
+#include <sstream>
 
 namespace w2l {
 
@@ -55,15 +56,19 @@ std::string cleanFilepath(const std::string& in) {
 }
 
 std::string serializeGflags(const std::string& separator /* = "\n" */) {
-  std::string serialized;
+  std::stringstream serialized;
   std::vector<gflags::CommandLineFlagInfo> allFlags;
   gflags::GetAllFlags(&allFlags);
   std::string currVal;
+  auto& deprecatedFlags = detail::getDeprecatedFlags();
   for (auto itr = allFlags.begin(); itr != allFlags.end(); ++itr) {
-    gflags::GetCommandLineOption(itr->name.c_str(), &currVal);
-    serialized += "--" + itr->name + "=" + currVal + separator;
+    // Check if the flag is deprecated - if so, skip it
+    if (deprecatedFlags.find(itr->name) == deprecatedFlags.end()) {
+      gflags::GetCommandLineOption(itr->name.c_str(), &currVal);
+      serialized << "--" << itr->name << "=" << currVal << separator;
+    }
   }
-  return serialized;
+  return serialized.str();
 }
 
 } // namespace w2l

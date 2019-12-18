@@ -110,6 +110,10 @@ int main(int argc, char** argv) {
     gflags::ParseCommandLineFlags(&argc, &argv, false);
   }
 
+  // Only Copy any values from deprecated flags to new flags when deprecated
+  // flags are present and corresponding new flags aren't
+  w2l::handleDeprecatedFlags();
+
   LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   /* ===================== Create Dictionary ===================== */

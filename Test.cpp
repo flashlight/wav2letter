@@ -73,6 +73,10 @@ int main(int argc, char** argv) {
     gflags::ReadFromFlagsFile(flagsfile, argv[0], true);
   }
 
+  // Only Copy any values from deprecated flags to new flags when deprecated
+  // flags are present and corresponding new flags aren't
+  w2l::handleDeprecatedFlags();
+
   LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   /* ===================== Create Dictionary ===================== */

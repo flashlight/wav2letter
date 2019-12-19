@@ -110,6 +110,28 @@ std::shared_ptr<Module> parseLines(
     return std::make_shared<Padding>(pad0, pad1, pad2, pad3, val);
   }
 
+  /* ========== TRANSFORMERS ========== */
+
+  if (params[0] == "TR") {
+    int modelDim = std::stoi(params[1]);
+    int mlpDim = std::stoi(params[2]);
+    int nHead = std::stoi(params[3]);
+    int csz = std::stoi(params[4]);
+    float pDropout = std::stof(params[5]);
+    float pLayerdrop = (params.size() >= 7) ? std::stof(params[6]) : 0.0;
+    int preLN = (params.size() >= 8) ? std::stoi(params[7]) : 0;
+    return std::make_shared<Transformer>(
+        modelDim,
+        modelDim / nHead,
+        mlpDim,
+        nHead,
+        csz,
+        pDropout,
+        pLayerdrop,
+        false,
+        preLN);
+  }
+
   /* ========== CONVOLUTIONS ========== */
 
   if (params[0] == "C" || params[0] == "C1") {

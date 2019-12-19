@@ -33,6 +33,26 @@ TEST(ModuleTest, TDSFwd) {
   ASSERT_EQ(output.dims(2), c);
 }
 
+TEST(ModuleTest, StreamingTDSFwd) {
+  int batchsize = 10;
+  int timesteps = 120;
+  int w = 4;
+  int c = 10;
+  int kw = 9;
+  int rPad = 3;
+
+  auto stds =
+      TDSBlock(c, kw, w, 0 /* dropout */, 0 /* innerLinearDim */, rPad, true);
+
+  auto input = Variable(af::randu(timesteps, w, c, batchsize), false);
+
+  auto output = stds.forward({input})[0];
+
+  ASSERT_EQ(output.dims(0), timesteps);
+  ASSERT_EQ(output.dims(1), w);
+  ASSERT_EQ(output.dims(2), c);
+}
+
 TEST(ModuleTest, SpecAugmentFwd) {
   SpecAugment specAug(0, 27, 2, 100, 0.2, 2);
   int T = 512, F = 80;

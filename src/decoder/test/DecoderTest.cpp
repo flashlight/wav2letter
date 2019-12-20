@@ -19,8 +19,8 @@
 #include "common/Transforms.h"
 #include "criterion/criterion.h"
 #include "libraries/common/Dictionary.h"
+#include "libraries/decoder/LexiconDecoder.h"
 #include "libraries/decoder/Trie.h"
-#include "libraries/decoder/WordLMDecoder.h"
 #include "libraries/lm/KenLM.h"
 #include "module/module.h"
 #include "runtime/runtime.h"
@@ -169,8 +169,8 @@ TEST(DecoderTest, run) {
       false, // FLAGS_logadd
       CriterionType::ASG);
 
-  WordLMDecoder decoder(
-      decoderOpt, trie, lm, silIdx, blankIdx, unkIdx, transitions);
+  LexiconDecoder decoder(
+      decoderOpt, trie, lm, silIdx, blankIdx, unkIdx, transitions, false);
   LOG(INFO) << "[Decoder] Decoder constructed.\n";
 
   /* -------- Run --------*/

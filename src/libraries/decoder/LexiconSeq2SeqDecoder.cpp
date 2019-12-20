@@ -50,7 +50,6 @@ void LexiconSeq2SeqDecoder::mergeCandidates() {
     if (candidatePtrs_[i]->lmState->compare(
             candidatePtrs_[nHypAfterMerging - 1]->lmState) ||
         candidatePtrs_[i]->lex != candidatePtrs_[nHypAfterMerging - 1]->lex ||
-        candidatePtrs_[i]->word != candidatePtrs_[nHypAfterMerging - 1]->word ||
         candidatePtrs_[i]->token !=
             candidatePtrs_[nHypAfterMerging - 1]->token) {
       candidatePtrs_[nHypAfterMerging] = candidatePtrs_[i];

@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cmath>
 #include <functional>
+#include <numeric>
 
 #include "libraries/decoder/LexiconFreeDecoder.h"
 
@@ -27,6 +28,10 @@ void LexiconFreeDecoder::mergeCandidates() {
     int lmCmp = node1->lmState->compare(node2->lmState);
     if (lmCmp != 0) {
       return lmCmp > 0;
+    } else if (node1->token != node2->token) {
+      return node1->token > node2->token;
+    } else if (node1->prevBlank != node2->prevBlank) {
+      return node1->prevBlank > node2->prevBlank;
     } else { /* same LmState */
       return node1->score > node2->score;
     }
@@ -37,7 +42,11 @@ void LexiconFreeDecoder::mergeCandidates() {
   int nHypAfterMerging = 1;
   for (int i = 1; i < candidatePtrs_.size(); i++) {
     if (candidatePtrs_[i]->lmState->compare(
-            candidatePtrs_[nHypAfterMerging - 1]->lmState)) {
+            candidatePtrs_[nHypAfterMerging - 1]->lmState) ||
+        candidatePtrs_[i]->token !=
+            candidatePtrs_[nHypAfterMerging - 1]->token ||
+        candidatePtrs_[i]->prevBlank !=
+            candidatePtrs_[nHypAfterMerging - 1]->prevBlank) {
       candidatePtrs_[nHypAfterMerging] = candidatePtrs_[i];
       nHypAfterMerging++;
     } else {
@@ -99,14 +108,26 @@ void LexiconFreeDecoder::decodeStep(const float* emissions, int T, int N) {
     }
   }
 
+  std::vector<size_t> idx(N);
   // Looping over all the frames
   for (int t = 0; t < T; t++) {
+    std::iota(idx.begin(), idx.end(), 0);
+    if (N > opt_.beamSizeToken) {
+      std::partial_sort(
+          idx.begin(),
+          idx.begin() + opt_.beamSizeToken,
+          idx.end(),
+          [&t, &N, &emissions](const size_t& l, const size_t& r) {
+            return emissions[t * N + l] > emissions[t * N + r];
+          });
+    }
+
     candidatesReset();
     for (const LexiconFreeDecoderState& prevHyp : hyp_[startFrame + t]) {
-      const LMStatePtr& prevLmState = prevHyp.lmState;
-
       const int prevIdx = prevHyp.token;
-      for (int n = 0; n < N; n++) {
+
+      for (int r = 0; r < std::min(opt_.beamSizeToken, N); ++r) {
+        int n = idx[r];
         double score = prevHyp.score + emissions[t * N + n];
         if (nDecodedFrames_ + t > 0 &&
             opt_.criterionType == CriterionType::ASG) {
@@ -114,20 +135,16 @@ void LexiconFreeDecoder::decodeStep(const float* emissions, int T, int N) {
         }
         if (n == sil_) {
           score += opt_.silScore;
-          if (prevIdx != sil_) {
-            score += opt_.wordScore;
-          }
         }
 
-        // DEBUG: CTC branch is not tested
         if ((opt_.criterionType == CriterionType::ASG && n != prevIdx) ||
             (opt_.criterionType == CriterionType::CTC && n != blank_ &&
              (n != prevIdx || prevHyp.prevBlank))) {
-          auto lmScoreReturn = lm_->score(prevLmState, n);
-          score += lmScoreReturn.second * opt_.lmWeight;
+          auto lmReturn = lm_->score(prevHyp.lmState, n);
+          score += lmReturn.second * opt_.lmWeight;
 
           candidatesAdd(
-              lmScoreReturn.first,
+              lmReturn.first,
               &prevHyp,
               score,
               n,
@@ -135,7 +152,7 @@ void LexiconFreeDecoder::decodeStep(const float* emissions, int T, int N) {
           );
         } else if (opt_.criterionType == CriterionType::CTC && n == blank_) {
           candidatesAdd(
-              prevLmState,
+              prevHyp.lmState,
               &prevHyp,
               score,
               n,
@@ -143,7 +160,7 @@ void LexiconFreeDecoder::decodeStep(const float* emissions, int T, int N) {
           );
         } else {
           candidatesAdd(
-              prevLmState,
+              prevHyp.lmState,
               &prevHyp,
               score,
               n,
@@ -165,11 +182,11 @@ void LexiconFreeDecoder::decodeEnd() {
        hyp_[nDecodedFrames_ - nPrunedFrames_]) {
     const LMStatePtr& prevLmState = prevHyp.lmState;
 
-    auto lmScoreReturn = lm_->finish(prevLmState);
+    auto lmReturn = lm_->finish(prevLmState);
     candidatesAdd(
-        lmScoreReturn.first,
+        lmReturn.first,
         &prevHyp,
-        prevHyp.score + opt_.lmWeight * lmScoreReturn.second,
+        prevHyp.score + opt_.lmWeight * lmReturn.second,
         sil_,
         false // prevBlank
     );

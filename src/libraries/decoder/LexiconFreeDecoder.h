@@ -56,8 +56,7 @@ struct LexiconFreeDecoderState {
  * Decoder implements a beam seach decoder that finds the word transcription
  * W maximizing:
  *
- * AM(W) + lmWeight_ * log(P_{lm}(W)) + wordScore_ * |W_known| - silWeight_ *
- * |{i| pi_i = <sil>}|
+ * AM(W) + lmWeight_ * log(P_{lm}(W)) + silScore_ * |{i| pi_i = <sil>}|
  *
  * where P_{lm}(W) is the language model score, pi_i is the value for the i-th
  * frame in the path leading to W and AM(W) is the (unnormalized) acoustic model

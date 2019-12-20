@@ -83,16 +83,20 @@ class LexiconDecoder : public Decoder {
       const int sil,
       const int blank,
       const int unk,
-      const std::vector<float>& transitions)
+      const std::vector<float>& transitions,
+      const bool isLmToken)
       : Decoder(opt),
         lexicon_(lexicon),
         lm_(lm),
-        transitions_(transitions),
         sil_(sil),
         blank_(blank),
-        unk_(unk) {}
+        unk_(unk),
+        transitions_(transitions),
+        isLmToken_(isLmToken) {}
 
   void decodeBegin() override;
+
+  void decodeStep(const float* emissions, int T, int N) override;
 
   void decodeEnd() override;
 
@@ -107,9 +111,20 @@ class LexiconDecoder : public Decoder {
   std::vector<DecodeResult> getAllFinalHypothesis() const override;
 
  protected:
+  // Lexicon trie to restrict beam-search decoder
   TriePtr lexicon_;
   LMPtr lm_;
+  // Index of silence label
+  int sil_;
+  // Index of blank label (for CTC)
+  int blank_;
+  // Index of unknown word
+  int unk_;
+  // matrix of transitions (for ASG criterion)
   std::vector<float> transitions_;
+  // if LM is token-level (operates on the same level as acoustic model)
+  // or it is word-level (in case of false)
+  bool isLmToken_;
 
   // All the hypothesis new candidates (can be larger than beamsize) proposed
   // based on the ones from previous frame
@@ -121,15 +136,6 @@ class LexiconDecoder : public Decoder {
 
   // Best candidate score of current frame
   double candidatesBestScore_;
-
-  // Index of silence label
-  int sil_;
-
-  // Index of blank label (for CTC)
-  int blank_;
-
-  // Index of unknown word
-  int unk_;
 
   // Vector of hypothesis for all the frames so far
   std::unordered_map<int, std::vector<LexiconDecoderState>> hyp_;
@@ -158,7 +164,7 @@ class LexiconDecoder : public Decoder {
       const bool isSort);
 
   // Merge hypothesis getting into same state from different path
-  virtual void mergeCandidates() = 0;
+  void mergeCandidates();
 };
 
 } // namespace w2l

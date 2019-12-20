@@ -9,7 +9,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "libraries/decoder/WordLMDecoder.h"
+#include "libraries/decoder/LexiconDecoder.h"
 
 #ifdef W2L_LIBRARIES_USE_KENLM
 #include "libraries/lm/KenLM.h"
@@ -96,16 +96,16 @@ class PyLM : public LM {
  *          return (outstate, -1)
  *```
  */
-void WordLMDecoder_decodeStep(
-    WordLMDecoder& decoder,
+void LexiconDecoder_decodeStep(
+    LexiconDecoder& decoder,
     uintptr_t emissions,
     int T,
     int N) {
   decoder.decodeStep(reinterpret_cast<const float*>(emissions), T, N);
 }
 
-std::vector<DecodeResult> WordLMDecoder_decode(
-    WordLMDecoder& decoder,
+std::vector<DecodeResult> LexiconDecoder_decode(
+    LexiconDecoder& decoder,
     uintptr_t emissions,
     int T,
     int N) {
@@ -200,7 +200,7 @@ PYBIND11_MODULE(_decoder, m) {
       .def_readwrite("tokens", &DecodeResult::tokens);
 
   // NB: `decode` and `decodeStep` expect raw emissions pointers.
-  py::class_<WordLMDecoder>(m, "WordLMDecoder")
+  py::class_<LexiconDecoder>(m, "LexiconDecoder")
       .def(py::init<
            const DecoderOptions&,
            const TriePtr,
@@ -208,16 +208,21 @@ PYBIND11_MODULE(_decoder, m) {
            const int,
            const int,
            const int,
-           const std::vector<float>&>())
-      .def("decode_begin", &WordLMDecoder::decodeBegin)
+           const std::vector<float>&,
+           const bool>())
+      .def("decode_begin", &LexiconDecoder::decodeBegin)
       .def(
-          "decode_step", &WordLMDecoder_decodeStep, "emissions"_a, "T"_a, "N"_a)
-      .def("decode_end", &WordLMDecoder::decodeEnd)
-      .def("decode", &WordLMDecoder_decode, "emissions"_a, "T"_a, "N"_a)
-      .def("prune", &WordLMDecoder::prune, "look_back"_a = 0)
+          "decode_step",
+          &LexiconDecoder_decodeStep,
+          "emissions"_a,
+          "T"_a,
+          "N"_a)
+      .def("decode_end", &LexiconDecoder::decodeEnd)
+      .def("decode", &LexiconDecoder_decode, "emissions"_a, "T"_a, "N"_a)
+      .def("prune", &LexiconDecoder::prune, "look_back"_a = 0)
       .def(
           "get_best_hypothesis",
-          &WordLMDecoder::getBestHypothesis,
+          &LexiconDecoder::getBestHypothesis,
           "look_back"_a = 0)
-      .def("get_all_final_hypothesis", &WordLMDecoder::getAllFinalHypothesis);
+      .def("get_all_final_hypothesis", &LexiconDecoder::getAllFinalHypothesis);
 }

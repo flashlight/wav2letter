@@ -13,9 +13,9 @@ from wav2letter.decoder import (
     CriterionType,
     DecoderOptions,
     KenLM,
+    LexiconDecoder,
     SmearingMode,
     Trie,
-    WordLMDecoder,
 )
 
 
@@ -176,9 +176,10 @@ if __name__ == "__main__":
     )
 
     # define lexicon beam-search decoder with word-level lm
-    # WordLMDecoder(decoder options, trie, lm, silence index,
-    #               blank index (for CTC), unk index, transitiona matrix)
-    decoder = WordLMDecoder(opts, trie, lm, sil_idx, -1, unk_idx, transitions)
+    # LexiconDecoder(decoder options, trie, lm, silence index,
+    #                blank index (for CTC), unk index,
+    #                transitiona matrix, is token-level lm)
+    decoder = LexiconDecoder(opts, trie, lm, sil_idx, -1, unk_idx, transitions, False)
     # run decoding
     # decoder.decode(emissions, Time, Ntokens)
     # result is a list of sorted hypothesis, 0-index is the best hypothesis

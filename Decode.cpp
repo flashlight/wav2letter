@@ -24,11 +24,10 @@
 #include "criterion/criterion.h"
 #include "data/Featurize.h"
 #include "libraries/common/Dictionary.h"
+#include "libraries/decoder/LexiconDecoder.h"
 #include "libraries/decoder/LexiconFreeDecoder.h"
 #include "libraries/decoder/LexiconFreeSeq2SeqDecoder.h"
 #include "libraries/decoder/LexiconSeq2SeqDecoder.h"
-#include "libraries/decoder/TokenLMDecoder.h"
-#include "libraries/decoder/WordLMDecoder.h"
 #include "libraries/lm/ConvLM.h"
 #include "libraries/lm/KenLM.h"
 #include "libraries/lm/ZeroLM.h"
@@ -439,28 +438,32 @@ int main(int argc, char** argv) {
         }
       } else {
         if (FLAGS_decodertype == "wrd") {
-          decoder.reset(new WordLMDecoder(
+          decoder.reset(new LexiconDecoder(
               decoderOpt,
               trie,
               localLm,
               silIdx,
               blankIdx,
               unkWordIdx,
-              transition));
-          LOG(INFO) << "[Decoder] Decoder with word-LM loaded in thread: "
-                    << tid;
+              transition,
+              false));
+          LOG(INFO)
+              << "[Decoder] Lexicon decoder with word-LM loaded in thread: "
+              << tid;
         } else if (FLAGS_decodertype == "tkn") {
           if (FLAGS_uselexicon) {
-            decoder.reset(new TokenLMDecoder(
+            decoder.reset(new LexiconDecoder(
                 decoderOpt,
                 trie,
                 localLm,
                 silIdx,
                 blankIdx,
                 unkWordIdx,
-                transition));
-            LOG(INFO) << "[Decoder] Decoder with token-LM loaded in thread: "
-                      << tid;
+                transition,
+                true));
+            LOG(INFO)
+                << "[Decoder] Lexicon decoder with token-LM loaded in thread: "
+                << tid;
           } else {
             decoder.reset(new LexiconFreeDecoder(
                 decoderOpt, localLm, silIdx, blankIdx, transition));

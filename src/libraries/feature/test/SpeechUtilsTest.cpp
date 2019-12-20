@@ -22,10 +22,10 @@ TEST(SpeechUtilsTest, SimpleMatmul) {
     [ 4  5  6 ],      [ 4  5 ]
     [ 5  6  7 ],
   */
-  std::vector<double> A = {2, 3, 4, 3, 4, 5, 4, 5, 6, 5, 6, 7};
-  std::vector<double> B = {2, 3, 3, 4, 4, 5};
+  std::vector<float> A = {2, 3, 4, 3, 4, 5, 4, 5, 6, 5, 6, 7};
+  std::vector<float> B = {2, 3, 3, 4, 4, 5};
   auto op = cblasGemm(A, B, 2, 3);
-  std::vector<double> expectedOp = {29, 38, 38, 50, 47, 62, 56, 74};
+  std::vector<float> expectedOp = {29, 38, 38, 50, 47, 62, 56, 74};
   EXPECT_TRUE(compareVec(op, expectedOp, 1E-10));
 }
 

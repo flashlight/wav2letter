@@ -27,7 +27,7 @@ function(build_test SRCFILE)
     PRIVATE
     "DATA_TEST_DATADIR=\"${PROJECT_SOURCE_DIR}/src/data/test/testdata\""
     "DECODER_TEST_DATADIR=\"${PROJECT_SOURCE_DIR}/src/decoder/test\""
-    "FEATURE_TEST_DATADIR=\"${PROJECT_SOURCE_DIR}/src/feature/test/data\""
+    "FEATURE_TEST_DATADIR=\"${PROJECT_SOURCE_DIR}/src/libraries/feature/test/data\""
     "MODULE_TEST_ARCHDIR=\"${PROJECT_SOURCE_DIR}/src/module/test\""
     )
   add_test(${target} ${target})
@@ -59,15 +59,15 @@ if (W2L_BUILD_TESTS)
   # Decoder
   build_test(${PROJECT_SOURCE_DIR}/src/decoder/test/DecoderTest.cpp)
   # Feature
-  build_test(${PROJECT_SOURCE_DIR}/src/feature/test/CeplifterTest.cpp)
-  build_test(${PROJECT_SOURCE_DIR}/src/feature/test/DctTest.cpp)
-  build_test(${PROJECT_SOURCE_DIR}/src/feature/test/DerivativesTest.cpp)
-  build_test(${PROJECT_SOURCE_DIR}/src/feature/test/DitherTest.cpp)
-  build_test(${PROJECT_SOURCE_DIR}/src/feature/test/MfccTest.cpp)
-  build_test(${PROJECT_SOURCE_DIR}/src/feature/test/PreEmphasisTest.cpp)
-  build_test(${PROJECT_SOURCE_DIR}/src/feature/test/SpeechUtilsTest.cpp)
-  build_test(${PROJECT_SOURCE_DIR}/src/feature/test/TriFilterbankTest.cpp)
-  build_test(${PROJECT_SOURCE_DIR}/src/feature/test/WindowingTest.cpp)
+  build_test(${PROJECT_SOURCE_DIR}/src/libraries/feature/test/CeplifterTest.cpp)
+  build_test(${PROJECT_SOURCE_DIR}/src/libraries/feature/test/DctTest.cpp)
+  build_test(${PROJECT_SOURCE_DIR}/src/libraries/feature/test/DerivativesTest.cpp)
+  build_test(${PROJECT_SOURCE_DIR}/src/libraries/feature/test/DitherTest.cpp)
+  build_test(${PROJECT_SOURCE_DIR}/src/libraries/feature/test/MfccTest.cpp)
+  build_test(${PROJECT_SOURCE_DIR}/src/libraries/feature/test/PreEmphasisTest.cpp)
+  build_test(${PROJECT_SOURCE_DIR}/src/libraries/feature/test/SpeechUtilsTest.cpp)
+  build_test(${PROJECT_SOURCE_DIR}/src/libraries/feature/test/TriFilterbankTest.cpp)
+  build_test(${PROJECT_SOURCE_DIR}/src/libraries/feature/test/WindowingTest.cpp)
   # Module
   build_test(${PROJECT_SOURCE_DIR}/src/module/test/W2lModuleTest.cpp)
   # Runtime

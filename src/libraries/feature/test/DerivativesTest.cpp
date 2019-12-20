@@ -17,7 +17,7 @@ using w2l::Derivatives;
 // Reference C++ code taken from HTK - http://htk.eng.cam.ac.uk/
 //   float *fp,*fp1,*fp2, *back, *forw;
 //   float sum, sigmaT2;
-//   int64_t i,t,j;
+//   int i,t,j;
 //
 //   sigmaT2 = 0.0;
 //   for (t=1;t<=delwin;t++)
@@ -43,7 +43,7 @@ using w2l::Derivatives;
 //   }
 TEST(DerivativesTest, matlabCompareTest) {
   // Test Case: 1
-  Derivatives<float> dev1(4, 4);
+  Derivatives dev1(4, 4);
   std::vector<float> input1(12);
   std::iota(input1.begin(), input1.end(), 0.0);
   std::vector<float> matlaboutput1{
@@ -58,7 +58,7 @@ TEST(DerivativesTest, matlabCompareTest) {
   ASSERT_TRUE(compareVec<float>(output1, transposeVec(matlaboutput1, 3, 12)));
 
   // Test Case: 2
-  Derivatives<float> dev2(9, 7);
+  Derivatives dev2(9, 7);
   std::vector<float> input2{
       3.827583, 3.975999, 0.9343630, 2.448821, 2.227931,  3.231565,  3.546824,
       3.773433, 1.380125, 3.398513,  3.275490, 0.8130586, 0.5949884, 2.491820,
@@ -94,12 +94,12 @@ TEST(DerivativesTest, matlabCompareTest) {
 
 TEST(DerivativesTest, batchingTest) {
   int numFeat = 60, frameSz = 20;
-  auto input = randVec<double>(numFeat * frameSz);
-  Derivatives<double> dev(6, 7);
+  auto input = randVec<float>(numFeat * frameSz);
+  Derivatives dev(6, 7);
   auto output = dev.apply(input, numFeat);
   ASSERT_EQ(output.size(), input.size() * 3);
   for (int i = 0; i < numFeat; ++i) {
-    std::vector<double> curInput(frameSz), expOutput(frameSz * 3);
+    std::vector<float> curInput(frameSz), expOutput(frameSz * 3);
     for (int j = 0; j < frameSz; ++j) {
       curInput[j] = input[j * numFeat + i];
       expOutput[j * 3] = output[j * numFeat * 3 + i];
@@ -107,7 +107,7 @@ TEST(DerivativesTest, batchingTest) {
       expOutput[j * 3 + 2] = output[j * numFeat * 3 + 2 * numFeat + i];
     }
     auto curOutput = dev.apply(curInput, 1);
-    ASSERT_TRUE(compareVec<double>(curOutput, expOutput, 1E-4));
+    ASSERT_TRUE(compareVec<float>(curOutput, expOutput, 1E-4));
   }
 }
 

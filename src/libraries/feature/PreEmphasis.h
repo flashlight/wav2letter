@@ -15,17 +15,17 @@ namespace w2l {
 
 // Pre-emphasise the signal by applying the first order difference equation
 //    s'(n) = s(n) - k * s(n-1)  where k in [0, 1)
-template <typename T>
+
 class PreEmphasis {
  public:
-  PreEmphasis(T alpha, int64_t N);
+  PreEmphasis(float alpha, int N);
 
-  std::vector<T> apply(const std::vector<T>& input) const;
+  std::vector<float> apply(const std::vector<float>& input) const;
 
-  void applyInPlace(std::vector<T>& input) const;
+  void applyInPlace(std::vector<float>& input) const;
 
  private:
-  T preemCoef_;
-  int64_t windowLength_;
+  float preemCoef_;
+  int windowLength_;
 };
 } // namespace w2l

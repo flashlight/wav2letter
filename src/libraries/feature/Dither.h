@@ -20,17 +20,16 @@ namespace w2l {
 // added everytime and with negative value of `q`, noise is random and the same
 // file may produce slightly different results in different trials
 
-template <typename T>
 class Dither {
  public:
-  explicit Dither(T ditherVal);
+  explicit Dither(float ditherVal);
 
-  std::vector<T> apply(const std::vector<T>& input);
+  std::vector<float> apply(const std::vector<float>& input);
 
-  void applyInPlace(std::vector<T>& input);
+  void applyInPlace(std::vector<float>& input);
 
  private:
-  T ditherVal_;
+  float ditherVal_;
   std::mt19937 rng_; // Standard mersenne_twister_engine
 };
 } // namespace w2l

@@ -15,14 +15,12 @@
 
 namespace w2l {
 
-template <typename T>
-Derivatives<T>::Derivatives(int64_t deltawindow, int64_t accwindow)
+Derivatives::Derivatives(int deltawindow, int accwindow)
     : deltaWindow_(deltawindow), accWindow_(accwindow) {}
 
-template <typename T>
-std::vector<T> Derivatives<T>::apply(
-    const std::vector<T>& input,
-    int64_t numfeat) const {
+std::vector<float> Derivatives::apply(
+    const std::vector<float>& input,
+    int numfeat) const {
   if (input.size() % numfeat != 0) {
     throw std::invalid_argument(
         "Derivatives: input size is not divisible by numFeatures");
@@ -34,14 +32,14 @@ std::vector<T> Derivatives<T>::apply(
 
   auto deltas = computeDerivative(input, deltaWindow_, numfeat);
   size_t szMul = 2;
-  std::vector<T> doubledeltas;
+  std::vector<float> doubledeltas;
   if (accWindow_ > 0) {
     // Compute double deltas (only if required)
     szMul = 3;
     doubledeltas = computeDerivative(deltas, accWindow_, numfeat);
   }
-  std::vector<T> output(input.size() * szMul);
-  int64_t numframes = input.size() / numfeat;
+  std::vector<float> output(input.size() * szMul);
+  int numframes = input.size() / numfeat;
   for (size_t i = 0; i < numframes; ++i) {
     size_t curInIdx = i * numfeat;
     size_t curOutIdx = curInIdx * szMul;
@@ -66,14 +64,13 @@ std::vector<T> Derivatives<T>::apply(
   return output;
 }
 
-template <typename T>
-std::vector<T> Derivatives<T>::computeDerivative(
-    const std::vector<T>& input,
-    int64_t windowlen,
-    int64_t numfeat) const {
-  int64_t numframes = input.size() / numfeat;
-  std::vector<T> output(input.size(), 0.0);
-  T denominator = (windowlen * (windowlen + 1) * (2 * windowlen + 1)) / 3.0;
+std::vector<float> Derivatives::computeDerivative(
+    const std::vector<float>& input,
+    int windowlen,
+    int numfeat) const {
+  int numframes = input.size() / numfeat;
+  std::vector<float> output(input.size(), 0.0);
+  float denominator = (windowlen * (windowlen + 1) * (2 * windowlen + 1)) / 3.0;
   for (size_t i = 0; i < numframes; ++i) {
     for (size_t j = 0; j < numfeat; ++j) {
       size_t curIdx = i * numfeat + j;
@@ -88,6 +85,4 @@ std::vector<T> Derivatives<T>::computeDerivative(
   return output;
 }
 
-template class Derivatives<float>;
-template class Derivatives<double>;
 } // namespace w2l

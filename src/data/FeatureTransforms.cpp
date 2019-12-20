@@ -35,7 +35,7 @@ fl::Dataset::DataTransformFunction inputFeatures(const FeatureParams& params) {
       input = transpose2d(input, dims[1], channels);
     }
 
-    static Mfsc<float> mfsc(params);
+    static Mfsc mfsc(params);
     auto output = mfsc.apply(input);
     auto nFeat = params.mfscFeatSz();
     auto T = output.size() / (nFeat * channels);

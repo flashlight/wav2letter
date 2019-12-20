@@ -16,8 +16,8 @@ using w2l::PreEmphasis;
 // Matlab code used: B=[1, -0.95]; = filter(B, 1, data, [], 2);
 // For first element in data multiply by (1 - alpha)
 TEST(PreEmphasisTest, matlabCompareTest) {
-  int64_t N = 8;
-  PreEmphasis<float> preemphasis1d(0.95, N);
+  int N = 8;
+  PreEmphasis preemphasis1d(0.95, N);
   std::vector<float> input{0.098589,
                            0.715877,
                            0.750572,
@@ -40,7 +40,7 @@ TEST(PreEmphasisTest, matlabCompareTest) {
   ASSERT_TRUE(compareVec<float>(output1d, matlaboutput1d));
 
   // numdims = 2
-  PreEmphasis<float> preemphasis2d(0.95, N / 2);
+  PreEmphasis preemphasis2d(0.95, N / 2);
   std::vector<float> matlaboutput2d{0.004929,
                                     0.622218,
                                     0.070489,
@@ -56,18 +56,18 @@ TEST(PreEmphasisTest, matlabCompareTest) {
 
 TEST(PreEmphasisTest, batchingTest) {
   int N = 16, B = 15;
-  auto input = randVec<double>(N * B);
-  auto preemphasis = PreEmphasis<double>(0.5, N);
+  auto input = randVec<float>(N * B);
+  auto preemphasis = PreEmphasis(0.5, N);
   auto output = preemphasis.apply(input);
   ASSERT_EQ(output.size(), input.size());
   for (int i = 0; i < B; ++i) {
-    std::vector<double> curInput(N), expOutput(N);
+    std::vector<float> curInput(N), expOutput(N);
     std::copy(
         input.data() + i * N, input.data() + (i + 1) * N, curInput.data());
     std::copy(
         output.data() + i * N, output.data() + (i + 1) * N, expOutput.data());
     auto curOutput = preemphasis.apply(curInput);
-    ASSERT_TRUE(compareVec<double>(curOutput, expOutput, 1E-10));
+    ASSERT_TRUE(compareVec<float>(curOutput, expOutput, 1E-10));
   }
 }
 

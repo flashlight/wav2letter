@@ -29,16 +29,16 @@ using WindowType = w2l::WindowType;
 using FrequencyScale = w2l::FrequencyScale;
 using FeatureParams = w2l::FeatureParams;
 
-using Ceplifter = w2l::Ceplifter<float>;
-using Dct = w2l::Dct<float>;
-using Derivatives = w2l::Derivatives<float>;
-using Dither = w2l::Dither<float>;
-using Mfcc = w2l::Mfcc<float>;
-using Mfsc = w2l::Mfsc<float>;
-using PowerSpectrum = w2l::PowerSpectrum<float>;
-using PreEmphasis = w2l::PreEmphasis<float>;
-using TriFilterbank = w2l::TriFilterbank<float>;
-using Windowing = w2l::Windowing<float>;
+using Ceplifter = w2l::Ceplifter;
+using Dct = w2l::Dct;
+using Derivatives = w2l::Derivatives;
+using Dither = w2l::Dither;
+using Mfcc = w2l::Mfcc;
+using Mfsc = w2l::Mfsc;
+using PowerSpectrum = w2l::PowerSpectrum;
+using PreEmphasis = w2l::PreEmphasis;
+using TriFilterbank = w2l::TriFilterbank;
+using Windowing = w2l::Windowing;
 
 PYBIND11_MODULE(_feature, m) {
   py::enum_<WindowType>(m, "WindowType")
@@ -172,6 +172,6 @@ PYBIND11_MODULE(_feature, m) {
       .def("apply", &Windowing::apply, "input"_a)
       .def("apply_in_place", &Windowing::applyInPlace, "input"_a);
 
-  m.def("frame_signal", w2l::frameSignal<float>, "input"_a, "params"_a);
-  m.def("cblas_gemm", w2l::cblasGemm<float>, "A"_a, "B"_a, "n"_a, "k"_a);
+  m.def("frame_signal", w2l::frameSignal, "input"_a, "params"_a);
+  m.def("cblas_gemm", w2l::cblasGemm, "A"_a, "B"_a, "n"_a, "k"_a);
 }

@@ -55,7 +55,7 @@ TEST(MfccTest, htkCompareTest) {
   params.useEnergy = false;
   params.zeroMeanFrame = false;
   params.usePower = false;
-  Mfcc<float> mfcc(params);
+  Mfcc mfcc(params);
   auto feat = mfcc.apply(wavinput);
   ASSERT_EQ(feat.size(), htkfeat.size());
 
@@ -72,7 +72,7 @@ TEST(MfccTest, htkCompareTest) {
     feat[f * 39 + 25] = featcopy[f * 39 + 13];
     feat[f * 39 + 38] = featcopy[f * 39 + 26];
   }
-  double sum = 0.0, max = 0.0;
+  float sum = 0.0, max = 0.0;
   for (int i = 0; i < feat.size(); ++i) {
     auto curdiff = std::abs(feat[i] - htkfeat[i]);
     sum += curdiff;
@@ -87,7 +87,7 @@ TEST(MfccTest, htkCompareTest) {
 }
 
 TEST(MfccTest, BatchingTest) {
-  int64_t Tmax = 10000;
+  int Tmax = 10000;
   auto input = randVec<float>(Tmax);
   FeatureParams featparams;
   featparams.deltaWindow = 0;
@@ -107,7 +107,7 @@ TEST(MfccTest, BatchingTest) {
           featparams.zeroMeanFrame = z;
           featparams.usePower = p;
 
-          Mfcc<float> mfcc(featparams);
+          Mfcc mfcc(featparams);
 
           auto output = mfcc.apply(input);
           for (int i = 0; i < numTrials; ++i) {
@@ -130,8 +130,8 @@ TEST(MfccTest, BatchingTest) {
 }
 
 TEST(MfccTest, BatchingTest2) {
-  int64_t Tmax = 10000;
-  int64_t batchSz = 100;
+  int Tmax = 10000;
+  int batchSz = 100;
   auto input = randVec<float>(Tmax);
   FeatureParams featparams;
   featparams.frameSizeMs = 25;
@@ -149,7 +149,7 @@ TEST(MfccTest, BatchingTest2) {
           featparams.zeroMeanFrame = z;
           featparams.usePower = p;
 
-          Mfcc<float> mfcc(featparams);
+          Mfcc mfcc(featparams);
 
           auto output = mfcc.batchApply(input, batchSz);
 
@@ -176,12 +176,12 @@ TEST(MfccTest, BatchingTest2) {
 TEST(MfccTest, EmptyTest) {
   std::vector<float> input;
   FeatureParams featparams;
-  Mfcc<float> mfcc(featparams);
+  Mfcc mfcc(featparams);
   auto output = mfcc.apply(input);
   ASSERT_TRUE(output.empty());
 
-  int64_t Tmax = 500;
-  for (int64_t t = 1; t <= Tmax; ++t) {
+  int Tmax = 500;
+  for (int t = 1; t <= Tmax; ++t) {
     input = randVec<float>(Tmax);
     output = mfcc.apply(input);
     ASSERT_TRUE(output.size() >= 0);
@@ -191,7 +191,7 @@ TEST(MfccTest, EmptyTest) {
 TEST(MfccTest, ZeroInputTest) {
   auto params = FeatureParams();
   params.useEnergy = false;
-  Mfsc<float> mfcc(params);
+  Mfsc mfcc(params);
   auto input = std::vector<float>(10000, 0.0);
   auto output = mfcc.apply(input);
   for (auto o : output) {

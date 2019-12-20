@@ -14,26 +14,24 @@
 
 namespace w2l {
 
-template <typename T>
-Mfcc<T>::Mfcc(const FeatureParams& params)
-    : Mfsc<T>(params),
+Mfcc::Mfcc(const FeatureParams& params)
+    : Mfsc(params),
       dct_(params.numFilterbankChans, params.numCepstralCoeffs),
       ceplifter_(params.numCepstralCoeffs, params.lifterParam),
       derivatives_(params.deltaWindow, params.accWindow) {
   validateMfccParams();
 }
 
-template <typename T>
-std::vector<T> Mfcc<T>::apply(const std::vector<T>& input) {
+std::vector<float> Mfcc::apply(const std::vector<float>& input) {
   auto frames = frameSignal(input, this->featParams_);
   if (frames.empty()) {
     return {};
   }
 
-  int64_t nSamples = this->featParams_.numFrameSizeSamples();
-  int64_t nFrames = frames.size() / nSamples;
+  int nSamples = this->featParams_.numFrameSizeSamples();
+  int nFrames = frames.size() / nSamples;
 
-  std::vector<T> energy(nFrames);
+  std::vector<float> energy(nFrames);
   if (this->featParams_.useEnergy && this->featParams_.rawEnergy) {
     for (size_t f = 0; f < nFrames; ++f) {
       auto begin = frames.data() + f * nSamples;
@@ -62,13 +60,11 @@ std::vector<T> Mfcc<T>::apply(const std::vector<T>& input) {
   return derivatives_.apply(cep, nFeat);
 }
 
-template <typename T>
-int64_t Mfcc<T>::outputSize(int64_t inputSz) {
+int Mfcc::outputSize(int inputSz) {
   return this->featParams_.mfccFeatSz() * this->featParams_.numFrames(inputSz);
 }
 
-template <typename T>
-void Mfcc<T>::validateMfccParams() const {
+void Mfcc::validateMfccParams() const {
   this->validatePowSpecParams();
   this->validateMfscParams();
   if (this->featParams_.lifterParam < 0) {
@@ -76,6 +72,4 @@ void Mfcc<T>::validateMfccParams() const {
   }
 }
 
-template class Mfcc<float>;
-template class Mfcc<double>;
 } // namespace w2l

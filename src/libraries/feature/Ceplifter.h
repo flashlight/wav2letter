@@ -15,18 +15,18 @@ namespace w2l {
 
 // Re-scale the cepstral coefficients using liftering
 //    c'(n) = c(n) * (1 + 0.5 * L * sin(pi * n/ L)) where L is lifterparam
-template <typename T>
+
 class Ceplifter {
  public:
-  Ceplifter(int64_t numfilters, int64_t lifterparam);
+  Ceplifter(int numfilters, int lifterparam);
 
-  std::vector<T> apply(const std::vector<T>& input) const;
+  std::vector<float> apply(const std::vector<float>& input) const;
 
-  void applyInPlace(std::vector<T>& input) const;
+  void applyInPlace(std::vector<float>& input) const;
 
  private:
-  int64_t numFilters_; // number of filterbank channels
-  int64_t lifterParam_; // liftering parameter
-  std::vector<T> coefs_; // coefficients to scale cepstral coefficients
+  int numFilters_; // number of filterbank channels
+  int lifterParam_; // liftering parameter
+  std::vector<float> coefs_; // coefficients to scale cepstral coefficients
 };
 } // namespace w2l

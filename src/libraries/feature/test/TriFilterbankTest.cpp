@@ -21,7 +21,7 @@ using w2l::TriFilterbank;
 //    https://www.mathworks.com/matlabcentral/fileexchange/32849-htk-mfcc-matlab
 TEST(TriFilterbankTest, matlabCompareTest) {
   // Test Case: 1
-  TriFilterbank<float> triflt1(10, 9, 20000, 0, 10000, FrequencyScale::MEL);
+  TriFilterbank triflt1(10, 9, 20000, 0, 10000, FrequencyScale::MEL);
   std::vector<float> matlabfbank1{
       0, 0, 0,        0,        0,        0, 0, 0, 0, 0, 0,
       0, 0, 0.881121, 0.118879, 0,        0, 0, 0, 0, 0, 0,
@@ -37,7 +37,7 @@ TEST(TriFilterbankTest, matlabCompareTest) {
   ASSERT_TRUE(compareVec<float>(outputfbank1, matlabfbank1));
 
   // Test Case: 2
-  TriFilterbank<float> triflt2(23, 33, 8000, 300, 3700, FrequencyScale::MEL);
+  TriFilterbank triflt2(23, 33, 8000, 300, 3700, FrequencyScale::MEL);
   std::vector<float> input2{
       0.0461713, 0.0971317, 0.823457, 0.694828, 0.317099, 0.950222, 0.0344460,
       0.438744,  0.381558,  0.765516, 0.795199, 0.186872, 0.489764, 0.445586,
@@ -57,12 +57,12 @@ TEST(TriFilterbankTest, matlabCompareTest) {
 
 TEST(TriFilterbankTest, batchingTest) {
   int numFilters = 16, filterLen = 10, B = 15;
-  auto input = randVec<double>(filterLen * B);
-  auto triflt = TriFilterbank<double>(numFilters, filterLen, 16000);
+  auto input = randVec<float>(filterLen * B);
+  auto triflt = TriFilterbank(numFilters, filterLen, 16000);
   auto output = triflt.apply(input);
   ASSERT_EQ(output.size(), numFilters * B);
   for (int i = 0; i < B; ++i) {
-    std::vector<double> curInput(filterLen), expOutput(numFilters);
+    std::vector<float> curInput(filterLen), expOutput(numFilters);
     std::copy(
         input.data() + i * filterLen,
         input.data() + (i + 1) * filterLen,
@@ -72,7 +72,7 @@ TEST(TriFilterbankTest, batchingTest) {
         output.data() + (i + 1) * numFilters,
         expOutput.data());
     auto curOutput = triflt.apply(curInput);
-    ASSERT_TRUE(compareVec<double>(curOutput, expOutput, 1E-10));
+    ASSERT_TRUE(compareVec<float>(curOutput, expOutput, 1E-5));
   }
 }
 

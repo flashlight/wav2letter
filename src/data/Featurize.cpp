@@ -25,18 +25,18 @@ namespace w2l {
 
 namespace {
 
-Mfcc<float>& getMfcc() {
-  static Mfcc<float> mfcc(defineSpeechFeatureParams());
+Mfcc& getMfcc() {
+  static Mfcc mfcc(defineSpeechFeatureParams());
   return mfcc;
 }
 
-Mfsc<float>& getMfsc() {
-  static Mfsc<float> mfsc(defineSpeechFeatureParams());
+Mfsc& getMfsc() {
+  static Mfsc mfsc(defineSpeechFeatureParams());
   return mfsc;
 }
 
-PowerSpectrum<float>& getPowerSpectrum() {
-  static PowerSpectrum<float> powspec(defineSpeechFeatureParams());
+PowerSpectrum& getPowerSpectrum() {
+  static PowerSpectrum powspec(defineSpeechFeatureParams());
   return powspec;
 }
 

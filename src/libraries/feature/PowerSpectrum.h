@@ -20,7 +20,7 @@
 namespace w2l {
 
 // Computes Power Spectrum features for a speech signal.
-template <typename T>
+
 class PowerSpectrum {
  public:
   explicit PowerSpectrum(const FeatureParams& params);
@@ -29,13 +29,13 @@ class PowerSpectrum {
 
   // input - input speech signal (T)
   // Returns - Power spectrum (Col Major : FEAT X FRAMESZ)
-  virtual std::vector<T> apply(const std::vector<T>& input);
+  virtual std::vector<float> apply(const std::vector<float>& input);
 
   // input - input speech signal (Col Major : T X BATCHSZ)
   // Returns - Output features (Col Major : FEAT X FRAMESZ X BATCHSZ)
-  std::vector<T> batchApply(const std::vector<T>& input, int64_t batchSz);
+  std::vector<float> batchApply(const std::vector<float>& input, int batchSz);
 
-  virtual int64_t outputSize(int64_t inputSz);
+  virtual int outputSize(int inputSz);
 
   FeatureParams getFeatureParams() const;
 
@@ -44,15 +44,15 @@ class PowerSpectrum {
 
   // Helper function which takes input as signal after dividing the signal into
   // frames. Main purpose of this function is to reuse it in MFSC, MFCC code
-  std::vector<T> powSpectrumImpl(std::vector<T>& frames);
+  std::vector<float> powSpectrumImpl(std::vector<float>& frames);
 
   void validatePowSpecParams() const;
 
  private:
   // The following classes are defined in the order they are applied
-  Dither<T> dither_;
-  PreEmphasis<T> preEmphasis_;
-  Windowing<T> windowing_;
+  Dither dither_;
+  PreEmphasis preEmphasis_;
+  Windowing windowing_;
 
   fftw_plan fftPlan_;
   std::vector<double> inFftBuf_, outFftBuf_;

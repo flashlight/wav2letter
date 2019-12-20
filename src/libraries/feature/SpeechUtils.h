@@ -15,14 +15,17 @@
 namespace w2l {
 
 // Convert the speech signal into frames
-template <typename T>
-std::vector<T> frameSignal(
-    const std::vector<T>& input,
+
+std::vector<float> frameSignal(
+    const std::vector<float>& input,
     const FeatureParams& params);
 
 // row major;  matA - m x k , matB - k x n
-template <typename T>
-std::vector<T>
-cblasGemm(const std::vector<T>& matA, const std::vector<T>& matB, int n, int k);
+
+std::vector<float> cblasGemm(
+    const std::vector<float>& matA,
+    const std::vector<float>& matB,
+    int n,
+    int k);
 
 } // namespace w2l

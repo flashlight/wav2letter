@@ -15,8 +15,7 @@
 
 namespace w2l {
 
-template <typename T>
-Ceplifter<T>::Ceplifter(int64_t numfilters, int64_t lifterparam)
+Ceplifter::Ceplifter(int numfilters, int lifterparam)
     : numFilters_(numfilters), lifterParam_(lifterparam), coefs_(numFilters_) {
   std::iota(coefs_.begin(), coefs_.end(), 0.0);
   for (auto& c : coefs_) {
@@ -24,15 +23,13 @@ Ceplifter<T>::Ceplifter(int64_t numfilters, int64_t lifterparam)
   }
 }
 
-template <typename T>
-std::vector<T> Ceplifter<T>::apply(const std::vector<T>& input) const {
+std::vector<float> Ceplifter::apply(const std::vector<float>& input) const {
   auto output(input);
   applyInPlace(output);
   return output;
 }
 
-template <typename T>
-void Ceplifter<T>::applyInPlace(std::vector<T>& input) const {
+void Ceplifter::applyInPlace(std::vector<float>& input) const {
   if (input.size() % numFilters_ != 0) {
     throw std::invalid_argument(
         "Ceplifter: input size is not divisible by numFilters");
@@ -45,7 +42,4 @@ void Ceplifter<T>::applyInPlace(std::vector<T>& input) const {
     }
   }
 }
-
-template class Ceplifter<float>;
-template class Ceplifter<double>;
 } // namespace w2l

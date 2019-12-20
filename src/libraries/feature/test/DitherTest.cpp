@@ -16,36 +16,36 @@
 using w2l::Dither;
 
 TEST(DitherTest, basicTest) {
-  int64_t N = 1000;
+  int N = 1000;
 
-  for (int64_t bch = 1; bch <= 8; bch *= 2) {
-    Dither<float> ditherpos(0.01);
+  for (int bch = 1; bch <= 8; bch *= 2) {
+    Dither ditherpos(0.01);
     auto input = randVec<float>(N * bch);
     auto output = ditherpos.apply(input);
     // Dithering should change input slightly.
     ASSERT_FALSE(compareVec<float>(output, input, 1E-5));
 
-    Dither<float> ditherpos2(0.01);
+    Dither ditherpos2(0.01);
     auto output2 = ditherpos2.apply(input);
     // Dither constant > 0 should give same result in multiple runs
     ASSERT_TRUE(compareVec<float>(output, output2, 1E-5));
   }
 
-  for (int64_t bch = 1; bch <= 8; bch *= 2) {
-    Dither<double> ditherneg(-0.01);
-    auto input = randVec<double>(N * bch);
+  for (int bch = 1; bch <= 8; bch *= 2) {
+    Dither ditherneg(-0.01);
+    auto input = randVec<float>(N * bch);
     auto output = ditherneg.apply(input);
     // Dithering should change input slightly.
-    ASSERT_FALSE(compareVec<double>(output, input, 1E-6));
+    ASSERT_FALSE(compareVec<float>(output, input, 1E-6));
 
     // time(NULL) resolution is in seconds
     std::chrono::seconds dura(2);
     std::this_thread::sleep_for(dura);
 
-    Dither<double> ditherneg2(-0.01);
+    Dither ditherneg2(-0.01);
     auto output2 = ditherneg2.apply(input);
     // Dithering should change input slightly.
-    ASSERT_FALSE(compareVec<double>(output, input, 1E-6));
+    ASSERT_FALSE(compareVec<float>(output, input, 1E-6));
   }
 }
 

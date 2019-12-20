@@ -15,32 +15,34 @@
 
 namespace w2l {
 
-template <typename T>
 class TriFilterbank {
  public:
   TriFilterbank(
-      int64_t numfilters,
-      int64_t filterlen,
-      int64_t samplingfreq,
-      int64_t lowfreq = 0,
-      int64_t highfreq = -1,
+      int numfilters,
+      int filterlen,
+      int samplingfreq,
+      int lowfreq = 0,
+      int highfreq = -1,
       FrequencyScale freqscale = FrequencyScale::MEL);
 
-  std::vector<T> apply(const std::vector<T>& input, T melfloor = 0.0) const;
+  std::vector<float> apply(
+      const std::vector<float>& input,
+      float melfloor = 0.0) const;
 
   // Returns triangular filterbank matrix
-  std::vector<T> filterbank() const;
+  std::vector<float> filterbank() const;
 
  private:
-  int64_t numFilters_; // Number of filterbank channels
-  int64_t filterLen_; // length of each filterbank channel
-  int64_t samplingFreq_; // sampling frequency (Hz)
-  int64_t lowFreq_; // lower cutoff frequency (Hz)
-  int64_t highFreq_; // higher cutoff frequency (Hz)
+  int numFilters_; // Number of filterbank channels
+  int filterLen_; // length of each filterbank channel
+  int samplingFreq_; // sampling frequency (Hz)
+  int lowFreq_; // lower cutoff frequency (Hz)
+  int highFreq_; // higher cutoff frequency (Hz)
   FrequencyScale freqScale_; // frequency warp type Ex. FrequencyScale::MEL
-  std::vector<T> H_; // (numFilters_ x filterLen_) triangular filterbank matrix
+  std::vector<float>
+      H_; // (numFilters_ x filterLen_) triangular filterbank matrix
 
-  T hertzToWarpedScale(T hz, FrequencyScale freqscale) const;
-  T warpedToHertzScale(T wrp, FrequencyScale freqscale) const;
+  float hertzToWarpedScale(float hz, FrequencyScale freqscale) const;
+  float warpedToHertzScale(float wrp, FrequencyScale freqscale) const;
 };
 } // namespace w2l

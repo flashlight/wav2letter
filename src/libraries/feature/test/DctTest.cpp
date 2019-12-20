@@ -21,7 +21,7 @@ using w2l::Dct;
 //    https://www.mathworks.com/matlabcentral/fileexchange/32849-htk-mfcc-matlab
 TEST(DctTest, matlabCompareTest) {
   // Test Case: 1
-  Dct<float> dct1(9, 6);
+  Dct dct1(9, 6);
   std::vector<float> input1(9, 1.0);
   std::vector<float> matlaboutput1{4.24264, 0.0, 0.0, 0.0, 0.0, 0.0};
   auto output1 = dct1.apply(input1);
@@ -29,7 +29,7 @@ TEST(DctTest, matlabCompareTest) {
   ASSERT_TRUE(compareVec(output1, matlaboutput1));
 
   // Test Case: 2
-  Dct<float> dct2(40, 23);
+  Dct dct2(40, 23);
   std::vector<float> input2{
       3.827583, 3.975999, 0.9343630, 2.448821, 2.227931,  3.231565,  3.546824,
       3.773433, 1.380125, 3.398513,  3.275490, 0.8130586, 0.5949884, 2.491820,
@@ -49,18 +49,18 @@ TEST(DctTest, matlabCompareTest) {
 
 TEST(DctTest, batchingTest) {
   int F = 16, C = 10, B = 15;
-  auto input = randVec<double>(F * B);
-  auto dct = Dct<double>(F, C);
+  auto input = randVec<float>(F * B);
+  auto dct = Dct(F, C);
   auto output = dct.apply(input);
   ASSERT_EQ(output.size(), C * B);
   for (int i = 0; i < B; ++i) {
-    std::vector<double> curInput(F), expOutput(C);
+    std::vector<float> curInput(F), expOutput(C);
     std::copy(
         input.data() + i * F, input.data() + (i + 1) * F, curInput.data());
     std::copy(
         output.data() + i * C, output.data() + (i + 1) * C, expOutput.data());
     auto curOutput = dct.apply(curInput);
-    ASSERT_TRUE(compareVec<double>(curOutput, expOutput, 1E-10));
+    ASSERT_TRUE(compareVec<float>(curOutput, expOutput, 1E-5));
   }
 }
 

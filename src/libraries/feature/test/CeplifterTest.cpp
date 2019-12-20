@@ -20,7 +20,7 @@ using w2l::Ceplifter;
 //    https://www.mathworks.com/matlabcentral/fileexchange/32849-htk-mfcc-matlab
 TEST(CeplifterTest, matlabCompareTest) {
   // Test Case: 1
-  Ceplifter<float> cep1(25, 22);
+  Ceplifter cep1(25, 22);
   std::vector<float> input1(25, 1.0);
   std::vector<float> matlaboutput1{
       1,        2.565463, 4.099058,   5.569565,  6.947048, 8.203468, 9.313245,
@@ -31,7 +31,7 @@ TEST(CeplifterTest, matlabCompareTest) {
   // Implementation should match with matlab for Test case 1.
   ASSERT_TRUE(compareVec<float>(output1, matlaboutput1));
   // Test Case: 2
-  Ceplifter<float> cep2(40, 13);
+  Ceplifter cep2(40, 13);
   std::vector<float> input2{
       3.827583, 3.975999, 0.9343630, 2.448821, 2.227931,  3.231565,  3.546824,
       3.773433, 1.380125, 3.398513,  3.275490, 0.8130586, 0.5949884, 2.491820,
@@ -55,18 +55,18 @@ TEST(CeplifterTest, matlabCompareTest) {
 
 TEST(CeplifterTest, batchingTest) {
   int N = 16, B = 15;
-  auto input = randVec<double>(N * B);
-  auto cep = Ceplifter<double>(N, 25);
+  auto input = randVec<float>(N * B);
+  auto cep = Ceplifter(N, 25);
   auto output = cep.apply(input);
   ASSERT_EQ(output.size(), input.size());
   for (int i = 0; i < B; ++i) {
-    std::vector<double> curInput(N), expOutput(N);
+    std::vector<float> curInput(N), expOutput(N);
     std::copy(
         input.data() + i * N, input.data() + (i + 1) * N, curInput.data());
     std::copy(
         output.data() + i * N, output.data() + (i + 1) * N, expOutput.data());
     auto curOutput = cep.apply(curInput);
-    ASSERT_TRUE(compareVec<double>(curOutput, expOutput, 1E-10));
+    ASSERT_TRUE(compareVec<float>(curOutput, expOutput, 1E-10));
   }
 }
 

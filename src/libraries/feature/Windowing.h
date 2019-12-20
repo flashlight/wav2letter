@@ -17,18 +17,18 @@ namespace w2l {
 
 // Applies a given window on input
 //    s'(n) = w(n) * s(n) where w(n) are the window coefficients
-template <typename T>
+
 class Windowing {
  public:
-  Windowing(int64_t N, WindowType window);
+  Windowing(int N, WindowType window);
 
-  std::vector<T> apply(const std::vector<T>& input) const;
+  std::vector<float> apply(const std::vector<float>& input) const;
 
-  void applyInPlace(std::vector<T>& input) const;
+  void applyInPlace(std::vector<float>& input) const;
 
  private:
-  int64_t windowLength_;
+  int windowLength_;
   WindowType windowType_;
-  std::vector<T> coefs_;
+  std::vector<float> coefs_;
 };
 } // namespace w2l

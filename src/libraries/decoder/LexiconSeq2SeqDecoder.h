@@ -31,38 +31,50 @@ using AMUpdateFunc = std::function<
  * beam.
  */
 struct LexiconSeq2SeqDecoderState {
+  double score; // Score so far
   LMStatePtr lmState; // Language model state
   const TrieNode* lex;
   const LexiconSeq2SeqDecoderState* parent; // Parent hypothesis
-  double score; // Score so far
   int token; // Label of token
   int word;
   AMStatePtr amState; // Acoustic model state
 
   LexiconSeq2SeqDecoderState(
+      const double score,
       const LMStatePtr& lmState,
       const TrieNode* lex,
       const LexiconSeq2SeqDecoderState* parent,
-      const double score,
       const int token,
       const int word,
       const AMStatePtr& amState)
-      : lmState(lmState),
+      : score(score),
+        lmState(lmState),
         lex(lex),
         parent(parent),
-        score(score),
         token(token),
         word(word),
         amState(amState) {}
 
   LexiconSeq2SeqDecoderState()
-      : lmState(nullptr),
+      : score(0),
+        lmState(nullptr),
         lex(nullptr),
         parent(nullptr),
-        score(0),
         token(-1),
         word(-1),
         amState(nullptr) {}
+
+  int compareNoScoreStates(const LexiconSeq2SeqDecoderState* node) const {
+    int lmCmp = lmState->compare(node->lmState);
+    if (lmCmp != 0) {
+      return lmCmp > 0 ? 1 : -1;
+    } else if (lex != node->lex) {
+      return lex > node->lex ? 1 : -1;
+    } else if (token != node->token) {
+      return token > node->token ? 1 : -1;
+    }
+    return 0;
+  }
 
   int getWord() const {
     return word;
@@ -125,23 +137,6 @@ class LexiconSeq2SeqDecoder : public Decoder {
   double candidatesBestScore_;
 
   std::unordered_map<int, std::vector<LexiconSeq2SeqDecoderState>> hyp_;
-
-  void candidatesReset();
-
-  void candidatesAdd(
-      const LMStatePtr& lmState,
-      const TrieNode* lex,
-      const LexiconSeq2SeqDecoderState* parent,
-      const double score,
-      const int token,
-      const int word,
-      const AMStatePtr& amState);
-
-  void candidatesStore(
-      std::vector<LexiconSeq2SeqDecoderState>& nextHyp,
-      const bool isSort);
-
-  void mergeCandidates();
 };
 
 } // namespace w2l

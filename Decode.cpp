@@ -233,12 +233,12 @@ int main(int argc, char** argv) {
   DecoderOptions decoderOpt(
       FLAGS_beamsize,
       FLAGS_beamsizetoken,
-      static_cast<float>(FLAGS_beamthreshold),
-      static_cast<float>(FLAGS_lmweight),
-      static_cast<float>(FLAGS_wordscore),
-      static_cast<float>(FLAGS_unkscore),
-      static_cast<float>(FLAGS_silscore),
-      static_cast<float>(FLAGS_eosscore),
+      FLAGS_beamthreshold,
+      FLAGS_lmweight,
+      FLAGS_wordscore,
+      FLAGS_unkscore,
+      FLAGS_silscore,
+      FLAGS_eosscore,
       FLAGS_logadd,
       criterionType);
 

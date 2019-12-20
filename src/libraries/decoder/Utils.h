@@ -17,7 +17,9 @@
 
 namespace w2l {
 
-const float kNegativeInfinity = -std::numeric_limits<float>::infinity();
+/* ===================== Definitions ===================== */
+
+const double kNegativeInfinity = -std::numeric_limits<double>::infinity();
 const int kLookBackLimit = 100;
 
 enum class CriterionType { ASG = 0, CTC = 1, S2S = 2 };
@@ -25,24 +27,24 @@ enum class CriterionType { ASG = 0, CTC = 1, S2S = 2 };
 struct DecoderOptions {
   int beamSize; // Maximum number of hypothesis we hold after each step
   int beamSizeToken; // Maximum number of tokens we consider at each step
-  float beamThreshold; // Threshold to prune hypothesis
-  float lmWeight; // Weight of lm
-  float wordScore; // Word insertion score
-  float unkScore; // Unknown word insertion score
-  float silScore; // Silence insertion score
-  float eosScore; // Score for inserting an EOS
+  double beamThreshold; // Threshold to prune hypothesis
+  double lmWeight; // Weight of lm
+  double wordScore; // Word insertion score
+  double unkScore; // Unknown word insertion score
+  double silScore; // Silence insertion score
+  double eosScore; // Score for inserting an EOS
   bool logAdd; // If or not use logadd when merging hypothesis
   CriterionType criterionType; // CTC or ASG
 
   DecoderOptions(
       const int beamSize,
       const int beamSizeToken,
-      const float beamThreshold,
-      const float lmWeight,
-      const float wordScore,
-      const float unkScore,
-      const float silScore,
-      const float eosScore,
+      const double beamThreshold,
+      const double lmWeight,
+      const double wordScore,
+      const double unkScore,
+      const double silScore,
+      const double eosScore,
       const bool logAdd,
       const CriterionType criterionType)
       : beamSize(beamSize),
@@ -68,44 +70,90 @@ struct DecodeResult {
       : score(0), words(length, -1), tokens(length, -1) {}
 };
 
+/* ===================== Candidate-related operations ===================== */
+
 template <class DecoderState>
-void mergeStates(
-    DecoderState* oldNode,
-    const DecoderState* newNode,
-    bool logAdd) {
-  double maxScore = std::max(oldNode->score, newNode->score);
-  if (logAdd) {
-    double minScore = std::min(oldNode->score, newNode->score);
-    oldNode->score = maxScore + std::log1p(std::exp(minScore - maxScore));
-  } else {
-    oldNode->score = maxScore;
+void candidatesReset(
+    double& candidatesBestScore,
+    std::vector<DecoderState>& candidates,
+    std::vector<DecoderState*>& candidatePtrs) {
+  candidatesBestScore = kNegativeInfinity;
+  candidates.clear();
+  candidatePtrs.clear();
+}
+
+template <class DecoderState, class... Args>
+void candidatesAdd(
+    std::vector<DecoderState>& candidates,
+    double& candidatesBestScore,
+    const double beamThreshold,
+    const double score,
+    const Args&... args) {
+  if (score >= candidatesBestScore) {
+    candidatesBestScore = score;
+  }
+  if (score >= candidatesBestScore - beamThreshold) {
+    candidates.emplace_back(score, args...);
   }
 }
 
-bool isValidCandidate(
-    double& bestScore,
-    const double score,
-    const double beamThreshold);
-
 template <class DecoderState>
-void pruneCandidates(
-    std::vector<DecoderState*>& candidatePtrs,
+void candidatesStore(
     std::vector<DecoderState>& candidates,
-    const float threshold) {
+    std::vector<DecoderState*>& candidatePtrs,
+    std::vector<DecoderState>& outputs,
+    const int beamSize,
+    const double threshold,
+    const bool logAdd,
+    const bool returnSorted) {
+  if (candidates.empty()) {
+    outputs.clear();
+    return;
+  }
+
+  /* 1. Select valid candidates */
   for (auto& candidate : candidates) {
     if (candidate.score >= threshold) {
       candidatePtrs.emplace_back(&candidate);
     }
   }
-}
 
-template <class DecoderState>
-void storeTopCandidates(
-    std::vector<DecoderState>& nextHyp,
-    std::vector<DecoderState*>& candidatePtrs,
-    const int beamSize,
-    const bool returnSorted) {
-  auto compareNodes = [](const DecoderState* node1, const DecoderState* node2) {
+  /* 2. Merge candidates */
+  std::sort(
+      candidatePtrs.begin(),
+      candidatePtrs.end(),
+      [](const DecoderState* node1, const DecoderState* node2) {
+        int cmp = node1->compareNoScoreStates(node2);
+        return cmp == 0 ? node1->score > node2->score : cmp > 0;
+      });
+
+  int nHypAfterMerging = 1;
+  for (int i = 1; i < candidatePtrs.size(); i++) {
+    if (candidatePtrs[i]->compareNoScoreStates(
+            candidatePtrs[nHypAfterMerging - 1]) != 0) {
+      // Distinct candidate
+      candidatePtrs[nHypAfterMerging] = candidatePtrs[i];
+      nHypAfterMerging++;
+    } else {
+      // Same candidate
+      double maxScore = std::max(
+          candidatePtrs[nHypAfterMerging - 1]->score, candidatePtrs[i]->score);
+      if (logAdd) {
+        double minScore = std::min(
+            candidatePtrs[nHypAfterMerging - 1]->score,
+            candidatePtrs[i]->score);
+        candidatePtrs[nHypAfterMerging - 1]->score =
+            maxScore + std::log1p(std::exp(minScore - maxScore));
+      } else {
+        candidatePtrs[nHypAfterMerging - 1]->score = maxScore;
+      }
+    }
+  }
+  candidatePtrs.resize(nHypAfterMerging);
+
+  /* 3. Sort and prune */
+  auto compareNodeScore = [](const DecoderState* node1,
+                             const DecoderState* node2) {
     return node1->score > node2->score;
   };
 
@@ -116,20 +164,22 @@ void storeTopCandidates(
         candidatePtrs.begin(),
         candidatePtrs.begin() + finalSize,
         candidatePtrs.begin() + nValidHyp,
-        compareNodes);
+        compareNodeScore);
   } else if (returnSorted) {
     std::partial_sort(
         candidatePtrs.begin(),
         candidatePtrs.begin() + finalSize,
         candidatePtrs.begin() + nValidHyp,
-        compareNodes);
+        compareNodeScore);
   }
 
-  nextHyp.resize(finalSize);
+  outputs.resize(finalSize);
   for (int i = 0; i < finalSize; i++) {
-    nextHyp[i] = std::move(*candidatePtrs[i]);
+    outputs[i] = std::move(*candidatePtrs[i]);
   }
 }
+
+/* ===================== Result-related operations ===================== */
 
 template <class DecoderState>
 DecodeResult getHypothesis(const DecoderState* node, const int finalFrame) {
@@ -217,18 +267,17 @@ void pruneAndNormalize(
     std::unordered_map<int, std::vector<DecoderState>>& hypothesis,
     const int startFrame,
     const int lookBack) {
-  // (1) Move things from back of hypothesis to front.
+  /* 1. Move things from back of hypothesis to front. */
   for (int i = 0; i <= lookBack; i++) {
     std::swap(hypothesis[i], hypothesis[i + startFrame]);
   }
 
-  // (2) Avoid further back-tracking
+  /* 2. Avoid further back-tracking */
   for (DecoderState& hyp : hypothesis[0]) {
     hyp.parent = nullptr;
   }
 
-  // (3) For each hypothesis in the last frame, subtract the largest score so as
-  // to avoid underflow/overflow.
+  /* 3. Avoid score underflow/overflow. */
   double largestScore = hypothesis[lookBack].front().score;
   for (int i = 1; i < hypothesis[lookBack].size(); i++) {
     if (largestScore < hypothesis[lookBack][i].score) {
@@ -240,6 +289,8 @@ void pruneAndNormalize(
     hypothesis[lookBack][i].score -= largestScore;
   }
 }
+
+/* ===================== LM-related operations ===================== */
 
 template <class DecoderState>
 void updateLMCache(const LMPtr& lm, std::vector<DecoderState>& hypothesis) {

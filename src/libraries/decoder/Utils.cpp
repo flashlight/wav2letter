@@ -10,15 +10,6 @@
 
 namespace w2l {
 
-bool isValidCandidate(
-    double& bestScore,
-    const double score,
-    const double beamThreshold) {
-  if (score >= bestScore) {
-    bestScore = score;
-  }
-
-  return score >= bestScore - beamThreshold;
-}
+// Place holder
 
 } // namespace w2l

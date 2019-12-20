@@ -19,38 +19,52 @@ namespace w2l {
  * LexiconDecoderState stores information for each hypothesis in the beam.
  */
 struct LexiconDecoderState {
+  double score; // Score so far
   LMStatePtr lmState; // Language model state
   const TrieNode* lex; // Trie node in the lexicon
   const LexiconDecoderState* parent; // Parent hypothesis
-  double score; // Score so far
   int token; // Label of token
   int word; // Label of word (-1 if incomplete)
   bool prevBlank; // If previous hypothesis is blank (for CTC only)
 
   LexiconDecoderState(
+      const double score,
       const LMStatePtr& lmState,
       const TrieNode* lex,
       const LexiconDecoderState* parent,
-      const double score,
       const int token,
       const int word,
       const bool prevBlank = false)
-      : lmState(lmState),
+      : score(score),
+        lmState(lmState),
         lex(lex),
         parent(parent),
-        score(score),
         token(token),
         word(word),
         prevBlank(prevBlank) {}
 
   LexiconDecoderState()
-      : lmState(nullptr),
+      : score(0),
+        lmState(nullptr),
         lex(nullptr),
         parent(nullptr),
-        score(0),
         token(-1),
         word(-1),
         prevBlank(false) {}
+
+  int compareNoScoreStates(const LexiconDecoderState* node) const {
+    int lmCmp = lmState->compare(node->lmState);
+    if (lmCmp != 0) {
+      return lmCmp > 0 ? 1 : -1;
+    } else if (lex != node->lex) {
+      return lex > node->lex ? 1 : -1;
+    } else if (token != node->token) {
+      return token > node->token ? 1 : -1;
+    } else if (prevBlank != node->prevBlank) {
+      return prevBlank > node->prevBlank ? 1 : -1;
+    }
+    return 0;
+  }
 
   int getWord() const {
     return word;
@@ -143,28 +157,6 @@ class LexiconDecoder : public Decoder {
   // These 2 variables are used for online decoding, for hypothesis pruning
   int nDecodedFrames_; // Total number of decoded frames.
   int nPrunedFrames_; // Total number of pruned frames from hyp_.
-
-  // Reset candidates buffer for decoding a new input frame
-  void candidatesReset();
-
-  // Add a new candidate to the buffer
-  void candidatesAdd(
-      const LMStatePtr& lmState,
-      const TrieNode* lex,
-      const LexiconDecoderState* parent,
-      const double score,
-      const int token,
-      const int label,
-      const bool prevBlank);
-
-  // Merge and sort candidates proposed in the current frame and place them into
-  // the `hyp_` buffer
-  void candidatesStore(
-      std::vector<LexiconDecoderState>& nextHyp,
-      const bool isSort);
-
-  // Merge hypothesis getting into same state from different path
-  void mergeCandidates();
 };
 
 } // namespace w2l

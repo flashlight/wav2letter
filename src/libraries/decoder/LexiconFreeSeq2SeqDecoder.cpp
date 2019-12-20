@@ -16,71 +16,6 @@
 
 namespace w2l {
 
-void LexiconFreeSeq2SeqDecoder::candidatesReset() {
-  candidatesBestScore_ = kNegativeInfinity;
-  candidates_.clear();
-  candidatePtrs_.clear();
-}
-
-void LexiconFreeSeq2SeqDecoder::mergeCandidates() {
-  auto compareNodesShortList = [](const LexiconFreeSeq2SeqDecoderState* node1,
-                                  const LexiconFreeSeq2SeqDecoderState* node2) {
-    int lmCmp = node1->lmState->compare(node2->lmState);
-    if (lmCmp != 0) {
-      return lmCmp > 0;
-    } else { /* same LmState */
-      return node1->score > node2->score;
-    }
-  };
-  std::sort(
-      candidatePtrs_.begin(), candidatePtrs_.end(), compareNodesShortList);
-
-  int nHypAfterMerging = 1;
-  for (int i = 1; i < candidatePtrs_.size(); i++) {
-    if (candidatePtrs_[i]->lmState->compare(
-            candidatePtrs_[nHypAfterMerging - 1]->lmState)) {
-      candidatePtrs_[nHypAfterMerging] = candidatePtrs_[i];
-      nHypAfterMerging++;
-    } else {
-      mergeStates(
-          candidatePtrs_[nHypAfterMerging - 1], candidatePtrs_[i], opt_.logAdd);
-    }
-  }
-
-  candidatePtrs_.resize(nHypAfterMerging);
-}
-
-void LexiconFreeSeq2SeqDecoder::candidatesAdd(
-    const LMStatePtr& lmState,
-    const LexiconFreeSeq2SeqDecoderState* parent,
-    const double score,
-    const int token,
-    const AMStatePtr& amState) {
-  if (isValidCandidate(candidatesBestScore_, score, opt_.beamThreshold)) {
-    candidates_.emplace_back(
-        LexiconFreeSeq2SeqDecoderState(lmState, parent, score, token, amState));
-  }
-}
-
-void LexiconFreeSeq2SeqDecoder::candidatesStore(
-    std::vector<LexiconFreeSeq2SeqDecoderState>& nextHyp,
-    const bool isSort) {
-  if (candidates_.empty()) {
-    nextHyp.clear();
-    return;
-  }
-
-  /* Select valid candidates */
-  pruneCandidates(
-      candidatePtrs_, candidates_, candidatesBestScore_ - opt_.beamThreshold);
-
-  /* Sort by (LmState, lex, score) and copy into next hypothesis */
-  mergeCandidates();
-
-  /* Sort hypothesis and select top-K */
-  storeTopCandidates(nextHyp, candidatePtrs_, opt_.beamSize, isSort);
-}
-
 void LexiconFreeSeq2SeqDecoder::decodeStep(
     const float* emissions,
     int T,
@@ -94,12 +29,12 @@ void LexiconFreeSeq2SeqDecoder::decodeStep(
 
   // Start from here.
   hyp_[0].clear();
-  hyp_[0].emplace_back(lm_->start(0), nullptr, 0.0, -1, nullptr);
+  hyp_[0].emplace_back(0.0, lm_->start(0), nullptr, -1, nullptr);
 
   // Decode frame by frame
   int t = 0;
   for (; t < maxOutputLength_; t++) {
-    candidatesReset();
+    candidatesReset(candidatesBestScore_, candidates_, candidatePtrs_);
 
     // Batch forwarding
     rawY_.clear();
@@ -129,7 +64,15 @@ void LexiconFreeSeq2SeqDecoder::decodeStep(
       const LexiconFreeSeq2SeqDecoderState& prevHyp = hyp_[t][hypo];
       // Change nothing for completed hypothesis
       if (prevHyp.token == eos_) {
-        candidatesAdd(prevHyp.lmState, &prevHyp, prevHyp.score, eos_, nullptr);
+        candidatesAdd(
+            candidates_,
+            candidatesBestScore_,
+            opt_.beamThreshold,
+            prevHyp.score,
+            prevHyp.lmState,
+            &prevHyp,
+            eos_,
+            nullptr);
         continue;
       }
 
@@ -160,24 +103,37 @@ void LexiconFreeSeq2SeqDecoder::decodeStep(
           auto lmScoreReturn = lm_->finish(prevHyp.lmState);
 
           candidatesAdd(
+              candidates_,
+              candidatesBestScore_,
+              opt_.beamThreshold,
+              score + opt_.eosScore + opt_.lmWeight * lmScoreReturn.second,
               lmScoreReturn.first,
               &prevHyp,
-              score + opt_.eosScore + opt_.lmWeight * lmScoreReturn.second,
               n,
               nullptr);
         } else { /* (2) Try normal token */
           auto lmScoreReturn = lm_->score(prevHyp.lmState, n);
           candidatesAdd(
+              candidates_,
+              candidatesBestScore_,
+              opt_.beamThreshold,
+              score + opt_.lmWeight * lmScoreReturn.second,
               lmScoreReturn.first,
               &prevHyp,
-              score + opt_.lmWeight * lmScoreReturn.second,
               n,
               outState);
         }
       }
       validHypo++;
     }
-    candidatesStore(hyp_[t + 1], true);
+    candidatesStore(
+        candidates_,
+        candidatePtrs_,
+        hyp_[t + 1],
+        opt_.beamSize,
+        candidatesBestScore_ - opt_.beamThreshold,
+        opt_.logAdd,
+        true);
     updateLMCache(lm_, hyp_[t + 1]);
 
   } // End of decoding

@@ -21,81 +21,6 @@
 
 namespace w2l {
 
-void LexiconSeq2SeqDecoder::candidatesReset() {
-  candidatesBestScore_ = kNegativeInfinity;
-  candidates_.clear();
-  candidatePtrs_.clear();
-}
-
-void LexiconSeq2SeqDecoder::mergeCandidates() {
-  auto compareNodesShortList = [](const LexiconSeq2SeqDecoderState* node1,
-                                  const LexiconSeq2SeqDecoderState* node2) {
-    int lmCmp = node1->lmState->compare(node2->lmState);
-    if (lmCmp != 0) {
-      return lmCmp > 0;
-    } else if (node1->lex != node2->lex) {
-      return node1->lex > node2->lex;
-    } else if (node1->token != node2->token) {
-      return node1->token > node2->token;
-    } else {
-      /* same LmState, same lex */
-      return node1->score > node2->score;
-    }
-  };
-  std::sort(
-      candidatePtrs_.begin(), candidatePtrs_.end(), compareNodesShortList);
-
-  int nHypAfterMerging = 1;
-  for (int i = 1; i < candidatePtrs_.size(); i++) {
-    if (candidatePtrs_[i]->lmState->compare(
-            candidatePtrs_[nHypAfterMerging - 1]->lmState) ||
-        candidatePtrs_[i]->lex != candidatePtrs_[nHypAfterMerging - 1]->lex ||
-        candidatePtrs_[i]->token !=
-            candidatePtrs_[nHypAfterMerging - 1]->token) {
-      candidatePtrs_[nHypAfterMerging] = candidatePtrs_[i];
-      nHypAfterMerging++;
-    } else {
-      mergeStates(
-          candidatePtrs_[nHypAfterMerging - 1], candidatePtrs_[i], opt_.logAdd);
-    }
-  }
-
-  candidatePtrs_.resize(nHypAfterMerging);
-}
-
-void LexiconSeq2SeqDecoder::candidatesAdd(
-    const LMStatePtr& lmState,
-    const TrieNode* lex,
-    const LexiconSeq2SeqDecoderState* parent,
-    const double score,
-    const int token,
-    const int word,
-    const AMStatePtr& amState) {
-  if (isValidCandidate(candidatesBestScore_, score, opt_.beamThreshold)) {
-    candidates_.emplace_back(LexiconSeq2SeqDecoderState(
-        lmState, lex, parent, score, token, word, amState));
-  }
-}
-
-void LexiconSeq2SeqDecoder::candidatesStore(
-    std::vector<LexiconSeq2SeqDecoderState>& nextHyp,
-    const bool isSort) {
-  if (candidates_.empty()) {
-    nextHyp.clear();
-    return;
-  }
-
-  /* Select valid candidates */
-  pruneCandidates(
-      candidatePtrs_, candidates_, candidatesBestScore_ - opt_.beamThreshold);
-
-  /* Sort by (LmState, lex, score) and copy into next hypothesis */
-  mergeCandidates();
-
-  /* Sort hypothesis and select top-K */
-  storeTopCandidates(nextHyp, candidatePtrs_, opt_.beamSize, isSort);
-}
-
 void LexiconSeq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
   // Extend hyp_ buffer
   if (hyp_.size() < maxOutputLength_ + 2) {
@@ -107,7 +32,7 @@ void LexiconSeq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
   // Start from here.
   hyp_[0].clear();
   hyp_[0].emplace_back(
-      lm_->start(0), lexicon_->getRoot(), nullptr, 0.0, -1, -1, nullptr);
+      0.0, lm_->start(0), lexicon_->getRoot(), nullptr, -1, -1, nullptr);
 
   auto compare = [](const LexiconSeq2SeqDecoderState& n1,
                     const LexiconSeq2SeqDecoderState& n2) {
@@ -117,7 +42,7 @@ void LexiconSeq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
   // Decode frame by frame
   int t = 0;
   for (; t < maxOutputLength_; t++) {
-    candidatesReset();
+    candidatesReset(candidatesBestScore_, candidates_, candidatePtrs_);
 
     // Batch forwarding
     rawY_.clear();
@@ -148,10 +73,13 @@ void LexiconSeq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
       // Change nothing for completed hypothesis
       if (prevHyp.token == eos_) {
         candidatesAdd(
+            candidates_,
+            candidatesBestScore_,
+            opt_.beamThreshold,
+            prevHyp.score,
             prevHyp.lmState,
             prevHyp.lex,
             &prevHyp,
-            prevHyp.score,
             eos_,
             -1,
             nullptr);
@@ -196,10 +124,13 @@ void LexiconSeq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
             lmScore = lmReturn.second - lexMaxScore;
           }
           candidatesAdd(
+              candidates_,
+              candidatesBestScore_,
+              opt_.beamThreshold,
+              score + opt_.eosScore + opt_.lmWeight * lmScore,
               lmState,
               lexicon_->getRoot(),
               &prevHyp,
-              score + opt_.eosScore + opt_.lmWeight * lmScore,
               n,
               -1,
               nullptr);
@@ -222,10 +153,13 @@ void LexiconSeq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
               lmScore = lex->maxScore - lexMaxScore;
             }
             candidatesAdd(
+                candidates_,
+                candidatesBestScore_,
+                opt_.beamThreshold,
+                score + opt_.lmWeight * lmScore,
                 lmState,
                 lex.get(),
                 &prevHyp,
-                score + opt_.lmWeight * lmScore,
                 n,
                 -1,
                 outState);
@@ -237,10 +171,13 @@ void LexiconSeq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
                   lmScore = lmReturn.second - lexMaxScore;
                 }
                 candidatesAdd(
+                    candidates_,
+                    candidatesBestScore_,
+                    opt_.beamThreshold,
+                    score + opt_.wordScore + opt_.lmWeight * lmScore,
                     lmState,
                     lexicon_->getRoot(),
                     &prevHyp,
-                    score + opt_.wordScore + opt_.lmWeight * lmScore,
                     n,
                     word,
                     outState);
@@ -254,7 +191,14 @@ void LexiconSeq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
       }
       validHypo++;
     }
-    candidatesStore(hyp_[t + 1], true);
+    candidatesStore(
+        candidates_,
+        candidatePtrs_,
+        hyp_[t + 1],
+        opt_.beamSize,
+        candidatesBestScore_ - opt_.beamThreshold,
+        opt_.logAdd,
+        true);
     updateLMCache(lm_, hyp_[t + 1]);
   } // End of decoding
 

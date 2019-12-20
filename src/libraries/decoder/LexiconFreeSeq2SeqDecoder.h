@@ -30,30 +30,34 @@ using AMUpdateFunc = std::function<
  * beam.
  */
 struct LexiconFreeSeq2SeqDecoderState {
+  double score; // Score so far
   LMStatePtr lmState; // Language model state
   const LexiconFreeSeq2SeqDecoderState* parent; // Parent hypothesis
-  double score; // Score so far
   int token; // Label of token
   AMStatePtr amState; // Acoustic model state
 
   LexiconFreeSeq2SeqDecoderState(
+      const double score,
       const LMStatePtr& lmState,
       const LexiconFreeSeq2SeqDecoderState* parent,
-      const double score,
       const int token,
       const AMStatePtr& amState = nullptr)
-      : lmState(lmState),
+      : score(score),
+        lmState(lmState),
         parent(parent),
-        score(score),
         token(token),
         amState(amState) {}
 
   LexiconFreeSeq2SeqDecoderState()
-      : lmState(nullptr),
+      : score(0),
+        lmState(nullptr),
         parent(nullptr),
-        score(0),
         token(-1),
         amState(nullptr) {}
+
+  int compareNoScoreStates(const LexiconFreeSeq2SeqDecoderState* node) const {
+    return lmState->compare(node->lmState);
+  }
 
   int getWord() const {
     return -1;
@@ -110,21 +114,6 @@ class LexiconFreeSeq2SeqDecoder : public Decoder {
   double candidatesBestScore_;
 
   std::unordered_map<int, std::vector<LexiconFreeSeq2SeqDecoderState>> hyp_;
-
-  void candidatesReset();
-
-  void candidatesAdd(
-      const LMStatePtr& lmState,
-      const LexiconFreeSeq2SeqDecoderState* parent,
-      const double score,
-      const int token,
-      const AMStatePtr& amState);
-
-  void candidatesStore(
-      std::vector<LexiconFreeSeq2SeqDecoderState>& nextHyp,
-      const bool isSort);
-
-  void mergeCandidates();
 };
 
 } // namespace w2l

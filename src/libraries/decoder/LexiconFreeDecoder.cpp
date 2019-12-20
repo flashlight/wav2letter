@@ -16,85 +16,12 @@
 
 namespace w2l {
 
-void LexiconFreeDecoder::candidatesReset() {
-  candidatesBestScore_ = kNegativeInfinity;
-  candidates_.clear();
-  candidatePtrs_.clear();
-}
-
-void LexiconFreeDecoder::mergeCandidates() {
-  auto compareNodesShortList = [](const LexiconFreeDecoderState* node1,
-                                  const LexiconFreeDecoderState* node2) {
-    int lmCmp = node1->lmState->compare(node2->lmState);
-    if (lmCmp != 0) {
-      return lmCmp > 0;
-    } else if (node1->token != node2->token) {
-      return node1->token > node2->token;
-    } else if (node1->prevBlank != node2->prevBlank) {
-      return node1->prevBlank > node2->prevBlank;
-    } else { /* same LmState */
-      return node1->score > node2->score;
-    }
-  };
-  std::sort(
-      candidatePtrs_.begin(), candidatePtrs_.end(), compareNodesShortList);
-
-  int nHypAfterMerging = 1;
-  for (int i = 1; i < candidatePtrs_.size(); i++) {
-    if (candidatePtrs_[i]->lmState->compare(
-            candidatePtrs_[nHypAfterMerging - 1]->lmState) ||
-        candidatePtrs_[i]->token !=
-            candidatePtrs_[nHypAfterMerging - 1]->token ||
-        candidatePtrs_[i]->prevBlank !=
-            candidatePtrs_[nHypAfterMerging - 1]->prevBlank) {
-      candidatePtrs_[nHypAfterMerging] = candidatePtrs_[i];
-      nHypAfterMerging++;
-    } else {
-      mergeStates(
-          candidatePtrs_[nHypAfterMerging - 1], candidatePtrs_[i], opt_.logAdd);
-    }
-  }
-
-  candidatePtrs_.resize(nHypAfterMerging);
-}
-
-void LexiconFreeDecoder::candidatesAdd(
-    const LMStatePtr& lmState,
-    const LexiconFreeDecoderState* parent,
-    const double score,
-    const int token,
-    const bool prevBlank) {
-  if (isValidCandidate(candidatesBestScore_, score, opt_.beamThreshold)) {
-    candidates_.emplace_back(
-        LexiconFreeDecoderState(lmState, parent, score, token, prevBlank));
-  }
-}
-
-void LexiconFreeDecoder::candidatesStore(
-    std::vector<LexiconFreeDecoderState>& nextHyp,
-    const bool returnSorted) {
-  if (candidates_.empty()) {
-    nextHyp.clear();
-    return;
-  }
-
-  /* Select valid candidates */
-  pruneCandidates(
-      candidatePtrs_, candidates_, candidatesBestScore_ - opt_.beamThreshold);
-
-  /* Sort by (LmState, lex, score) and copy into next hypothesis */
-  mergeCandidates();
-
-  /* Sort hypothesis and select top-K */
-  storeTopCandidates(nextHyp, candidatePtrs_, opt_.beamSize, returnSorted);
-}
-
 void LexiconFreeDecoder::decodeBegin() {
   hyp_.clear();
   hyp_.emplace(0, std::vector<LexiconFreeDecoderState>());
 
   /* note: the lm reset itself with :start() */
-  hyp_[0].emplace_back(lm_->start(0), nullptr, 0.0, sil_);
+  hyp_[0].emplace_back(0.0, lm_->start(0), nullptr, sil_);
   nDecodedFrames_ = 0;
   nPrunedFrames_ = 0;
 }
@@ -122,7 +49,7 @@ void LexiconFreeDecoder::decodeStep(const float* emissions, int T, int N) {
           });
     }
 
-    candidatesReset();
+    candidatesReset(candidatesBestScore_, candidates_, candidatePtrs_);
     for (const LexiconFreeDecoderState& prevHyp : hyp_[startFrame + t]) {
       const int prevIdx = prevHyp.token;
 
@@ -144,25 +71,34 @@ void LexiconFreeDecoder::decodeStep(const float* emissions, int T, int N) {
           score += lmReturn.second * opt_.lmWeight;
 
           candidatesAdd(
+              candidates_,
+              candidatesBestScore_,
+              opt_.beamThreshold,
+              score,
               lmReturn.first,
               &prevHyp,
-              score,
               n,
               false // prevBlank
           );
         } else if (opt_.criterionType == CriterionType::CTC && n == blank_) {
           candidatesAdd(
+              candidates_,
+              candidatesBestScore_,
+              opt_.beamThreshold,
+              score,
               prevHyp.lmState,
               &prevHyp,
-              score,
               n,
               true // prevBlank
           );
         } else {
           candidatesAdd(
+              candidates_,
+              candidatesBestScore_,
+              opt_.beamThreshold,
+              score,
               prevHyp.lmState,
               &prevHyp,
-              score,
               n,
               false // prevBlank
           );
@@ -170,29 +106,46 @@ void LexiconFreeDecoder::decodeStep(const float* emissions, int T, int N) {
       }
     }
 
-    candidatesStore(hyp_[startFrame + t + 1], false);
+    candidatesStore(
+        candidates_,
+        candidatePtrs_,
+        hyp_[startFrame + t + 1],
+        opt_.beamSize,
+        candidatesBestScore_ - opt_.beamThreshold,
+        opt_.logAdd,
+        false);
     updateLMCache(lm_, hyp_[startFrame + t + 1]);
   }
   nDecodedFrames_ += T;
 }
 
 void LexiconFreeDecoder::decodeEnd() {
-  candidatesReset();
+  candidatesReset(candidatesBestScore_, candidates_, candidatePtrs_);
   for (const LexiconFreeDecoderState& prevHyp :
        hyp_[nDecodedFrames_ - nPrunedFrames_]) {
     const LMStatePtr& prevLmState = prevHyp.lmState;
 
     auto lmReturn = lm_->finish(prevLmState);
     candidatesAdd(
+        candidates_,
+        candidatesBestScore_,
+        opt_.beamThreshold,
+        prevHyp.score + opt_.lmWeight * lmReturn.second,
         lmReturn.first,
         &prevHyp,
-        prevHyp.score + opt_.lmWeight * lmReturn.second,
         sil_,
         false // prevBlank
     );
   }
 
-  candidatesStore(hyp_[nDecodedFrames_ - nPrunedFrames_ + 1], true);
+  candidatesStore(
+      candidates_,
+      candidatePtrs_,
+      hyp_[nDecodedFrames_ - nPrunedFrames_ + 1],
+      opt_.beamSize,
+      candidatesBestScore_ - opt_.beamThreshold,
+      opt_.logAdd,
+      true);
   ++nDecodedFrames_;
 }
 

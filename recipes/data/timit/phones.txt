@@ -32,7 +32,7 @@ sh zh
 t
 th
 uh
-uw   ux
+uw ux
 v
 w
 y

@@ -152,9 +152,9 @@ std::shared_ptr<Module> parseLines(
     int freqdim = std::stoi(params[3]);
     double dropprob = (params.size() >= 5 ? std::stod(params[4]) : 0);
     int l2 = (params.size() >= 6 ? std::stoi(params[5]) : 0);
-    int rPad = (params.size() >= 8 ? std::stoi(params[7]) : 0);
+    int rPad = (params.size() >= 7) ? std::stoi(params[6]) : -1;
     bool lNormIncludeTime =
-        (params.size() >= 7 && std::stoi(params[6]) == 0) ? false : true;
+        (params.size() >= 8 && std::stoi(params[7]) == 0) ? false : true;
     return std::make_shared<w2l::TDSBlock>(
         cisz, cwx, freqdim, dropprob, l2, rPad, lNormIncludeTime);
   }

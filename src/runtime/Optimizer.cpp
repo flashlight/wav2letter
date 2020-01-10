@@ -29,7 +29,7 @@ std::shared_ptr<fl::FirstOrderOptimizer> initOptimizer(
   }
 
   std::shared_ptr<fl::FirstOrderOptimizer> opt;
-  if (optimizer == kSGDoptimizer) {
+  if (optimizer == kSGDOptimizer) {
     opt = std::make_shared<fl::SGDOptimizer>(params, lr, momentum, weightdecay);
   } else if (optimizer == kAdamOptimizer) {
     opt = std::make_shared<fl::AdamOptimizer>(
@@ -45,6 +45,26 @@ std::shared_ptr<fl::FirstOrderOptimizer> initOptimizer(
   } else if (optimizer == kAdadeltaOptimizer) {
     opt = std::make_shared<fl::AdadeltaOptimizer>(
         params, 1.0, FLAGS_optimrho, FLAGS_optimepsilon, weightdecay);
+  } else if (optimizer == kAdagradOptimizer) {
+    opt =
+        std::make_shared<fl::AdagradOptimizer>(params, lr, FLAGS_optimepsilon);
+  } else if (optimizer == kAMSgradOptimizer) {
+    opt = std::make_shared<fl::AMSgradOptimizer>(
+        params,
+        lr,
+        FLAGS_adambeta1,
+        FLAGS_adambeta2,
+        FLAGS_optimepsilon,
+        weightdecay);
+
+  } else if (optimizer == kNovogradOptimizer) {
+    opt = std::make_shared<fl::NovogradOptimizer>(
+        params,
+        lr,
+        FLAGS_adambeta1,
+        FLAGS_adambeta2,
+        FLAGS_optimepsilon,
+        weightdecay);
   } else {
     LOG(FATAL) << "Optimizer option " << optimizer << " not implemented";
   }

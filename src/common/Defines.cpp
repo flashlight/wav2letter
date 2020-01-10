@@ -95,8 +95,8 @@ DEFINE_int64(
 DEFINE_double(gamma, 1.0, "the LR annealing multiplier");
 
 // OPTIMIZER OPTIONS
-DEFINE_string(netoptim, kSGDoptimizer, "optimizer for the network");
-DEFINE_string(critoptim, kSGDoptimizer, "optimizer for the criterion");
+DEFINE_string(netoptim, kSGDOptimizer, "optimizer for the network");
+DEFINE_string(critoptim, kSGDOptimizer, "optimizer for the criterion");
 
 // MFCC OPTIONS
 DEFINE_bool(mfcc, false, "use standard htk mfcc features as input");

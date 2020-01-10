@@ -87,10 +87,13 @@ constexpr const char* kRunIdx = "runIdx";
 constexpr const char* kRunPath = "runPath";
 constexpr const char* kProgramName = "programname";
 constexpr const char* kEpoch = "epoch";
-constexpr const char* kSGDoptimizer = "sgd";
+constexpr const char* kSGDOptimizer = "sgd";
 constexpr const char* kAdamOptimizer = "adam";
 constexpr const char* kRMSPropOptimizer = "rmsprop";
 constexpr const char* kAdadeltaOptimizer = "adadelta";
+constexpr const char* kAdagradOptimizer = "adagrad";
+constexpr const char* kAMSgradOptimizer = "amsgrad";
+constexpr const char* kNovogradOptimizer = "novograd";
 constexpr const char* kCtcCriterion = "ctc";
 constexpr const char* kAsgCriterion = "asg";
 constexpr const char* kSeq2SeqCriterion = "seq2seq";
@@ -148,8 +151,8 @@ DECLARE_double(weightdecay);
 DECLARE_bool(sqnorm);
 DECLARE_double(lrcrit);
 DECLARE_double(maxgradnorm);
-DECLARE_double(adambeta1);
-DECLARE_double(adambeta2);
+DECLARE_double(adambeta1); // TODO rename into optim beta1
+DECLARE_double(adambeta2); // TODO rename into optim beta2
 DECLARE_double(optimrho);
 DECLARE_double(optimepsilon);
 

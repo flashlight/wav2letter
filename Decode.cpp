@@ -221,7 +221,9 @@ int main(int argc, char** argv) {
   CriterionType criterionType = CriterionType::ASG;
   if (FLAGS_criterion == kCtcCriterion) {
     criterionType = CriterionType::CTC;
-  } else if (FLAGS_criterion == kSeq2SeqCriterion) {
+  } else if (
+      FLAGS_criterion == kSeq2SeqCriterion ||
+      FLAGS_criterion == kTransformerCriterion) {
     criterionType = CriterionType::S2S;
   } else if (FLAGS_criterion != kAsgCriterion) {
     LOG(FATAL) << "[Decoder] Invalid model type: " << FLAGS_criterion;
@@ -394,7 +396,9 @@ int main(int argc, char** argv) {
       // Build Decoder
       std::unique_ptr<Decoder> decoder;
       if (criterionType == CriterionType::S2S) {
-        auto amUpdateFunc = buildAmUpdateFunction(localCriterion);
+        auto amUpdateFunc = FLAGS_criterion == kSeq2SeqCriterion
+            ? buildAmUpdateFunction(localCriterion)
+            : buildTransformerAmUpdateFunction(localCriterion);
         int eosIdx = tokenDict.getIndex(kEosToken);
 
         if (FLAGS_decodertype == "wrd") {

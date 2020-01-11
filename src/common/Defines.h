@@ -64,7 +64,8 @@ void handleDeprecatedFlags();
  * USAGE:
  *   DEPRECATE_FLAGS(myOldFlagName, my_new_flag_name)
  */
-#define DEPRECATE_FLAGS(DEPRECATED, NEW) addDeprecatedFlag(#DEPRECATED, #NEW);
+#define DEPRECATE_FLAGS(DEPRECATED, NEW) \
+  w2l::detail::addDeprecatedFlag(#DEPRECATED, #NEW);
 
 // Dataset indices
 // If a new field is added, `kNumDataIdx` should be modified accordingly.
@@ -97,6 +98,7 @@ constexpr const char* kNovogradOptimizer = "novograd";
 constexpr const char* kCtcCriterion = "ctc";
 constexpr const char* kAsgCriterion = "asg";
 constexpr const char* kSeq2SeqCriterion = "seq2seq";
+constexpr const char* kTransformerCriterion = "transformer";
 constexpr int kTargetPadValue = -1;
 constexpr int kMaxDevicePerNode = 8;
 
@@ -198,6 +200,11 @@ DECLARE_double(pcttraineval);
 DECLARE_string(arch);
 DECLARE_string(criterion);
 DECLARE_int64(encoderdim);
+
+// Seq2Seq Transformer decoder
+DECLARE_int64(am_decoder_tr_layers);
+DECLARE_double(am_decoder_tr_dropout);
+DECLARE_double(am_decoder_tr_layerdrop);
 
 /* ========== DECODER OPTIONS ========== */
 

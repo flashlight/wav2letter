@@ -148,6 +148,17 @@ DEFINE_string(arch, "default", "network architecture");
 DEFINE_string(criterion, kAsgCriterion, "training criterion");
 DEFINE_int64(encoderdim, 0, "Dimension of encoded hidden state.");
 
+// Seq2Seq Transformer decoder
+DEFINE_int64(
+    am_decoder_tr_layers,
+    1,
+    "s2s transformer decoder: number of layers");
+DEFINE_double(am_decoder_tr_dropout, 0.0, "s2s transformer decoder: dropout");
+DEFINE_double(
+    am_decoder_tr_layerdrop,
+    0.0,
+    "s2s transformer decoder: layerdrop");
+
 // DECODER OPTIONS
 
 DEFINE_bool(show, false, "show predictions");

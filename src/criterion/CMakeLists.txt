@@ -65,6 +65,7 @@ target_sources(
   ${CMAKE_CURRENT_SOURCE_DIR}/ForceAlignmentCriterion.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Seq2SeqCriterion.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/FullConnectionCriterion.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/TransformerCriterion.cpp
   )
 
 target_link_libraries(

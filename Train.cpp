@@ -218,6 +218,14 @@ int main(int argc, char** argv) {
     } else if (FLAGS_criterion == kSeq2SeqCriterion) {
       criterion = std::make_shared<Seq2SeqCriterion>(
           buildSeq2Seq(numClasses, tokenDict.getIndex(kEosToken)));
+    } else if (FLAGS_criterion == kTransformerCriterion) {
+      criterion =
+          std::make_shared<TransformerCriterion>(buildTransformerCriterion(
+              numClasses,
+              FLAGS_am_decoder_tr_layers,
+              FLAGS_am_decoder_tr_dropout,
+              FLAGS_am_decoder_tr_layerdrop,
+              tokenDict.getIndex(kEosToken)));
     } else {
       LOG(FATAL) << "unimplemented criterion";
     }
@@ -636,7 +644,8 @@ int main(int argc, char** argv) {
 
   if (FLAGS_pretrainWindow - startEpoch > 0) {
     auto s2s = std::dynamic_pointer_cast<Seq2SeqCriterion>(criterion);
-    if (!s2s) {
+    auto trde = std::dynamic_pointer_cast<TransformerCriterion>(criterion);
+    if (!s2s && !trde) {
       LOG(FATAL) << "Window pretraining only allowed for seq2seq.";
     }
     train(
@@ -649,7 +658,11 @@ int main(int argc, char** argv) {
         FLAGS_lrcrit,
         true /* clampCrit */,
         FLAGS_pretrainWindow);
-    s2s->clearWindow();
+    if (s2s) {
+      s2s->clearWindow();
+    } else if (trde) {
+      trde->clearWindow();
+    }
     startEpoch = FLAGS_pretrainWindow;
   }
 

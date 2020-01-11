@@ -132,6 +132,13 @@ std::shared_ptr<Module> parseLines(
         preLN);
   }
 
+  if (params[0] == "POSEMB") {
+    int layerDim = std::stoi(params[1]);
+    int csz = std::stoi(params[2]);
+    float dropout = (params.size() >= 4) ? std::stof(params[3]) : 0.0;
+    return std::make_shared<PositionEmbedding>(layerDim, csz, dropout);
+  }
+
   /* ========== CONVOLUTIONS ========== */
 
   if (params[0] == "C" || params[0] == "C1") {

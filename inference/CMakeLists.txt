@@ -26,6 +26,8 @@ set_property(
   PROPERTY STRINGS
   ${AVAILABLE_INFERENCE_BACKENDS}
 )
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project(wav2letter-inference)
 
@@ -139,10 +141,9 @@ endif()
 set_target_properties(
   wav2letter-inference
   PROPERTIES
-    LINKER_LANGUAGE CXX
+  LINKER_LANGUAGE CXX
+  CXX_STANDARD 11
 )
-
-target_compile_features(wav2letter-inference PRIVATE cxx_std_11)
 
 target_include_directories(
   wav2letter-inference

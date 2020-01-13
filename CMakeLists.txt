@@ -10,6 +10,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # ----------------------------- Configuration -----------------------------
 
 option(W2L_BUILD_LIBRARIES_ONLY "Build wav2letter-libraries only" OFF)
+option(W2L_BUILD_INFERENCE
+  "Build inference even when W2L_BUILD_LIBRARIES_ONLY is set" ON)
 option(W2L_LIBRARIES_USE_CUDA "Use CUDA in libraries-only build" ON)
 option(W2L_LIBRARIES_USE_KENLM "Use KenLM in libraries-only build" ON)
 option(W2L_LIBRARIES_USE_MKL "Use MKL in libraries-only build" ON)
@@ -48,6 +50,9 @@ endfunction ()
 
 if (W2L_BUILD_LIBRARIES_ONLY)
   build_w2l_libraries()
+  if (W2L_BUILD_INFERENCE)
+    add_subdirectory(${PROJECT_SOURCE_DIR}/inference)
+  endif()
   return()
 endif ()
 
@@ -156,8 +161,9 @@ if (W2L_BUILD_TESTS)
   add_subdirectory(${PROJECT_SOURCE_DIR}/src/tests)
 endif ()
 
-# Inference
-add_subdirectory(${PROJECT_SOURCE_DIR}/inference)
+if (W2L_BUILD_INFERENCE)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/inference)
+endif()
 
 # ----------------------------- wav2letter++ lib  -----------------------------
 

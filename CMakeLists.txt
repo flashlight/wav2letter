@@ -156,6 +156,9 @@ if (W2L_BUILD_TESTS)
   add_subdirectory(${PROJECT_SOURCE_DIR}/src/tests)
 endif ()
 
+# Inference
+add_subdirectory(${PROJECT_SOURCE_DIR}/inference)
+
 # ----------------------------- wav2letter++ lib  -----------------------------
 
 add_library(

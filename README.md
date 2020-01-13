@@ -6,7 +6,7 @@ wav2letter++ is a fast, open source speech processing toolkit from the Speech te
 
 This repository also contains **pre-trained** models and implementations for various ASR results including:
 - [NEW] [Pratap et al. (2020): Scaling Online Speech Recognition Using ConvNets](recipes/models/streaming_convnets/)
-- [NEW SOTA][Synnaeve et al. (2019): End-to-end ASR: from Supervised to Semi-Supervised Learning with Modern Architectures](recipes/models/sota/2019)
+- [NEW SOTA] [Synnaeve et al. (2019): End-to-end ASR: from Supervised to Semi-Supervised Learning with Modern Architectures](recipes/models/sota/2019)
 - [Likhomanenko et al. (2019): Who Needs Words? Lexicon-free Speech Recognition](recipes/models/lexicon_free/)
 - [Hannun et al. (2019): Sequence-to-Sequence Speech Recognition with Time-Depth Separable Convolutions](recipes/models/seq2seq_tds/)
 

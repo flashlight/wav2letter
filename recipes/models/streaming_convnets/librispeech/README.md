@@ -28,7 +28,7 @@ tree -L 2
 ### AM training
 - Fix the paths inside `train*.cfg`
 - We are running acoustic model training with `train*.cfg` on **32 GPUs** (`--enable_distributed=true` is set in the config).
-- Training is done on Librispeech 1k hours and [Libri-Light data](https://github.com/facebookresearch/libri-light) (unsupervised for which we used generated pseudo labels from the [End-to-end ASR: from Supervised to Semi-Supervised Learning with Modern Architectures](https://arxiv.org/abs/1911.08460)).
+- Training is done on Librispeech 1k hours and [LibriVox data](https://github.com/facebookresearch/libri-light) (unsupervised for which we used generated pseudo labels from the [End-to-end ASR: from Supervised to Semi-Supervised Learning with Modern Architectures](https://arxiv.org/abs/1911.08460)).
 ```
 # Trained during 110 epochs
 [...]/wav2letter/build/Train train --flagsfile train_am_500ms_future_context.cfg --minloglevel=0 --logtostderr=1

@@ -49,7 +49,7 @@ target_link_libraries(
 )
 
 function(build_example TARGET SRCFILE)
-  message("Examples: add executable ${TARGET}")
+  message(STATUS "Examples: add executable ${TARGET}")
   add_executable(${TARGET}
     ${SRCFILE}
   )

@@ -28,15 +28,6 @@ add_executable(
   ${CMAKE_CURRENT_LIST_DIR}/TDSModelConverter.cpp
 )
 
-add_dependencies(tds_module_converter common)
-add_dependencies(tds_module_converter criterion)
-add_dependencies(tds_module_converter module)
-add_dependencies(tds_module_converter runtime)
-add_dependencies(tds_module_converter GFLAGS)
-add_dependencies(tds_module_converter streaming_inference_common)
-add_dependencies(tds_module_converter streaming_inference_decoder)
-add_dependencies(tds_module_converter streaming_inference_modules)
-
 target_include_directories(
   tds_module_converter
   PRIVATE

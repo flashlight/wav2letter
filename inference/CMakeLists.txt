@@ -1,8 +1,7 @@
-# Creates build rules for wav2letter inference processing graph.
-#
-
 cmake_minimum_required(VERSION 3.5.1)
-#install libraries into correct locations on all platforms
+
+# Creates build rules for wav2letter inference processing graph.
+
 include(GNUInstallDirs)
 
 option(W2L_INFERENCE_BUILD_TESTS
@@ -13,14 +12,24 @@ set(KENLM_MAX_ORDER 6 CACHE
     STRING
     "Maximum ngram order for KenLM"
 )
-set(W2L_INFERENCE_BACKEND FBGEMM CACHE
+
+# Inference backend names MUST match paths along
+# inference/module/nn/backend/{backend_name}
+set(AVAILABLE_INFERENCE_BACKENDS fbgemm)
+set(W2L_INFERENCE_BACKEND fbgemm CACHE
   STRING
-  "Inference backend tensor library."
+  "Inference backend library"
+)
+set_property(
+  CACHE
+  W2L_INFERENCE_BACKEND
+  PROPERTY STRINGS
+  ${AVAILABLE_INFERENCE_BACKENDS}
 )
 
 project(wav2letter-inference)
 
-add_library(wav2letter-inference)
+add_library(wav2letter-inference "")
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
@@ -33,6 +42,8 @@ else()
 endif()
 
 #--- Download and build Google test ---
+# Only if we're not building w2l tests elsewhere, else we'll
+# define the same custom target twice with ExternalProject_add
 include(BuildGoogleTest)
 
 #--- Download/build Cereal ---
@@ -77,7 +88,7 @@ endif()
 # Builds a single test source file.
 function(build_test SRCFILE)
   get_filename_component(target ${SRCFILE} NAME_WE)
-  message("Tests: add executable ${target}")
+  message(STATUS "Tests: add executable ${target}")
   add_executable(${target} ${SRCFILE})
   add_dependencies(wav2letter-inference ${target})
   add_dependencies(${target} gtest) # make sure gtest is built first

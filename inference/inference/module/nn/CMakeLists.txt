@@ -1,6 +1,8 @@
-if (NOT W2L_INFERENCE_BACKEND)
-  message(FATAL_ERROR "W2L_INFERENCE_BACKEND must be defined."
-    " supported values={FBGEMMM, }")
+cmake_minimum_required(VERSION 3.5.1)
+
+if (NOT W2L_INFERENCE_BACKEND IN_LIST AVAILABLE_INFERENCE_BACKENDS)
+  message(FATAL_ERROR "Passed value of W2L_INFERENCE_BACKEND is invalid."
+    " supported values=${AVAILABLE_INFERENCE_BACKENDS}")
 endif()
 
 # Creates target streaming_inference_modules_nn_backend

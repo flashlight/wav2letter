@@ -70,7 +70,7 @@ function(build_example TARGET SRCFILE)
   )
 endfunction(build_example)
 
-build_example(simple_online_asr_example
+build_example(simple_streaming_asr_example
   ${CMAKE_CURRENT_LIST_DIR}/SimpleStreamingASRExample.cpp)
 build_example(Multithreaded_streaming_asr_example
   ${CMAKE_CURRENT_LIST_DIR}/MultithreadedStreamingASRExample.cpp)

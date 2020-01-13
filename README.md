@@ -13,13 +13,13 @@ This repository also contains **pre-trained** models and implementations for var
 The previous iteration of wav2letter (written in Lua) can be found in the [`wav2letter-lua`](https://github.com/facebookresearch/wav2letter/tree/wav2letter-lua) branch.
 
 ## Building wav2letter++ and full documentation
-All details and docs can be found on the [wiki](https://github.com/facebookresearch/wav2letter/wiki).
+All details and documentation can be found on the [wiki](https://github.com/facebookresearch/wav2letter/wiki).
 
 To get started with wav2letter++, checkout the [tutorials](tutorials) section.
 
 We also provide complete recipes for WSJ, Timit and Librispeech and they can be found in [recipes](recipes) folder.
 
-Finally, we provide [Python bindings](bindings/python) for a subset of wav2letter++ (featurization, decoder, and ASG criterion).
+Finally, we provide [Python bindings](bindings/python) for a subset of wav2letter++ (featurization, decoder, and ASG criterion) and a standalone [inference framework](inference) for running online ASR.
 
 ## Citation
 

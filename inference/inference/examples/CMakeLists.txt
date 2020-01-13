@@ -48,21 +48,20 @@ target_link_libraries(
     decoder-library
 )
 
-function(build_example SRCFILE)
-  get_filename_component(target ${SRCFILE} NAME_WE)
-  message("Examples: add executable ${target}")
-  add_executable(${target}
+function(build_example TARGET SRCFILE)
+  message("Examples: add executable ${TARGET}")
+  add_executable(${TARGET}
     ${SRCFILE}
   )
-  add_dependencies(StreamingInferenceExamples ${target})
+  add_dependencies(StreamingInferenceExamples ${TARGET})
   target_include_directories(
-    ${target}
+    ${TARGET}
     PRIVATE
       ${CMAKE_CURRENT_LIST_DIR}
       ${GFLAGS_INCLUDE_DIRS}
   )
   target_link_libraries(
-    ${target}
+    ${TARGET}
     PRIVATE
       streaming_inference_modules_nn_backend
       streaming_inference_modules_feature
@@ -71,5 +70,7 @@ function(build_example SRCFILE)
   )
 endfunction(build_example)
 
-build_example(${CMAKE_CURRENT_LIST_DIR}/SimpleStreamingASRExample.cpp)
-build_example(${CMAKE_CURRENT_LIST_DIR}/MultithreadedStreamingASRExample.cpp)
+build_example(simple_online_asr_example
+  ${CMAKE_CURRENT_LIST_DIR}/SimpleStreamingASRExample.cpp)
+build_example(Multithreaded_streaming_asr_example
+  ${CMAKE_CURRENT_LIST_DIR}/MultithreadedStreamingASRExample.cpp)

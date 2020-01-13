@@ -5,9 +5,10 @@ The Librispeech corpus consists of about 1000 hours of read English speech. The 
 
 ## Wav2Letter models
 | DEV-CLEAN WER % / LER % | DEV-OTHER WER % / LER % | TEST-CLEAN WER % / LER % | TEST-OTHER WER % / LER % | MODEL                                                                                                      | PAPER                                                                                                     |
-|-------------------------|-------------------------|--------------------------|--------------------------|------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
-| 4.6 / 2.3 | 13.8 / 9.0 | 4.8 / - | 14.5 / - | [conv_glu](https://github.com/facebookresearch/wav2letter/tree/master/recipes/models/conv_glu/librispeech) | [Wav2Letter: an End-to-End ConvNet-based Speech Recognition System](https://arxiv.org/pdf/1609.03193.pdf), [Letter-Based Speech Recognition with Gated ConvNets](https://arxiv.org/pdf/1712.09444.pdf) |
+|:-------------------------:|:-------------------------:|:--------------------------:|:--------------------------:|:------------------------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------:|
+| - | 7.27 / - | - | 7.95 / - | [streaming convnets](https://github.com/facebookresearch/wav2letter/tree/master/recipes/models/inference/2019)|[Model with limited future context for inference pipelines](https://research.fb.com/publications/scaling-up-online-speech-recognition-using-convnets/)|
 | 3.01 / - | 8.86 / - | 3.28 / - | 9.84 / - | [seq2seq_tds](https://github.com/facebookresearch/wav2letter/tree/master/recipes/models/seq2seq_tds/librispeech)|[Sequence-to-Sequence Speech Recognition with Time-Depth Separable Convolutions](https://arxiv.org/abs/1904.02619)|
+| 4.6 / 2.3 | 13.8 / 9.0 | 4.8 / - | 14.5 / - | [conv_glu](https://github.com/facebookresearch/wav2letter/tree/master/recipes/models/conv_glu/librispeech) | [Wav2Letter: an End-to-End ConvNet-based Speech Recognition System](https://arxiv.org/pdf/1609.03193.pdf), [Letter-Based Speech Recognition with Gated ConvNets](https://arxiv.org/pdf/1712.09444.pdf) |
 
 ## Steps to download and prepare the audio and text data
 To download and prepare the audio and text for training/evaluation run (replace [...] with a path where the data should be stored)

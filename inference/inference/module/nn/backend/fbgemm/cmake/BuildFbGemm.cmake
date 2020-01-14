@@ -21,6 +21,7 @@ if (NOT TARGET fbgemm)
       INSTALL_COMMAND ""
       CMAKE_CACHE_ARGS
           -DFBGEMM_BUILD_BENCHMARKS:BOOL=OFF
+          -DFBGEMM_BUILD_TESTS:BOOL=OFF
   )
 endif()
 

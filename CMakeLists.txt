@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(W2L_BUILD_LIBRARIES_ONLY "Build wav2letter-libraries only" OFF)
 option(W2L_BUILD_INFERENCE
-  "Build inference even when W2L_BUILD_LIBRARIES_ONLY is set" ON)
+  "Build inference even when W2L_BUILD_LIBRARIES_ONLY is set" OFF)
 option(W2L_LIBRARIES_USE_CUDA "Use CUDA in libraries-only build" ON)
 option(W2L_LIBRARIES_USE_KENLM "Use KenLM in libraries-only build" ON)
 option(W2L_LIBRARIES_USE_MKL "Use MKL in libraries-only build" ON)

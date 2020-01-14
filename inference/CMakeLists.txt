@@ -87,13 +87,17 @@ endif()
 
 # ------------------------ Tests ------------------------
 
+add_custom_target(inference_tests)
+
 # Builds a single test source file.
 function(build_test SRCFILE)
   get_filename_component(target ${SRCFILE} NAME_WE)
+  set(target inference_${target})
   message(STATUS "Tests: add executable ${target}")
   add_executable(${target} ${SRCFILE})
   add_dependencies(wav2letter-inference ${target})
   add_dependencies(${target} gtest) # make sure gtest is built first
+  add_dependencies(inference_tests ${target})
   target_link_libraries(
     ${target}
     PRIVATE

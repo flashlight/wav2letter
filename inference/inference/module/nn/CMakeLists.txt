@@ -5,10 +5,23 @@ if (NOT W2L_INFERENCE_BACKEND IN_LIST AVAILABLE_INFERENCE_BACKENDS)
     " supported values=${AVAILABLE_INFERENCE_BACKENDS}")
 endif()
 
+# Directory of build list for the specified backend
+set(BACKEND_LIST_PATH
+  ${CMAKE_CURRENT_LIST_DIR}/backend/${W2L_INFERENCE_BACKEND}/CMakeLists.txt)
+
+# Make sure a path to the valid list exists
+if (NOT EXISTS BACKEND_LIST_PATH)
+  message(FATAL_ERROR "Inference backend path ${BACKEND_LIST_PATH} does not "
+    "exist. This indicates a problem with the the value of "
+    "W2L_INFERENCE_BACKEND=${W2L_INFERENCE_BACKEND}. Please ensure "
+    "${W2L_INFERENCE_BACKEND} is a directory name under "
+    "${CMAKE_CURRENT_LIST_DIR}/backend and contains a valid CMakeLists file.")
+endif ()
+
 # Creates target streaming_inference_modules_nn_backend
 # Appends CMAKE_MODULE_PATH
 # Sets BACKEND_FOUND=true
-include(${CMAKE_CURRENT_LIST_DIR}/backend/${W2L_INFERENCE_BACKEND}/CMakeLists.txt)
+include(${BACKEND_LIST_PATH})
 
 if (NOT ${BACKEND_FOUND})
   message(FATAL_ERROR

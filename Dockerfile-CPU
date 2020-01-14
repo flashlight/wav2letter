@@ -22,5 +22,5 @@ RUN export MKLROOT=/opt/intel/mkl && \
 # ------------------------------------------------------------------
     export KENLM_ROOT_DIR=/root/kenlm && \
     cd /root/wav2letter && mkdir -p build && \
-    cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DW2L_LIBRARIES_USE_CUDA=OFF && \
+    cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DW2L_LIBRARIES_USE_CUDA=OFF -DW2L_BUILD_INFERENCE=ON && \
     make -j8

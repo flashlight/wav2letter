@@ -229,7 +229,10 @@ int main(int argc, char** argv) {
     } else {
       LOG(FATAL) << "unimplemented criterion";
     }
-  } else {
+  } else if (runStatus == kForkMode) {
+    std::unordered_map<std::string, std::string> cfg; // unused
+    W2lSerializer::load(reloadPath, cfg, network, criterion);
+  } else { // kContinueMode
     std::unordered_map<std::string, std::string> cfg; // unused
     W2lSerializer::load(
         reloadPath, cfg, network, criterion, netoptim, critoptim);

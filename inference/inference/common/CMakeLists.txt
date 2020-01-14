@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.5.1)
+
 add_library(streaming_inference_common
   ${CMAKE_CURRENT_LIST_DIR}/DataType.cpp
   ${CMAKE_CURRENT_LIST_DIR}/DefaultMemoryManager.cpp

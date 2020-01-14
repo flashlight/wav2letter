@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.5.1)
+
 include(ExternalProject)
 
 set(gtest_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/googletest/src/googletest/googletest/include)

@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.5.1)
+
 include(ExternalProject)
 
 set(cereal_URL https://github.com/USCiLab/cereal.git)

@@ -37,11 +37,11 @@ std::string prettyDuration(
   std::stringstream strStream;
   strStream << " elapsed time=";
   if (runtimeMicroSec.count() < 1e5) {
-    strStream << runtimeMicroSec.count() << "microseconds\n";
+    strStream << runtimeMicroSec.count() << " microseconds\n";
   } else if (runtimeMiliSec.count() < 1e5) {
-    strStream << runtimeMiliSec.count() << "milliseconds\n";
+    strStream << runtimeMiliSec.count() << " milliseconds\n";
   } else {
-    strStream << runtimeSeconds.count() << "seconds\n";
+    strStream << runtimeSeconds.count() << " seconds\n";
   }
   return strStream.str();
 }

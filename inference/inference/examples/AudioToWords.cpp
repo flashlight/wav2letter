@@ -17,6 +17,20 @@
 namespace w2l {
 namespace streaming {
 
+namespace {
+void printChunckTranscription(
+    std::ostream& output,
+    const std::vector<WordUnit>& wordUnits,
+    int chunckStartTime,
+    int chunckEndTime) {
+  output << chunckStartTime << "," << chunckEndTime << ",";
+  for (const auto& wordUnit : wordUnits) {
+    output << wordUnit.word << " ";
+  }
+  output << std::endl;
+}
+} // namespace
+
 void audioStreamToWordsStream(
     std::istream& inputAudioStream,
     std::ostream& outputWordsStream,
@@ -52,8 +66,6 @@ void audioStreamToWordsStream(
           return static_cast<float>(i) / kMaxUint16;
         });
 
-    audioSampleCount += curChunkSize;
-
     if (curChunkSize >= minChunkSize) {
       dnnModule->run(input);
       float* data = outputBuffer->data<float>();
@@ -73,19 +85,17 @@ void audioStreamToWordsStream(
     }
 
     /* Print results */
-    const std::vector<WordUnit> wordUnits =
-        decoder.getBestHypothesisInWords(lookBack);
-
-    outputWordsStream << audioSampleCount /
-            static_cast<float>(kAudioWavSamplingFrequency / 1000.0)
-                      << ","
-                      << (audioSampleCount + curChunkSize) /
-            static_cast<float>(kAudioWavSamplingFrequency / 1000.0)
-                      << ",";
-    for (const auto& wordUnit : wordUnits) {
-      outputWordsStream << wordUnit.word << " ";
-    }
-    outputWordsStream << std::endl;
+    const int chunk_start_ms =
+        (audioSampleCount / (kAudioWavSamplingFrequency / 1000));
+    const int chunk_end_ms =
+        ((audioSampleCount + curChunkSize) /
+         (kAudioWavSamplingFrequency / 1000));
+    printChunckTranscription(
+        outputWordsStream,
+        decoder.getBestHypothesisInWords(lookBack),
+        chunk_start_ms,
+        chunk_end_ms);
+    audioSampleCount += curChunkSize;
 
     // Consume and prune
     const int nFramesOut = outputBuffer->size<float>() / nTokens;

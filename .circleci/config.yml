@@ -63,7 +63,7 @@ jobs:
             make install -j$(proc) && \
             export MKLROOT=/opt/intel/mkl && export KENLM_ROOT_DIR=/root/kenlm && \
             cd /wav2letter && mkdir -p build && cd build && \
-            cmake .. -DCMAKE_BUILD_TYPE=Debug -DW2L_LIBRARIES_USE_CUDA=ON && \
+            cmake .. -DCMAKE_BUILD_TYPE=Debug -DW2L_LIBRARIES_USE_CUDA=ON -DW2L_BUILD_INFERENCE=ON && \
             make -j$(nproc) && make test"
   build-cpu:
     docker:

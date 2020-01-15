@@ -35,7 +35,11 @@ IOBuffer::IOBuffer(const void* buffer, int sizeInBytes, const std::string& name)
 }
 
 int IOBuffer::headRoom() const {
-  assert(offsetInBytes_ > 0);
+  if (offsetInBytes_ < 0) {
+    throw std::runtime_error(
+        "Invalid offsetInBytes_=" + std::to_string(offsetInBytes_) +
+        " in IOBuffer::headRoom()");
+  }
   return offsetInBytes_;
 }
 

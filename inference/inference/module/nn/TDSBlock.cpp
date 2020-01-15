@@ -27,6 +27,35 @@ TDSBlock::TDSBlock(
     DataType reluDataType,
     DataType residualDataType)
     : reluDataType_(reluDataType), residualDataType_(residualDataType) {
+  if (!conv) {
+    throw std::invalid_argument(
+        "TDSBlock::TDSBlock() is called with null conv.");
+  }
+  if (!layernorm1) {
+    throw std::invalid_argument(
+        "TDSBlock::TDSBlock() is called with null layernorm1.");
+  }
+  if (!linear1) {
+    throw std::invalid_argument(
+        "TDSBlock::TDSBlock() is called with null linear1.");
+  }
+  if (!linear2) {
+    throw std::invalid_argument(
+        "TDSBlock::TDSBlock() is called with null linear2.");
+  }
+  if (!layernorm2) {
+    throw std::invalid_argument(
+        "TDSBlock::TDSBlock() is called with null layernorm2.");
+  }
+  if (reluDataType == DataType::UNINITIALIZED) {
+    throw std::invalid_argument(
+        "TDSBlock::TDSBlock() is called with UNINITIALIZED reluDataType.");
+  }
+  if (residualDataType == DataType::UNINITIALIZED) {
+    throw std::invalid_argument(
+        "TDSBlock::TDSBlock() is called with UNINITIALIZED residualDataType.");
+  }
+
   auto convSeq = std::make_shared<Sequential>();
   convSeq->add(conv);
   convSeq->add(std::make_shared<Relu>(reluDataType_));

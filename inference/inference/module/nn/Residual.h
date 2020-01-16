@@ -52,10 +52,12 @@ class Residual : public InferenceModule {
 
   template <class Archive>
   void serialize(Archive& ar) {
+    std::cout << __FILE__ << ":" << __LINE__ << " Residual::serialize start" << std::endl;
     ar(cereal::base_class<InferenceModule>(this),
        module_,
        dataType_,
        identity_);
+       std::cout << __FILE__ << ":" << __LINE__ << " Residual::serialize end" << std::endl;
   }
 
   // bufC = bufA + bufB

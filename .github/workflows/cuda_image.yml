@@ -1,4 +1,4 @@
-name: Publish Docker
+name: Publish CUDA Docker images
 on: [push]
 jobs:
   build:
@@ -13,3 +13,4 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
         dockerfile: Dockerfile-CUDA
         snapshot: true 
+        tags: "tata-cuda-latest"

@@ -6,11 +6,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <cereal/archives/binary.hpp>
 #include <cereal/archives/portable_binary.hpp>
-#include <cereal/archives/xml.hpp>
-#include <cereal/types/polymorphic.hpp>
 #include <gtest/gtest.h>
+
 #include <climits>
 #include <cstdlib>
 #include <numeric>
@@ -249,7 +247,6 @@ TEST(TDSBlock, Serialization) {
   inputBuf->write<float>(inputValues.data(), inputValues.size());
   auto output = tds->run(input);
   tds->finish(input);
-
   std::cout << "Before serialization:" << tds->debugString() << std::endl;
   std::stringstream memoryBufferStream;
   {
@@ -258,8 +255,10 @@ TEST(TDSBlock, Serialization) {
   }
 
   std::shared_ptr<TDSBlock> tdsLoaded;
-  cereal::BinaryInputArchive archive(memoryBufferStream);
-  archive(tdsLoaded);
+  {
+    cereal::BinaryInputArchive archive(memoryBufferStream);
+    archive(tdsLoaded);
+  }
   std::cout << "After serialization:" << tdsLoaded->debugString() << std::endl;
 
   auto input2 = std::make_shared<ModuleProcessingState>(1);

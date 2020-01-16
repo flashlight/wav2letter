@@ -72,14 +72,8 @@ TDSBlock::TDSBlock(
 }
 
 TDSBlock::TDSBlock()
-    : TDSBlock(
-          nullptr,
-          nullptr,
-          nullptr,
-          nullptr,
-          nullptr,
-          DataType::UNINITIALIZED,
-          DataType::UNINITIALIZED) {}
+    : reluDataType_(DataType::UNINITIALIZED),
+      residualDataType_(DataType::UNINITIALIZED) {}
 
 std::string TDSBlock::debugString() const {
   std::stringstream ss;

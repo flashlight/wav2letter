@@ -5,8 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
-    - name: test_action
-      uses: mr-smithers-excellent/docker-build-push@v1.0
+    - uses: mr-smithers-excellent/docker-build-push@v1.0
       with:
         image: wav2letter/wav2letter
         registry: docker.io

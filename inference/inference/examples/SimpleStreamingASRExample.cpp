@@ -14,42 +14,54 @@
  * 1. Setup the input files:
  * Assuming that you have the acoustic model, language model, features
  * extraction serialized streaming inference DNN, tokens file, lexicon file and
- * input audio file in a directory called modules. > ls ~/modules am.bin
- * language.bin
- * feat.bin
- * tokens.txt
- * lexicon.txt
- * audio.wav
+ * input audio file in a directory called model.
+
+ *  $> ls ~/model
+ *   acoustic_model.bin
+ *   language.bin
+ *   feat.bin
+ *   tokens.txt
+ *   lexicon.txt
  *
- * 2. Run:
- * simple_wav2letter_example -input_files_base_path=~/modules
+ * $> ls ~/audio
+ *   input1.wav
  *
- * Input files expect by default the naming convention we show above
- * in the example ~/modules directory. Input files can be specified by flags.
- * input files can be specified as a full path or as a file name prefixed by
- * the --input_files_base_path flag. In order to process the input audio file
- * from standard input rather than a file, set --input_audio_file=""
+ * 2. Run as pipe:
+ * cat ~/audio/input1.wav | simple_wav2letter_example
+ *                                     --input_files_base_path ~/model
  *
- * cat audio.wav | simple_wav2letter_example --input_files_base_path=~/modules
- *                                           --feature_module_file=features_123.bin
- *                                           --acoustic_module_file=/tmp/am.bin
- *                                           --input_audio_file=""
+ * Or specidy the input audio file:
+ *
+ * ./simple_wav2letter_example --input_files_base_path ~/model
+ *                             --input_audio_file ~/audio/input1.wav
  *
  * Example output:
- * Feat file loaded
- * AM file loaded
- * Tokens loaded - 9998
+ * Started features model file loading ...
+ * Completed features model file loading elapsed time=46557 microseconds
+ *
+ * Started acoustic model file loading ...
+ * Completed acoustic model file loading elapsed time=2058 milliseconds
+ *
+ * Started tokens file loading ...
+ * Completed tokens file loading elapsed time=1318 microseconds
+ *
+ * Tokens loaded - 9998 tokens
+ * Started decoder options file loading ...
+ * Completed decoder options file loading elapsed time=388 microseconds
+ *
+ * Started create decoder ...
  * [Letters] 9998 tokens loaded.
  * [Words] 200001 words loaded.
- * WordLMDecoder is in use.
- * Reading input wav file from stdin...
- * start: 0 ms - end: 500 ms :
- * start: 500 ms - end: 1000 ms :
- * start: 1000 ms - end: 1500 ms : uncle
- * start: 1500 ms - end: 2000 ms : julia said
- * start: 2000 ms - end: 2500 ms :
- * start: 2500 ms - end: 3000 ms : and auntie
- * start: 3000 ms - end: 3500 ms : helen
+ * Completed create decoder elapsed time=884 milliseconds
+ *
+ *
+ * #start (msec), end(msec), transcription
+ * 0,1000,
+ * 1000,2000,i wish he
+ * 2000,3000,had never been to school
+ * 3000,4000,missus
+ * 4000,4260,began again brusquely
+ * Completed converting audio input
  *
  */
 

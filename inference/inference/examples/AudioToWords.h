@@ -28,6 +28,19 @@ void audioStreamToWordsStream(
     const DecoderOptions& decoderOptions,
     int nTokens);
 
+// @inputFileName is a 16KHz wav file.
+// @errorStream file errors are written to errorStream.
+void audioFileToWordsFile(
+    const std::string& inputFileName,
+    const std::string& outputFileName,
+    std::shared_ptr<streaming::Sequential> dnnModule,
+    std::shared_ptr<const DecoderFactory> decoderFactory,
+    const DecoderOptions& decoderOptions,
+    int nTokens,
+    std::ostream& errorStream);
+
+// @inputFileName is a 16KHz wav file.
+// Errors are throws as exceptions.
 void audioFileToWordsFile(
     const std::string& inputFileName,
     const std::string& outputFileName,

@@ -15,25 +15,27 @@
  * Assuming that you have the acoustic model, language model, features
  * extraction serialized streaming inference DNN, tokens file, lexicon file and
  * input audio file in a directory called modules.
- *  $> ls ~/modules
+ *  $> ls ~/model
  *   acoustic_model.bin
  *   language.bin
  *   feat.bin
  *   tokens.txt
  *   lexicon.txt
- *   inputAudio1.wav
- *   inputAudio2.wav
+ *
+ * $> ls ~/audio
+ *   input1.wav
+ *   input2.wav
  *
  * 2. Run:
- * multithreaded_wav2letter_example --input_files_base_path=~/modules
- *                                  --input_audio_files=inputAudio1.wav,inputAudio2.wav
- *                                  --output_files_base_path=/tmp/out
+ * multithreaded_wav2letter_example --input_files_base_path ~/model
+ *                                  --output_files_base_path /tmp/out
+ *      --input_audio_files=${HOME}/audio/input1.wav,${HOME}/audio/inputAudio1.wav
  *
  * For each input file X and output file is written to the
  * output_files_base_path named as X.txt.
  *   $> ls /tmp/out
- *   inputAudio1.wav.txt
- *   inputAudio2.wav.txt
+ *   input1.wav.txt
+ *   input2.wav.txt
  *
  *
  */
@@ -42,6 +44,7 @@
 #include <fstream>
 #include <istream>
 #include <ostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -249,33 +252,33 @@ int main(int argc, char* argv[]) {
       const std::string outputFilePath = GetOutputFileFullPath(inputFile);
 
       std::cout << "Enqueue input file=" << inputFile << " to thread pool.\n";
-      try {
-        pool.enqueue(
-            [inputFilePath,
-             outputFilePath,
-             dnnModule,
-             decoderFactory,
-             &decoderOptions,
-             nTokens,
-             &processedFilesCount,
-             inputFileCount]() -> void {
-              const int prossesingFileNumber = ++processedFilesCount;
-              std::cout << "audioFileToWordsFile() processing "
-                        << prossesingFileNumber << "/" << inputFileCount
-                        << " input=" << inputFilePath
-                        << " output=" << outputFilePath << std::endl;
-              audioFileToWordsFile(
-                  inputFilePath,
-                  outputFilePath,
-                  dnnModule,
-                  decoderFactory,
-                  decoderOptions,
-                  nTokens);
-            });
-      } catch (const std::exception& e) {
-        std::cout << "Enqueue failed for processing input file=" << inputFile
-                  << " with error=" << e.what() << std::endl;
-      }
+      pool.enqueue(
+          [inputFilePath,
+           outputFilePath,
+           dnnModule,
+           decoderFactory,
+           &decoderOptions,
+           nTokens,
+           &processedFilesCount,
+           inputFileCount]() -> void {
+            const int prossesingFileNumber = ++processedFilesCount;
+
+            std::stringstream stringBuffer;
+            stringBuffer << "audioFileToWordsFile() processing "
+                         << prossesingFileNumber << "/" << inputFileCount
+                         << " input=" << inputFilePath
+                         << " output=" << outputFilePath << std::endl;
+            std::cout << stringBuffer.str();
+
+            audioFileToWordsFile(
+                inputFilePath,
+                outputFilePath,
+                dnnModule,
+                decoderFactory,
+                decoderOptions,
+                nTokens,
+                std::cerr);
+          });
     }
   }
 }

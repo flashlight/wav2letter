@@ -18,6 +18,7 @@ namespace w2l {
 namespace streaming {
 
 namespace {
+
 void printChunckTranscription(
     std::ostream& output,
     const std::vector<WordUnit>& wordUnits,
@@ -29,6 +30,7 @@ void printChunckTranscription(
   }
   output << std::endl;
 }
+
 } // namespace
 
 void audioStreamToWordsStream(
@@ -104,25 +106,38 @@ void audioStreamToWordsStream(
   }
 }
 
-void audioFileToWordsFile(
+namespace {
+
+void audioFileToWordsFileImpl(
     const std::string& inputFileName,
     const std::string& outputFileName,
     std::shared_ptr<streaming::Sequential> dnnModule,
     std::shared_ptr<const DecoderFactory> decoderFactory,
     const DecoderOptions& decoderOptions,
-    int nTokens) {
+    int nTokens,
+    std::ostream* errorStream) {
   std::ifstream inputFileStream(inputFileName, std::ios::binary);
   if (!inputFileStream.is_open()) {
-    throw std::runtime_error(
+    const std::string error =
         "audioFileToWordsFile() failed to open input file=" + inputFileName +
-        " for reading");
+        " for reading";
+    if (errorStream) {
+      *errorStream << error << std::endl;
+    } else {
+      throw std::runtime_error(error);
+    }
   }
 
   std::ofstream outputFileStream(outputFileName, std::ios::binary);
   if (!outputFileStream.is_open()) {
-    throw std::runtime_error(
-        "audioFileToWordsFile() failed to open output file=" + inputFileName +
-        " inputFileName for writing");
+    const std::string error =
+        "audioFileToWordsFile() failed to open output file=" + outputFileName +
+        " for reading";
+    if (errorStream) {
+      *errorStream << error << std::endl;
+    } else {
+      throw std::runtime_error(error);
+    }
   }
 
   return audioStreamToWordsStream(
@@ -132,6 +147,43 @@ void audioFileToWordsFile(
       decoderFactory,
       decoderOptions,
       nTokens);
+}
+
+} // namespace
+
+void audioFileToWordsFile(
+    const std::string& inputFileName,
+    const std::string& outputFileName,
+    std::shared_ptr<streaming::Sequential> dnnModule,
+    std::shared_ptr<const DecoderFactory> decoderFactory,
+    const DecoderOptions& decoderOptions,
+    int nTokens,
+    std::ostream& errorStream) {
+  audioFileToWordsFileImpl(
+      inputFileName,
+      outputFileName,
+      dnnModule,
+      decoderFactory,
+      decoderOptions,
+      nTokens,
+      &errorStream);
+}
+
+void audioFileToWordsFile(
+    const std::string& inputFileName,
+    const std::string& outputFileName,
+    std::shared_ptr<streaming::Sequential> dnnModule,
+    std::shared_ptr<const DecoderFactory> decoderFactory,
+    const DecoderOptions& decoderOptions,
+    int nTokens) {
+  audioFileToWordsFileImpl(
+      inputFileName,
+      outputFileName,
+      dnnModule,
+      decoderFactory,
+      decoderOptions,
+      nTokens,
+      nullptr);
 }
 
 } // namespace streaming

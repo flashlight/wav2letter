@@ -19,10 +19,16 @@ Residual::Residual(std::shared_ptr<InferenceModule> module, DataType dataType)
     : module_(module),
       dataType_(dataType),
       identity_(std::make_shared<Identity>()) {
-  assert(module);
+  if (!module) {
+    throw std::invalid_argument(
+        "Residual::Residual() is called with null module.");
+  }
 }
 
-Residual::Residual() : Residual(nullptr, DataType::UNINITIALIZED) {}
+Residual::Residual()
+    : module_(nullptr),
+      dataType_(DataType::UNINITIALIZED),
+      identity_(nullptr) {}
 
 std::shared_ptr<ModuleProcessingState> Residual::start(
     std::shared_ptr<ModuleProcessingState> input) {

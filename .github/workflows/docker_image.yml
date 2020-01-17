@@ -5,33 +5,19 @@ on:
       - master
   pull_request:
     branches:
-      - master
+      - master      
 jobs:
   cuda_image_build:
     name: CUDA image build
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
-    - uses: mr-smithers-excellent/docker-build-push@v1.0
-      with:
-        image: wav2letter/wav2letter
-        registry: docker.io
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-        dockerfile: Dockerfile-CUDA-test
-        snapshot: true 
-        tag: "tata-cuda-latest,new2"
-  cpu_image_build:
-    name: CPU image build 
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@master
-    - uses: mr-smithers-excellent/docker-build-push@v1.0
-      with:
-        image: wav2letter/wav2letter
-        registry: docker.io
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-        dockerfile: Dockerfile-CPU-test
-        snapshot: true 
-        tag: "tata-cpu-latest,new"
+    - name: Build the CUDA Docker image
+      run: docker build . --file Dockerfile-CUDA-test --tag test-cuda:$(date +%s)
+    - name: Login to the docker hub
+      env:
+          USER: ${{ secrets.DOCKER_USERNAME }}
+          PASSWORD: ${{ secrets.DOCKER_PASSWORD }}  
+      run: docker login -u=$USER -p=$PASSWORD
+    - name: Push image
+      run: docker push wav2letter/wav2letter:test-cuda:$(date +%s)

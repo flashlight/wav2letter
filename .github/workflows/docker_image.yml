@@ -13,17 +13,37 @@ jobs:
     steps:
     - uses: actions/checkout@master
     - name: Build the CUDA Docker image
-      run: docker build . --file Dockerfile-CUDA-test --tag wav2letter/wav2letter:test-cuda
-    - name: Login to the docker hub
+      run: docker build . --file Dockerfile-CUDA --tag wav2letter/wav2letter:test-cuda-latest
+    - name: Docker login
       env:
           USER: ${{ secrets.DOCKER_USERNAME }}
           PASSWORD: ${{ secrets.DOCKER_PASSWORD }}  
       run: docker login -u=$USER -p=$PASSWORD
-    - name: Push image with latest tag
-      run: docker push wav2letter/wav2letter:test-cuda 
+    - name: Push image with the latest tag
+      run: docker push wav2letter/wav2letter:test-cuda-latest
     - name: Tag revision
-      run: docker tag wav2letter/wav2letter:test-cuda wav2letter/wav2letter:test-cuda-`git rev-parse --short HEAD`
-    - name: Push image with revision tag
+      run: docker tag wav2letter/wav2letter:test-cuda-latest wav2letter/wav2letter:test-cuda-`git rev-parse --short HEAD`
+    - name: Push image with the revision tag
       run: docker push wav2letter/wav2letter:test-cuda-`git rev-parse --short HEAD` 
+    - name: Docker logout
+      run: docker logout
+  cpu_image_build:
+    name: CPU image build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Build the CPU Docker image
+      run: docker build . --file Dockerfile-CPU --tag wav2letter/wav2letter:test-cpu-latest
+    - name: Docker login
+      env:
+          USER: ${{ secrets.DOCKER_USERNAME }}
+          PASSWORD: ${{ secrets.DOCKER_PASSWORD }}  
+      run: docker login -u=$USER -p=$PASSWORD
+    - name: Push image with the latest tag
+      run: docker push wav2letter/wav2letter:test-cpu-latest
+    - name: Tag revision
+      run: docker tag wav2letter/wav2letter:test-cpu-latest wav2letter/wav2letter:test-cpu-`git rev-parse --short HEAD`
+    - name: Push image with the revision tag
+      run: docker push wav2letter/wav2letter:test-cpu-`git rev-parse --short HEAD` 
     - name: Docker logout
       run: docker logout

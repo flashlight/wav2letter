@@ -21,3 +21,5 @@ jobs:
       run: docker login -u=$USER -p=$PASSWORD
     - name: Push image
       run: docker push wav2letter/wav2letter:test-cuda
+           docker tag wav2letter/wav2letter:test-cuda wav2letter/wav2letter:test-cuda-`git rev-parse --short HEAD`
+           docker push wav2letter/wav2letter:test-cuda-`git rev-parse --short HEAD`

@@ -18,9 +18,9 @@ jobs:
         registry: docker.io
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
-        dockerfile: Dockerfile-CUDA
+        dockerfile: Dockerfile-CUDA-test
         snapshot: true 
-        tags: "tata-cuda-latest"
+        tag: "tata-cuda-latest"
   cpu_image_build:
     name: CPU image build 
     runs-on: ubuntu-latest
@@ -32,6 +32,6 @@ jobs:
         registry: docker.io
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
-        dockerfile: Dockerfile-CPU
+        dockerfile: Dockerfile-CPU-test
         snapshot: true 
-        tags: "tata-cpu-latest"
+        tag: "tata-cpu-latest"

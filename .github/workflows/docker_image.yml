@@ -13,11 +13,11 @@ jobs:
     steps:
     - uses: actions/checkout@master
     - name: Build the CUDA Docker image
-      run: docker build . --file Dockerfile-CUDA-test --tag test-cuda:$(date +%s)
+      run: docker build . --file Dockerfile-CUDA-test --tag wav2letter/wav2letter:test-cuda
     - name: Login to the docker hub
       env:
           USER: ${{ secrets.DOCKER_USERNAME }}
           PASSWORD: ${{ secrets.DOCKER_PASSWORD }}  
       run: docker login -u=$USER -p=$PASSWORD
     - name: Push image
-      run: docker push wav2letter/wav2letter:test-cuda:$(date +%s)
+      run: docker push wav2letter/wav2letter:test-cuda

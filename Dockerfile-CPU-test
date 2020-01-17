@@ -1,0 +1,3 @@
+FROM wav2letter/wav2letter:cpu-base-latest
+
+RUN echo "Hello world, CPU"

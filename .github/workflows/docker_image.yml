@@ -19,8 +19,11 @@ jobs:
           USER: ${{ secrets.DOCKER_USERNAME }}
           PASSWORD: ${{ secrets.DOCKER_PASSWORD }}  
       run: docker login -u=$USER -p=$PASSWORD
-    - name: Push image
-      run: docker push wav2letter/wav2letter:test-cuda && \
-           docker tag wav2letter/wav2letter:test-cuda wav2letter/wav2letter:test-cuda-`git rev-parse --short HEAD` && \
-           docker push wav2letter/wav2letter:test-cuda-`git rev-parse --short HEAD` && \
-           docker logout
+    - name: Push image with latest tag
+      run: docker push wav2letter/wav2letter:test-cuda 
+    - name: Tag revision
+      run: docker tag wav2letter/wav2letter:test-cuda wav2letter/wav2letter:test-cuda-`git rev-parse --short HEAD`
+    - name: Push image with revision tag
+      run: docker push wav2letter/wav2letter:test-cuda-`git rev-parse --short HEAD` 
+    - name: Docker logout
+      run: docker logout

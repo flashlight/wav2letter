@@ -20,7 +20,7 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
         dockerfile: Dockerfile-CUDA-test
         snapshot: true 
-        tag: "tata-cuda-latest"
+        tag: "tata-cuda-latest,new2"
   cpu_image_build:
     name: CPU image build 
     runs-on: ubuntu-latest
@@ -34,4 +34,4 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
         dockerfile: Dockerfile-CPU-test
         snapshot: true 
-        tag: "tata-cpu-latest"
+        tag: "tata-cpu-latest,new"

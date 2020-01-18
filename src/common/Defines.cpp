@@ -202,7 +202,7 @@ DEFINE_double(
     "smoothening the probability distribution in seq2seq decoder");
 DEFINE_int32(
     attentionthreshold,
-    std::numeric_limits<int>::infinity(),
+    std::numeric_limits<int>::max(),
     "hard attention limit");
 
 // ASG OPTIONS

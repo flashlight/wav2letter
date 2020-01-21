@@ -290,7 +290,7 @@ int main(int argc, char** argv) {
 
   {
     std::string featFilePath =
-        pathsConcat(FLAGS_outdir, "feature_extraction_model.bin");
+        pathsConcat(FLAGS_outdir, "feature_extractor.bin");
     std::ofstream featFile(featFilePath, std::ios::binary);
     LOG(INFO) << "Serializing feature extraction model to '" << featFilePath
               << "'";

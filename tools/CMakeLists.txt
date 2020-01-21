@@ -21,21 +21,21 @@ if (W2L_BUILD_TOOLS)
 endif ()
 
 
-# ---------------------- tds_module_converter ----------------------
+# ---------------------- streaming_tds_model_converter ----------------------
 
 add_executable(
-  tds_module_converter
-  ${CMAKE_CURRENT_LIST_DIR}/TDSModelConverter.cpp
+  streaming_tds_model_converter
+  ${CMAKE_CURRENT_LIST_DIR}/StreamingTDSModelConverter.cpp
 )
 
 target_include_directories(
-  tds_module_converter
+  streaming_tds_model_converter
   PRIVATE
     ${GFLAGS_INCLUDE_DIRS}
 )
 
 target_link_libraries(
-  tds_module_converter
+  streaming_tds_model_converter
   PRIVATE
     common
     criterion

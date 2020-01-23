@@ -12,6 +12,8 @@ add_library(util_example
 add_dependencies(util_example cereal)
 add_dependencies(util_example streaming_inference_common)
 
+find_package(Threads REQUIRED)
+
 target_include_directories(
   util_example
   PUBLIC
@@ -46,6 +48,7 @@ target_link_libraries(
     streaming_inference_modules_nn_backend
     streaming_inference_decoder
     decoder-library
+    Threads::Threads
 )
 
 function(build_example TARGET SRCFILE)

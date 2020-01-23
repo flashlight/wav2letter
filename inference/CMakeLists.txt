@@ -105,6 +105,7 @@ function(build_test SRCFILE)
     streaming_inference_common
     streaming_inference_decoder
     streaming_inference_modules
+    Threads::Threads
   )
   target_include_directories(
     ${target}
@@ -135,7 +136,8 @@ set(W2L_INFERENCE_TESTS_SOURCES
 )
 
 if (W2L_INFERENCE_BUILD_TESTS)
-  foreach(SRC_FILE ${W2L_INFERENCE_TESTS_SOURCES})
+ find_package(Threads REQUIRED)
+ foreach(SRC_FILE ${W2L_INFERENCE_TESTS_SOURCES})
     build_test(${SRC_FILE})
   endforeach()
 endif()

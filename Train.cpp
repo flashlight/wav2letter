@@ -588,9 +588,15 @@ int main(int argc, char** argv) {
 
         // scale down gradients by batchsize
         for (const auto& p : ntwrk->params()) {
+          if (!p.isGradAvailable()) {
+            continue;
+          }
           p.grad() = p.grad() / FLAGS_batchsize;
         }
         for (const auto& p : crit->params()) {
+          if (!p.isGradAvailable()) {
+            continue;
+          }
           p.grad() = p.grad() / FLAGS_batchsize;
         }
 

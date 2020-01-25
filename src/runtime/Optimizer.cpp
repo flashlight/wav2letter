@@ -44,7 +44,7 @@ std::shared_ptr<fl::FirstOrderOptimizer> initOptimizer(
         params, lr, FLAGS_optimrho, FLAGS_optimepsilon, weightdecay);
   } else if (optimizer == kAdadeltaOptimizer) {
     opt = std::make_shared<fl::AdadeltaOptimizer>(
-        params, 1.0, FLAGS_optimrho, FLAGS_optimepsilon, weightdecay);
+        params, lr, FLAGS_optimrho, FLAGS_optimepsilon, weightdecay);
   } else if (optimizer == kAdagradOptimizer) {
     opt =
         std::make_shared<fl::AdagradOptimizer>(params, lr, FLAGS_optimepsilon);

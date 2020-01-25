@@ -1,0 +1,25 @@
+# ==================================================================
+# wav2letter build
+#
+# Should be run from within existing wav2letter directory. That directory
+# is copied to the docker image. The image build with wav2letter-libraries,
+# and inference-pipeline only, without Flashlight or CUDA dependencies.
+# wav2letter executables are at /root/wav2letter/build. The inference executable
+# examples are at: /root/wav2letter/build/inference/inference/examples/
+# ------------------------------------------------------------------
+
+FROM wav2letter/wav2letter:inference-base-latest
+
+#Copy wav2letter src directory from host.
+RUN mkdir /root/wav2letter
+COPY . /root/wav2letter
+
+# build w2l
+RUN export KENLM_ROOT_DIR=/root/kenlm && \
+    export MKLROOT=/opt/intel/mkl && \
+    cd /root/wav2letter && \
+    mkdir -p build && \
+    cd build && \
+    rm -rf * && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DW2L_BUILD_LIBRARIES_ONLY=ON -DW2L_LIBRARIES_USE_CUDA=OFF -DW2L_BUILD_INFERENCE=ON   && \
+    make -j$(nproc)

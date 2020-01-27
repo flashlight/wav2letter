@@ -66,7 +66,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     cd kenlm && git checkout e47088ddfae810a5ee4c8a9923b5f8071bed1ae8 && \
     mkdir build && cd build && \
     cmake .. && \
-    make -j8 && make install && \
+    make -j$((($(nproc) + 1)/2)) && make install && \
 # ==================================================================
 # config & cleanup
 # ------------------------------------------------------------------

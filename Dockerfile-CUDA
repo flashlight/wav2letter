@@ -15,14 +15,14 @@ COPY . /root/wav2letter
 RUN cd /root && git clone --recursive https://github.com/facebookresearch/flashlight.git && \
     cd /root/flashlight && mkdir -p build && \
     cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CUDA && \
-    make -j8 && make install && \
+    make -j$((($(nproc) + 1)/2)) && make install && \
 # ==================================================================
 # wav2letter with GPU backend
 # ------------------------------------------------------------------
     export MKLROOT=/opt/intel/mkl && export KENLM_ROOT_DIR=/root/kenlm && \
     cd /root/wav2letter && mkdir -p build && \
     cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DW2L_LIBRARIES_USE_CUDA=ON -DW2L_BUILD_INFERENCE=ON && \
-    make -j8 && \
+    make -j$((($(nproc) + 1)/2)) && \
 # ==================================================================
 # wav2letter python bindings
 # ------------------------------------------------------------------

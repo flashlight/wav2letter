@@ -1,5 +1,5 @@
 name: Publish Docker images
-on: 
+on:
   push:
     branches:
       - master
@@ -14,14 +14,14 @@ jobs:
     - name: Docker login
       env:
           USER: ${{ secrets.DOCKER_USERNAME }}
-          PASSWORD: ${{ secrets.DOCKER_PASSWORD }}  
+          PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       run: docker login -u=$USER -p=$PASSWORD
     - name: Push image with the latest tag
       run: docker push wav2letter/wav2letter:cuda-latest
     - name: Tag revision
       run: docker tag wav2letter/wav2letter:cuda-latest wav2letter/wav2letter:cuda-`git rev-parse --short HEAD`
     - name: Push image with the revision tag
-      run: docker push wav2letter/wav2letter:cuda-`git rev-parse --short HEAD` 
+      run: docker push wav2letter/wav2letter:cuda-`git rev-parse --short HEAD`
     - name: Docker logout
       run: docker logout
   cpu_image_build:
@@ -34,13 +34,33 @@ jobs:
     - name: Docker login
       env:
           USER: ${{ secrets.DOCKER_USERNAME }}
-          PASSWORD: ${{ secrets.DOCKER_PASSWORD }}  
+          PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       run: docker login -u=$USER -p=$PASSWORD
     - name: Push image with the latest tag
       run: docker push wav2letter/wav2letter:cpu-latest
     - name: Tag revision
       run: docker tag wav2letter/wav2letter:cpu-latest wav2letter/wav2letter:cpu-`git rev-parse --short HEAD`
     - name: Push image with the revision tag
-      run: docker push wav2letter/wav2letter:cpu-`git rev-parse --short HEAD` 
+      run: docker push wav2letter/wav2letter:cpu-`git rev-parse --short HEAD`
+    - name: Docker logout
+      run: docker logout
+  inference_image_build:
+    name: Inference image build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Build the Inference Docker image
+      run: docker build . --file Dockerfile-Inference --tag wav2letter/wav2letter:inference-latest
+    - name: Docker login
+      env:
+          USER: ${{ secrets.DOCKER_USERNAME }}
+          PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      run: docker login -u=$USER -p=$PASSWORD
+    - name: Push image with the latest tag
+      run: docker push wav2letter/wav2letter:inference-latest
+    - name: Tag revision
+      run: docker tag wav2letter/wav2letter:inference-latest wav2letter/wav2letter:inference-`git rev-parse --short HEAD`
+    - name: Push image with the revision tag
+      run: docker push wav2letter/wav2letter:inference-`git rev-parse --short HEAD`
     - name: Docker logout
       run: docker logout

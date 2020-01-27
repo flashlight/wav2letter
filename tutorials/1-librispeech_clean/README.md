@@ -46,7 +46,7 @@ their transcripts for train, validation  and test sets respectively.
 
 Before preparing the dataset, we need to decide the sub-word units to be used for training the acoustic model (mode details on acoustic model later). These could be [phonemes](https://en.wikipedia.org/wiki/Phoneme), [graphemes](https://en.wikipedia.org/wiki/Grapheme), word-pieces etc. Each word is represented as a sequence of these chosen sub-word units. In this tutorial, we will use graphemes as the sub-word unit.
 
-Now, we will preprocess this dataset into a format which wav2letter++ pipelines can process. Given training, validation and test sets, we will keep each set in a separate file with each line corresponding to a single sample. You can find more details about dataset preparation [here](../../docs/data_prep.md).
+Now, we will preprocess this dataset into a format which wav2letter++ pipelines can process. Given training, validation and test sets, we will keep each set in a separate file with each line corresponding to a single sample. You can find more details about dataset preparation [here](https://github.com/facebookresearch/wav2letter/wiki/Data-Preparation).
 
 ```shell
 > pip install sox
@@ -94,7 +94,7 @@ During [acoustic model](https://en.wikipedia.org/wiki/Acoustic_model) training, 
 wav2letter++ currently supports multiple audio file formats (e.g. wav, flac... / mono, stereo / int, float) and several feature types including the raw audio, a linearly scaled power spectrum , log-Mels (MFSC) and MFCCs. The features are computed on the fly prior to each network evaluation. For this tutorial, we will use [MFCC features](http://practicalcryptography.com/miscellaneous/machine-learning/guide-mel-frequency-cepstral-coefficients-mfccs/) which can be specified using the gflag `-mfcc`.
 
 ##### Defining the Neural Network
-wav2letter++ provides an easy way to define `fl::Sequential` module using `-arch` and `-archdir` flags. This makes it easier to explore different network architectures with a single binary. It is also possible plugin your own custom network by defining new `fl::Module`. More details on specifying the architecture files [here](../../docs/arch.md).
+wav2letter++ provides an easy way to define `fl::Sequential` module using `-arch` and `-archdir` flags. This makes it easier to explore different network architectures with a single binary. It is also possible plugin your own custom network by defining new `fl::Module`. More details on specifying the architecture files [here](https://github.com/facebookresearch/wav2letter/wiki/Writing-architecture-files).
 
 For this tutorial, we will use the following neural network with 8 Temporal Convolutions followed by 2 Linear layers with ReLU activations.
 
@@ -128,7 +128,7 @@ L 512 NLABEL			# NLABEL is replaced with appropriate token size at runtime.
 wav2letter++ supports many end-to-end sequence models such as ConnectionistTemporalClassification, AutoSegmentationCriterion and Sequence-to-Sequence models with attention. For this tutorial, we will use [Connectionist Temporal Classification](https://distill.pub/2017/ctc/)  Loss which is specified using `-ctc` flag.
 
 ##### Training the Model
-Documentation on training the models with wav2letter++  can be found [here](../../docs/train.md). To start training
+Documentation on training the models with wav2letter++  can be found [here](https://github.com/facebookresearch/wav2letter/wiki/Train-a-model). To start training
 
 ```shell
 # Replace [...] with appropriate paths in train.cfg before starting
@@ -187,7 +187,7 @@ Otherwise, [KenLM](https://github.com/kpu/kenlm) can be used to train an n-gram 
 wav2letter++ uses beam-search decoder to find the best transcription for the given utterance.
 It supports tuning of hyperparameters like beamsize, beamscore, silweight, wordscore, lmweight etc.
 Typically, one should a grid search on these to find the hyperparameters on the validation set and use it for testing.
-You can find more details about decoding with wav2letter++ [here](../../docs/decoder.md).
+You can find more details about decoding with wav2letter++ [here](https://github.com/facebookresearch/wav2letter/wiki/Beam-Search-Decoder).
 
 ```shell
 # Replace [...] with appropriate paths in decode.cfg before starting

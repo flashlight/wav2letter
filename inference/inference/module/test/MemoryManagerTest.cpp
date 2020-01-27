@@ -10,7 +10,6 @@
 
 #include <gtest/gtest.h>
 
-#include "inference/common/DataType.h"
 #include "inference/common/DefaultMemoryManager.h"
 #include "inference/common/IOBuffer.h"
 #include "inference/common/MemoryManager.h"

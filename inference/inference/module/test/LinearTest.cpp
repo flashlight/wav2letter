@@ -26,7 +26,6 @@
 #include "inference/module/ModuleProcessingState.h"
 #include "inference/module/nn/Linear.h"
 #include "inference/module/nn/backend/fbgemm/LinearFbGemm.h"
-#include "inference/module/nn/backend/fbgemm/PackedGemmMatrixFP16.h"
 
 namespace w2l {
 namespace streaming {

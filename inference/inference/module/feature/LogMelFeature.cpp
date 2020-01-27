@@ -13,8 +13,6 @@
 #include <sstream>
 #include <stdexcept>
 
-#include "inference/common/Functions.h"
-
 namespace w2l {
 namespace streaming {
 

@@ -19,7 +19,6 @@
 #include <streambuf>
 #include <vector>
 
-#include "inference/common/DataType.h"
 #include "inference/common/IOBuffer.h"
 #include "inference/module/ModuleParameter.h"
 #include "inference/module/ModuleProcessingState.h"

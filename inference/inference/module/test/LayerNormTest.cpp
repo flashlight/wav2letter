@@ -20,12 +20,10 @@
 #include <streambuf>
 #include <vector>
 
-#include "inference/common/DataType.h"
 #include "inference/common/IOBuffer.h"
 #include "inference/module/ModuleParameter.h"
 #include "inference/module/ModuleProcessingState.h"
 #include "inference/module/nn/LayerNorm.h"
-#include "inference/module/nn/backend/fbgemm/PackedGemmMatrixFP16.h"
 #include "inference/module/test/TestUtils.h"
 
 namespace w2l {

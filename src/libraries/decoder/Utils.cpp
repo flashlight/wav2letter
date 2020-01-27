@@ -6,8 +6,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "libraries/decoder/Utils.h"
-
 namespace w2l {
 
 // Place holder

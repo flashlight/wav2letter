@@ -22,4 +22,4 @@ RUN export KENLM_ROOT_DIR=/root/kenlm && \
     cd build && \
     rm -rf * && \
     cmake .. -DCMAKE_BUILD_TYPE=Release -DW2L_BUILD_LIBRARIES_ONLY=ON -DW2L_LIBRARIES_USE_CUDA=OFF -DW2L_BUILD_INFERENCE=ON   && \
-    make -j$((($(nproc) + 1)/2))
+    make -j$(nproc)

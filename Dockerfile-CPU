@@ -16,11 +16,11 @@ RUN export MKLROOT=/opt/intel/mkl && \
     cd /root && git clone --recursive https://github.com/facebookresearch/flashlight.git && \
     cd flashlight && mkdir -p build && cd build && \
     cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CPU && \
-    make -j$((($(nproc) + 1)/2)) && make install && \
+    make -j$(nproc) && make install && \
 # ==================================================================
 # wav2letter with CPU backend
 # ------------------------------------------------------------------
     export KENLM_ROOT_DIR=/root/kenlm && \
     cd /root/wav2letter && mkdir -p build && \
     cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DW2L_LIBRARIES_USE_CUDA=OFF && \
-    make -j$((($(nproc) + 1)/2))
+    make -j$(nproc)

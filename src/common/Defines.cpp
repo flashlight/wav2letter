@@ -165,6 +165,7 @@ DEFINE_bool(show, false, "show predictions");
 DEFINE_bool(showletters, false, "show letter predictions");
 DEFINE_bool(logadd, false, "use logadd when merging decoder nodes");
 DEFINE_bool(uselexicon, true, "use lexicon in decoding");
+DEFINE_bool(isbeamdump, false, "dump the decoding beam");
 
 DEFINE_string(smearing, "none", "none, max or logadd");
 DEFINE_string(lmtype, "kenlm", "kenlm, convlm");

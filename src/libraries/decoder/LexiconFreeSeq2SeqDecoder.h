@@ -30,30 +30,39 @@ using AMUpdateFunc = std::function<
  * beam.
  */
 struct LexiconFreeSeq2SeqDecoderState {
-  double score; // Score so far
+  double score; // Accumulated total score so far
   LMStatePtr lmState; // Language model state
   const LexiconFreeSeq2SeqDecoderState* parent; // Parent hypothesis
   int token; // Label of token
   AMStatePtr amState; // Acoustic model state
+
+  double amScore; // Accumulated AM score so far
+  double lmScore; // Accumulated LM score so far
 
   LexiconFreeSeq2SeqDecoderState(
       const double score,
       const LMStatePtr& lmState,
       const LexiconFreeSeq2SeqDecoderState* parent,
       const int token,
-      const AMStatePtr& amState = nullptr)
+      const AMStatePtr& amState = nullptr,
+      const double amScore = 0,
+      const double lmScore = 0)
       : score(score),
         lmState(lmState),
         parent(parent),
         token(token),
-        amState(amState) {}
+        amState(amState),
+        amScore(amScore),
+        lmScore(lmScore) {}
 
   LexiconFreeSeq2SeqDecoderState()
       : score(0),
         lmState(nullptr),
         parent(nullptr),
         token(-1),
-        amState(nullptr) {}
+        amState(nullptr),
+        amScore(0.),
+        lmScore(0.) {}
 
   int compareNoScoreStates(const LexiconFreeSeq2SeqDecoderState* node) const {
     return lmState->compare(node->lmState);

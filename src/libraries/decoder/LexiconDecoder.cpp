@@ -65,11 +65,12 @@ void LexiconDecoder::decodeStep(const float* emissions, int T, int N) {
           continue;
         }
         const TrieNodePtr& lex = iter->second;
-        double score = prevHyp.score + emissions[t * N + n];
+        double amScore = emissions[t * N + n];
         if (nDecodedFrames_ + t > 0 &&
             opt_.criterionType == CriterionType::ASG) {
-          score += transitions_[n * N + prevIdx];
+          amScore += transitions_[n * N + prevIdx];
         }
+        double score = prevHyp.score + amScore;
         if (n == sil_) {
           score += opt_.silScore;
         }
@@ -78,9 +79,9 @@ void LexiconDecoder::decodeStep(const float* emissions, int T, int N) {
         double lmScore = 0.;
 
         if (isLmToken_) {
-          auto lmReturn = lm_->score(prevHyp.lmState, n);
-          lmState = lmReturn.first;
-          lmScore = lmReturn.second;
+          auto lmStateScorePair = lm_->score(prevHyp.lmState, n);
+          lmState = lmStateScorePair.first;
+          lmScore = lmStateScorePair.second;
         }
 
         // We eat-up a new token
@@ -101,17 +102,18 @@ void LexiconDecoder::decodeStep(const float* emissions, int T, int N) {
                 &prevHyp,
                 n,
                 -1,
-                false // prevBlank
-            );
+                false, // prevBlank
+                prevHyp.amScore + amScore,
+                prevHyp.lmScore + lmScore);
           }
         }
 
         // If we got a true word
         for (auto label : lex->labels) {
           if (!isLmToken_) {
-            auto lmReturn = lm_->score(prevHyp.lmState, label);
-            lmState = lmReturn.first;
-            lmScore = lmReturn.second - lexMaxScore;
+            auto lmStateScorePair = lm_->score(prevHyp.lmState, label);
+            lmState = lmStateScorePair.first;
+            lmScore = lmStateScorePair.second - lexMaxScore;
           }
           candidatesAdd(
               candidates_,
@@ -123,16 +125,17 @@ void LexiconDecoder::decodeStep(const float* emissions, int T, int N) {
               &prevHyp,
               n,
               label,
-              false // prevBlank
-          );
+              false, // prevBlank
+              prevHyp.amScore + amScore,
+              prevHyp.lmScore + lmScore);
         }
 
         // If we got an unknown word
         if (lex->labels.empty() && (opt_.unkScore > kNegativeInfinity)) {
           if (!isLmToken_) {
-            auto lmReturn = lm_->score(prevHyp.lmState, unk_);
-            lmState = lmReturn.first;
-            lmScore = lmReturn.second - lexMaxScore;
+            auto lmStateScorePair = lm_->score(prevHyp.lmState, unk_);
+            lmState = lmStateScorePair.first;
+            lmScore = lmStateScorePair.second - lexMaxScore;
           }
           candidatesAdd(
               candidates_,
@@ -144,19 +147,21 @@ void LexiconDecoder::decodeStep(const float* emissions, int T, int N) {
               &prevHyp,
               n,
               unk_,
-              false // prevBlank
-          );
+              false, // prevBlank
+              prevHyp.amScore + amScore,
+              prevHyp.lmScore + lmScore);
         }
       }
 
       /* (2) Try same lexicon node */
       if (opt_.criterionType != CriterionType::CTC || !prevHyp.prevBlank) {
         int n = prevIdx;
-        double score = prevHyp.score + emissions[t * N + n];
+        double amScore = emissions[t * N + n];
         if (nDecodedFrames_ + t > 0 &&
             opt_.criterionType == CriterionType::ASG) {
-          score += transitions_[n * N + prevIdx];
+          amScore += transitions_[n * N + prevIdx];
         }
+        double score = prevHyp.score + amScore;
         if (n == sil_) {
           score += opt_.silScore;
         }
@@ -171,26 +176,28 @@ void LexiconDecoder::decodeStep(const float* emissions, int T, int N) {
             &prevHyp,
             n,
             -1,
-            false // prevBlank
-        );
+            false, // prevBlank
+            prevHyp.amScore + amScore,
+            prevHyp.lmScore);
       }
 
       /* (3) CTC only, try blank */
       if (opt_.criterionType == CriterionType::CTC) {
         int n = blank_;
-        double score = prevHyp.score + emissions[t * N + n];
+        double amScore = emissions[t * N + n];
         candidatesAdd(
             candidates_,
             candidatesBestScore_,
             opt_.beamThreshold,
-            score,
+            prevHyp.score + amScore,
             prevHyp.lmState,
             prevLex,
             &prevHyp,
             n,
             -1,
-            true // prevBlank
-        );
+            true, // prevBlank
+            prevHyp.amScore + amScore,
+            prevHyp.lmScore);
       }
       // finish proposing
     }
@@ -226,18 +233,20 @@ void LexiconDecoder::decodeEnd() {
 
     if (!hasNiceEnding || prevHyp.lex == lexicon_->getRoot()) {
       auto lmStateScorePair = lm_->finish(prevLmState);
+      auto lmScore = lmStateScorePair.second;
       candidatesAdd(
           candidates_,
           candidatesBestScore_,
           opt_.beamThreshold,
-          prevHyp.score + opt_.lmWeight * lmStateScorePair.second,
+          prevHyp.score + opt_.lmWeight * lmScore,
           lmStateScorePair.first,
           prevLex,
           &prevHyp,
           sil_,
           -1,
-          false // prevBlank
-      );
+          false, // prevBlank
+          prevHyp.amScore,
+          prevHyp.lmScore + lmScore);
     }
   }
 

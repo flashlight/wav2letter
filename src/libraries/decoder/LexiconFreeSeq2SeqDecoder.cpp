@@ -72,7 +72,9 @@ void LexiconFreeSeq2SeqDecoder::decodeStep(
             prevHyp.lmState,
             &prevHyp,
             eos_,
-            nullptr);
+            nullptr,
+            prevHyp.amScore,
+            prevHyp.lmScore);
         continue;
       }
 
@@ -97,31 +99,37 @@ void LexiconFreeSeq2SeqDecoder::decodeStep(
            r < std::min(amScores[validHypo].size(), (size_t)opt_.beamSizeToken);
            r++) {
         int n = idx[r];
-        double score = prevHyp.score + amScores[validHypo][n];
+        double amScore = amScores[validHypo][n];
 
         if (n == eos_) { /* (1) Try eos */
-          auto lmScoreReturn = lm_->finish(prevHyp.lmState);
+          auto lmStateScorePair = lm_->finish(prevHyp.lmState);
+          auto lmScore = lmStateScorePair.second;
 
           candidatesAdd(
               candidates_,
               candidatesBestScore_,
               opt_.beamThreshold,
-              score + opt_.eosScore + opt_.lmWeight * lmScoreReturn.second,
-              lmScoreReturn.first,
+              prevHyp.score + amScore + opt_.eosScore + opt_.lmWeight * lmScore,
+              lmStateScorePair.first,
               &prevHyp,
               n,
-              nullptr);
+              nullptr,
+              prevHyp.amScore + amScore,
+              prevHyp.lmScore + lmScore);
         } else { /* (2) Try normal token */
-          auto lmScoreReturn = lm_->score(prevHyp.lmState, n);
+          auto lmStateScorePair = lm_->score(prevHyp.lmState, n);
+          auto lmScore = lmStateScorePair.second;
           candidatesAdd(
               candidates_,
               candidatesBestScore_,
               opt_.beamThreshold,
-              score + opt_.lmWeight * lmScoreReturn.second,
-              lmScoreReturn.first,
+              prevHyp.score + amScore + opt_.lmWeight * lmScore,
+              lmStateScorePair.first,
               &prevHyp,
               n,
-              outState);
+              outState,
+              prevHyp.amScore + amScore,
+              prevHyp.lmScore + lmScore);
         }
       }
       validHypo++;

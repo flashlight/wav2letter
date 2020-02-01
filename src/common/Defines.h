@@ -212,6 +212,7 @@ DECLARE_bool(show);
 DECLARE_bool(showletters);
 DECLARE_bool(logadd);
 DECLARE_bool(uselexicon);
+DECLARE_bool(isbeamdump);
 
 DECLARE_string(smearing);
 DECLARE_string(lmtype);

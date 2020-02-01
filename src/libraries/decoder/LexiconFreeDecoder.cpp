@@ -55,11 +55,12 @@ void LexiconFreeDecoder::decodeStep(const float* emissions, int T, int N) {
 
       for (int r = 0; r < std::min(opt_.beamSizeToken, N); ++r) {
         int n = idx[r];
-        double score = prevHyp.score + emissions[t * N + n];
+        double amScore = emissions[t * N + n];
         if (nDecodedFrames_ + t > 0 &&
             opt_.criterionType == CriterionType::ASG) {
-          score += transitions_[n * N + prevIdx];
+          amScore += transitions_[n * N + prevIdx];
         }
+        double score = prevHyp.score + emissions[t * N + n];
         if (n == sil_) {
           score += opt_.silScore;
         }
@@ -67,19 +68,20 @@ void LexiconFreeDecoder::decodeStep(const float* emissions, int T, int N) {
         if ((opt_.criterionType == CriterionType::ASG && n != prevIdx) ||
             (opt_.criterionType == CriterionType::CTC && n != blank_ &&
              (n != prevIdx || prevHyp.prevBlank))) {
-          auto lmReturn = lm_->score(prevHyp.lmState, n);
-          score += lmReturn.second * opt_.lmWeight;
+          auto lmStateScorePair = lm_->score(prevHyp.lmState, n);
+          auto lmScore = lmStateScorePair.second;
 
           candidatesAdd(
               candidates_,
               candidatesBestScore_,
               opt_.beamThreshold,
-              score,
-              lmReturn.first,
+              score + opt_.lmWeight * lmScore,
+              lmStateScorePair.first,
               &prevHyp,
               n,
-              false // prevBlank
-          );
+              false, // prevBlank
+              prevHyp.amScore + amScore,
+              prevHyp.lmScore + lmScore);
         } else if (opt_.criterionType == CriterionType::CTC && n == blank_) {
           candidatesAdd(
               candidates_,
@@ -89,8 +91,9 @@ void LexiconFreeDecoder::decodeStep(const float* emissions, int T, int N) {
               prevHyp.lmState,
               &prevHyp,
               n,
-              true // prevBlank
-          );
+              true, // prevBlank
+              prevHyp.amScore + amScore,
+              prevHyp.lmScore);
         } else {
           candidatesAdd(
               candidates_,
@@ -100,8 +103,9 @@ void LexiconFreeDecoder::decodeStep(const float* emissions, int T, int N) {
               prevHyp.lmState,
               &prevHyp,
               n,
-              false // prevBlank
-          );
+              false, // prevBlank
+              prevHyp.amScore + amScore,
+              prevHyp.lmScore);
         }
       }
     }
@@ -125,17 +129,20 @@ void LexiconFreeDecoder::decodeEnd() {
        hyp_[nDecodedFrames_ - nPrunedFrames_]) {
     const LMStatePtr& prevLmState = prevHyp.lmState;
 
-    auto lmReturn = lm_->finish(prevLmState);
+    auto lmStateScorePair = lm_->finish(prevLmState);
+    auto lmScore = lmStateScorePair.second;
+
     candidatesAdd(
         candidates_,
         candidatesBestScore_,
         opt_.beamThreshold,
-        prevHyp.score + opt_.lmWeight * lmReturn.second,
-        lmReturn.first,
+        prevHyp.score + opt_.lmWeight * lmScore,
+        lmStateScorePair.first,
         &prevHyp,
         sil_,
-        false // prevBlank
-    );
+        false, // prevBlank
+        prevHyp.amScore,
+        prevHyp.lmScore + lmScore);
   }
 
   candidatesStore(

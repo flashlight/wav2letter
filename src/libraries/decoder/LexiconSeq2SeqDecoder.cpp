@@ -81,7 +81,9 @@ void LexiconSeq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
             &prevHyp,
             eos_,
             -1,
-            nullptr);
+            nullptr,
+            prevHyp.amScore,
+            prevHyp.lmScore);
         continue;
       }
 
@@ -110,29 +112,32 @@ void LexiconSeq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
            r < std::min(amScores[validHypo].size(), (size_t)opt_.beamSizeToken);
            r++) {
         int n = idx[r];
-        double score = prevHyp.score + amScores[validHypo][n];
+        double amScore = amScores[validHypo][n];
 
         /* (1) Try eos */
         if (n == eos_ && (prevLex == lexicon_->getRoot())) {
-          auto lmReturn = lm_->finish(prevHyp.lmState);
-          LMStatePtr lmState = lmReturn.first;
+          auto lmStateScorePair = lm_->finish(prevHyp.lmState);
+          LMStatePtr lmState = lmStateScorePair.first;
           double lmScore;
           if (isLmToken_) {
-            lmScore = lmReturn.second;
+            lmScore = lmStateScorePair.second;
           } else {
-            lmScore = lmReturn.second - lexMaxScore;
+            lmScore = lmStateScorePair.second - lexMaxScore;
           }
+
           candidatesAdd(
               candidates_,
               candidatesBestScore_,
               opt_.beamThreshold,
-              score + opt_.eosScore + opt_.lmWeight * lmScore,
+              prevHyp.score + amScore + opt_.eosScore + opt_.lmWeight * lmScore,
               lmState,
               lexicon_->getRoot(),
               &prevHyp,
               n,
               -1,
-              nullptr);
+              nullptr,
+              prevHyp.amScore + amScore,
+              prevHyp.lmScore + lmScore);
         }
 
         /* (2) Try normal token */
@@ -143,9 +148,9 @@ void LexiconSeq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
             LMStatePtr lmState;
             double lmScore;
             if (isLmToken_) {
-              auto lmReturn = lm_->score(prevHyp.lmState, n);
-              lmState = lmReturn.first;
-              lmScore = lmReturn.second;
+              auto lmStateScorePair = lm_->score(prevHyp.lmState, n);
+              lmState = lmStateScorePair.first;
+              lmScore = lmStateScorePair.second;
             } else {
               // smearing
               lmState = prevHyp.lmState;
@@ -155,31 +160,38 @@ void LexiconSeq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
                 candidates_,
                 candidatesBestScore_,
                 opt_.beamThreshold,
-                score + opt_.lmWeight * lmScore,
+                prevHyp.score + amScore + opt_.lmWeight * lmScore,
                 lmState,
                 lex.get(),
                 &prevHyp,
                 n,
                 -1,
-                outState);
+                outState,
+                prevHyp.amScore + amScore,
+                prevHyp.lmScore + lmScore);
+
+            // If we got a true word
             if (lex->labels.size() > 0) {
               for (auto word : lex->labels) {
                 if (!isLmToken_) {
-                  auto lmReturn = lm_->score(prevHyp.lmState, word);
-                  lmState = lmReturn.first;
-                  lmScore = lmReturn.second - lexMaxScore;
+                  auto lmStateScorePair = lm_->score(prevHyp.lmState, word);
+                  lmState = lmStateScorePair.first;
+                  lmScore = lmStateScorePair.second - lexMaxScore;
                 }
                 candidatesAdd(
                     candidates_,
                     candidatesBestScore_,
                     opt_.beamThreshold,
-                    score + opt_.wordScore + opt_.lmWeight * lmScore,
+                    prevHyp.score + amScore + opt_.wordScore +
+                        opt_.lmWeight * lmScore,
                     lmState,
                     lexicon_->getRoot(),
                     &prevHyp,
                     n,
                     word,
-                    outState);
+                    outState,
+                    prevHyp.amScore + amScore,
+                    prevHyp.lmScore + lmScore);
                 if (isLmToken_) {
                   break;
                 }

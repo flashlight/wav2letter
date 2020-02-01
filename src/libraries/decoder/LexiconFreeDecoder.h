@@ -18,30 +18,39 @@ namespace w2l {
  * LexiconFreeDecoderState stores information for each hypothesis in the beam.
  */
 struct LexiconFreeDecoderState {
-  double score; // Score so far
+  double score; // Accumulated total score so far
   LMStatePtr lmState; // Language model state
   const LexiconFreeDecoderState* parent; // Parent hypothesis
   int token; // Label of token
   bool prevBlank; // If previous hypothesis is blank (for CTC only)
+
+  double amScore; // Accumulated AM score so far
+  double lmScore; // Accumulated LM score so far
 
   LexiconFreeDecoderState(
       const double score,
       const LMStatePtr& lmState,
       const LexiconFreeDecoderState* parent,
       const int token,
-      const bool prevBlank = false)
+      const bool prevBlank = false,
+      const double amScore = 0,
+      const double lmScore = 0)
       : score(score),
         lmState(lmState),
         parent(parent),
         token(token),
-        prevBlank(prevBlank) {}
+        prevBlank(prevBlank),
+        amScore(amScore),
+        lmScore(lmScore) {}
 
   LexiconFreeDecoderState()
       : score(0),
         lmState(nullptr),
         parent(nullptr),
         token(-1),
-        prevBlank(false) {}
+        prevBlank(false),
+        amScore(0.),
+        lmScore(0.) {}
 
   int compareNoScoreStates(const LexiconFreeDecoderState* node) const {
     int lmCmp = lmState->compare(node->lmState);

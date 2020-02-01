@@ -555,66 +555,89 @@ int main(int argc, char** argv) {
             decoder->decode(emission.data(), nFrames, nTokens);
         meters.timer.stop();
 
-        // Clean-up predictions
-        auto rawWordPrediction = results[0].words;
-        auto rawTokenPrediction = results[0].tokens;
+        int nTopHyps = FLAGS_isbeamdump ? results.size() : 1;
+        for (int i = 0; i < nTopHyps; i++) {
+          // Cleanup predictions
+          auto rawWordPrediction = results[i].words;
+          auto rawTokenPrediction = results[i].tokens;
 
-        auto letterTarget = tknTarget2Ltr(tokenTarget, tokenDict);
-        auto letterPrediction =
-            tknPrediction2Ltr(rawTokenPrediction, tokenDict);
-        std::vector<std::string> wordPrediction;
-        if (FLAGS_uselexicon) {
-          rawWordPrediction =
-              validateIdx(rawWordPrediction, wordDict.getIndex(kUnkToken));
-          wordPrediction = wrdIdx2Wrd(rawWordPrediction, wordDict);
-        } else {
-          wordPrediction = tkn2Wrd(letterPrediction);
-        }
-
-        // Update meters & print out predictions
-        meters.werSlice.add(wordPrediction, wordTarget);
-        meters.lerSlice.add(letterPrediction, letterTarget);
-
-        auto wordTargetStr = join(" ", wordTarget);
-        auto wordPredictionStr = join(" ", wordPrediction);
-        if (!FLAGS_sclite.empty()) {
-          std::string suffix = " (" + sampleId + ")\n";
-          writeHyp(wordPredictionStr + suffix);
-          writeRef(wordTargetStr + suffix);
-        }
-
-        if (FLAGS_show) {
-          meters.wer.reset();
-          meters.ler.reset();
-          meters.wer.add(wordPrediction, wordTarget);
-          meters.ler.add(letterPrediction, letterTarget);
-
-          std::stringstream buffer;
-          buffer << "|T|: " << wordTargetStr << std::endl;
-          buffer << "|P|: " << wordPredictionStr << std::endl;
-          if (FLAGS_showletters) {
-            buffer << "|t|: " << join(" ", letterTarget) << std::endl;
-            buffer << "|p|: " << join(" ", letterPrediction) << std::endl;
+          auto letterTarget = tknTarget2Ltr(tokenTarget, tokenDict);
+          auto letterPrediction =
+              tknPrediction2Ltr(rawTokenPrediction, tokenDict);
+          std::vector<std::string> wordPrediction;
+          if (FLAGS_uselexicon) {
+            rawWordPrediction =
+                validateIdx(rawWordPrediction, wordDict.getIndex(kUnkToken));
+            wordPrediction = wrdIdx2Wrd(rawWordPrediction, wordDict);
+          } else {
+            wordPrediction = tkn2Wrd(letterPrediction);
           }
-          buffer << "[sample: " << sampleId
-                 << ", WER: " << meters.wer.value()[0]
-                 << "\%, LER: " << meters.ler.value()[0]
-                 << "\%, slice WER: " << meters.werSlice.value()[0]
-                 << "\%, slice LER: " << meters.lerSlice.value()[0]
-                 << "\%, decoded samples (thread " << tid
-                 << "): " << sliceNumSamples[tid] + 1 << "]" << std::endl;
+          auto wordTargetStr = join(" ", wordTarget);
+          auto wordPredictionStr = join(" ", wordPrediction);
 
-          std::cout << buffer.str();
-          if (!FLAGS_sclite.empty()) {
-            writeLog(buffer.str());
+          // Normal decoding and computing WER
+          if (!FLAGS_isbeamdump) {
+            meters.werSlice.add(wordPrediction, wordTarget);
+            meters.lerSlice.add(letterPrediction, letterTarget);
+
+            if (!FLAGS_sclite.empty()) {
+              std::string suffix = " (" + sampleId + ")\n";
+              writeHyp(wordPredictionStr + suffix);
+              writeRef(wordTargetStr + suffix);
+            }
+
+            if (FLAGS_show) {
+              meters.wer.reset();
+              meters.ler.reset();
+              meters.wer.add(wordPrediction, wordTarget);
+              meters.ler.add(letterPrediction, letterTarget);
+
+              std::stringstream buffer;
+              buffer << "|T|: " << wordTargetStr << std::endl;
+              buffer << "|P|: " << wordPredictionStr << std::endl;
+              if (FLAGS_showletters) {
+                buffer << "|t|: " << join(" ", letterTarget) << std::endl;
+                buffer << "|p|: " << join(" ", letterPrediction) << std::endl;
+              }
+              buffer << "[sample: " << sampleId
+                     << ", WER: " << meters.wer.value()[0]
+                     << "\%, LER: " << meters.ler.value()[0]
+                     << "\%, slice WER: " << meters.werSlice.value()[0]
+                     << "\%, slice LER: " << meters.lerSlice.value()[0]
+                     << "\%, decoded samples (thread " << tid
+                     << "): " << sliceNumSamples[tid] + 1 << "]" << std::endl;
+
+              std::cout << buffer.str();
+              if (!FLAGS_sclite.empty()) {
+                writeLog(buffer.str());
+              }
+            }
+
+            // Update conters
+            sliceNumWords[tid] += wordTarget.size();
+            sliceNumTokens[tid] += letterTarget.size();
+            sliceTime[tid] += meters.timer.value();
+            sliceNumSamples[tid] += 1;
+          }
+          // Beam Dump
+          else {
+            meters.wer.reset();
+            meters.wer.add(wordPrediction, wordTarget);
+            auto wer = meters.wer.value()[0];
+
+            if (FLAGS_sclite.empty()) {
+              LOG(FATAL) << "FLAGS_sclite is empty, nowhere to dump the beam.";
+            }
+
+            auto score = results[i].score;
+            auto amScore = results[i].amScore;
+            auto lmScore = results[i].lmScore;
+            auto outString = sampleId + " | " + std::to_string(score) + " | " +
+                std::to_string(amScore) + " | " + std::to_string(lmScore) +
+                " | " + std::to_string(wer) + " | " + wordPredictionStr + "\n";
+            writeHyp(outString);
           }
         }
-
-        // Update conters
-        sliceNumWords[tid] += wordTarget.size();
-        sliceNumTokens[tid] += letterTarget.size();
-        sliceTime[tid] += meters.timer.value();
-        sliceNumSamples[tid] += 1;
       }
       sliceWer[tid] = meters.werSlice.value()[0];
       sliceLer[tid] = meters.lerSlice.value()[0];

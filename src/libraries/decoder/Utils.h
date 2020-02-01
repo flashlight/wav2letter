@@ -63,6 +63,8 @@ struct DecoderOptions {
 
 struct DecodeResult {
   double score;
+  double amScore;
+  double lmScore;
   std::vector<int> words;
   std::vector<int> tokens;
 
@@ -190,6 +192,8 @@ DecodeResult getHypothesis(const DecoderState* node, const int finalFrame) {
 
   DecodeResult res(finalFrame + 1);
   res.score = node_->score;
+  res.amScore = node_->amScore;
+  res.lmScore = node_->lmScore;
 
   int i = 0;
   while (node_) {

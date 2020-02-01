@@ -37,6 +37,7 @@ if (W2L_BUILD_TESTS)
   # Common
   build_test(${PROJECT_SOURCE_DIR}/src/common/test/W2lCommonTest.cpp)
   build_test(${PROJECT_SOURCE_DIR}/src/common/test/DictionaryTest.cpp)
+  build_test(${PROJECT_SOURCE_DIR}/src/common/test/ProducerConsumerQueueTest.cpp)
   set(
     W2L_DICTIONARY_TEST_DIR
     "\"${PROJECT_SOURCE_DIR}/src/common/test/\""

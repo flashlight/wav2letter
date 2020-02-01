@@ -238,6 +238,8 @@ DECLARE_int32(nthread_decoder_am_forward);
 DECLARE_int32(nthread_decoder);
 DECLARE_int32(lm_memory);
 
+DECLARE_int32(emission_queue_size);
+
 // Seq2Seq
 DECLARE_double(smoothingtemperature);
 DECLARE_int32(attentionthreshold);

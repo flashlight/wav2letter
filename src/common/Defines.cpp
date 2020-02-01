@@ -197,6 +197,8 @@ DEFINE_int32(
     5000,
     "total memory size for batch during forward pass ");
 
+DEFINE_int32(emission_queue_size, 3000, "max size of emission queue");
+
 DEFINE_double(
     smoothingtemperature,
     1.0,

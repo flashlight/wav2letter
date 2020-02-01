@@ -24,6 +24,7 @@
 #include "criterion/criterion.h"
 #include "data/Featurize.h"
 #include "libraries/common/Dictionary.h"
+#include "libraries/common/ProducerConsumerQueue.h"
 #include "libraries/decoder/LexiconDecoder.h"
 #include "libraries/decoder/LexiconFreeDecoder.h"
 #include "libraries/decoder/LexiconFreeSeq2SeqDecoder.h"
@@ -135,90 +136,7 @@ int main(int argc, char** argv) {
 
   DictionaryMap dicts = {{kTargetIdx, tokenDict}, {kWordIdx, wordDict}};
 
-  /* ===================== Create Dataset ===================== */
-  // TODO: to be deprecated
-  EmissionSet emissionSet;
-  if (FLAGS_criterion == kAsgCriterion) {
-    emissionSet.transition = afToVector<float>(criterion->param(0).array());
-  }
-
-  // Load dataset
-  auto ds = createDataset(FLAGS_test, dicts, lexicon, 1, 0, 1);
-  ds->shuffle(3);
-  int nSamples = ds->size();
-  if (FLAGS_maxload > 0) {
-    nSamples = std::min(nSamples, FLAGS_maxload);
-  }
-
-  for (int i = 0; i < nSamples; i++) {
-    auto sample = ds->get(i);
-    auto sampleId = readSampleIds(sample[kSampleIdx]).front();
-    emissionSet.sampleIds.emplace_back(sampleId);
-
-    // Use existing emissions
-    if (FLAGS_emission_dir.empty()) {
-      auto rawEmission =
-          network->forward({fl::input(sample[kInputIdx])}).front();
-      int N = rawEmission.dims(0);
-      int T = rawEmission.dims(1);
-
-      auto emission = afToVector<float>(rawEmission);
-      auto tokenTarget = afToVector<int>(sample[kTargetIdx]);
-      auto wordTarget = afToVector<int>(sample[kWordIdx]);
-
-      // TODO: we will reform the w2l dataset so that the loaded word targets
-      // are strings already
-      std::vector<std::string> wordTargetStr;
-      if (FLAGS_uselexicon) {
-        wordTargetStr = wrdIdx2Wrd(wordTarget, wordDict);
-      } else {
-        auto letterTarget = tknTarget2Ltr(tokenTarget, tokenDict);
-        wordTargetStr = tkn2Wrd(letterTarget);
-      }
-
-      emissionSet.emissions.emplace_back(emission);
-      emissionSet.wordTargets.emplace_back(wordTargetStr);
-      emissionSet.tokenTargets.emplace_back(tokenTarget);
-      emissionSet.emissionT.emplace_back(T);
-      emissionSet.emissionN = N;
-    }
-    // Generate emissions on the fly
-    else {
-      EmissionUnit emissionUnit;
-      auto cleanTestPath = cleanFilepath(FLAGS_test);
-      std::string emissionDir = pathsConcat(FLAGS_emission_dir, cleanTestPath);
-      std::string loadPath = pathsConcat(emissionDir, sampleId + ".bin");
-      W2lSerializer::load(loadPath, emissionUnit);
-
-      auto tokenTarget = afToVector<int>(sample[kTargetIdx]);
-      auto wordTarget = afToVector<int>(sample[kWordIdx]);
-      std::vector<std::string> wordTargetStr;
-      if (FLAGS_uselexicon) {
-        wordTargetStr = wrdIdx2Wrd(wordTarget, wordDict);
-      } else {
-        auto letterTarget = tknTarget2Ltr(tokenTarget, tokenDict);
-        wordTargetStr = tkn2Wrd(letterTarget);
-      }
-
-      emissionSet.emissions.emplace_back(emissionUnit.emission);
-      emissionSet.wordTargets.emplace_back(wordTargetStr);
-      emissionSet.tokenTargets.emplace_back(tokenTarget);
-      emissionSet.emissionT.emplace_back(emissionUnit.nFrames);
-      emissionSet.emissionN = emissionUnit.nTokens;
-    }
-  }
-  LOG(INFO) << "[Dataset] Dataset loaded.";
-
-  int nSamplesPerThread =
-      std::ceil(nSamples / static_cast<float>(FLAGS_nthread_decoder));
-  LOG(INFO) << "[Dataset] Number of samples per thread: " << nSamplesPerThread;
-
-  network.reset(); // AM is only used in running forward pass. So we will free
-                   // the space of it on GPU or memory. network.use_count() will
-                   // be 0 after this call.
-  af::deviceGC();
-
-  /* ===================== Decode ===================== */
+  /* =============== Prepare Sharable Decoder Components ============== */
   // Prepare counters
   std::vector<double> sliceWer(FLAGS_nthread_decoder);
   std::vector<double> sliceLer(FLAGS_nthread_decoder);
@@ -239,7 +157,10 @@ int main(int argc, char** argv) {
     LOG(FATAL) << "[Decoder] Invalid model type: " << FLAGS_criterion;
   }
 
-  const auto& transition = emissionSet.transition;
+  std::vector<float> transition;
+  if (FLAGS_criterion == kAsgCriterion) {
+    transition = afToVector<float>(criterion->param(0).array());
+  }
 
   // Prepare decoder options
   DecoderOptions decoderOpt(
@@ -276,15 +197,15 @@ int main(int argc, char** argv) {
     }
   }
 
-  auto writeHyp = [&](const std::string& hypStr) {
+  auto writeHyp = [&hypMutex, &hypStream](const std::string& hypStr) {
     std::lock_guard<std::mutex> lock(hypMutex);
     hypStream << hypStr;
   };
-  auto writeRef = [&](const std::string& refStr) {
+  auto writeRef = [&refMutex, &refStream](const std::string& refStr) {
     std::lock_guard<std::mutex> lock(refMutex);
     refStream << refStr;
   };
-  auto writeLog = [&](const std::string& logStr) {
+  auto writeLog = [&logMutex, &logStream](const std::string& logStr) {
     std::lock_guard<std::mutex> lock(logMutex);
     logStream << logStr;
   };
@@ -362,9 +283,132 @@ int main(int argc, char** argv) {
     LOG(INFO) << "[Decoder] Trie smeared.\n";
   }
 
-  // Decoding
-  auto runDecoder = [&](int tid, int start, int end) {
+  /* ===================== AM Forwarding ===================== */
+  using EmissionQueue = ProducerConsumerQueue<EmissionTargetPair>;
+  EmissionQueue emissionQueue(FLAGS_emission_queue_size);
+
+  // Load dataset
+  auto ds = createDataset(
+      FLAGS_test,
+      dicts,
+      lexicon,
+      1 /* batchsize */,
+      0 /* worldrank */,
+      1 /* worldsize */);
+  ds->shuffle(3);
+  int nSamples = ds->size();
+  if (FLAGS_maxload > 0) {
+    nSamples = std::min(nSamples, FLAGS_maxload);
+  }
+
+  std::mutex dataReadMutex;
+  int datasetGlobalSampleId = 0; // A gloabal index for data reading
+
+  auto runAmForward = [&dataReadMutex,
+                       &datasetGlobalSampleId,
+                       &network,
+                       &criterion,
+                       &nSamples,
+                       &ds,
+                       &tokenDict,
+                       &wordDict,
+                       &emissionQueue](int tid) {
+    // Initialize AM
+    af::setDevice(tid);
+    std::shared_ptr<fl::Module> localNetwork = network;
+    std::shared_ptr<SequenceCriterion> localCriterion = criterion;
+    if (tid != 0) {
+      std::unordered_map<std::string, std::string> dummyCfg;
+      W2lSerializer::load(FLAGS_am, dummyCfg, localNetwork, localCriterion);
+      localNetwork->eval();
+      localCriterion->eval();
+    }
+
+    while (datasetGlobalSampleId < nSamples) {
+      /* 1. Get sample */
+      int datasetLocalSampleId = -1;
+      std::vector<af::array> sample;
+      {
+        std::lock_guard<std::mutex> lock(dataReadMutex);
+        sample = ds->get(datasetGlobalSampleId);
+        datasetLocalSampleId = datasetGlobalSampleId;
+        datasetGlobalSampleId++;
+      }
+      auto sampleId = readSampleIds(sample[kSampleIdx]).front();
+
+      /* 2. Load Targets */
+      TargetUnit targetUnit;
+      auto tokenTarget = afToVector<int>(sample[kTargetIdx]);
+      auto wordTarget = afToVector<int>(sample[kWordIdx]);
+      // TODO: we will reform the w2l dataset so that the loaded word targets
+      // are strings already
+      std::vector<std::string> wordTargetStr;
+      if (FLAGS_uselexicon) {
+        wordTargetStr = wrdIdx2Wrd(wordTarget, wordDict);
+      } else {
+        auto letterTarget = tknTarget2Ltr(tokenTarget, tokenDict);
+        wordTargetStr = tkn2Wrd(letterTarget);
+      }
+
+      targetUnit.wordTargetStr = wordTargetStr;
+      targetUnit.tokenTarget = tokenTarget;
+
+      /* 3. Load Emissions */
+      EmissionUnit emissionUnit;
+      if (FLAGS_emission_dir.empty()) {
+        auto rawEmission =
+            localNetwork->forward({fl::input(sample[kInputIdx])}).front();
+        emissionUnit = EmissionUnit(
+            afToVector<float>(rawEmission),
+            sampleId,
+            rawEmission.dims(1),
+            rawEmission.dims(0));
+      } else {
+        auto cleanTestPath = cleanFilepath(FLAGS_test);
+        std::string emissionDir =
+            pathsConcat(FLAGS_emission_dir, cleanTestPath);
+        std::string savePath = pathsConcat(emissionDir, sampleId + ".bin");
+        W2lSerializer::load(savePath, emissionUnit);
+      }
+
+      emissionQueue.add({emissionUnit, targetUnit});
+      if (datasetLocalSampleId == nSamples - 1) {
+        emissionQueue.finishAdding();
+      }
+    }
+
+    localNetwork.reset(); // AM is only used in running forward pass. So we will
+                          // free the space of it on GPU or memory.
+                          // localNetwork.use_count() will be 0 after this call.
+
+    af::deviceGC(); // Explicitly call the Garbage collector.
+  };
+
+  /* ===================== Decode ===================== */
+  auto runDecoder = [&criterion,
+                     &lm,
+                     &trie,
+                     &silIdx,
+                     &blankIdx,
+                     &unkWordIdx,
+                     &criterionType,
+                     &transition,
+                     &usrDict,
+                     &tokenDict,
+                     &wordDict,
+                     &decoderOpt,
+                     &emissionQueue,
+                     &writeHyp,
+                     &writeRef,
+                     &writeLog,
+                     &sliceWer,
+                     &sliceLer,
+                     &sliceNumWords,
+                     &sliceNumTokens,
+                     &sliceNumSamples,
+                     &sliceTime](int tid) {
     try {
+      /* 1. Prepare GPU-dependent resources */
       // Note: These 2 GPU-dependent models should be placed on different cards
       // for different threads and nthread_decoder should not be greater than
       // the number of GPUs.
@@ -403,7 +447,7 @@ int main(int argc, char** argv) {
         }
       }
 
-      // Build Decoder
+      /* 2. Build Decoder */
       std::unique_ptr<Decoder> decoder;
       if (criterionType == CriterionType::S2S) {
         auto amUpdateFunc = FLAGS_criterion == kSeq2SeqCriterion
@@ -490,24 +534,30 @@ int main(int argc, char** argv) {
         }
       }
 
-      // Get data and run decoder
+      /* 3. Get data and run decoder */
       TestMeters meters;
-      int sliceSize = end - start;
-      meters.timer.resume();
-      for (int s = start; s < end; s++) {
-        auto emission = emissionSet.emissions[s];
-        auto wordTarget = emissionSet.wordTargets[s];
-        auto tokenTarget = emissionSet.tokenTargets[s];
-        auto sampleId = emissionSet.sampleIds[s];
-        auto T = emissionSet.emissionT[s];
-        auto N = emissionSet.emissionN;
+      EmissionTargetPair emissionTargetPair;
+      while (emissionQueue.get(emissionTargetPair)) {
+        const auto& emissionUnit = emissionTargetPair.first;
+        const auto& targetUnit = emissionTargetPair.second;
+
+        const auto& nFrames = emissionUnit.nFrames;
+        const auto& nTokens = emissionUnit.nTokens;
+        const auto& emission = emissionUnit.emission;
+        const auto& sampleId = emissionUnit.sampleId;
+        const auto& wordTarget = targetUnit.wordTargetStr;
+        const auto& tokenTarget = targetUnit.tokenTarget;
 
         // DecodeResult
-        auto results = decoder->decode(emission.data(), T, N);
+        meters.timer.reset();
+        meters.timer.resume();
+        const auto& results =
+            decoder->decode(emission.data(), nFrames, nTokens);
+        meters.timer.stop();
 
-        // Cleanup predictions
-        auto& rawWordPrediction = results[0].words;
-        auto& rawTokenPrediction = results[0].tokens;
+        // Clean-up predictions
+        auto rawWordPrediction = results[0].words;
+        auto rawTokenPrediction = results[0].tokens;
 
         auto letterTarget = tknTarget2Ltr(tokenTarget, tokenDict);
         auto letterPrediction =
@@ -551,9 +601,8 @@ int main(int argc, char** argv) {
                  << "\%, LER: " << meters.ler.value()[0]
                  << "\%, slice WER: " << meters.werSlice.value()[0]
                  << "\%, slice LER: " << meters.lerSlice.value()[0]
-                 << "\%, progress (slice " << tid
-                 << "): " << static_cast<float>(s - start + 1) / sliceSize * 100
-                 << "\%]" << std::endl;
+                 << "\%, decoded samples (thread " << tid
+                 << "): " << sliceNumSamples[tid] + 1 << "]" << std::endl;
 
           std::cout << buffer.str();
           if (!FLAGS_sclite.empty()) {
@@ -564,38 +613,62 @@ int main(int argc, char** argv) {
         // Update conters
         sliceNumWords[tid] += wordTarget.size();
         sliceNumTokens[tid] += letterTarget.size();
+        sliceTime[tid] += meters.timer.value();
+        sliceNumSamples[tid] += 1;
       }
-      meters.timer.stop();
       sliceWer[tid] = meters.werSlice.value()[0];
       sliceLer[tid] = meters.lerSlice.value()[0];
-      sliceNumSamples[tid] = sliceSize;
-      sliceTime[tid] = meters.timer.value();
     } catch (const std::exception& exc) {
       LOG(FATAL) << "Exception in thread " << tid << "\n" << exc.what();
     }
   };
 
-  /* Spread threades */
-  auto startThreads = [&]() {
-    if (FLAGS_nthread_decoder == 1) {
-      runDecoder(0, 0, nSamples);
-    } else if (FLAGS_nthread_decoder > 1) {
-      fl::ThreadPool threadPool(FLAGS_nthread_decoder);
-      for (int i = 0; i < FLAGS_nthread_decoder; i++) {
-        int start = i * nSamplesPerThread;
-        if (start >= nSamples) {
-          break;
+  /* ===================== Spread threades ===================== */
+  if (FLAGS_nthread_decoder_am_forward <= 0) {
+    LOG(FATAL) << "FLAGS_nthread_decoder_am_forward ("
+               << FLAGS_nthread_decoder_am_forward << ") need to be positive ";
+  }
+  if (FLAGS_nthread_decoder <= 0) {
+    LOG(FATAL) << "FLAGS_nthread_decoder (" << FLAGS_nthread_decoder
+               << ") need to be positive ";
+  }
+
+  auto startThreadsAndJoin = [&runAmForward, &runDecoder](
+                                 int nAmThreads, int nDecoderThreads) {
+    // We have to run AM forwarding and decoding in sequential to avoid GPU
+    // OOM with two large neural nets.
+    if (FLAGS_lmtype == "convlm") {
+      // 1. AM forwarding
+      {
+        fl::ThreadPool threadPool(nAmThreads);
+        for (int i = 0; i < nAmThreads; i++) {
+          threadPool.enqueue(runAmForward, i);
         }
-        int end = std::min((i + 1) * nSamplesPerThread, nSamples);
-        threadPool.enqueue(runDecoder, i, start, end);
       }
-    } else {
-      LOG(FATAL) << "Invalid nthread_decoder";
+      // 2. Decoding
+      {
+        fl::ThreadPool threadPool(nDecoderThreads);
+        for (int i = 0; i < nDecoderThreads; i++) {
+          threadPool.enqueue(runDecoder, i);
+        }
+      }
+    }
+    // Non-convLM decoding. AM forwarding and decoding can be run in parallel.
+    else {
+      fl::ThreadPool threadPool(nAmThreads + nDecoderThreads);
+      // AM forwarding threads
+      for (int i = 0; i < nAmThreads; i++) {
+        threadPool.enqueue(runAmForward, i);
+      }
+      // Decoding threads
+      for (int i = 0; i < nDecoderThreads; i++) {
+        threadPool.enqueue(runDecoder, i);
+      }
     }
   };
   auto timer = fl::TimeMeter();
   timer.resume();
-  startThreads();
+  startThreadsAndJoin(FLAGS_nthread_decoder_am_forward, FLAGS_nthread_decoder);
   timer.stop();
 
   /* Compute statistics */

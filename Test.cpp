@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <fstream>
 #include <iomanip>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -254,7 +255,7 @@ int main(int argc, char** argv) {
                   << "\%, LER: " << meters.ler.value()[0]
                   << "\%, total WER: " << meters.werSlice.value()[0]
                   << "\%, total LER: " << meters.lerSlice.value()[0]
-                  << "\%, progress (slice " << tid << "): "
+                  << "\%, progress (thread " << tid << "): "
                   << static_cast<float>(datasetSampleId) / nSamples * 100
                   << "\%]" << std::endl;
       }
@@ -283,7 +284,7 @@ int main(int argc, char** argv) {
   };
 
   /* Spread threades */
-  auto startThreads = [&run](int nThreads) {
+  auto startThreadsAndJoin = [&run](int nThreads) {
     if (nThreads == 1) {
       run(0);
     } else if (nThreads > 1) {
@@ -297,7 +298,7 @@ int main(int argc, char** argv) {
   };
   auto timer = fl::TimeMeter();
   timer.resume();
-  startThreads(FLAGS_nthread_decoder_am_forward);
+  startThreadsAndJoin(FLAGS_nthread_decoder_am_forward);
   timer.stop();
 
   int totalTokens = 0, totalWords = 0, totalSamples = 0;

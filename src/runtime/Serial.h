@@ -77,50 +77,6 @@ struct W2lSerializer {
   }
 };
 
-// Convenience struct for serializing emissions and targets
-// TODO: to be deprecated
-struct EmissionSet {
-  std::vector<std::vector<float>> emissions;
-  std::vector<std::vector<std::string>> wordTargets;
-  std::vector<std::vector<int>> tokenTargets;
-  std::vector<std::string> sampleIds;
-  std::vector<float> transition;
-  std::vector<int> emissionT;
-  int emissionN; // Assume alphabet size to be identical for all the samples
-  std::string gflags; // Saving all the flags used in model training
-
-  FL_SAVE_LOAD(
-      emissions,
-      wordTargets,
-      tokenTargets,
-      sampleIds,
-      transition,
-      emissionT,
-      emissionN,
-      gflags)
-};
-
-struct EmissionUnit {
-  std::vector<float> emission; // A column-major tensor with shape T x N.
-  std::string sampleId;
-  int nFrames;
-  int nTokens;
-
-  FL_SAVE_LOAD(emission, sampleId, nFrames, nTokens)
-
-  EmissionUnit() {}
-
-  EmissionUnit(
-      std::vector<float> emission,
-      std::string sampleId,
-      int nFrames,
-      int nTokens)
-      : emission(emission),
-        sampleId(sampleId),
-        nFrames(nFrames),
-        nTokens(nTokens) {}
-};
-
 std::string newRunPath(
     const std::string& root,
     const std::string& runname = "",
@@ -133,7 +89,7 @@ getRunFile(const std::string& name, int runidx, const std::string& runpath);
  * Given a filename, remove any filepath delimiters - returns a contiguous
  * string that won't be subdivided into a filepath
  */
-std::string cleanFilepath(const std::string& in);
+std::string cleanFilepath(const std::string& inputFileName);
 
 /**
  * Serialize gflags into a buffer
@@ -141,5 +97,37 @@ std::string cleanFilepath(const std::string& in);
  * Only serializes gflags that aren't explicitly deprecated
  */
 std::string serializeGflags(const std::string& separator = "\n");
+
+// ========================= Decoder helpers ==============================
+// Convenience structs for serializing emissions and targets
+struct EmissionUnit {
+  std::vector<float> emission; // A column-major tensor with shape T x N.
+  std::string sampleId;
+  int nFrames;
+  int nTokens;
+
+  FL_SAVE_LOAD(emission, sampleId, nFrames, nTokens)
+
+  EmissionUnit() : nFrames(0), nTokens(0) {}
+
+  EmissionUnit(
+      const std::vector<float>& emission,
+      const std::string& sampleId,
+      int nFrames,
+      int nTokens)
+      : emission(emission),
+        sampleId(sampleId),
+        nFrames(nFrames),
+        nTokens(nTokens) {}
+};
+
+struct TargetUnit {
+  std::vector<std::string> wordTargetStr; // Word targets in strings
+  std::vector<int> tokenTarget; // Token targets in indices
+
+  FL_SAVE_LOAD(wordTargetStr, tokenTarget)
+};
+
+using EmissionTargetPair = std::pair<EmissionUnit, TargetUnit>;
 
 } // namespace w2l

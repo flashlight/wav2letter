@@ -78,6 +78,7 @@ struct W2lSerializer {
 };
 
 // Convenience struct for serializing emissions and targets
+// TODO: to be deprecated
 struct EmissionSet {
   std::vector<std::vector<float>> emissions;
   std::vector<std::vector<std::string>> wordTargets;
@@ -97,6 +98,27 @@ struct EmissionSet {
       emissionT,
       emissionN,
       gflags)
+};
+
+struct EmissionUnit {
+  std::vector<float> emission; // A column-major tensor with shape T x N.
+  std::string sampleId;
+  int nFrames;
+  int nTokens;
+
+  FL_SAVE_LOAD(emission, sampleId, nFrames, nTokens)
+
+  EmissionUnit() {}
+
+  EmissionUnit(
+      std::vector<float> emission,
+      std::string sampleId,
+      int nFrames,
+      int nTokens)
+      : emission(emission),
+        sampleId(sampleId),
+        nFrames(nFrames),
+        nTokens(nTokens) {}
 };
 
 std::string newRunPath(

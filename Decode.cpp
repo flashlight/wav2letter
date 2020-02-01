@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
   for (int i = 0; i < argc; i++) {
     argvs.emplace_back(argv[i]);
   }
-  gflags::SetUsageMessage("Usage: Please refer to https://git.io/fjVVq");
+  gflags::SetUsageMessage("Usage: Please refer to https://git.io/JvJuR");
   if (argc <= 1) {
     LOG(FATAL) << gflags::ProgramUsage();
   }
@@ -65,20 +65,9 @@ int main(int argc, char** argv) {
     LOG(FATAL) << "Both flags are empty: `-emission_dir` and `-am`";
   }
 
-  EmissionSet emissionSet;
   std::shared_ptr<fl::Module> network;
   std::shared_ptr<SequenceCriterion> criterion;
   std::unordered_map<std::string, std::string> cfg;
-
-  /* Using existing emissions */
-  if (!FLAGS_emission_dir.empty()) {
-    std::string cleanedTestPath = cleanFilepath(FLAGS_test);
-    std::string loadPath =
-        pathsConcat(FLAGS_emission_dir, cleanedTestPath + ".bin");
-    LOG(INFO) << "[Serialization] Loading file: " << loadPath;
-    W2lSerializer::load(loadPath, emissionSet);
-    gflags::ReadFlagsFromString(emissionSet.gflags, gflags::GetArgv0(), true);
-  }
 
   /* Using acoustic model */
   if (!FLAGS_am.empty()) {
@@ -147,18 +136,27 @@ int main(int argc, char** argv) {
   DictionaryMap dicts = {{kTargetIdx, tokenDict}, {kWordIdx, wordDict}};
 
   /* ===================== Create Dataset ===================== */
-  if (FLAGS_emission_dir.empty()) {
-    // Load dataset
-    int worldRank = 0;
-    int worldSize = 1;
-    auto ds =
-        createDataset(FLAGS_test, dicts, lexicon, 1, worldRank, worldSize);
+  // TODO: to be deprecated
+  EmissionSet emissionSet;
+  if (FLAGS_criterion == kAsgCriterion) {
+    emissionSet.transition = afToVector<float>(criterion->param(0).array());
+  }
 
-    ds->shuffle(3);
-    LOG(INFO) << "[Serialization] Running forward pass ...";
+  // Load dataset
+  auto ds = createDataset(FLAGS_test, dicts, lexicon, 1, 0, 1);
+  ds->shuffle(3);
+  int nSamples = ds->size();
+  if (FLAGS_maxload > 0) {
+    nSamples = std::min(nSamples, FLAGS_maxload);
+  }
 
-    int cnt = 0;
-    for (auto& sample : *ds) {
+  for (int i = 0; i < nSamples; i++) {
+    auto sample = ds->get(i);
+    auto sampleId = readSampleIds(sample[kSampleIdx]).front();
+    emissionSet.sampleIds.emplace_back(sampleId);
+
+    // Use existing emissions
+    if (FLAGS_emission_dir.empty()) {
       auto rawEmission =
           network->forward({fl::input(sample[kInputIdx])}).front();
       int N = rawEmission.dims(0);
@@ -183,31 +181,43 @@ int main(int argc, char** argv) {
       emissionSet.tokenTargets.emplace_back(tokenTarget);
       emissionSet.emissionT.emplace_back(T);
       emissionSet.emissionN = N;
-
-      // while decoding we use batchsize 1 and hence ds only has 1 sampleid
-      emissionSet.sampleIds.emplace_back(
-          readSampleIds(sample[kSampleIdx]).front());
-
-      ++cnt;
-      if (cnt == FLAGS_maxload) {
-        break;
-      }
     }
-    if (FLAGS_criterion == kAsgCriterion) {
-      emissionSet.transition = afToVector<float>(criterion->param(0).array());
+    // Generate emissions on the fly
+    else {
+      EmissionUnit emissionUnit;
+      auto cleanTestPath = cleanFilepath(FLAGS_test);
+      std::string emissionDir = pathsConcat(FLAGS_emission_dir, cleanTestPath);
+      std::string loadPath = pathsConcat(emissionDir, sampleId + ".bin");
+      W2lSerializer::load(loadPath, emissionUnit);
+
+      auto tokenTarget = afToVector<int>(sample[kTargetIdx]);
+      auto wordTarget = afToVector<int>(sample[kWordIdx]);
+      std::vector<std::string> wordTargetStr;
+      if (FLAGS_uselexicon) {
+        wordTargetStr = wrdIdx2Wrd(wordTarget, wordDict);
+      } else {
+        auto letterTarget = tknTarget2Ltr(tokenTarget, tokenDict);
+        wordTargetStr = tkn2Wrd(letterTarget);
+      }
+
+      emissionSet.emissions.emplace_back(emissionUnit.emission);
+      emissionSet.wordTargets.emplace_back(wordTargetStr);
+      emissionSet.tokenTargets.emplace_back(tokenTarget);
+      emissionSet.emissionT.emplace_back(emissionUnit.nFrames);
+      emissionSet.emissionN = emissionUnit.nTokens;
     }
   }
+  LOG(INFO) << "[Dataset] Dataset loaded.";
 
-  int nSample = emissionSet.emissions.size();
-  nSample = FLAGS_maxload > 0 ? std::min(nSample, FLAGS_maxload) : nSample;
-  int nSamplePerThread =
-      std::ceil(nSample / static_cast<float>(FLAGS_nthread_decoder));
-  LOG(INFO) << "[Dataset] Number of samples per thread: " << nSamplePerThread;
+  int nSamplesPerThread =
+      std::ceil(nSamples / static_cast<float>(FLAGS_nthread_decoder));
+  LOG(INFO) << "[Dataset] Number of samples per thread: " << nSamplesPerThread;
 
   network.reset(); // AM is only used in running forward pass. So we will free
                    // the space of it on GPU or memory. network.use_count() will
                    // be 0 after this call.
   af::deviceGC();
+
   /* ===================== Decode ===================== */
   // Prepare counters
   std::vector<double> sliceWer(FLAGS_nthread_decoder);
@@ -568,15 +578,15 @@ int main(int argc, char** argv) {
   /* Spread threades */
   auto startThreads = [&]() {
     if (FLAGS_nthread_decoder == 1) {
-      runDecoder(0, 0, nSample);
+      runDecoder(0, 0, nSamples);
     } else if (FLAGS_nthread_decoder > 1) {
       fl::ThreadPool threadPool(FLAGS_nthread_decoder);
       for (int i = 0; i < FLAGS_nthread_decoder; i++) {
-        int start = i * nSamplePerThread;
-        if (start >= nSample) {
+        int start = i * nSamplesPerThread;
+        if (start >= nSamples) {
           break;
         }
-        int end = std::min((i + 1) * nSamplePerThread, nSample);
+        int end = std::min((i + 1) * nSamplesPerThread, nSamples);
         threadPool.enqueue(runDecoder, i, start, end);
       }
     } else {

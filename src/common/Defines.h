@@ -234,6 +234,7 @@ DECLARE_int32(maxload);
 DECLARE_int32(maxword);
 DECLARE_int32(beamsize);
 DECLARE_int32(beamsizetoken);
+DECLARE_int32(nthread_decoder_am_forward);
 DECLARE_int32(nthread_decoder);
 DECLARE_int32(lm_memory);
 

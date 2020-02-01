@@ -61,26 +61,23 @@ TEST(DecoderTest, run) {
 #endif
 
   /* ===================== Create Dataset ===================== */
-  EmissionSet emissionSet;
+  EmissionUnit emissionUnit;
 
   // T, N
   std::string tnPath = pathsConcat(dataDir, "TN.bin");
   std::ifstream tnStream(tnPath, std::ios::binary | std::ios::in);
   std::vector<int> tnArray(2);
-  int T, N;
   tnStream.read((char*)tnArray.data(), 2 * sizeof(int));
-  T = tnArray[0];
-  N = tnArray[1];
-  emissionSet.emissionN = N;
-  emissionSet.emissionT.push_back(T);
+  int T = tnArray[0], N = tnArray[1];
+  emissionUnit.nFrames = T;
+  emissionUnit.nTokens = N;
   tnStream.close();
 
   // Emission
-  emissionSet.emissions.resize(1);
-  emissionSet.emissions[0].resize(T * N);
+  emissionUnit.emission.resize(T * N);
   std::string emissionPath = pathsConcat(dataDir, "emission.bin");
   std::ifstream em_stream(emissionPath, std::ios::binary | std::ios::in);
-  em_stream.read((char*)emissionSet.emissions[0].data(), T * N * sizeof(float));
+  em_stream.read((char*)emissionUnit.emission.data(), T * N * sizeof(float));
   em_stream.close();
 
   // Transitions
@@ -174,7 +171,7 @@ TEST(DecoderTest, run) {
   LOG(INFO) << "[Decoder] Decoder constructed.\n";
 
   /* -------- Run --------*/
-  auto emission = emissionSet.emissions[0];
+  auto emission = emissionUnit.emission;
 
   std::vector<float> score;
   std::vector<std::vector<int>> wordPredictions;

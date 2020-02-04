@@ -78,7 +78,12 @@ std::vector<W2lLoaderData> W2lListFilesDataset::getLoaderData(
     }
 
     data[id].sampleId = data_[i].getSampleId();
-    data[id].input = loadSound(data_[i].getAudioFile());
+    auto path = data_[i].getAudioFile();
+    try {
+        data[id].input = loadSound(path);
+    } catch (const std::exception &ex) {
+        throw std::runtime_error("loadSound failed: " + path + " | " + ex.what());
+    }
     data[id].targets[kTargetIdx] = wrd2Target(
         data_[i].getTranscript(),
         lexicon_,

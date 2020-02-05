@@ -441,7 +441,6 @@ int main(int argc, char** argv) {
     for (auto& batch : *testds) {
       auto output = ntwrk->forward({fl::input(batch[kInputIdx])}).front();
       output.cast(batch[kInputIdx].type());
-      af::sync();
       auto loss =
           crit->forward({output, fl::Variable(batch[kTargetIdx], false)})
               .front();

@@ -57,7 +57,7 @@ tree -L 2
 
 | Lexicon | Tokens | Beam-search lexicon |
 |:-:|:-:|:-:|
-| [Lexicon](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/librispeech-train+dev-unigram-10000-nbest10.lexicon) | [Tokens](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/librispeech-train-all-unigram-10000.tokens) | [Beam-search lexicon](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/decoder-unigram-10000-nbest10.lexicon) |
+| [Lexicon](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/librispeech-train%2Bdev-unigram-10000-nbest10.lexicon) | [Tokens](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/librispeech-train-all-unigram-10000.tokens) | [Beam-search lexicon](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/decoder-unigram-10000-nbest10.lexicon) |
 
 Tokens and lexicon files generated in the `$MODEL_DST/am/` and `$MODEL_DST/decoder/` are the same as in the table.
 

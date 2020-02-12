@@ -108,8 +108,8 @@ void candidatesStore(
     const double threshold,
     const bool logAdd,
     const bool returnSorted) {
+  outputs.clear();
   if (candidates.empty()) {
-    outputs.clear();
     return;
   }
 
@@ -175,9 +175,8 @@ void candidatesStore(
         compareNodeScore);
   }
 
-  outputs.resize(finalSize);
   for (int i = 0; i < finalSize; i++) {
-    outputs[i] = std::move(*candidatePtrs[i]);
+    outputs.emplace_back(std::move(*candidatePtrs[i]));
   }
 }
 
@@ -272,8 +271,12 @@ void pruneAndNormalize(
     const int startFrame,
     const int lookBack) {
   /* 1. Move things from back of hypothesis to front. */
-  for (int i = 0; i <= lookBack; i++) {
-    std::swap(hypothesis[i], hypothesis[i + startFrame]);
+  for (int i = 0; i < hypothesis.size(); i++) {
+    if (i <= lookBack) {
+      hypothesis[i].swap(hypothesis[i + startFrame]);
+    } else {
+      hypothesis[i].clear();
+    }
   }
 
   /* 2. Avoid further back-tracking */

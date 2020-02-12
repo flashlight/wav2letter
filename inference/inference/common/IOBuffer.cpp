@@ -48,7 +48,9 @@ int IOBuffer::tailRoom() const {
 }
 
 void IOBuffer::reset() {
-  memmove(buf_.data(), data<void>(), sizeInBytes_);
+  if (buf_.data()) {
+    std::memmove(buf_.data(), data<void>(), sizeInBytes_);
+  }
   offsetInBytes_ = 0;
 }
 

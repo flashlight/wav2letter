@@ -10,6 +10,7 @@ target_sources(
   INTERFACE
   ${CMAKE_CURRENT_SOURCE_DIR}/cpu/CriterionUtils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/cpu/ForceAlignmentCriterion.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/cpu/ConnectionistTemporalClassificationCriterion.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/cpu/FullConnectionCriterion.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/cpu/ViterbiPath.cpp
   )

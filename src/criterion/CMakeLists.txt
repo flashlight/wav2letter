@@ -29,6 +29,8 @@ if (FLASHLIGHT_USE_CUDA)
     INTERFACE
     ${CUDA_LIBRARIES}
     warpctc # added directly from subdir
+    # Can remove once CTC constrained Viterbi is implemented in CUDA T62268085
+    criterion-library
     )
 
   target_include_directories(

@@ -79,6 +79,19 @@ struct ForceAlignmentCriterion {
       Float* transGrad,
       void* workspace,
       cudaStream_t stream);
+
+  static void viterbiPath(
+      int B,
+      int T,
+      int N,
+      int L,
+      const Float* input,
+      const int* target,
+      const int* targetSize,
+      const Float* trans,
+      int* bestPaths,
+      void* workspace,
+      cudaStream_t stream);
 };
 
 } // namespace cuda

@@ -19,7 +19,7 @@ namespace {
 
 template <class Float>
 struct WorkspacePtrs {
-  explicit WorkspacePtrs(void* workspace, int B, int T, int N, int L) {
+  WorkspacePtrs(void* workspace, int B, int T, int N, int L) {
     w2l::Workspace<> ws(workspace);
     ws.request(&scale, B);
     ws.request(&alpha, B, T, L);
@@ -218,6 +218,82 @@ void ForceAlignmentCriterion<Float>::backward(
     for (int i = 0; i < N * N; ++i) {
       transGrad[i] += gradScale * transBatchGrad[i];
     }
+  }
+}
+
+template <class Float>
+void ForceAlignmentCriterion<Float>::viterbi(
+    int B,
+    int T,
+    int N,
+    int _L,
+    const Float* _input,
+    const int* _target,
+    const int* targetSize,
+    const Float* trans,
+    int* bestPaths,
+    void* workspace) {
+  WorkspacePtrs<Float> ws(workspace, B, T, N, _L);
+
+#pragma omp parallel for num_threads(B)
+  for (int b = 0; b < B; ++b) {
+    double* alpha = &ws.alpha[b * T * _L];
+    const Float* input = &_input[b * T * N];
+    const int* target = &_target[b * _L];
+    Float* transBuf1 = &ws.transBuf1[b * _L];
+    Float* transBuf2 = &ws.transBuf2[b * _L];
+    int L = targetSize[b];
+
+    alpha[0] = input[target[0]];
+
+    for (int i = 0; i < L; ++i) {
+      transBuf1[i] = trans[target[i] * N + target[i]];
+      transBuf2[i] = i > 0 ? trans[target[i] * N + target[i - 1]] : 0;
+    }
+
+    for (int t = 1; t < T; ++t) {
+      const Float* inputCur = &input[t * N];
+      double* alphaPrev = &alpha[(t - 1) * L];
+      double* alphaCur = &alpha[t * L];
+
+      int high = t < L ? t : L;
+      int low = T - t < L ? L - (T - t) : 1;
+
+      // Handle edge cases.
+      // If (T - t >= L), then we can conceivably still be at the initial blank
+      if (T - t >= L) {
+        alphaCur[0] = alphaPrev[0] + transBuf1[0] + inputCur[target[0]];
+      }
+
+      // If (t < L), then the highest position can only be be computed
+      // by transitioning. (We couldn't have been at position `high`
+      // at the previous timestep).
+      if (t < L) {
+        alphaCur[high] =
+            alphaPrev[high - 1] + transBuf2[high] + inputCur[target[high]];
+      }
+
+      for (int i = low; i < high; ++i) {
+        double s1 = alphaPrev[i] + transBuf1[i];
+        double s2 = alphaPrev[i - 1] + transBuf2[i];
+        alphaCur[i] = inputCur[target[i]] + fmax(s1, s2);
+      }
+    }
+
+    auto ltrIdx = L - 1;
+    int* bestPath = bestPaths + b * T;
+    for (auto t = T - 1; t > 0; t--) {
+      bestPath[t] = target[ltrIdx];
+      auto* alphaPrev = &alpha[(t - 1) * L];
+      if (ltrIdx > 0) {
+        double s1 = alphaPrev[ltrIdx] + transBuf1[ltrIdx];
+        double s2 = alphaPrev[ltrIdx - 1] + transBuf2[ltrIdx];
+        if (s2 > s1) {
+          ltrIdx--;
+        }
+      }
+    }
+    bestPath[0] = target[ltrIdx];
   }
 }
 

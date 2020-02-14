@@ -47,6 +47,11 @@ class AutoSegmentationCriterion : public SequenceCriterion {
     return w2l::viterbiPath(input, params_[0].array());
   }
 
+  af::array viterbiPath(const af::array& input, const af::array& target)
+      override {
+    return fac_.viterbiPath(input, target);
+  }
+
   void setParams(const fl::Variable& var, int position) override {
     Module::setParams(var, position);
     syncTransitions();

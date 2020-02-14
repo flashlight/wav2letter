@@ -218,6 +218,82 @@ __global__ void backwardKernel(
   }
 }
 
+template <class Float>
+__global__ void viterbiPathKernel(
+    int T,
+    int N,
+    int _L,
+    const Float* _input,
+    const int* _target,
+    const int* targetSize,
+    const Float* trans,
+    int* bestPaths,
+    WorkspacePtrs<Float> ws) {
+  int b = blockIdx.x;
+  auto* alpha = &ws.alpha[b * T * _L];
+  auto* input = &_input[b * T * N];
+  auto* target = &_target[b * _L];
+  auto* transBuf1 = &ws.transBuf1[b * _L];
+  auto* transBuf2 = &ws.transBuf2[b * _L];
+  int L = targetSize[b];
+
+  for (int i = threadIdx.x; i < L; i += blockDim.x) {
+    alpha[i] = i == 0 ? input[target[0]] : 0;
+    transBuf1[i] = trans[target[i] * N + target[i]];
+    transBuf2[i] = i > 0 ? trans[target[i] * N + target[i - 1]] : 0;
+  }
+  if (L > T || L == 0) {
+    return;
+  }
+
+  for (int t = 1; t < T; ++t) {
+    auto* inputCur = &input[t * N];
+    auto* alphaPrev = &alpha[(t - 1) * L];
+    auto* alphaCur = &alpha[t * L];
+
+    int high = t < L ? t : L;
+    int low = T - t < L ? L - (T - t) : 1;
+
+    // Ensure that all previous alphas have been computed
+    __syncthreads();
+
+    if (threadIdx.x == 0) {
+      if (T - t >= L) {
+        alphaCur[0] = alphaPrev[0] + transBuf1[0] + inputCur[target[0]];
+      }
+    } else if (threadIdx.x == 1) {
+      if (t < L) {
+        alphaCur[high] =
+            alphaPrev[high - 1] + transBuf2[high] + inputCur[target[high]];
+      }
+    }
+
+    for (int i = low + threadIdx.x; i < high; i += blockDim.x) {
+      double s1 = alphaPrev[i] + transBuf1[i];
+      double s2 = alphaPrev[i - 1] + transBuf2[i];
+      alphaCur[i] = inputCur[target[i]] + max(s1, s2);
+    }
+  }
+  // Ensure all threads are finished and alphas have been computed before
+  // computing backward path
+  __syncthreads();
+  if (threadIdx.x == 0) {
+    int ltrIdx = L - 1;
+    for (int t = T - 1; t > 0; t--) {
+      bestPaths[t + (b * T)] = target[ltrIdx];
+      auto* alphaPrev = &alpha[(t - 1) * L];
+      if (ltrIdx > 0) {
+        double s1 = alphaPrev[ltrIdx] + transBuf1[ltrIdx];
+        double s2 = alphaPrev[ltrIdx - 1] + transBuf2[ltrIdx];
+        if (s2 > s1) {
+          ltrIdx--;
+        }
+      }
+    }
+    bestPaths[b * T] = target[ltrIdx];
+  }
+}
+
 } // namespace
 
 namespace w2l {
@@ -274,6 +350,26 @@ void ForceAlignmentCriterion<Float>::backward(
   setZero(ws.transBufGrad2, B * L, stream);
   backwardKernel<<<B, blockSize, 0, stream>>>(
       T, N, L, target, targetSize, grad, inputGrad, transGrad, ws);
+}
+
+template <class Float>
+void ForceAlignmentCriterion<Float>::viterbiPath(
+    int B,
+    int T,
+    int N,
+    int L,
+    const Float* input,
+    const int* target,
+    const int* targetSize,
+    const Float* trans,
+    int* bestPaths,
+    void* workspace,
+    cudaStream_t stream) {
+  int blockSize = std::min(256, (L + 31) / 32 * 32);
+  WorkspacePtrs<Float> ws(workspace, B, T, N, L);
+  setZero(ws.alpha, B * T * L, stream);
+  viterbiPathKernel<<<B, blockSize, 0, stream>>>(
+      T, N, L, input, target, targetSize, trans, bestPaths, ws);
 }
 
 template struct ForceAlignmentCriterion<float>;

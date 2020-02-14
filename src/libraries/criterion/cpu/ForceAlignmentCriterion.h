@@ -9,7 +9,6 @@
 #pragma once
 
 #include <cstddef>
-
 #include "libraries/criterion/Defines.h"
 
 namespace w2l {
@@ -43,6 +42,18 @@ struct ForceAlignmentCriterion {
       const Float* grad,
       Float* inputGrad,
       Float* transGrad,
+      void* workspace);
+
+  static void viterbi(
+      int B,
+      int T,
+      int N,
+      int L,
+      const Float* input,
+      const int* target,
+      const int* targetSize,
+      const Float* trans,
+      int* bestPaths,
       void* workspace);
 };
 

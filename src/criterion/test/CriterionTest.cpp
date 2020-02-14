@@ -294,6 +294,137 @@ TEST(CriterionTest, ViterbiPath) {
   }
 }
 
+// Test constrained viterbi path for ctc and asg criterion.
+// Target will be a range from [0, 1, 2, 3]
+// Input will predict a high probability for each target i at frame i * 2 + 1
+// Expected output is [0, 0, 1, 1, 2, 2, 3, 3] for both ctc and ASG with
+// constant transitions
+TEST(CriterionTest, VertibitPathConstrained) {
+  const int B = 2;
+  const int T = 8;
+  const int N = 5;
+  const int L = 4;
+  af::array target = af::range(af::dim4(L, B), 0, s32);
+  af::array input = af::constant(0.01, N, T, B);
+  af::array expectedPath = af::constant(0, T, B, s32);
+  for (int i = 0; i < L; i++) {
+    input(i, i * 2 + 1, af::span) = 1.0;
+    expectedPath(i * 2, af::span) = i;
+    expectedPath(i * 2 + 1, af::span) = i;
+  }
+
+  ConnectionistTemporalClassificationCriterion ctc;
+  af::array ctcPath = ctc.viterbiPath(input, target);
+  af::array diff = ctcPath - expectedPath;
+  ASSERT_LE(af::max<float>(af::abs(diff)), kEpsilon);
+
+  AutoSegmentationCriterion asg(N);
+  asg.param(0).array() = af::constant(1.0, N, N);
+  af::array asgPath = asg.viterbiPath(input, target);
+  diff = asgPath - expectedPath;
+  ASSERT_LE(af::max<float>(af::abs(diff)), kEpsilon);
+}
+
+// Test that CTC can return a path with no spaces
+TEST(CriterionTest, CTCViterbiPathNopaces) {
+  const int B = 3; // Batchsize
+  const int T = 10; // Utterance length
+  const int N = 30; // Number of tokens
+  const int L = 1; // Length of target
+  const int target_idx = 1; // Token Idx of target
+
+  af::array input = af::constant(0.01, N, T, B);
+  af::array target = af::constant(0, L, B, s32);
+  af::array expectedPath = af::constant(target_idx, T, B, s32);
+
+  // Target_idx has the highest prob for all t in T
+  input(target_idx, af::span, af::span) = 1.0;
+  target(af::span, af::span) = target_idx;
+
+  ConnectionistTemporalClassificationCriterion ctc;
+  af::array vpathArr = ctc.viterbiPath(input, target);
+  af::array diff = expectedPath - vpathArr;
+  ASSERT_LE(af::max<float>(af::abs(diff)), kEpsilon);
+}
+
+// Test that CTC can return a path that optionally ends with a space
+TEST(CriterionTest, CTCViterbiPathConstrainedEndWithSpace) {
+  const int B = 3; // Batchsize
+  const int T = 10; // Utterance length
+  const int N = 30; // Number of tokens
+  const int blank_label = N - 1;
+  const int L = 1; // Length of target
+  const int target_idx = 1; // Token Idx of target
+
+  af::array input = af::constant(0.01, N, T, B);
+  af::array target = af::constant(target_idx, L, B, s32);
+  af::array expectedPath = af::constant(target_idx, T, B, s32);
+  // Target_idx has the highest prob for all t in T, except for T - 1, which is
+  // a blank label
+  input(target_idx, af::span, af::span) = 1.0;
+  input(target_idx, T - 1, af::span) = 0.00;
+  input(blank_label, T - 1, af::span) = 1.0;
+  expectedPath(T - 1, af::span) = blank_label;
+
+  ConnectionistTemporalClassificationCriterion ctc;
+  af::array vpathArr = ctc.viterbiPath(input, target);
+  af::array diff = expectedPath - vpathArr;
+  ASSERT_LE(af::max<float>(af::abs(diff)), kEpsilon);
+}
+
+// Test that CTC can return a path that optionally begins with a space
+TEST(CriterionTest, CTCViterbiPathConstrainedBeginWithSpace) {
+  const int B = 3; // Batchsize
+  const int T = 10; // Utterance length
+  const int N = 30; // Number of tokens
+  const int blank_label = N - 1;
+  const int L = 1; // Length of target
+  const int target_idx = 1; // Token Idx of target
+
+  // Target_idx has the highest prob for all t in T, except for 0, which is
+  // a blank label
+  af::array input = af::constant(0.01, N, T, B);
+  af::array target = af::constant(target_idx, L, B, s32);
+  af::array expectedPath = af::constant(target_idx, T, B, s32);
+  input(target_idx, af::span, af::span) = 1.0;
+  input(target_idx, 0, af::span) = 0.00;
+  input(blank_label, 0, af::span) = 1.0;
+  expectedPath(0, af::span) = blank_label;
+
+  ConnectionistTemporalClassificationCriterion ctc;
+  af::array vpathArr = ctc.viterbiPath(input, target);
+  af::array diff = expectedPath - vpathArr;
+  ASSERT_LE(af::max<float>(af::abs(diff)), kEpsilon);
+}
+
+// Test that CTC can return a path that optionally begins and ends with a space
+TEST(CriterionTest, CTCViterbiPathConstrainedBeginAndEndWithSpace) {
+  const int B = 3; // Batchsize
+  const int T = 10; // Utterance length
+  const int N = 30; // Number of tokens
+  const int blank_label = N - 1;
+  const int L = 1; // Length of target
+  const int target_idx = 1; // Token Idx of target
+
+  // Target_idx has the highest prob for all t in T, except for 0 and T -1
+  // which is // a blank label
+  af::array input = af::constant(0.01, N, T, B);
+  af::array target = af::constant(target_idx, L, B, s32);
+  af::array expectedPath = af::constant(target_idx, T, B, s32);
+  input(target_idx, af::span, af::span) = 1.0;
+  input(target_idx, 0, af::span) = 0.00;
+  input(blank_label, 0, af::span) = 1.0;
+  expectedPath(0, af::span) = blank_label;
+
+  input(target_idx, T - 1, af::span) = 0.00;
+  expectedPath(T - 1, af::span) = blank_label;
+
+  ConnectionistTemporalClassificationCriterion ctc;
+  af::array vpathArr = ctc.viterbiPath(input, target);
+  af::array diff = expectedPath - vpathArr;
+  ASSERT_LE(af::max<float>(af::abs(diff)), kEpsilon);
+}
+
 TEST(CriterionTest, FCCCost) {
   // Test case: 1
   std::array<float, 12> input1 = {

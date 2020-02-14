@@ -116,4 +116,53 @@ Variable ForceAlignmentCriterion::forward(
       });
 }
 
+af::array ForceAlignmentCriterion::viterbiPath(
+    const af::array& input,
+    const af::array& target) {
+  int N = input.dims(0);
+  int T = input.dims(1);
+  int B = input.dims(2);
+  int L = target.dims(0);
+
+  std::vector<std::vector<int>> bestPaths;
+  const auto& transVar = param(0);
+
+  if (N != transVar.dims(0)) {
+    throw std::invalid_argument("FAC: input dim doesn't match N:");
+  } else if (input.type() != f32) {
+    throw std::invalid_argument("FAC: input must be float32");
+  } else if (target.type() != s32) {
+    throw std::invalid_argument("FAC: target must be int32");
+  }
+
+  const auto& targetSize = getTargetSizeArray(target, T);
+  const auto& trans = transVar.array();
+  af::array bestPathsVar(T, B, s32);
+  af::array workspace(FAC::getWorkspaceSize(B, T, N, L), u8);
+
+  {
+    fl::DevicePtr inputRaw(input);
+    fl::DevicePtr targetRaw(target);
+    fl::DevicePtr targetSizeRaw(targetSize);
+    fl::DevicePtr transRaw(trans);
+    fl::DevicePtr bestPathsRaw(bestPathsVar);
+    ;
+    fl::DevicePtr workspaceRaw(workspace);
+
+    FAC::viterbiPath(
+        B,
+        T,
+        N,
+        L,
+        static_cast<const float*>(inputRaw.get()),
+        static_cast<const int*>(targetRaw.get()),
+        static_cast<const int*>(targetSizeRaw.get()),
+        static_cast<const float*>(transRaw.get()),
+        static_cast<int*>(bestPathsRaw.get()),
+        workspaceRaw.get(),
+        fl::cuda::getActiveStream());
+  }
+  return bestPathsVar;
+}
+
 } // namespace w2l

@@ -71,11 +71,14 @@ Variable ForceAlignmentCriterion::forward(
   int L = targetVar.dims(0);
 
   if (N != transVar.dims(0)) {
-    throw std::invalid_argument("FAC: input dim doesn't match N");
+    throw std::invalid_argument(
+        "ForceAlignmentCriterion(cpu)::forward: input dim doesn't match N");
   } else if (inputVar.type() != f32) {
-    throw std::invalid_argument("FAC: input must be float32");
+    throw std::invalid_argument(
+        "ForceAlignmentCriterion(cpu)::forward: input must be float32");
   } else if (targetVar.type() != s32) {
-    throw std::invalid_argument("FAC: target must be int32");
+    throw std::invalid_argument(
+        "ForceAlignmentCriterion(cpu)::forward: target must be int32");
   }
 
   const auto& targetSize = getTargetSizeArray(targetVar.array(), T);
@@ -106,6 +109,45 @@ Variable ForceAlignmentCriterion::forward(
       [=](std::vector<Variable>& inputs, const Variable& gradVar) {
         backward(inputs, gradVar, B, T, N, L, ctx);
       });
+}
+
+af::array ForceAlignmentCriterion::viterbiPath(
+    const af::array& inputVar,
+    const af::array& targetVar) {
+  const af::array& transVar = param(0).array();
+  int N = inputVar.dims(0); // Number of output tokens
+  int T = inputVar.dims(1); // Utterance length
+  int B = inputVar.dims(2); // Batchsize
+  int L = targetVar.dims(0); // Target length
+
+  if (N != transVar.dims(0)) {
+    throw std::invalid_argument("FAC: input dim doesn't match N:");
+  } else if (inputVar.type() != f32) {
+    throw std::invalid_argument("FAC: input must be float32");
+  } else if (targetVar.type() != s32) {
+    throw std::invalid_argument("FAC: target must be int32");
+  }
+  const af::array targetSize = getTargetSizeArray(targetVar, T);
+  std::shared_ptr<Context> ctx = std::make_shared<Context>();
+  std::vector<float> inputVec = afToVector<float>(inputVar);
+  ctx->targetVec = afToVector<int>(targetVar);
+  ctx->targetSizeVec = afToVector<int>(targetSize);
+  std::vector<float> transVec = afToVector<float>(transVar);
+  std::vector<float> lossVec(B);
+  ctx->workspaceVec.assign(FAC::getWorkspaceSize(B, T, N, L), 0);
+  std::vector<int> bestPaths(B * T);
+  FAC::viterbi(
+      B,
+      T,
+      N,
+      L,
+      inputVec.data(),
+      ctx->targetVec.data(),
+      ctx->targetSizeVec.data(),
+      transVec.data(),
+      bestPaths.data(),
+      ctx->workspaceVec.data());
+  return af::array(T, B, bestPaths.data());
 }
 
 } // namespace w2l

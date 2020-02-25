@@ -22,10 +22,11 @@ The model is trained with total batch size 128 for approximately 1400 epochs.
 ```
 
 ### Transformer CTC training
-The model is trained with total batch size 128 for approximatively 500 epochs with Adagrad.
-There is a warmup stage: SpecAugment is activated only after warmup, and the learning rate is warmed up (linearly increased) over the first 64000 updates to 0.03. It is then divided by 2 at epoch 160, and then every 70 epochs.
+The model is trained with total batch size 128 for approximatively 320 epochs with Adadelta.
+There is a warmup stage: SpecAugment is activated only after warmup, and the learning rate is warmed up (linearly increased) over the first 32000 updates to 0.4. It is then divided by 2 at epoch 180, and then every 40 epochs. Last 10 epochs are done with `lr=0.001`.
 ```
 [...]/wav2letter/build/Train train --flagsfile train_am_transformer_ctc.cfg --minloglevel=0 --logtostderr=1
+[...]/wav2letter/build/Train continue [path/to/am/model.bin] --lr=0.001 --lrcrit=0.001 --optimrho=0.5 --optimepsilon=0.000001
 ```
 
 ### Transformer Seq2Seq training

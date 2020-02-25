@@ -138,7 +138,7 @@ std::vector<std::vector<int64_t>> RoundRobinBatchPacker::getBatches(
   std::iota(globalBatchIdx.begin(), globalBatchIdx.end(), 0);
 
   if (seed >= 0) {
-    auto rng = std::default_random_engine(seed);
+    auto rng = std::mt19937(seed);
     std::shuffle(globalBatchIdx.begin(), globalBatchIdx.end(), rng);
   }
 

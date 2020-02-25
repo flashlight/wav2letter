@@ -1,4 +1,4 @@
-# [Semi-Supervised Speech Recognition via Local Prior Matching (Hsu et al., 2019)](https://arxiv.org/abs/2002.10336)
+# [Semi-Supervised Speech Recognition via Local Prior Matching (Hsu et al., 2020)](https://arxiv.org/abs/2002.10336)
 
 The architecture, flags files and the training script are provided to reproduce training results from the paper.
 Considered benchmarks:

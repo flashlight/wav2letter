@@ -86,14 +86,12 @@ int main(int argc, char** argv) {
     auto viterbipath = afToVector<int>(viterbipathArr);
     remapLabels(viterbipath, dict);
 
-    out << sampleId << "\t";
-    for (int i = 0; i < viterbipath.size(); ++i) {
-      out << "a"; // use a dummy output token
-      if (i < viterbipath.size() - 1) {
-        out << " ";
-      }
+    if (viterbipath.size() == 0) {
+      continue;
     }
-    out << std::endl;
+    // assume "reflen1" is not a valid word in the lexicon
+    out << sampleId << " reflen" << std::to_string(viterbipath.size())
+        << std::endl;
   }
   out.close();
 

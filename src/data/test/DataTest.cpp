@@ -200,15 +200,15 @@ TEST(RoundRobinBatchShufflerTest, params) {
   auto batches = packer.getBatches(11, 0);
   EXPECT_EQ(batches.size(), 3);
   ASSERT_THAT(batches[0], ::testing::ElementsAre(8, 9));
-  ASSERT_THAT(batches[1], ::testing::ElementsAre(0, 1));
-  ASSERT_THAT(batches[2], ::testing::ElementsAre(4, 5));
+  ASSERT_THAT(batches[1], ::testing::ElementsAre(4, 5));
+  ASSERT_THAT(batches[2], ::testing::ElementsAre(0, 1));
 
   packer = RoundRobinBatchPacker(2, 2, 1);
   batches = packer.getBatches(11, 0);
   EXPECT_EQ(batches.size(), 3);
   ASSERT_THAT(batches[0], ::testing::ElementsAre(10));
-  ASSERT_THAT(batches[1], ::testing::ElementsAre(2, 3));
-  ASSERT_THAT(batches[2], ::testing::ElementsAre(6, 7));
+  ASSERT_THAT(batches[1], ::testing::ElementsAre(6, 7));
+  ASSERT_THAT(batches[2], ::testing::ElementsAre(2, 3));
 
   // No shuffling
   packer = RoundRobinBatchPacker(2, 2, 0);

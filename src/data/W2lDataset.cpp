@@ -10,6 +10,7 @@
 
 #include <functional>
 #include <numeric>
+#include <utility>
 
 #include <glog/logging.h>
 
@@ -139,7 +140,11 @@ std::vector<std::vector<int64_t>> RoundRobinBatchPacker::getBatches(
 
   if (seed >= 0) {
     auto rng = std::mt19937(seed);
-    std::shuffle(globalBatchIdx.begin(), globalBatchIdx.end(), rng);
+    auto n = globalBatchIdx.size();
+    // custom implementation of shuffle - https://stackoverflow.com/a/51931164
+    for (auto i = n; i > 1; --i) {
+      std::swap(globalBatchIdx[i - 1], globalBatchIdx[rng() % n]);
+    }
   }
 
   std::vector<std::vector<int64_t>> batches(nGlobalBatches);

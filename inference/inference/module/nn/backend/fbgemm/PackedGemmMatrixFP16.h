@@ -52,6 +52,8 @@ void load(
     std::shared_ptr<fbgemm::PackedGemmMatrixFP16>& packedMatrix) {
   int numRows = 0;
   int numCols = 0;
+
+  // The following params are unused but kept for backward compatibility
   int blockRowSize = 0;
   int lastBrow = 0;
   int blockColSize = 0;
@@ -67,19 +69,22 @@ void load(
      numBrow,
      numBcol,
      matSize);
+
+  std::vector<fbgemm::float16> tempBufFp16;
+  ar(tempBufFp16);
+
+  std::vector<float> tempBufFp32(numRows * numCols);
+  for (int i = 0; i < numRows * numCols; ++i) {
+    tempBufFp32[i] = fbgemm::cpu_half2float(tempBufFp16[i]);
+  }
+
+  constexpr float alpha = 1.0;
   packedMatrix = std::make_shared<fbgemm::PackedGemmMatrixFP16>(
+      fbgemm::matrix_op_t::NoTranspose,
       numRows,
       numCols,
-      blockRowSize,
-      lastBrow,
-      blockColSize,
-      numBrow,
-      numBcol,
-      matSize);
-
-  std::vector<fbgemm::float16> tempBuf;
-  ar(tempBuf);
-  packedMatrix->packFromSrc(fbgemm::matrix_op_t::NoTranspose, tempBuf.data());
+      alpha,
+      tempBufFp32.data());
 }
 
 } // namespace cereal

@@ -142,7 +142,7 @@ std::vector<std::vector<int64_t>> RoundRobinBatchPacker::getBatches(
     auto rng = std::mt19937(seed);
     auto n = globalBatchIdx.size();
     // custom implementation of shuffle - https://stackoverflow.com/a/51931164
-    for (auto i = n; i > 1; --i) {
+    for (auto i = n; i >= 1; --i) {
       std::swap(globalBatchIdx[i - 1], globalBatchIdx[rng() % n]);
     }
   }

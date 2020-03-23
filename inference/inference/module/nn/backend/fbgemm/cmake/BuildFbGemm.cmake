@@ -5,7 +5,7 @@ include(ExternalProject)
 
 set(fbgemm_URL https://github.com/pytorch/FBGEMM.git)
 set(fbgemm_BUILD ${CMAKE_CURRENT_BINARY_DIR}/fbgemm/)
-set(fbgemm_TAG b35b183e45a8b9af50efe29c7fd1b2460ad16182)
+set(fbgemm_TAG 58c002d1593f32aa420ab56b5c344e60d3fb6d05)
 
 # Download fbgemm
 if (NOT TARGET fbgemm)

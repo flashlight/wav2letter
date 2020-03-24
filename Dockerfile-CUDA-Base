@@ -58,9 +58,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     $PIP_INSTALL \
         sox \
         tqdm \
-        numpy \
-        torch==1.2.0 \
-        packaging==19.1 && \
+        numpy && \
 # ==================================================================
 # libsndfile https://github.com/erikd/libsndfile.git
 # ------------------------------------------------------------------

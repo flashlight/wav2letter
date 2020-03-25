@@ -19,6 +19,7 @@ namespace w2l {
 std::pair<std::string, std::string> getStatus(
     TrainMeters& meters,
     int64_t epoch,
+    int64_t nupdates,
     double lr,
     double lrcrit,
     bool verbose /* = false */,
@@ -39,6 +40,7 @@ std::pair<std::string, std::string> getStatus(
     insertItem("time", format("%s", getCurrentTime().c_str()));
   }
   insertItem("epoch", format("%8d", epoch));
+  insertItem("nupdates", format("%12d", nupdates));
   insertItem("lr", format("%4.6lf", lr));
   insertItem("lrcriterion", format("%4.6lf", lrcrit));
 

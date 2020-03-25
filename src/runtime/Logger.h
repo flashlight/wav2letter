@@ -48,6 +48,7 @@ struct TestMeters {
 std::pair<std::string, std::string> getStatus(
     TrainMeters& meters,
     int64_t epoch,
+    int64_t nupdates,
     double lr,
     double lrcrit,
     bool verbose = false,

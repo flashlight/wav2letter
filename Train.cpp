@@ -47,7 +47,8 @@ int main(int argc, char** argv) {
   std::string runPath; // current experiment path
   std::string reloadPath; // path to model to reload
   std::string runStatus = argv[1];
-  int startEpoch = 0;
+  int64_t startEpoch = 0;
+  int64_t startUpdate = 0;
   if (argc <= 1) {
     LOG(FATAL) << gflags::ProgramUsage();
   }
@@ -90,6 +91,12 @@ int main(int argc, char** argv) {
       LOG(WARNING) << "Did not find epoch to start from, starting from 0.";
     } else {
       startEpoch = std::stoi(epoch->second);
+    }
+    auto nbupdates = cfg.find(kUpdates);
+    if (nbupdates == cfg.end()) {
+      LOG(WARNING) << "Did not find #updates to start from, starting from 0.";
+    } else {
+      startUpdate = std::stoi(nbupdates->second);
     }
   } else if (runStatus == kForkMode) {
     reloadPath = argv[2];
@@ -256,15 +263,15 @@ int main(int argc, char** argv) {
   std::shared_ptr<LinSegCriterion> linseg;
   std::shared_ptr<fl::FirstOrderOptimizer> linNetoptim;
   std::shared_ptr<fl::FirstOrderOptimizer> linCritoptim;
-  if (FLAGS_linseg > startEpoch) {
+  if (FLAGS_linseg > startUpdate) {
     if (FLAGS_criterion != kAsgCriterion) {
       LOG(FATAL) << "linseg may only be used with ASG criterion";
     }
     linseg = std::make_shared<LinSegCriterion>(numClasses, scalemode);
     linseg->setParams(criterion->param(0), 0);
     LOG_MASTER(INFO) << "[Criterion] " << linseg->prettyString()
-                     << " (for first " << FLAGS_linseg - startEpoch
-                     << " epochs)";
+                     << " (for first " << FLAGS_linseg - startUpdate
+                     << " updates)";
 
     linNetoptim = initOptimizer(
         {network},
@@ -276,11 +283,11 @@ int main(int argc, char** argv) {
         initOptimizer({linseg}, FLAGS_critoptim, initLinCritlr, 0.0, 0.0);
 
     LOG_MASTER(INFO) << "[Network Optimizer] " << linNetoptim->prettyString()
-                     << " (for first " << FLAGS_linseg - startEpoch
-                     << " epochs)";
+                     << " (for first " << FLAGS_linseg - startUpdate
+                     << " updates)";
     LOG_MASTER(INFO) << "[Criterion Optimizer] " << linCritoptim->prettyString()
-                     << " (for first " << FLAGS_linseg - startEpoch
-                     << " epochs)";
+                     << " (for first " << FLAGS_linseg - startUpdate
+                     << " updates)";
   }
 
   /* ===================== Meters ===================== */
@@ -308,7 +315,7 @@ int main(int argc, char** argv) {
       LOG(FATAL) << "failed to open perf file for writing";
     }
     // write perf header
-    auto perfMsg = getStatus(meters, 0, 0, 0, false, true, "\t").first;
+    auto perfMsg = getStatus(meters, 0, 0, 0, 0, false, true, "\t").first;
     appendToLog(perfFile, "# " + perfMsg);
     // write config
     std::ofstream configFile(getRunFile("config", runIdx, runPath));
@@ -316,25 +323,31 @@ int main(int argc, char** argv) {
     ar(CEREAL_NVP(config));
   }
 
-  auto logStatus =
-      [&perfFile, &logFile, isMaster](
-          TrainMeters& mtrs, int64_t epoch, double lr, double lrcrit) {
-        syncMeter(mtrs);
+  auto logStatus = [&perfFile, &logFile, isMaster](
+                       TrainMeters& mtrs,
+                       int64_t epoch,
+                       int64_t nupdates,
+                       double lr,
+                       double lrcrit) {
+    syncMeter(mtrs);
 
-        if (isMaster) {
-          auto logMsg =
-              getStatus(mtrs, epoch, lr, lrcrit, true, false, " | ").second;
-          auto perfMsg = getStatus(mtrs, epoch, lr, lrcrit, false, true).second;
-          LOG_MASTER(INFO) << logMsg;
-          appendToLog(logFile, logMsg);
-          appendToLog(perfFile, perfMsg);
-        }
-      };
+    if (isMaster) {
+      auto logMsg =
+          getStatus(mtrs, epoch, nupdates, lr, lrcrit, true, false, " | ")
+              .second;
+      auto perfMsg =
+          getStatus(mtrs, epoch, nupdates, lr, lrcrit, false, true).second;
+      LOG_MASTER(INFO) << logMsg;
+      appendToLog(logFile, logMsg);
+      appendToLog(perfFile, perfMsg);
+    }
+  };
 
-  auto saveModels = [&](int iter) {
+  auto saveModels = [&](int iter, int totalUpdates) {
     if (isMaster) {
       // Save last epoch
       config[kEpoch] = std::to_string(iter);
+      config[kUpdates] = std::to_string(totalUpdates);
 
       std::string filename;
       if (FLAGS_itersave) {
@@ -423,18 +436,20 @@ int main(int argc, char** argv) {
     mtrs.wrdEdit.reset();
     mtrs.loss.reset();
 
-    for (auto& sample : *testds) {
-      auto output = ntwrk->forward({fl::input(sample[kInputIdx])}).front();
+    for (auto& batch : *testds) {
+      auto output = ntwrk->forward({fl::input(batch[kInputIdx])}).front();
       auto loss =
-          crit->forward({output, fl::Variable(sample[kTargetIdx], false)})
+          crit->forward({output, fl::Variable(batch[kTargetIdx], false)})
               .front();
       mtrs.loss.add(loss.array());
-      evalOutput(output.array(), sample[kTargetIdx], mtrs);
+      evalOutput(output.array(), batch[kTargetIdx], mtrs);
     }
   };
 
   auto trainEvalIds =
       getTrainEvalIds(trainds->size(), FLAGS_pcttraineval, FLAGS_seed);
+
+  int64_t curEpoch = startEpoch;
 
   auto train = [&meters,
                 &test,
@@ -443,7 +458,8 @@ int main(int argc, char** argv) {
                 &evalOutput,
                 &validds,
                 &trainEvalIds,
-                &startEpoch,
+                &curEpoch,
+                &startUpdate,
                 reducer](
                    std::shared_ptr<fl::Module> ntwrk,
                    std::shared_ptr<SequenceCriterion> crit,
@@ -453,7 +469,7 @@ int main(int argc, char** argv) {
                    double initlr,
                    double initcritlr,
                    bool clampCrit,
-                   int nepochs) {
+                   int64_t nbatches) {
     if (reducer) {
       fl::distributeModuleGrads(ntwrk, reducer);
       fl::distributeModuleGrads(crit, reducer);
@@ -476,7 +492,10 @@ int main(int argc, char** argv) {
       meters.optimtimer.reset();
       meters.timer.reset();
     };
-    auto runValAndSaveModel = [&](int64_t epoch, double lr, double lrcrit) {
+    auto runValAndSaveModel = [&](int64_t totalEpochs,
+                                  int64_t totalUpdates,
+                                  double lr,
+                                  double lrcrit) {
       meters.runtime.stop();
       meters.timer.stop();
       meters.sampletimer.stop();
@@ -492,13 +511,13 @@ int main(int argc, char** argv) {
 
       // print status
       try {
-        logStatus(meters, epoch, lr, lrcrit);
+        logStatus(meters, totalEpochs, totalUpdates, lr, lrcrit);
       } catch (const std::exception& ex) {
         LOG(ERROR) << "Error while writing logs: " << ex.what();
       }
       // save last and best models
       try {
-        saveModels(epoch);
+        saveModels(totalEpochs, totalUpdates);
       } catch (const std::exception& ex) {
         LOG(FATAL) << "Error while saving models: " << ex.what();
       }
@@ -508,20 +527,9 @@ int main(int argc, char** argv) {
       meters.train.wrdEdit.reset();
     };
 
-    int64_t curEpoch = startEpoch;
-    int64_t sampleIdx = 0;
-    while (curEpoch < nepochs) {
-      double lrScale = 1;
-      if (FLAGS_lrcosine) {
-        const double pi = std::acos(-1);
-        lrScale = std::cos(((double)curEpoch) / ((double)nepochs) * pi / 2.0);
-      } else {
-        lrScale = std::pow(FLAGS_gamma, curEpoch / FLAGS_stepsize);
-      }
-      netopt->setLr(lrScale * initlr);
-      critopt->setLr(lrScale * initcritlr);
-
-      ++curEpoch;
+    int64_t curBatch = startUpdate;
+    while (curBatch < nbatches) {
+      ++curEpoch; // counts partial epochs too!
       ntwrk->train();
       crit->train();
       if (FLAGS_reportiters == 0) {
@@ -536,40 +544,50 @@ int main(int argc, char** argv) {
       meters.runtime.resume();
       meters.timer.resume();
       LOG_MASTER(INFO) << "Epoch " << curEpoch << " started!";
-      for (auto& sample : *trainset) {
-        // meters
-        ++sampleIdx;
+      for (auto& batch : *trainset) {
+        ++curBatch;
+        double lrScale = 1;
+        if (FLAGS_lrcosine) {
+          const double pi = std::acos(-1);
+          lrScale =
+              std::cos(((double)curBatch) / ((double)nbatches) * pi / 2.0);
+        } else {
+          lrScale =
+              std::pow(FLAGS_gamma, (double)curBatch / (double)FLAGS_stepsize);
+        }
+        netopt->setLr(lrScale * initlr * curBatch);
+        critopt->setLr(lrScale * initcritlr * curBatch);
         af::sync();
         meters.timer.incUnit();
         meters.sampletimer.stopAndIncUnit();
-        meters.stats.add(sample[kInputIdx], sample[kTargetIdx]);
-        if (af::anyTrue<bool>(af::isNaN(sample[kInputIdx])) ||
-            af::anyTrue<bool>(af::isNaN(sample[kTargetIdx]))) {
+        meters.stats.add(batch[kInputIdx], batch[kTargetIdx]);
+        if (af::anyTrue<bool>(af::isNaN(batch[kInputIdx])) ||
+            af::anyTrue<bool>(af::isNaN(batch[kTargetIdx]))) {
           LOG(FATAL) << "Sample has NaN values - "
-                     << join(",", readSampleIds(sample[kSampleIdx]));
+                     << join(",", readSampleIds(batch[kSampleIdx]));
         }
 
         // forward
         meters.fwdtimer.resume();
-        auto output = ntwrk->forward({fl::input(sample[kInputIdx])}).front();
+        auto output = ntwrk->forward({fl::input(batch[kInputIdx])}).front();
         af::sync();
         meters.critfwdtimer.resume();
         auto loss =
-            crit->forward({output, fl::noGrad(sample[kTargetIdx])}).front();
+            crit->forward({output, fl::noGrad(batch[kTargetIdx])}).front();
         af::sync();
         meters.fwdtimer.stopAndIncUnit();
         meters.critfwdtimer.stopAndIncUnit();
 
         if (af::anyTrue<bool>(af::isNaN(loss.array()))) {
           LOG(FATAL) << "Loss has NaN values. Samples - "
-                     << join(",", readSampleIds(sample[kSampleIdx]));
+                     << join(",", readSampleIds(batch[kSampleIdx]));
         }
         meters.train.loss.add(loss.array());
 
-        int64_t batchIdx = (sampleIdx - 1) % trainset->size();
+        int64_t batchIdx = (curBatch - startUpdate - 1) % trainset->size();
         int64_t globalBatchIdx = trainset->getGlobalBatchIdx(batchIdx);
         if (trainEvalIds.find(globalBatchIdx) != trainEvalIds.end()) {
-          evalOutput(output.array(), sample[kTargetIdx], meters.train);
+          evalOutput(output.array(), batch[kTargetIdx], meters.train);
         }
 
         // backward
@@ -617,8 +635,9 @@ int main(int argc, char** argv) {
         meters.optimtimer.stopAndIncUnit();
         meters.sampletimer.resume();
 
-        if (FLAGS_reportiters > 0 && sampleIdx % FLAGS_reportiters == 0) {
-          runValAndSaveModel(curEpoch, netopt->getLr(), critopt->getLr());
+        if (FLAGS_reportiters > 0 && curBatch % FLAGS_reportiters == 0) {
+          runValAndSaveModel(
+              curEpoch, curBatch, netopt->getLr(), critopt->getLr());
           resetTimeStatMeters();
           ntwrk->train();
           crit->train();
@@ -626,16 +645,20 @@ int main(int argc, char** argv) {
           meters.runtime.resume();
           meters.timer.resume();
         }
+        if (curBatch > nbatches) {
+          break;
+        }
       }
       af::sync();
       if (FLAGS_reportiters == 0) {
-        runValAndSaveModel(curEpoch, netopt->getLr(), critopt->getLr());
+        runValAndSaveModel(
+            curEpoch, curBatch, netopt->getLr(), critopt->getLr());
       }
     }
   };
 
   /* ===================== Train ===================== */
-  if (FLAGS_linseg - startEpoch > 0) {
+  if (FLAGS_linseg - startUpdate > 0) {
     train(
         network,
         linseg,
@@ -647,13 +670,13 @@ int main(int argc, char** argv) {
         false /* clampCrit */,
         FLAGS_linseg - startEpoch);
 
-    startEpoch = FLAGS_linseg;
+    startUpdate = FLAGS_linseg;
     LOG_MASTER(INFO) << "Finished LinSeg";
   }
 
-  if (FLAGS_pretrainWindow - startEpoch > 0) {
-    auto s2s = std::dynamic_pointer_cast<Seq2SeqCriterion>(criterion);
-    auto trde = std::dynamic_pointer_cast<TransformerCriterion>(criterion);
+  auto s2s = std::dynamic_pointer_cast<Seq2SeqCriterion>(criterion);
+  auto trde = std::dynamic_pointer_cast<TransformerCriterion>(criterion);
+  if (FLAGS_pretrainWindow - startUpdate > 0) {
     if (!s2s && !trde) {
       LOG(FATAL) << "Window pretraining only allowed for seq2seq.";
     }
@@ -663,16 +686,16 @@ int main(int argc, char** argv) {
         trainds,
         netoptim,
         critoptim,
-        FLAGS_lr,
-        FLAGS_lrcrit,
-        true /* clampCrit */,
+        netoptim->getLr(),
+        critoptim->getLr(),
+        true,
         FLAGS_pretrainWindow);
-    if (s2s) {
-      s2s->clearWindow();
-    } else if (trde) {
-      trde->clearWindow();
-    }
-    startEpoch = FLAGS_pretrainWindow;
+    startUpdate = FLAGS_pretrainWindow;
+  }
+  if (s2s) {
+    s2s->clearWindow();
+  } else if (trde) {
+    trde->clearWindow();
   }
 
   train(
@@ -681,8 +704,8 @@ int main(int argc, char** argv) {
       trainds,
       netoptim,
       critoptim,
-      FLAGS_lr,
-      FLAGS_lrcrit,
+      netoptim->getLr(),
+      critoptim->getLr(),
       true /* clampCrit */,
       FLAGS_iter);
 

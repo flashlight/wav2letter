@@ -75,7 +75,7 @@ DEFINE_bool(sqnorm, false, "use square-root while normalizing criterion loss");
 DEFINE_bool(lrcosine, false, "use cosine learning rate schedule");
 
 // LEARNING HYPER-PARAMETER OPTIONS
-DEFINE_int64(iter, 1000000, "number of iterations");
+DEFINE_int64(iter, std::numeric_limits<int64_t>::max(), "number of updates");
 DEFINE_bool(itersave, false, "save model at each iteration");
 DEFINE_double(lr, 1.0, "learning rate");
 DEFINE_double(momentum, 0.0, "momentum factor");
@@ -90,8 +90,8 @@ DEFINE_double(optimepsilon, 1e-8, "epsilon in the optimizer");
 // LR-SCHEDULER OPTIONS
 DEFINE_int64(
     stepsize,
-    1000000,
-    "We multiply LR by gamma every stepsize epochs");
+    std::numeric_limits<int64_t>::max(),
+    "We multiply LR by gamma every stepsize updates");
 DEFINE_double(gamma, 1.0, "the LR annealing multiplier");
 
 // OPTIMIZER OPTIONS
@@ -210,7 +210,7 @@ DEFINE_int32(
     "hard attention limit");
 
 // ASG OPTIONS
-DEFINE_int64(linseg, 0, "# of epochs of LinSeg to init transitions for ASG");
+DEFINE_int64(linseg, 0, "# of updates of LinSeg to init transitions for ASG");
 DEFINE_double(linlr, -1.0, "LinSeg learning rate (if < 0, use lr)");
 DEFINE_double(
     linlrcrit,
@@ -279,7 +279,7 @@ DEFINE_bool(trainWithWindow, false, "use window in training");
 DEFINE_int64(
     pretrainWindow,
     0,
-    "use window in training for pretrainWindow epochs");
+    "use window in training for pretrainWindow in updates");
 DEFINE_double(gumbeltemperature, 1.0, "temperature in gumbel softmax");
 DEFINE_int64(decoderrnnlayer, 1, "The number of decoder rnn layers.");
 DEFINE_int64(decoderattnround, 1, "The number of decoder attention rounds.");

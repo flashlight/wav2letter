@@ -530,6 +530,11 @@ int main(int argc, char** argv) {
     int64_t curBatch = startUpdate;
     while (curBatch < nbatches) {
       ++curEpoch; // counts partial epochs too!
+      if (curEpoch >= FLAGS_lr_decay &&
+          (curEpoch - FLAGS_lr_decay) % FLAGS_lr_decay_step == 0) {
+        initlr /= 2;
+        initcritlr /= 2;
+      }
       ntwrk->train();
       crit->train();
       if (FLAGS_reportiters == 0) {

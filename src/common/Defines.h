@@ -153,6 +153,8 @@ DECLARE_double(momentum);
 DECLARE_double(weightdecay);
 DECLARE_bool(sqnorm);
 DECLARE_double(lrcrit);
+DECLARE_int64(lr_decay);
+DECLARE_int64(lr_decay_step);
 DECLARE_double(maxgradnorm);
 DECLARE_double(adambeta1); // TODO rename into optim beta1
 DECLARE_double(adambeta2); // TODO rename into optim beta2

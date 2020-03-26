@@ -81,6 +81,14 @@ DEFINE_double(lr, 1.0, "learning rate");
 DEFINE_double(momentum, 0.0, "momentum factor");
 DEFINE_double(weightdecay, 0.0, "weight decay (L2 penalty)");
 DEFINE_double(lrcrit, 0, "criterion learning rate");
+DEFINE_int64(
+    lr_decay,
+    std::numeric_limits<int64_t>::max(),
+    "Epoch for the first LR decay");
+DEFINE_int64(
+    lr_decay_step,
+    std::numeric_limits<int64_t>::max(),
+    "Epochs for each new LR decay");
 DEFINE_double(maxgradnorm, 0, "Clip gradients at value (0 = no clipping)");
 DEFINE_double(adambeta1, 0.9, "beta1 in the Adam optimizer");
 DEFINE_double(adambeta2, 0.999, "beta2 in the Adam optimizer");

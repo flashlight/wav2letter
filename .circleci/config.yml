@@ -67,7 +67,7 @@ jobs:
             make -j$(nproc) && make test && \
             pip install torch==1.2.0 packaging==19.1 && \
             export KENLM_ROOT_DIR=/root/kenlm && \
-            cd /root/wav2letter/bindings/python && pip install -e ."
+            cd /wav2letter/bindings/python && pip install -e ."
   build-cpu:
     docker:
       - image: wav2letter/wav2letter:cpu-base-latest
@@ -89,7 +89,7 @@ jobs:
             make 
             pip install torch==1.2.0 packaging==19.1
             export USE_CUDA=0 && export KENLM_ROOT_DIR=/root/kenlm
-            cd /root/wav2letter/bindings/python && pip install -e .
+            cd /root/project/bindings/python && pip install -e .
 workflows:
   version: 2
   build_and_install:

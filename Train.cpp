@@ -560,8 +560,8 @@ int main(int argc, char** argv) {
           lrScale =
               std::pow(FLAGS_gamma, (double)curBatch / (double)FLAGS_stepsize);
         }
-        netopt->setLr(lrScale * initlr * curBatch);
-        critopt->setLr(lrScale * initcritlr * curBatch);
+        netopt->setLr(lrScale * initlr);
+        critopt->setLr(lrScale * initcritlr);
         af::sync();
         meters.timer.incUnit();
         meters.sampletimer.stopAndIncUnit();
@@ -673,7 +673,7 @@ int main(int argc, char** argv) {
         initLinNetlr,
         initLinCritlr,
         false /* clampCrit */,
-        FLAGS_linseg - startEpoch);
+        FLAGS_linseg - startUpdate);
 
     startUpdate = FLAGS_linseg;
     LOG_MASTER(INFO) << "Finished LinSeg";
@@ -694,8 +694,9 @@ int main(int argc, char** argv) {
         netoptim->getLr(),
         critoptim->getLr(),
         true,
-        FLAGS_pretrainWindow);
+        FLAGS_pretrainWindow - startUpdate);
     startUpdate = FLAGS_pretrainWindow;
+    LOG_MASTER(INFO) << "Finished window pretraining.";
   }
   if (s2s) {
     s2s->clearWindow();

@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
     # create leixcon
     lexicon_file = os.path.join(am_dst, "lexicon.txt")
-    sys.stdout.write("creating train lexicon file {t}...\n".format(t=tkn_file))
+    sys.stdout.write("creating train lexicon file {t}...\n".format(t=lexicon_file))
     sys.stdout.flush()
     with open(lexicon_file, "w") as f:
         for w in train_dev_words.keys():

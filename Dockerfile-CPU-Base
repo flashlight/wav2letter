@@ -2,7 +2,7 @@
 # module list
 # ------------------------------------------------------------------
 # inherit from flml/flashlight:cpu-base-latest
-# libsndfile       bef2abc      (git)
+# libsndfile       4bdd741      (git)
 # FFTW             latest       (apt)
 # KenLM            e47088d      (git)
 # GLOG             latest       (apt)
@@ -18,12 +18,14 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         # for libsndfile
         autoconf automake autogen build-essential libasound2-dev \
         libflac-dev libogg-dev libtool libvorbis-dev pkg-config python \
+        # for libsndfile for ubuntu 18.04
+        libopus-dev \
         # FFTW
         libfftw3-dev \
         # for kenlm
         zlib1g-dev libbz2-dev liblzma-dev libboost-all-dev \
         # gflags
-        libgflags-dev libgflags2v5 \
+        libgflags-dev libgflags2.2 \
         # for glog
         libgoogle-glog-dev libgoogle-glog0v5 \
         # for receipts data processing
@@ -50,13 +52,14 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         setuptools \
         && \
     $PIP_INSTALL \
+        numpy \
         sox \
         tqdm && \
 # ==================================================================
 # libsndfile https://github.com/erikd/libsndfile.git
 # ------------------------------------------------------------------
     cd /tmp && git clone https://github.com/erikd/libsndfile.git && \
-    cd libsndfile && git checkout bef2abc9e888142203953addc31c50a192e496e5 && \
+    cd libsndfile && git checkout 4bdd7414602946a18799b514001b0570e8693a47 && \
     ./autogen.sh && ./configure --enable-werror && \
     make && make check && make install && \
 # ==================================================================

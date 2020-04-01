@@ -20,8 +20,8 @@ jobs:
           name: Setup Docker and nvidia-docker
           command: |
             # Install CUDA 10.0
-            wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-repo-ubuntu1804_10.0.130-1_amd64.deb
-            sudo dpkg -i cuda-repo-ubuntu1804_10.0.130-1_amd64.deb
+            wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_10.0.130-1_amd64.deb
+            sudo dpkg -i cuda-repo-ubuntu1604_10.0.130-1_amd64.deb
             sudo apt-get update || true
             sudo apt-get --yes --force-yes install cuda
             nvidia-smi

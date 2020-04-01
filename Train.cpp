@@ -560,8 +560,11 @@ int main(int argc, char** argv) {
           lrScale =
               std::pow(FLAGS_gamma, (double)curBatch / (double)FLAGS_stepsize);
         }
-        netopt->setLr(lrScale * initlr);
-        critopt->setLr(lrScale * initcritlr);
+        netopt->setLr(
+            lrScale * initlr * std::min(curBatch / double(FLAGS_warmup), 1.0));
+        critopt->setLr(
+            lrScale * initcritlr *
+            std::min(curBatch / double(FLAGS_warmup), 1.0));
         af::sync();
         meters.timer.incUnit();
         meters.sampletimer.stopAndIncUnit();

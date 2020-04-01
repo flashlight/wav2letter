@@ -81,6 +81,7 @@ DEFINE_double(lr, 1.0, "learning rate");
 DEFINE_double(momentum, 0.0, "momentum factor");
 DEFINE_double(weightdecay, 0.0, "weight decay (L2 penalty)");
 DEFINE_double(lrcrit, 0, "criterion learning rate");
+DEFINE_int64(warmup, 8000, "the LR warmup parameter, in updates");
 DEFINE_int64(
     lr_decay,
     std::numeric_limits<int64_t>::max(),

@@ -185,6 +185,15 @@ DECLARE_int64(fftcachesize);
 DECLARE_int64(framesizems);
 DECLARE_int64(framestridems);
 
+/* ========== SPECAUGMENT OPTIONS ========== */
+
+DECLARE_bool(use_saug);
+DECLARE_int64(saug_fmaskf);
+DECLARE_int64(saug_fmaskn);
+DECLARE_int64(saug_tmaskt);
+DECLARE_double(saug_tmaskp);
+DECLARE_int64(saug_tmaskn);
+
 /* ========== RUN OPTIONS ========== */
 
 DECLARE_string(datadir);

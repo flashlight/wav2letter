@@ -129,6 +129,17 @@ DEFINE_int64(
     10,
     "Stride millisecond for power spectrum feature");
 
+// SPECAUGMENT OPTIONS
+DEFINE_bool(use_saug, false, "Use SpecAugment");
+DEFINE_int64(saug_fmaskf, 27, "Max number of frequency bands that are masked");
+DEFINE_int64(saug_fmaskn, 2, "Number of frequency masks");
+DEFINE_int64(saug_tmaskt, 100, "Max number of timesteps that are masked");
+DEFINE_double(
+    saug_tmaskp,
+    1.0,
+    "Max proportion of the input sequence (1.0 is 100%) that can be masked in time");
+DEFINE_int64(saug_tmaskn, 2, "Number of time masks");
+
 // RUN OPTIONS
 DEFINE_string(datadir, "", "speech data directory");
 DEFINE_string(tokensdir, "", "dictionary directory");

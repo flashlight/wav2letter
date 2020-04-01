@@ -482,12 +482,12 @@ int main(int argc, char** argv) {
     std::shared_ptr<SpecAugment> saug;
     if (FLAGS_saug_start_update >= 0) {
       saug = std::make_shared<SpecAugment>(
-          FLAGS_filterbanks, // default 80
-          static_cast<int>(27 * FLAGS_filterbanks * 1.0 / 80), // default 27
-          2,
-          100,
-          1.0,
-          2);
+          FLAGS_filterbanks,
+          FLAGS_saug_fmaskf,
+          FLAGS_saug_fmaskn,
+          FLAGS_saug_tmaskt,
+          FLAGS_saug_tmaskp,
+          FLAGS_saug_tmaskn);
     }
 
     fl::allReduceParameters(ntwrk);

@@ -479,6 +479,17 @@ int main(int argc, char** argv) {
     meters.train.tknEdit.reset();
     meters.train.wrdEdit.reset();
 
+    std::shared_ptr<SpecAugment> saug;
+    if (FLAGS_saug_start_update >= 0) {
+      saug = std::make_shared<SpecAugment>(
+          FLAGS_filterbanks, // default 80
+          static_cast<int>(27 * FLAGS_filterbanks * 1.0 / 80), // default 27
+          2,
+          100,
+          1.0,
+          2);
+    }
+
     fl::allReduceParameters(ntwrk);
     fl::allReduceParameters(crit);
 
@@ -577,7 +588,12 @@ int main(int argc, char** argv) {
 
         // forward
         meters.fwdtimer.resume();
-        auto output = ntwrk->forward({fl::input(batch[kInputIdx])}).front();
+        auto input = fl::input(batch[kInputIdx]);
+        if (FLAGS_saug_start_update >= 0 &&
+            curBatch >= FLAGS_saug_start_update) {
+          input = saug->forward(input);
+        }
+        auto output = ntwrk->forward({input}).front();
         af::sync();
         meters.critfwdtimer.resume();
         auto loss =

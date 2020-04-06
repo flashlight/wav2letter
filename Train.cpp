@@ -440,7 +440,7 @@ int main(int argc, char** argv) {
 
     for (auto& batch : *testds) {
       auto output = ntwrk->forward({fl::input(batch[kInputIdx])}).front();
-      output.cast(batch[kInputIdx].type());
+      output.inPlaceCast(batch[kInputIdx].type());
       auto loss =
           crit->forward({output, fl::Variable(batch[kTargetIdx], false)})
               .front();
@@ -592,6 +592,7 @@ int main(int argc, char** argv) {
           LOG(FATAL) << "Sample has NaN values - "
                      << join(",", readSampleIds(batch[kSampleIdx]));
         }
+
         // This loop is required to ensure no training example is skipped while
         // adjusting the loss scale factor. Note that when the gradient values
         // are Inf/NaN, the results are skipped and the program tries to adjust
@@ -602,27 +603,33 @@ int main(int argc, char** argv) {
         bool retrySample = false;
         do {
           retrySample = false;
-
           // forward
           meters.fwdtimer.resume();
-          auto output = ntwrk->forward({fl::input(sample[kInputIdx])}).front();
-          output.cast(sample[kInputIdx].type());
+          auto input = fl::input(batch[kInputIdx]);
+          if (FLAGS_saug_start_update >= 0 &&
+              curBatch >= FLAGS_saug_start_update) {
+            input = saug->forward(input);
+          }
+          auto output = ntwrk->forward({input}).front();
+          output.inPlaceCast(batch[kInputIdx].type());
           af::sync();
           meters.critfwdtimer.resume();
           auto loss =
-              crit->forward({output, fl::noGrad(sample[kTargetIdx])}).front();
+              crit->forward({output, fl::noGrad(batch[kTargetIdx])}).front();
           af::sync();
+          meters.fwdtimer.stopAndIncUnit();
+          meters.critfwdtimer.stopAndIncUnit();
+
           if (FLAGS_mixedprecision) {
             ++scaleCounter;
             loss = loss * scaleFactor;
           }
-          meters.fwdtimer.stopAndIncUnit();
-          meters.critfwdtimer.stopAndIncUnit();
 
           if (af::anyTrue<bool>(af::isNaN(loss.array())) ||
               af::anyTrue<bool>(af::isInf(loss.array()))) {
             if (FLAGS_mixedprecision && scaleFactor >= 2) {
               scaleFactor = scaleFactor / 2.0f;
+              // TODO: MTMD - log only if it's the master
               LOG(INFO) << "Scale factor decreased. New value:\t"
                         << scaleFactor;
               scaleCounter = 1;
@@ -630,37 +637,15 @@ int main(int argc, char** argv) {
               continue;
             } else {
               LOG(FATAL) << "Loss has NaN values. Samples - "
-                         << join(",", readSampleIds(sample[kSampleIdx]));
+                         << join(",", readSampleIds(batch[kSampleIdx]));
             }
           }
 
-        // forward
-        meters.fwdtimer.resume();
-        auto input = fl::input(batch[kInputIdx]);
-        if (FLAGS_saug_start_update >= 0 &&
-            curBatch >= FLAGS_saug_start_update) {
-          input = saug->forward(input);
-        }
-        auto output = ntwrk->forward({input}).front();
-        af::sync();
-        meters.critfwdtimer.resume();
-        auto loss =
-            crit->forward({output, fl::noGrad(batch[kTargetIdx])}).front();
-        af::sync();
-        meters.fwdtimer.stopAndIncUnit();
-        meters.critfwdtimer.stopAndIncUnit();
-
-        if (af::anyTrue<bool>(af::isNaN(loss.array()))) {
-          LOG(FATAL) << "Loss has NaN values. Samples - "
-                     << join(",", readSampleIds(batch[kSampleIdx]));
-        }
-        meters.train.loss.add(loss.array());
-
-        int64_t batchIdx = (curBatch - startUpdate - 1) % trainset->size();
-        int64_t globalBatchIdx = trainset->getGlobalBatchIdx(batchIdx);
-        if (trainEvalIds.find(globalBatchIdx) != trainEvalIds.end()) {
-          evalOutput(output.array(), batch[kTargetIdx], meters.train);
-        }
+          int64_t batchIdx = (curBatch - startUpdate - 1) % trainset->size();
+          int64_t globalBatchIdx = trainset->getGlobalBatchIdx(batchIdx);
+          if (trainEvalIds.find(globalBatchIdx) != trainEvalIds.end()) {
+            evalOutput(output.array(), batch[kTargetIdx], meters.train);
+          }
 
           // backward
           meters.bwdtimer.resume();
@@ -710,22 +695,23 @@ int main(int argc, char** argv) {
             p.grad() = p.grad() / (FLAGS_batchsize * scaleFactor);
           }
 
-          // clamp gradients
-          if (FLAGS_maxgradnorm > 0) {
-            auto params = ntwrk->params();
-            if (clampCrit) {
-              auto critparams = crit->params();
-              params.insert(params.end(), critparams.begin(), critparams.end());
-            }
-            fl::clipGradNorm(params, FLAGS_maxgradnorm);
-          }
-
-          // update weights
-          critopt->step();
-          netopt->step();
-          af::sync();
-          meters.optimtimer.stopAndIncUnit();
         } while (retrySample);
+
+        // clamp gradients
+        if (FLAGS_maxgradnorm > 0) {
+          auto params = ntwrk->params();
+          if (clampCrit) {
+            auto critparams = crit->params();
+            params.insert(params.end(), critparams.begin(), critparams.end());
+          }
+          fl::clipGradNorm(params, FLAGS_maxgradnorm);
+        }
+
+        // update weights
+        critopt->step();
+        netopt->step();
+        af::sync();
+        meters.optimtimer.stopAndIncUnit();
 
         // update scale fcator
         if (FLAGS_mixedprecision && scaleFactor < kMaxScaleFactor) {
@@ -737,11 +723,6 @@ int main(int argc, char** argv) {
           }
         }
 
-        // update weights
-        critopt->step();
-        netopt->step();
-        af::sync();
-        meters.optimtimer.stopAndIncUnit();
         meters.sampletimer.resume();
 
         if (FLAGS_reportiters > 0 && curBatch % FLAGS_reportiters == 0) {

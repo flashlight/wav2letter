@@ -175,7 +175,9 @@ int main(int argc, char** argv) {
   /* ===================== Create Dictionary & Lexicon ===================== */
   auto dictPath = pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
   if (dictPath.empty() || !fileExists(dictPath)) {
-    throw std::runtime_error("Invalid dictionary filepath specified.");
+    throw std::runtime_error(
+        "Invalid dictionary filepath specified with --tokensdir and --tokens: \"" +
+        dictPath + "\"");
   }
   Dictionary tokenDict(dictPath);
   // Setup-specific modifications

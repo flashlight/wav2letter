@@ -9,6 +9,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
+    - name: free disk space
+      run: | 
+        sudo swapoff -a
+        sudo rm -f /swapfile
+        sudo apt clean
+        docker rmi $(docker image ls -aq)
+        df -h
     - name: Build the CUDA Docker image
       run: docker build . --file Dockerfile-CUDA --tag wav2letter/wav2letter:cuda-latest
     - name: Docker login

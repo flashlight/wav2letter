@@ -75,7 +75,6 @@
 #include "inference/decoder/Decoder.h"
 #include "inference/examples/AudioToWords.h"
 #include "inference/examples/Util.h"
-#include "inference/examples/threadpool/ThreadPool.h"
 #include "inference/module/feature/feature.h"
 #include "inference/module/module.h"
 #include "inference/module/nn/nn.h"
@@ -96,6 +95,10 @@ DEFINE_string(
     acoustic_module_file,
     "acoustic_model.bin",
     "binary file containing acoustic module parameters.");
+DEFINE_string(
+    transitions_file,
+    "",
+    "binary file containing ASG criterion transition parameters.");
 DEFINE_string(tokens_file, "tokens.txt", "text file containing tokens.");
 DEFINE_string(lexicon_file, "lexicon.txt", "text file containing lexicon.");
 DEFINE_string(silence_token, "_", "the token to use to denote silence");
@@ -195,11 +198,24 @@ int main(int argc, char* argv[]) {
        cereal::make_nvp("criterionType", decoderOptions.criterionType));
   }
 
+  std::vector<float> transitions;
+  if (!FLAGS_transitions_file.empty()) {
+    TimeElapsedReporter acousticLoadingElapsed("transitions file loading");
+    std::ifstream transitionsFile(
+        GetInputFileFullPath(FLAGS_transitions_file), std::ios::binary);
+    if (!transitionsFile.is_open()) {
+      throw std::runtime_error(
+          "failed to open transition parameter file=" +
+          GetInputFileFullPath(FLAGS_transitions_file) + " for reading");
+    }
+    cereal::BinaryInputArchive ar(transitionsFile);
+    ar(transitions);
+  }
+
   std::shared_ptr<const DecoderFactory> decoderFactory;
   // Create Decoder
   {
     TimeElapsedReporter acousticLoadingElapsed("create decoder");
-    std::vector<float> transitions; // unused for now
     decoderFactory = std::make_shared<DecoderFactory>(
         GetInputFileFullPath(FLAGS_tokens_file),
         GetInputFileFullPath(FLAGS_lexicon_file),

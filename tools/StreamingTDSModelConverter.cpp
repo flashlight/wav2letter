@@ -68,8 +68,14 @@ std::shared_ptr<streaming::Conv1d> convertConv1d(
               << " cIn:" << cIn << " cOut:" << cOut << " kw:" << kw
               << " groups:" << groups << "  bs.elements():" << bs.elements();
   }
-  if (padding.first == -1) {
+  if (padding.first == -1 && padding.second == -1) {
+    auto totalPad = kw - dw;
+    padding.first = (totalPad + 1) / 2;
+    padding.second = (totalPad + 1) / 2;
+  } else if (padding.first == -1) {
     padding.first = kw - dw - padding.second;
+  } else if (padding.second == -1) {
+    padding.second = kw - dw - padding.first;
   }
   return streaming::createConv1d(
       cIn,
@@ -99,7 +105,8 @@ std::shared_ptr<streaming::TDSBlock> convertTDS(
     int kernelSz,
     int featSz,
     int rightPad,
-    std::vector<fl::Variable> params) {
+    std::vector<fl::Variable> params,
+    int innerLinearDim) {
   auto conv1 = convertConv1d(
       channels * featSz,
       channels * featSz,
@@ -109,12 +116,15 @@ std::shared_ptr<streaming::TDSBlock> convertTDS(
       featSz,
       params[0],
       params[1]);
+  if (innerLinearDim == 0) {
+    innerLinearDim = featSz * channels;
+  }
   auto lnorm1 = convertLayerNorm(featSz * channels, params[2], params[3]);
   auto lnorm2 = convertLayerNorm(featSz * channels, params[8], params[9]);
   auto lin1 =
-      convertLinear(featSz * channels, featSz * channels, params[4], params[5]);
+      convertLinear(featSz * channels, innerLinearDim, params[4], params[5]);
   auto lin2 =
-      convertLinear(featSz * channels, featSz * channels, params[6], params[7]);
+      convertLinear(innerLinearDim, featSz * channels, params[6], params[7]);
   return std::make_shared<streaming::TDSBlock>(
       conv1,
       lnorm1,
@@ -170,10 +180,13 @@ int main(int argc, char** argv) {
         "Invalid dictionary filepath specified " + dictPath);
   }
   Dictionary tokenDict(dictPath);
+  for (int64_t r = 1; r <= FLAGS_replabel; ++r) {
+    tokenDict.addEntry(std::to_string(r));
+  }
   if (FLAGS_criterion == kCtcCriterion) {
     tokenDict.addEntry(kBlankToken);
-  } else {
-    LOG(FATAL) << "This script currently support only CTC criterion";
+  } else if (FLAGS_criterion != kAsgCriterion) {
+    LOG(FATAL) << "This script currently support only CTC/ASG criterion";
   }
   int numTokens = tokenDict.indexSize();
   LOG(INFO) << "Number of classes (network): " << numTokens;
@@ -191,9 +204,12 @@ int main(int argc, char** argv) {
   auto params = network->params();
   int curFeatSz = nFeat;
   int paramIdx = 0;
-  int leftPad = -1, rightPad = 0;
+  int leftPad = -1, rightPad = -1;
   for (size_t i = 0; i < lines.size(); ++i) {
     auto columns = w2l::splitOnWhitespace(lines[i], true);
+    if (columns.empty()) {
+      continue;
+    }
     auto layerType = columns[0];
     if (layerType == "C2") {
       if (columns.size() < 8) {
@@ -250,7 +266,8 @@ int main(int argc, char** argv) {
           std::stoi(columns[2]),
           std::stoi(columns[3]),
           (columns.size() > 6) ? std::stoi(columns[6]) : -1,
-          {params.begin() + paramIdx, params.begin() + paramIdx + 10});
+          {params.begin() + paramIdx, params.begin() + paramIdx + 10},
+          (columns.size() > 5) ? std::stoi(columns[5]) : 0);
       streamingModule->add(stds);
       paramIdx += 10;
     } else if (layerType == "V") {
@@ -286,6 +303,22 @@ int main(int argc, char** argv) {
       tokenFile << tokenDict.getEntry(i) << "\n";
     }
     tokenFile.close();
+  }
+
+  if (FLAGS_criterion == kAsgCriterion) {
+    if (criterion->params().size() == 0 ||
+        criterion->param(0).elements() !=
+            tokenDict.indexSize() * tokenDict.indexSize()) {
+      throw std::runtime_error("Invalid criterion parameters for ASG");
+    }
+    std::string transitionsFilePath =
+        pathsConcat(FLAGS_outdir, "transitions.bin");
+    std::ofstream transitionsFile(transitionsFilePath);
+    LOG(INFO) << "Writing transitions file to '" << transitionsFilePath << "'";
+    std::vector<float> transitionsVec(criterion->param(0).elements());
+    criterion->param(0).host(transitionsVec.data());
+    fl::save(transitionsFile, transitionsVec);
+    transitionsFile.close();
   }
 
   {

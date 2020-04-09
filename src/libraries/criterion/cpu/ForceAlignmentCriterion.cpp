@@ -243,6 +243,9 @@ void ForceAlignmentCriterion<Float>::viterbi(
     Float* transBuf1 = &ws.transBuf1[b * _L];
     Float* transBuf2 = &ws.transBuf2[b * _L];
     int L = targetSize[b];
+    for (int i = 0; i < L * T; i++) {
+      alpha[i] = -std::numeric_limits<Float>::infinity();
+    }
 
     alpha[0] = input[target[0]];
 

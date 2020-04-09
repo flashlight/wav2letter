@@ -294,6 +294,40 @@ TEST(CriterionTest, ViterbiPath) {
   }
 }
 
+// Test with alternating blanks and with varying target sizes
+TEST(CriterionTest, ASGAlternatingBlanks) {
+  w2l::AutoSegmentationCriterion criterion(2);
+  int C = 2; // (one class + blank)
+  int T = 7;
+  int mL = 3;
+  int B = 2;
+  std::vector<float> x_v = {
+      -0x1.1f60fap+1, -0x1.0518e2p+0, 0x1.2016e2p-3,  -0x1.dfe0dp-4,
+      0x1.00ee32p-2,  0x1.af74fp-2,   -0x1.f29964p-2, 0x1.977e08p-2,
+      -0x1.52548ep-1, -0x1.ae9504p-3, 0x1.bcf1fcp+1,  0x1.31ad5p+0,
+      0x1.9bc5aep-1,  0x1.3c7dacp-1,  0x1.3e2852p-1,  0x1.6699f4p-1,
+      0x1.095a5p+0,   0x1.1840bcp-1,  0x1.465a4ep-1,  0x1.2c4cacp-1,
+      0x1.754998p-1,  0x1.cb6698p-2,  -0x1.1cadcp+0,  0x1.757b88p-2,
+      0x1.3dec32p+0,  0x1.320fp+0,    -0x1.9eb1a4p-1, -0x1.e43beap-2};
+  af::array x = af::array(af::dim4(C, T, B), x_v.data());
+  af::array y = af::constant(-1, af::dim4(mL * 2 + 1, B), s32);
+  int L;
+  L = 2;
+  y(af::seq(0, 2 * L, 2), 0) = 1;
+  y(af::seq(1, 2 * L - 1, 2), 0) = 0;
+  L = 3;
+  y(af::seq(0, 2 * L, 2), 1) = 1;
+  y(af::seq(1, 2 * L - 1, 2), 1) = 0;
+  af::array expectedPath = af::constant(1, af::dim4(T, B));
+  expectedPath(1, 0) = 0;
+  expectedPath(5, 0) = 0;
+  expectedPath(1, 1) = 0;
+  expectedPath(3, 1) = 0;
+  expectedPath(5, 1) = 0;
+  af::array path = criterion.viterbiPath(x, y);
+  checkZero(path - expectedPath);
+}
+
 // Test constrained viterbi path for ctc and asg criterion.
 // Target will be a range from [0, 1, 2, 3]
 // Input will predict a high probability for each target i at frame i * 2 + 1

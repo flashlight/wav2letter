@@ -237,8 +237,12 @@ __global__ void viterbiPathKernel(
   auto* transBuf2 = &ws.transBuf2[b * _L];
   int L = targetSize[b];
 
+  for (int i = threadIdx.x; i < L * T; i += blockDim.x) {
+    alpha[i] =
+        i == 0 ? input[target[0]] : -std::numeric_limits<Float>::infinity();
+  }
+
   for (int i = threadIdx.x; i < L; i += blockDim.x) {
-    alpha[i] = i == 0 ? input[target[0]] : 0;
     transBuf1[i] = trans[target[i] * N + target[i]];
     transBuf2[i] = i > 0 ? trans[target[i] * N + target[i - 1]] : 0;
   }

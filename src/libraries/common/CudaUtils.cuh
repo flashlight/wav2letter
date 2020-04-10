@@ -11,6 +11,7 @@
 #include <cstddef>
 
 #include <cuda.h>
+#include <math_constants.h> // for CUDART_INF
 
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ < 600
 

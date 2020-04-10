@@ -238,8 +238,7 @@ __global__ void viterbiPathKernel(
   int L = targetSize[b];
 
   for (int i = threadIdx.x; i < L * T; i += blockDim.x) {
-    alpha[i] =
-        i == 0 ? input[target[0]] : -std::numeric_limits<Float>::infinity();
+    alpha[i] = i == 0 ? input[target[0]] : -CUDART_INF_F;
   }
 
   for (int i = threadIdx.x; i < L; i += blockDim.x) {

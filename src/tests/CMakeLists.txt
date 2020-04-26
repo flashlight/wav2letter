@@ -13,14 +13,12 @@ function(build_test SRCFILE)
     PRIVATE
     wav2letter++
     ${GTEST_LIBRARIES}
-    ${GMOCK_LIBRARIES}
     )
   target_include_directories(
     ${target}
     PRIVATE
     ${PROJECT_SOURCE_DIR}/..
     ${GTEST_INCLUDE_DIR}
-    ${GMOCK_INCLUDE_DIR}
     )
   target_compile_definitions(
     ${target}

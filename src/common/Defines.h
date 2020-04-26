@@ -101,7 +101,6 @@ constexpr const char* kAsgCriterion = "asg";
 constexpr const char* kSeq2SeqCriterion = "seq2seq";
 constexpr const char* kTransformerCriterion = "transformer";
 constexpr int kTargetPadValue = -1;
-constexpr int kMaxDevicePerNode = 8;
 
 // Feature params
 constexpr int kLifterParam = 22;
@@ -299,6 +298,7 @@ DECLARE_double(decoderdropout);
 DECLARE_bool(enable_distributed);
 DECLARE_int64(world_rank);
 DECLARE_int64(world_size);
+DECLARE_int64(max_devices_per_node);
 DECLARE_string(rndv_filepath);
 
 /* ========== FB SPECIFIC ========== */

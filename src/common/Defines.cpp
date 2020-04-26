@@ -319,6 +319,10 @@ DEFINE_int64(
     world_size,
     1,
     "total number of the process (Used if rndv_filepath is not empty)");
+DEFINE_int64(
+    max_devices_per_node,
+    8,
+    "the maximum number of devices per training node");
 DEFINE_string(
     rndv_filepath,
     "",

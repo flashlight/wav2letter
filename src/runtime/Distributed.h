@@ -15,6 +15,7 @@ namespace w2l {
 void initDistributed(
     int worldRank,
     int worldSize,
+    int maxDevicesPerNode,
     const std::string& rndvFilepath);
 
 } // namespace w2l

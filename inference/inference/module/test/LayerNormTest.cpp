@@ -44,7 +44,7 @@ TEST(LayerNorm, Batch) {
   }
 
   LayerNorm layerNorm(F, alpha, beta);
-  std::cout << "TEST(LayerNorm, Btach)\n"
+  std::cout << "TEST(LayerNorm, Batch)\n"
             << "LayerNorm:" << layerNorm.debugString() << std::endl;
 
   auto input = std::make_shared<ModuleProcessingState>(1);
@@ -70,7 +70,7 @@ TEST(LayerNorm, Batch) {
   }
 }
 
-TEST(LayerNorm, ) {
+TEST(LayerNorm, BatchChunked) {
   int T = 100, F = 1000;
   auto mean = randVec<float>(T);
   auto std = randVec<float>(T);
@@ -85,7 +85,7 @@ TEST(LayerNorm, ) {
   }
 
   LayerNorm layerNorm(F, alpha, beta);
-  std::cout << "TEST(LayerNorm, )\n"
+  std::cout << "TEST(LayerNorm, BatchChunked)\n"
             << "LayerNorm:" << layerNorm.debugString() << std::endl;
 
   auto input = std::make_shared<ModuleProcessingState>(1);
@@ -113,5 +113,6 @@ TEST(LayerNorm, ) {
     }
   }
 }
+
 } // namespace streaming
 } // namespace w2l

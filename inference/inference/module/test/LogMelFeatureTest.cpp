@@ -23,7 +23,7 @@
 namespace w2l {
 namespace streaming {
 
-TEST(LogMelFeature, ) {
+TEST(LogMelFeature, LogMelFeatureTest) {
   int randomLargeValue = 166960;
   std::vector<float> inputData = randVec<float>(randomLargeValue);
   auto streamingOutput = [](const size_t chunkSize, std::vector<float>& in) {

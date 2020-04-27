@@ -494,8 +494,8 @@ std::pair<Variable, Seq2SeqState> Seq2SeqCriterion::decodeStep(
     const Variable& xEncoded,
     const Variable& y,
     const Seq2SeqState& inState) const {
-  size_t stepSize = af::getMemStepSize();
-  af::setMemStepSize(10 * (1 << 10));
+  size_t stepSize = afGetMemStepSize();
+  afSetMemStepSize(10 * (1 << 10));
   Variable hy;
   if (y.isempty()) {
     hy = tile(startEmbedding(), {1, 1, static_cast<int>(xEncoded.dims(2))});
@@ -532,7 +532,7 @@ std::pair<Variable, Seq2SeqState> Seq2SeqCriterion::decodeStep(
   outState.summary = summaries;
 
   auto out = linearOut()->forward(hy); // C x 1 x B
-  af::setMemStepSize(stepSize);
+  afSetMemStepSize(stepSize);
   return std::make_pair(out, outState);
 }
 

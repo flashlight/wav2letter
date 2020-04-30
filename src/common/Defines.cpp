@@ -130,7 +130,6 @@ DEFINE_int64(
     "Stride millisecond for power spectrum feature");
 
 // SPECAUGMENT OPTIONS
-DEFINE_bool(use_saug, false, "Use SpecAugment");
 DEFINE_int64(saug_fmaskf, 27, "Max number of frequency bands that are masked");
 DEFINE_int64(saug_fmaskn, 2, "Number of frequency masks");
 DEFINE_int64(saug_tmaskt, 100, "Max number of timesteps that are masked");

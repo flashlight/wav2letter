@@ -186,7 +186,6 @@ DECLARE_int64(framestridems);
 
 /* ========== SPECAUGMENT OPTIONS ========== */
 
-DECLARE_bool(use_saug);
 DECLARE_int64(saug_fmaskf);
 DECLARE_int64(saug_fmaskn);
 DECLARE_int64(saug_tmaskt);

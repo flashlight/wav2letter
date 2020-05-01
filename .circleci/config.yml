@@ -65,11 +65,26 @@ jobs:
             make install -j$(proc) && \
             export MKLROOT=/opt/intel/mkl && export KENLM_ROOT_DIR=/root/kenlm && \
             cd /wav2letter && mkdir -p build && cd build && \
-            cmake .. -DCMAKE_BUILD_TYPE=Debug -DW2L_LIBRARIES_USE_CUDA=ON -DW2L_BUILD_INFERENCE=ON && \
+            cmake .. -DCMAKE_BUILD_TYPE=Debug -DW2L_LIBRARIES_USE_CUDA=ON -DW2L_BUILD_INFERENCE=OFF && \
             make -j$(nproc) && make test && \
             pip install torch==1.2.0 packaging==19.1 && \
             export KENLM_ROOT_DIR=/root/kenlm && \
             cd /wav2letter/bindings/python && pip install -e ."
+  build-inference:
+    docker:
+      - image: wav2letter/wav2letter:cpu-base-latest
+    steps:
+      - checkout
+      - run:
+          name: Build wav2letter Inference pipeline
+          # Only build required components for the inference pipeline (e.g. w2l libraries)
+          command: |
+            apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5 && \
+            export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5 && \
+            export MKLROOT=/opt/intel/mkl && export KENLM_ROOT_DIR=/root/kenlm && \
+            cd /root/project && mkdir -p build && cd build && \
+            cmake .. -DCMAKE_BUILD_TYPE=Debug -DW2L_LIBRARIES_USE_CUDA=OFF -DW2L_BUILD_LIBRARIES_ONLY=ON -DW2L_BUILD_INFERENCE=ON && \
+            make && cd inference && ctest
   build-cpu:
     docker:
       - image: wav2letter/wav2letter:cpu-base-latest
@@ -88,7 +103,7 @@ jobs:
             make install
             export KENLM_ROOT_DIR=/root/kenlm && \
             cd /root/project && mkdir -p build && cd build && \
-            cmake .. -DCMAKE_BUILD_TYPE=Debug -DW2L_LIBRARIES_USE_CUDA=OFF -DW2L_BUILD_EXAMPLES=OFF -DW2L_BUILD_TESTS=OFF && \
+            cmake .. -DCMAKE_BUILD_TYPE=Debug -DW2L_LIBRARIES_USE_CUDA=OFF -DW2L_BUILD_EXAMPLES=OFF -DW2L_BUILD_TESTS=OFF -DW2L_BUILD_INFERENCE=OFF && \
             make && \
             pip install torch==1.2.0 packaging==19.1 && \
             export USE_CUDA=0 && export KENLM_ROOT_DIR=/root/kenlm && \
@@ -98,4 +113,5 @@ workflows:
   build_and_install:
     jobs:
       - build-cuda
+      - build-inference
       - build-cpu

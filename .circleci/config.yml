@@ -57,8 +57,8 @@ jobs:
             sudo docker exec -it wav2letter bash -c "mkdir /wav2letter"
             sudo docker cp . wav2letter:/wav2letter
             sudo docker exec -it wav2letter bash -c "\
-            apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends g++-4.8 && \
-            export CXX=/usr/bin/g++-4.8 && \
+            apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5 && \
+            export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5 && \
             git clone --recursive https://github.com/facebookresearch/flashlight.git && \
             cd flashlight && mkdir -p build && cd build && \
             cmake .. -DCMAKE_BUILD_TYPE=Debug -DFLASHLIGHT_BACKEND=CUDA -DFL_BUILD_CONTRIB=ON -DFL_BUILD_TESTS=OFF -DFL_BUILD_EXAMPLES=OFF && \
@@ -80,9 +80,8 @@ jobs:
           # Tests and examples are built in the CUDA backend workflow, and since we're not running CPU tests anyways, ignore
           # and only build core library components (e.g. CPU criterion, etc)
           command: |
-            apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends g++-4.8 && \
-            export MKLROOT=/opt/intel/mkl && export CXX=/usr/bin/g++-4.8 && \
-            mkdir -p build && cd build
+            apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5 && \
+            export MKLROOT=/opt/intel/mkl && export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5 && \
             cd /root && git clone --recursive https://github.com/facebookresearch/flashlight.git && \
             cd flashlight && mkdir -p build && cd build && \
             cmake .. -DCMAKE_BUILD_TYPE=Debug -DFLASHLIGHT_BACKEND=CPU -DFL_BUILD_CONTRIB=ON -DFL_BUILD_TESTS=OFF -DFL_BUILD_EXAMPLES=OFF && \

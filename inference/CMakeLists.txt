@@ -136,8 +136,9 @@ set(W2L_INFERENCE_TESTS_SOURCES
 )
 
 if (W2L_INFERENCE_BUILD_TESTS)
- find_package(Threads REQUIRED)
- foreach(SRC_FILE ${W2L_INFERENCE_TESTS_SOURCES})
+  find_package(Threads REQUIRED)
+  enable_testing()
+  foreach(SRC_FILE ${W2L_INFERENCE_TESTS_SOURCES})
     build_test(${SRC_FILE})
   endforeach()
 endif()

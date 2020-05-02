@@ -130,12 +130,6 @@ int main(int argc, char** argv) {
   // aren't
   w2l::handleDeprecatedFlags();
 
-  auto deviceInterface = std::make_shared<fl::MemoryManagerDeviceInterface>();
-  auto adapter = std::make_shared<fl::CachingMemoryManager>(
-      af::getDeviceCount(), deviceInterface);
-  auto installer = fl::cpp::make_unique<fl::MemoryManagerInstaller>(adapter);
-  installer->setAsMemoryManager();
-
   af::setSeed(FLAGS_seed);
   af::setFFTPlanCacheSize(FLAGS_fftcachesize);
 
@@ -386,7 +380,11 @@ int main(int argc, char** argv) {
         }
       }
       // print brief stats on memory allocation (so far)
-      adapter->printInfo("Memory Manager Stats", 0 /* device id */);
+      auto* curMemMgr =
+          fl::MemoryManagerInstaller::currentlyInstalledMemoryManager();
+      if (curMemMgr) {
+        curMemMgr->printInfo("Memory Manager Stats", 0 /* device id */);
+      }
     }
   };
 

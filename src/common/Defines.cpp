@@ -323,9 +323,14 @@ DEFINE_int64(
     8,
     "the maximum number of devices per training node");
 DEFINE_string(
+    reducer_dtype,
+    "f32",
+    "if supported by the reducer, the type to "
+    "which reduced tensors are cast and synchronized");
+DEFINE_string(
     rndv_filepath,
     "",
-    "Shared file path used for setting up rendezvous."
+    "Shared file path used for setting up rendezvous. "
     "If empty, uses MPI to initialize.");
 
 // FB SPECIFIC

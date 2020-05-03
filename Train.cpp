@@ -141,7 +141,10 @@ int main(int argc, char** argv) {
         FLAGS_max_devices_per_node,
         FLAGS_rndv_filepath);
     reducer = std::make_shared<fl::CoalescingReducer>(
-        1.0 / fl::getWorldSize(), true, true);
+        1.0 / fl::getWorldSize(),
+        true,
+        true,
+        fl::stringToAfType(FLAGS_reducer_dtype));
   }
 
   int worldRank = fl::getWorldRank();

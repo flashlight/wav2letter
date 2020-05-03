@@ -298,6 +298,7 @@ DECLARE_bool(enable_distributed);
 DECLARE_int64(world_rank);
 DECLARE_int64(world_size);
 DECLARE_int64(max_devices_per_node);
+DECLARE_string(reducer_dtype);
 DECLARE_string(rndv_filepath);
 
 /* ========== FB SPECIFIC ========== */

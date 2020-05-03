@@ -166,6 +166,15 @@ DEFINE_double(
     100,
     "percentage of training set (by number of utts) to use for evaluation");
 
+// Mixed Precision OPTIONS
+DEFINE_bool(mixedprecision, false, "Use mixed precision for training");
+DEFINE_int32(scalefactor, 4096, "Loss scale factor");
+DEFINE_int32(
+    scalefactorupdateinterval,
+    2000,
+    "Update interval for adjusting loss scaling");
+DEFINE_int32(maxscalefactor, 32000, "Maximum value for scale factor");
+
 // ARCHITECTURE OPTIONS
 DEFINE_string(arch, "default", "network architecture");
 DEFINE_string(criterion, kAsgCriterion, "training criterion");

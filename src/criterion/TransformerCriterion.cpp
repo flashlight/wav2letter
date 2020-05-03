@@ -231,8 +231,8 @@ std::pair<Variable, TS2SState> TransformerCriterion::decodeStep(
     const Variable& xEncoded,
     const Variable& y,
     const TS2SState& inState) const {
-  size_t stepSize = af::getMemStepSize();
-  af::setMemStepSize(100 * (1 << 10));
+  size_t stepSize = fl::afGetMemStepSize();
+  fl::afSetMemStepSize(100 * (1 << 10));
 
   Variable hy;
   if (y.isempty()) {
@@ -268,7 +268,7 @@ std::pair<Variable, TS2SState> TransformerCriterion::decodeStep(
   hy = hy + summary;
 
   auto out = linearOut()->forward(hy);
-  af::setMemStepSize(stepSize);
+  fl::afSetMemStepSize(stepSize);
   return std::make_pair(out, outState);
 }
 
@@ -279,8 +279,8 @@ TransformerCriterion::decodeBatchStep(
     const std::vector<TS2SState*>& inStates,
     const int /* attentionThreshold */,
     const float smoothingTemperature) const {
-  size_t stepSize = af::getMemStepSize();
-  af::setMemStepSize(10 * (1 << 10));
+  size_t stepSize = fl::afGetMemStepSize();
+  fl::afSetMemStepSize(10 * (1 << 10));
   int B = ys.size();
 
   for (int i = 0; i < B; i++) {
@@ -335,7 +335,7 @@ TransformerCriterion::decodeBatchStep(
     out[i] = w2l::afToVector<float>(outBatched.col(i));
   }
 
-  af::setMemStepSize(stepSize);
+  fl::afSetMemStepSize(stepSize);
   return std::make_pair(out, outstates);
 }
 

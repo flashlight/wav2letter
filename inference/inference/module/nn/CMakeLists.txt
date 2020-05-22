@@ -34,12 +34,15 @@ add_library(streaming_inference_modules_nn_impl
   ${CMAKE_CURRENT_LIST_DIR}/Conv1d.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Identity.cpp
   ${CMAKE_CURRENT_LIST_DIR}/LayerNorm.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/LayerNorm3Axis.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Linear.cpp
   ${CMAKE_CURRENT_LIST_DIR}/LocalNorm.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Relu.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/Reorder.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Residual.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Sequential.cpp
   ${CMAKE_CURRENT_LIST_DIR}/TDSBlock.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/TDSBlockWReorder.cpp
 )
 
 target_include_directories(

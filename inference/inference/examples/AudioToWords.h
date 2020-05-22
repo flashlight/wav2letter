@@ -26,7 +26,8 @@ void audioStreamToWordsStream(
     std::shared_ptr<streaming::Sequential> dnnModule,
     std::shared_ptr<const DecoderFactory> decoderFactory,
     const DecoderOptions& decoderOptions,
-    int nTokens);
+    int nTokens,
+    int chunkSizeMsec=500);
 
 // @inputFileName is a 16KHz wav file.
 // @errorStream file errors are written to errorStream.

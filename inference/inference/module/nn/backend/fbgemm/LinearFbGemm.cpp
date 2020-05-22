@@ -100,6 +100,7 @@ std::shared_ptr<ModuleProcessingState> LinearFbGemm::run(
       outPtr);
 
   inputBuf->consume<float>(nFrames * nInput_);
+  outputBuf->dim = inputBuf->dim;
   return output;
 }
 

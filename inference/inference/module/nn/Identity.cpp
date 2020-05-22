@@ -36,6 +36,7 @@ std::shared_ptr<ModuleProcessingState> Identity::run(
   auto inLen = inputBuf->size<char>();
   outputBuf->write(inputBuf->data<char>(), inLen);
   inputBuf->consume<char>(inLen);
+  outputBuf->dim = inputBuf->dim;
   return output;
 }
 

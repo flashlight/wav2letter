@@ -103,6 +103,9 @@ std::shared_ptr<ModuleProcessingState> LocalNorm::run(
     inputBuf->consume<float>(featureSize_);
     outputBuf->move<float>(featureSize_);
   }
+  outputBuf->dim = dim4(nFeatFrames, featureSize_);
+  sumBuf->dim = dim4(nFeatFrames);
+  sqSumBuf->dim = dim4(nFeatFrames);
   return output;
 }
 

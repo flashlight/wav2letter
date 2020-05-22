@@ -59,7 +59,7 @@ int readTransformStreamIntoBuffer(
     std::shared_ptr<IOBuffer> buffer,
     int sizeInBufferType,
     const std::function<BufferType(StreamType)>& transformationFunction) {
-  const int sizeInBytes = sizeInBufferType * sizeof(BufferType);
+  const int sizeInBytes = sizeInBufferType * sizeof(StreamType);
   auto tmpBuffer = std::make_shared<IOBuffer>(sizeInBytes);
   const int bytesRead =
       readStreamIntoBuffer(inputStream, tmpBuffer, sizeInBytes);

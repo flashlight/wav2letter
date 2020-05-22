@@ -7,7 +7,6 @@
  */
 
 #pragma once
-
 #include <cereal/access.hpp>
 #include <cereal/archives/xml.hpp>
 #include <cereal/types/vector.hpp>
@@ -17,6 +16,26 @@
 
 namespace w2l {
 namespace streaming {
+
+typedef long long   dim_t;
+class dim4
+{
+public:
+    dim_t dims[4];
+
+    dim4() : dims{0, 0, 0, 0} {}
+    dim4(const dim4& other)
+        : dims{other.dims[0], other.dims[1], other.dims[2], other.dims[3]} {}
+
+    dim4(dim_t first, dim_t second = 1, dim_t third = 1, dim_t fourth = 1)
+        : dims{first, second, third, fourth} {}
+    dim_t elements() { return static_cast<const dim4&>(*this).elements(); }
+    dim_t elements() const { return dims[0] * dims[1] * dims[2] * dims[3]; }
+    const dim_t& operator[](const unsigned dim) const { return dims[dim]; }
+    dim_t& operator[](const unsigned dim) {
+    return const_cast<dim_t&>(static_cast<const dim4&>((*this))[dim]);
+  }
+};
 
 // Inspired by folly::IOBuffer
 // Currently memory is unalinged, will make it aligned if it improves
@@ -68,6 +87,7 @@ class IOBuffer {
   std::string debugStringWithContent() const;
 
   std::vector<char>& buffer();
+  dim4 dim;
 
  private:
   int headRoom() const;

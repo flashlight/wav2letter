@@ -158,8 +158,10 @@ std::shared_ptr<ModuleProcessingState> Conv1dFbGemm::run(
   if (!memoryManager_) {
     throw std::invalid_argument("null memoryManager_ at Conv1dFbGemm::run()");
   }
-  auto workspace = memoryManager_->makeShared<float>(
-      (kernelSize_ * inChannels_ * outChannels_ * nOutFrames) / groups_);
+
+
+  size_t size = (size_t)inChannels_ * kernelSize_  * outChannels_ * nOutFrames / groups_;
+  auto workspace = memoryManager_->makeShared<float>(size);
   assert(workspace);
 
   unfoldDepthwise(
@@ -182,6 +184,8 @@ std::shared_ptr<ModuleProcessingState> Conv1dFbGemm::run(
 
   outputBuf->move<float>(outSize);
   inputBuf->consume<float>(consumedSize);
+
+  outputBuf->dim = dim4(nOutFrames, groups_, outSize/nOutFrames/groups_);
   return output;
 }
 

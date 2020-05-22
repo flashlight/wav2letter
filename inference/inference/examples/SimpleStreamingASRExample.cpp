@@ -120,8 +120,14 @@ DEFINE_string(
     " including: max overall beam size, max beam for token selection, beam score threshold"
     ", language model weight, word insertion score, unknown word insertion score"
     ", silence insertion score, and use logadd when merging decoder nodes");
+DEFINE_int32(
+    chunk_size,
+    500,
+    "size of chunk to process (msecs).");
 
 std::string GetInputFileFullPath(const std::string& fileName) {
+  if (fileName.empty())
+    return "";
   return GetFullPath(fileName, FLAGS_input_files_base_path);
 }
 
@@ -242,7 +248,8 @@ int main(int argc, char* argv[]) {
         dnnModule,
         decoderFactory,
         decoderOptions,
-        nTokens);
+        nTokens,
+        FLAGS_chunk_size);
   } else {
     const std::string input_audio_file =
         GetInputFileFullPath(FLAGS_input_audio_file);
@@ -256,7 +263,8 @@ int main(int argc, char* argv[]) {
         dnnModule,
         decoderFactory,
         decoderOptions,
-        nTokens);
+        nTokens,
+        FLAGS_chunk_size);
   }
 
   return 0;

@@ -39,18 +39,18 @@ void audioStreamToWordsStream(
     std::shared_ptr<Sequential> dnnModule,
     std::shared_ptr<const DecoderFactory> decoderFactory,
     const DecoderOptions& decoderOptions,
-    int nTokens) {
+    int nTokens,
+    int chunkSizeMsec) {
   constexpr const int lookBack = 0;
   constexpr const size_t kWavHeaderNumBytes = 44;
   constexpr const float kMaxUint16 = static_cast<float>(0x8000);
   constexpr const int kAudioWavSamplingFrequency = 16000; // 16KHz audio.
-  constexpr const int kChunkSizeMsec = 500;
 
   auto decoder = decoderFactory->createDecoder(decoderOptions);
 
   inputAudioStream.ignore(kWavHeaderNumBytes);
 
-  const int minChunkSize = kChunkSizeMsec * kAudioWavSamplingFrequency / 1000;
+  const int minChunkSize = chunkSizeMsec * kAudioWavSamplingFrequency / 1000;
   auto input = std::make_shared<streaming::ModuleProcessingState>(1);
   auto inputBuffer = input->buffer(0);
   int audioSampleCount = 0;
@@ -68,7 +68,7 @@ void audioStreamToWordsStream(
           return static_cast<float>(i) / kMaxUint16;
         });
 
-    if (curChunkSize >= minChunkSize) {
+    if (curChunkSize >= minChunkSize || audioSampleCount==0) {
       dnnModule->run(input);
       float* data = outputBuffer->data<float>();
       int size = outputBuffer->size<float>();

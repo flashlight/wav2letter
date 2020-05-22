@@ -6,3 +6,4 @@ TARGETS
 __pycache__
 *.egg-info
 *.cpython-*.so
+/.idea/

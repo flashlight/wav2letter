@@ -11,12 +11,15 @@
 #include "inference/module/nn/Conv1d.h"
 #include "inference/module/nn/Identity.h"
 #include "inference/module/nn/LayerNorm.h"
+#include "inference/module/nn/LayerNorm3Axis.h"
 #include "inference/module/nn/Linear.h"
 #include "inference/module/nn/LocalNorm.h"
 #include "inference/module/nn/Relu.h"
 #include "inference/module/nn/Residual.h"
+#include "inference/module/nn/Reorder.h"
 #include "inference/module/nn/Sequential.h"
 #include "inference/module/nn/TDSBlock.h"
+#include "inference/module/nn/TDSBlockWReorder.h"
 
 // We need to include the backend for the Cereal serirlization implementation.
 #if W2L_INFERENCE_BACKEND == fbgemm

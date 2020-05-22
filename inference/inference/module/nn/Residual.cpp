@@ -59,7 +59,10 @@ std::shared_ptr<ModuleProcessingState> Residual::run(
   std::shared_ptr<ModuleProcessingState> residualSum = output->next();
   assert(residualSum);
   sum(input->buffers().back(), output->buffer(0), residualSum->buffer(0));
-  return identity_->run(residualSum);
+
+  auto result = identity_->run(residualSum);
+  result->buffer(0)->dim = output->buffer(0)->dim;
+  return result;
 }
 
 std::shared_ptr<ModuleProcessingState> Residual::finish(
@@ -74,7 +77,10 @@ std::shared_ptr<ModuleProcessingState> Residual::finish(
   std::shared_ptr<ModuleProcessingState> residualSum = output->next();
   assert(residualSum);
   sum(input->buffers().back(), output->buffer(0), residualSum->buffer(0));
-  return identity_->finish(residualSum);
+
+  auto result = identity_->finish(residualSum);
+  result->buffer(0)->dim = output->buffer(0)->dim;
+  return result;
 }
 
 void Residual::setMemoryManager(std::shared_ptr<MemoryManager> memoryManager) {

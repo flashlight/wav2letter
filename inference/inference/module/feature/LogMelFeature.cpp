@@ -62,6 +62,7 @@ std::shared_ptr<ModuleProcessingState> LogMelFeature::run(
   assert(outputVec.size() == numFrames * numFilters_);
   outputBuf->write<float>(outputVec.data(), outputVec.size());
   inputBuf->consume<float>(numFrames * featParams_.numFrameStrideSamples());
+  outputBuf->dim = dim4(numFrames, numFilters_);
   return output;
 }
 

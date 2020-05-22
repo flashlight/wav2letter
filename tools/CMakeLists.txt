@@ -42,3 +42,29 @@ target_link_libraries(
     streaming_inference_decoder
     streaming_inference_modules
 )
+
+# ---------------------- streaming_tds_model_converter_vad_model ----------------------
+
+add_executable(
+        streaming_tds_model_converter_vad_model
+        ${CMAKE_CURRENT_LIST_DIR}/StreamingTDSModelConverterVadModel.cpp
+)
+
+target_include_directories(
+        streaming_tds_model_converter_vad_model
+        PRIVATE
+        ${GFLAGS_INCLUDE_DIRS}
+)
+
+target_link_libraries(
+        streaming_tds_model_converter_vad_model
+        PRIVATE
+        common
+        criterion
+        module
+        runtime
+        ${GFLAGS_LIBRARIES}
+        streaming_inference_common
+        streaming_inference_decoder
+        streaming_inference_modules
+)

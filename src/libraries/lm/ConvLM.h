@@ -16,8 +16,8 @@
 
 namespace w2l {
 
-using GetConvLmScoreFunc = std::function<std::vector<std::vector<
-    float>>(const std::vector<int>&, const std::vector<int>&, int, int)>;
+using GetConvLmScoreFunc = std::function<std::vector<
+    float>(const std::vector<int>&, const std::vector<int>&, int, int)>;
 
 struct ConvLMState : LMState {
   std::vector<int> tokens;

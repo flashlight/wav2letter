@@ -12,7 +12,6 @@
 
 #include "common/FlashlightUtils.h"
 
-
 namespace w2l {
 GetConvLmScoreFunc buildGetConvLmScoreFunction(
     std::shared_ptr<fl::Module> network) {
@@ -33,27 +32,32 @@ GetConvLmScoreFunc buildGetConvLmScoreFunction(
     if (af::count<int>(af::isNaN(output.array())) != 0) {
       throw std::runtime_error("[ConvLM] Encountered NaNs in propagation");
     }
-    std::vector<std::vector<float>> chosenFramePred(batchSize);
-    auto preds = af::reorder(output.array(), 2, 1, 0); // (b t c)
-    if (preds.dims(0) != batchSize) {
+    int32_t C = output.dims(0), T = output.dims(1), B = output.dims(2);
+    if (B != batchSize) {
       throw std::logic_error(
           "[ConvLM]: incorrect predictions: batch should be " +
+          std::to_string(batchSize) + " but it is " + std::to_string(B));
+    }
+    if (batchSize != (int)lastTokenPositions.size()) {
+      throw std::logic_error(
+          "[ConvLM]: incorrect postions for accessing: size should be " +
           std::to_string(batchSize) + " but it is " +
-          std::to_string(preds.dims(0)));
+          std::to_string(lastTokenPositions.size()));
     }
-    for (int idx = 0; idx < batchSize; idx++) {
-      if ((lastTokenPositions[idx] < 0) ||
-          (lastTokenPositions[idx] >= preds.dims(1))) {
-        throw std::logic_error(
-            "[ConvLM]: trying the access to batch idx " + std::to_string(idx) +
-            " and time idx " + std::to_string(lastTokenPositions[idx]) +
-            " while the sizes are b: " + std::to_string(preds.dims(0)) +
-            " t: " + std::to_string(preds.dims(1)));
-      }
-      chosenFramePred[idx] =
-          afToVector<float>(preds.row(idx).col(lastTokenPositions[idx]));
-    }
-    return chosenFramePred;
+    // output (c, t, b)
+    // set global indices: offset by channel
+    af::array globalIndices = af::iota(af::dim4(C, 1), af::dim4(1, B), s32);
+    // set global indices: offset by batch
+    globalIndices =
+        globalIndices + af::iota(af::dim4(1, B), af::dim4(C, 1), s32) * T * C;
+    // set global indices: offset by time which we need to take
+    globalIndices = globalIndices +
+        af::tile(af::array(af::dim4(1, B), lastTokenPositions.data()), C, 1) *
+            C;
+    af::array preds =
+        af::moddims(af::flat(output.array())(af::flat(globalIndices)), C, B);
+    // vector of B X C predictions
+    return afToVector<float>(preds);
   };
 
   return getConvLmScoreFunc;

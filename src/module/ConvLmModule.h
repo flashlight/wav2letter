@@ -13,8 +13,8 @@
 
 namespace w2l {
 
-using GetConvLmScoreFunc = std::function<std::vector<std::vector<
-    float>>(const std::vector<int>&, const std::vector<int>&, int, int)>;
+using GetConvLmScoreFunc = std::function<std::vector<
+    float>(const std::vector<int>&, const std::vector<int>&, int, int)>;
 
 GetConvLmScoreFunc buildGetConvLmScoreFunction(
     std::shared_ptr<fl::Module> network);

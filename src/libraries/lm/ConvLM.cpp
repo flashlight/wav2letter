@@ -116,7 +116,7 @@ std::pair<LMStatePtr, float> ConvLM::scoreWithLmIdx(
 
     std::vector<int> lastTokenPositions = {rawInState->length - 1};
     cache_[newIdx] =
-        getConvLmScoreFunc_(rawInState->tokens, lastTokenPositions, -1, 1)[0];
+        getConvLmScoreFunc_(rawInState->tokens, lastTokenPositions, -1, 1);
     score = cache_[newIdx][tokenIdx];
   }
   if (std::isnan(score) || !std::isfinite(score)) {
@@ -219,17 +219,16 @@ void ConvLM::updateCache(std::vector<LMStatePtr> states) {
     auto batchedProb = getConvLmScoreFunc_(
         batchedTokens_, lastTokenPositions, longestHistory, nBatchStates);
 
+    if (batchedProb.size() != vocabSize_ * nBatchStates) {
+      throw std::logic_error(
+          "[ConvLM] Batch X Vocab size " + std::to_string(batchedProb.size()) +
+          " mismatch with " + std::to_string(vocabSize_ * nBatchStates));
+    }
     // Place probabilities in cache
     for (int i = 0; i < nBatchStates; i++, cacheSize++) {
-      if (batchedProb[i].size() != vocabSize_) {
-        throw std::logic_error(
-            "[ConvLM] Batch probability size " +
-            std::to_string(batchedProb[i].size()) +
-            " mismatch with vocab size " + std::to_string(vocabSize_));
-      }
       std::memcpy(
           cache_[cacheSize].data(),
-          batchedProb[i].data(),
+          batchedProb.data() + vocabSize_ * i,
           vocabSize_ * sizeof(float));
     }
   }

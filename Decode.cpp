@@ -249,7 +249,10 @@ int main(int argc, char** argv) {
   // Build Trie
   int blankIdx =
       FLAGS_criterion == kCtcCriterion ? tokenDict.getIndex(kBlankToken) : -1;
-  int silIdx = tokenDict.getIndex(FLAGS_wordseparator);
+  int silIdx = -1;
+  if (FLAGS_wordseparator != "") {
+    tokenDict.getIndex(FLAGS_wordseparator);
+  }
   std::shared_ptr<Trie> trie = nullptr;
   if (FLAGS_decodertype == "wrd" || FLAGS_uselexicon) {
     trie = std::make_shared<Trie>(tokenDict.indexSize(), silIdx);

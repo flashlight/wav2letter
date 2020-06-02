@@ -552,11 +552,9 @@ int main(int argc, char** argv) {
     int64_t curBatch = startUpdate;
     while (curBatch < nbatches) {
       ++curEpoch; // counts partial epochs too!
-      if (curEpoch >= FLAGS_lr_decay &&
-          (curEpoch - FLAGS_lr_decay) % FLAGS_lr_decay_step == 0) {
-        initlr /= 2;
-        initcritlr /= 2;
-      }
+      int epochsAfterDecay = curEpoch - FLAGS_lr_decay;
+      double lrScale =
+          std::pow(0.5, std::max(epochsAfterDecay, 0) / FLAGS_lr_decay_step);
       ntwrk->train();
       crit->train();
       if (FLAGS_reportiters == 0) {
@@ -573,13 +571,12 @@ int main(int argc, char** argv) {
       LOG_MASTER(INFO) << "Epoch " << curEpoch << " started!";
       for (auto& batch : *trainset) {
         ++curBatch;
-        double lrScale = 1;
         if (FLAGS_lrcosine) {
           const double pi = std::acos(-1);
-          lrScale =
+          lrScale = lrScale *
               std::cos(((double)curBatch) / ((double)nbatches) * pi / 2.0);
         } else {
-          lrScale =
+          lrScale = lrScale *
               std::pow(FLAGS_gamma, (double)curBatch / (double)FLAGS_stepsize);
         }
         netopt->setLr(
@@ -721,8 +718,8 @@ int main(int argc, char** argv) {
         trainds,
         netoptim,
         critoptim,
-        netoptim->getLr(),
-        critoptim->getLr(),
+        FLAGS_lr,
+        FLAGS_lrcrit,
         true,
         FLAGS_pretrainWindow - startUpdate);
     startUpdate = FLAGS_pretrainWindow;
@@ -740,8 +737,8 @@ int main(int argc, char** argv) {
       trainds,
       netoptim,
       critoptim,
-      netoptim->getLr(),
-      critoptim->getLr(),
+      FLAGS_lr,
+      FLAGS_lrcrit,
       true /* clampCrit */,
       FLAGS_iter);
 

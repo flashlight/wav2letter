@@ -316,6 +316,11 @@ std::shared_ptr<Module> parseLines(
     return std::make_shared<LogSoftmax>(dim);
   }
 
+  if (params[0] == "SH") {
+    auto beta = params.size() > 1 ? std::stof(params[1]) : 1.0;
+    return std::make_shared<Swish>(beta);
+  }
+
   /* ========== RNNs ========== */
 
   auto rnnLayer = [&](const std::vector<std::string>& prms, RnnMode mode) {

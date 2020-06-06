@@ -12,6 +12,8 @@
 #include <cstddef>
 #include <numeric>
 
+#include <iostream>
+
 #include "SpeechUtils.h"
 
 namespace w2l {
@@ -31,12 +33,16 @@ Mfsc::Mfsc(const FeatureParams& params)
 
 std::vector<float> Mfsc::apply(const std::vector<float>& input) {
   auto frames = frameSignal(input, this->featParams_);
+  // std::cout << "Mfsc::apply(input.size()=" << input.size()
+  //           << ") frames.size()=" << frames.size() << std::endl;
   if (frames.empty()) {
     return {};
   }
 
   int nSamples = this->featParams_.numFrameSizeSamples();
   int nFrames = frames.size() / nSamples;
+  // std::cout << "Mfsc::apply() nSamples)=" << nSamples << " nFrames=" << nFrames
+  //           << std::endl;
 
   std::vector<float> energy(nFrames);
   if (this->featParams_.useEnergy && this->featParams_.rawEnergy) {

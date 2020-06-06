@@ -1,0 +1,21 @@
+load("@fbcode_macros//build_defs:cpp_unittest.bzl", "cpp_unittest")
+
+datadir_flags = [
+    "-DDATA_TEST_DATADIR=\"deeplearning/projects/wav2letter/src/experimental/augmentation/test/data/\"",
+]
+
+cpp_unittest(
+    name = "augmentation_test",
+    srcs = [
+        "AudioAugmenterTest.cpp",
+    ],
+    compiler_flags = datadir_flags,
+    deps = [
+        "//deeplearning/projects/wav2letter/src/common:common",
+        "//deeplearning/projects/wav2letter/src/data:data",
+        "//deeplearning/projects/wav2letter/src/experimental/augmentation:augmentation",
+    ],
+    external_deps = [
+        ("googletest", None, "gtest"),
+    ],
+)

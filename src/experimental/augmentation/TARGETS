@@ -1,0 +1,22 @@
+load("@fbcode_macros//build_defs:cpp_library.bzl", "cpp_library")
+
+cpp_library(
+    name = "augmentation",
+    srcs = [
+        "AdditiveNoise.cpp",
+        "AudioAugmenter.cpp",
+        "AudioLoader.cpp",
+    ],
+    headers = [
+        "AdditiveNoise.h",
+        "AudioAugmenter.h",
+        "AudioLoader.h",
+    ],
+    deps = [
+        "//deeplearning/projects/wav2letter/src/common:common",
+        "//deeplearning/projects/wav2letter/src/data:util",
+    ],
+    external_deps = [
+        ("libsamplerate", None),
+    ],
+)

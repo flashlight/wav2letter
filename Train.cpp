@@ -23,6 +23,7 @@
 #include "common/Transforms.h"
 #include "criterion/criterion.h"
 #include "data/Featurize.h"
+#include "experimental/augmentation/AdditiveNoise.h"
 #include "libraries/common/Dictionary.h"
 #include "module/module.h"
 #include "runtime/runtime.h"
@@ -401,6 +402,21 @@ int main(int argc, char** argv) {
   for (const auto& s : validTagSets) {
     validds[s.first] = createDataset(
         s.second, dicts, lexicon, FLAGS_batchsize, worldRank, worldSize);
+  }
+
+  std::shared_ptr<w2l::augmentation::AdditiveNoise> additiveNoise;
+  if (!FLAGS_addnoise_noisedir.empty()) {
+    w2l::augmentation::AdditiveNoise::Config config;
+    config.noiseDir = FLAGS_addnoise_noisedir;
+    config.debugLevel = FLAGS_addnoise_debug_level;
+    config.minSnr = FLAGS_addnoise_min_snr;
+    config.maxSnr = FLAGS_addnoise_max_snr;
+    config.maxTimeRatio = FLAGS_addnoise_max_time_ratio;
+    config.nClipsPerUtterance = FLAGS_addnoise_n_clips;
+    std::cout << "addnoise_config={" << config.prettyString() << "}"
+              << std::endl;
+    additiveNoise = std::make_shared<w2l::augmentation::AdditiveNoise>(config);
+    trainds->augment(additiveNoise);
   }
 
   /* ===================== Hooks ===================== */

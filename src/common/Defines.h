@@ -192,6 +192,15 @@ DECLARE_int64(saug_tmaskt);
 DECLARE_double(saug_tmaskp);
 DECLARE_int64(saug_tmaskn);
 
+/* ========== ADDITIVE NOISE AUGMENTION OPTIONS ========== */
+
+DECLARE_double(addnoise_max_time_ratio);
+DECLARE_int64(addnoise_n_clips);
+DECLARE_double(addnoise_min_snr);
+DECLARE_double(addnoise_max_snr);
+DECLARE_string(addnoise_noisedir);
+DECLARE_int64(addnoise_debug_level);
+
 /* ========== RUN OPTIONS ========== */
 
 DECLARE_string(datadir);

@@ -155,6 +155,8 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/src/module)
 # Runtime
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/runtime)
 
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/experimental/augmentation)
+
 # Tests
 if (W2L_BUILD_TESTS)
   enable_testing()
@@ -230,6 +232,7 @@ add_executable(
 target_link_libraries(
   Train
   wav2letter++
+  augmentation
   )
 
 # ----------------------------- Test -----------------------------

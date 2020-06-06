@@ -139,6 +139,27 @@ DEFINE_double(
     "Max proportion of the input sequence (1.0 is 100%) that can be masked in time");
 DEFINE_int64(saug_tmaskn, 2, "Number of time masks");
 
+// ADDITIVE NOISE AUGMENTION OPTIONS
+
+DEFINE_double(
+    addnoise_max_time_ratio,
+    1.0,
+    "maximum time in the clean utterance that will have noise added to it");
+DEFINE_int64(addnoise_n_clips, 1, "number of noise clips to use per utterance");
+DEFINE_double(
+    addnoise_min_snr,
+    0.01,
+    "minimum signal noise ratio that we want");
+DEFINE_double(
+    addnoise_max_snr,
+    0.5,
+    "maximum signal noise ratio that we want ");
+DEFINE_string(
+    addnoise_noisedir,
+    "",
+    "directory of noise files (e.g. /checkpoint/defossez/denoising/datasets/dns/noise )");
+DEFINE_int64(addnoise_debug_level, 0, " print debug info when > 0");
+
 // RUN OPTIONS
 DEFINE_string(datadir, "", "speech data directory");
 DEFINE_string(tokensdir, "", "dictionary directory");

@@ -14,6 +14,7 @@
 #include <flashlight/flashlight.h>
 
 #include "data/Featurize.h"
+#include "experimental/augmentation/AudioAugmenter.h"
 #include "libraries/common/Dictionary.h"
 
 namespace w2l {
@@ -43,6 +44,10 @@ class W2lDataset : public fl::Dataset {
 
   void shuffle(int seed);
 
+  void augment(std::shared_ptr<augmentation::AudioAugmenter> audioAugmenter) {
+    audioAugmenter_ = audioAugmenter;
+  }
+
  protected:
   DictionaryMap dicts_;
 
@@ -59,6 +64,7 @@ class W2lDataset : public fl::Dataset {
       prefetchCache_;
 
   std::vector<std::vector<int64_t>> sampleBatches_;
+  std::shared_ptr<augmentation::AudioAugmenter> audioAugmenter_;
 };
 
 // Abstract class which defines an interface to pack samples

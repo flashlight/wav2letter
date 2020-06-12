@@ -195,7 +195,7 @@ Seq2SeqCriterion::Seq2SeqCriterion(
   }
 
   // 5. Initial hidden state
-  params_.push_back(uniform(af::dim4{hiddenDim}, -1e-1, 1e-1));
+  params_.push_back(fl::uniform(af::dim4{hiddenDim}, -1e-1, 1e-1));
   setUseSequentialDecoder();
 }
 

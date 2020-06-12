@@ -111,7 +111,7 @@ TransformerCriterion::TransformerCriterion(
   }
   add(std::make_shared<fl::Linear>(hiddenDim, nClass));
   add(attention);
-  params_.push_back(uniform(af::dim4{hiddenDim}, -1e-1, 1e-1));
+  params_.push_back(fl::uniform(af::dim4{hiddenDim}, -1e-1, 1e-1));
 }
 
 std::vector<Variable> TransformerCriterion::forward(

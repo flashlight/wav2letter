@@ -31,19 +31,18 @@ namespace augmentation {
 
 struct AudioAndStats {
   AudioAndStats();
+  explicit AudioAndStats(std::vector<float> data);
 
-  std::string prettyString();
+  std::string prettyString() const;
 
-  float absMin_;
-  float absMax_;
-  float absAvg_;
-  double absSum_;
+  float sqrMin_;
+  float sqrMax_;
+  float sqrAvg_;
+  double sqrSum_;
   std::vector<float> data_;
 };
 
-AudioAndStats sumAudiosAndCalcStats(const std::vector<std::vector<float>>& audios, size_t len);
 AudioAndStats sumAudiosAndCalcStats(std::vector<AudioLoader::Audio> audios, size_t len);
-AudioAndStats calcAudioStats(std::vector<float> audio);
 
 class AudioAugmenter {
  public:

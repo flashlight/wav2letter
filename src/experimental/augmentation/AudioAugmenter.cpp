@@ -53,7 +53,18 @@ namespace augmentation {
 
 AudioAndStats::AudioAndStats() : absMin_(0.0), absMax_(0.0), absAvg_(0.0) {}
 
-std::string AudioAndStats::prettyString() {
+AudioAndStats::AudioAndStats(std::vector<float> data)
+    : absMin_(0.0), absMax_(0.0), absAvg_(0.0), data_(std::move(data)) {
+  for (float f : data_) {
+    float cur = std::abs(f);
+    absMin_ = std::min(cur, absMin_);
+    absMax_ = std::min(cur, absMax_);
+    absSum_ += cur;
+  }
+  absAvg_ = absSum_ / static_cast<double>(data_.size());
+}
+
+std::string AudioAndStats::prettyString() const {
   std::stringstream ss;
   ss << "absMin_=" << absMin_ << " absMax=" << absMax_ << " absAvg_=" << absAvg_
      << " absSum_=" << absSum_ << " data_.size()=" << data_.size();
@@ -66,72 +77,18 @@ AudioAndStats sumAudiosAndCalcStats(
   if (audios.empty()) {
     return {};
   }
-  AudioAndStats stats;
-  stats.data_ = std::move(audios[0].data_);
-  stats.data_.resize(len, 0.0);
+  std::vector<float> audioSum = std::move(audios[0].data_);
 
   // Combine all data into single vector.
   // To maximise chache hits, add one continues memory vector at a time.
   for (int i = 1; i < audios.size(); ++i) {
-    std::vector<float>& data = audios[i].data_;
+    std::vector<float>& cur = audios[i].data_;
     for (int j = 0; j < len; ++j) {
-      stats.data_[j] += data[j];
+      audioSum[j] += cur[j];
     }
   }
 
-  for (int i = 0; i < len; ++i) {
-    float cur = std::abs(stats.data_[i]);
-    stats.absMin_ = std::min(cur, stats.absMin_);
-    stats.absMax_ = std::min(cur, stats.absMax_);
-    stats.absSum_ += cur;
-  }
-  stats.absAvg_ = stats.absSum_ / static_cast<double>(len);
-  return stats;
-}
-
-AudioAndStats calcAudioStats(std::vector<float> audio) {
-  if (audio.empty()) {
-    return {};
-  }
-  AudioAndStats stats;
-  stats.data_ = std::move(audio);
-
-  for (int i = 0; i < stats.data_.size(); ++i) {
-    float cur = std::abs(stats.data_[i]);
-    stats.absMin_ = std::min(cur, stats.absMin_);
-    stats.absMax_ = std::min(cur, stats.absMax_);
-    stats.absSum_ += cur;
-  }
-  stats.absAvg_ = stats.absSum_ / static_cast<double>(stats.data_.size());
-  return stats;
-}
-
-AudioAndStats calcAudioAndStats(
-    std::vector<std::vector<float>> audios,
-    size_t len) {
-  if (audios.empty()) {
-    return {};
-  }
-  AudioAndStats stats;
-  stats.data_ = std::move(audios[0]);
-  stats.data_.resize(len, 0.0);
-
-  // Combine all data into single vector.
-  // To maximise chache hits, add one continues memory vector at a time.
-  for (int i = 1; i < audios.size(); ++i) {
-    for (int j = 0; j < len; ++j) {
-      stats.data_[j] += audios[i][j];
-    }
-  }
-
-  for (int i = 0; i < len; ++i) {
-    float cur = std::abs(stats.data_[i]);
-    stats.absMin_ = std::min(cur, stats.absMin_);
-    stats.absMax_ = std::min(cur, stats.absMax_);
-    stats.absSum_ += cur;
-  }
-  stats.absAvg_ = stats.absSum_ / static_cast<double>(len);
-  return stats;
+  return AudioAndStats(std::move(audioSum));
 }
 
 } // namespace augmentation

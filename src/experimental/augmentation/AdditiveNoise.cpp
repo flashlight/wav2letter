@@ -54,7 +54,7 @@ void AdditiveNoise::augment(std::vector<float>& signal) {
   // and back in to signal before returning from this funciton.
   std::vector<float> tmpSignal;
   tmpSignal.swap(signal);
-  AudioAndStats signalAndStats = calcAudioStats(std::move(tmpSignal));
+  AudioAndStats signalAndStats(std::move(tmpSignal));
 
   double snr = signalAndStats.absAvg_ / noiseAndStats.absAvg_;
   float noiseMultiplier = 1.0;

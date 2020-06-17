@@ -27,3 +27,5 @@ target_include_directories(
   INTERFACE
   ${GLOG_INCLUDE_DIRS}
   )
+
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/experimental/augmentation/tests)

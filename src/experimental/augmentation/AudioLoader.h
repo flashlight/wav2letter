@@ -26,8 +26,7 @@ class AudioLoader {
  private:
   const std::string audioDirectoryPath_;
   std::vector<std::string> audioFilePathVec_;
-  std::random_device randomSeedDevice_;
-  std::mt19937 randomEngine_{0};
+  std::mt19937 randomEngine_;
   std::unique_ptr<std::uniform_int_distribution<>> uniformDistribution_;
 };
 

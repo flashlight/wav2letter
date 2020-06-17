@@ -51,23 +51,23 @@ namespace w2l {
 
 namespace augmentation {
 
-AudioAndStats::AudioAndStats() : absMin_(0.0), absMax_(0.0), absAvg_(0.0) {}
+AudioAndStats::AudioAndStats() : sqrMin_(0.0), sqrMax_(0.0), sqrAvg_(0.0) {}
 
 AudioAndStats::AudioAndStats(std::vector<float> data)
-    : absMin_(0.0), absMax_(0.0), absAvg_(0.0), data_(std::move(data)) {
+    : sqrMin_(0.0), sqrMax_(0.0), sqrAvg_(0.0), data_(std::move(data)) {
   for (float f : data_) {
-    float cur = std::abs(f);
-    absMin_ = std::min(cur, absMin_);
-    absMax_ = std::min(cur, absMax_);
-    absSum_ += cur;
+    float cur = f * f;
+    sqrMin_ = std::min(cur, sqrMin_);
+    sqrMax_ = std::min(cur, sqrMax_);
+    sqrSum_ += cur;
   }
-  absAvg_ = absSum_ / static_cast<double>(data_.size());
+  sqrAvg_ = sqrSum_ / static_cast<double>(data_.size());
 }
 
 std::string AudioAndStats::prettyString() const {
   std::stringstream ss;
-  ss << "absMin_=" << absMin_ << " absMax=" << absMax_ << " absAvg_=" << absAvg_
-     << " absSum_=" << absSum_ << " data_.size()=" << data_.size();
+  ss << "sqrMin_=" << sqrMin_ << " sqrMax=" << sqrMax_ << " sqrAvg_=" << sqrAvg_
+     << " sqrSum_=" << sqrSum_ << " data_.size()=" << data_.size();
   return ss.str();
 }
 

@@ -16,12 +16,13 @@ namespace augmentation {
 class AdditiveNoise : public AudioAugmenter {
  public:
   struct Config {
-    double maxTimeRatio;
-    double minSnr;
-    double maxSnr;
-    int nClipsPerUtterance;
-    std::string noiseDir;
-    int debugLevel;  // 0=none, 1=stats, 2=histogram, 3=save augmented files
+    unsigned int randomSeed_;
+    double maxTimeRatio_;
+    double minSnr_;
+    double maxSnr_;
+    int nClipsPerUtterance_;
+    std::string noiseDir_;
+    int debugLevel_; // 0=none, 1=stats, 2=histogram, 3=save augmented files
 
     std::string prettyString() const;
   };
@@ -34,6 +35,7 @@ class AdditiveNoise : public AudioAugmenter {
   AudioLoader audioLoader_;
   const AdditiveNoise::Config config_;
   std::vector<std::string> noiseFilePathVec_;
+  std::mt19937 randomEngine_;
 };
 
 } // namespace augmentation

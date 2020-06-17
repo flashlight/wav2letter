@@ -33,7 +33,6 @@ std::string GetFullPath(const std::string& path, const std::string& fileName) {
 
 AudioLoader::AudioLoader(const std::string& audioDirectoryPath)
     : audioDirectoryPath_(audioDirectoryPath)
-//   randomEngine_(randomSeedDevice_)
 {
   std::stringstream ss;
   ss << "AudioLoader::AudioLoader(audioDirectoryPath=" << audioDirectoryPath

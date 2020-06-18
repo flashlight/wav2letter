@@ -11,7 +11,7 @@
 #include "data/Sound.h"
 // #include "experimental/augmentation/AudioAugmenter.h"
 #include "experimental/augmentation/AdditiveNoise.h"
-#include "experimental/augmentation/NoiseDatabase.h"
+#include "experimental/augmentation/AudioLoader.h"
 #include "libraries/common/Utils.h"
 
 using namespace w2l;
@@ -40,29 +40,6 @@ std::string loadPath = "";
 //         SoundSubFormat::PCM_16);
 //   }
 // }
-
-const std::string kNoiseInputDirectory = "/home/avidov/noise";
-
-TEST(AudioAugmenterTest, NoiseDatabase) {
-  w2l::augmentation::NoiseDatabase noiseDb(kNoiseInputDirectory);
-  const size_t numTracks = 3;
-  std::vector<std::vector<float>> noiseVec =
-      noiseDb.getRandomNoiseTracks(numTracks);
-  EXPECT_EQ(noiseVec.size(), numTracks);
-}
-
-TEST(AudioAugmenterTest, AdditiveNoise) {
-  w2l::augmentation::AdditiveNoise noiseAdder(kNoiseInputDirectory, {});
-  const size_t signalSize = 1000;
-  std::vector<float> signal(signalSize);
-  for (int i = 0; i < signalSize; ++i) {
-    signal[i] = 0;
-  }
-
-  const std::vector<float> augmented = noiseAdder.ApplyAdditiveNoise(signal);
-
-  EXPECT_NE(augmented, signal);
-}
 
 // TEST(AudioAugmenterTest, Mix) {
 //   // std::string filename = "test.wav";
@@ -93,7 +70,7 @@ TEST(AudioAugmenterTest, AdditiveNoise) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
 
-  // Resolve directory for data
+// Resolve directory for data
 #ifdef DATA_TEST_DATADIR
   loadPath = DATA_TEST_DATADIR;
 #endif

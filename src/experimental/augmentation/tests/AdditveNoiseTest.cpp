@@ -8,11 +8,10 @@
 
 #include <gtest/gtest.h>
 
-#include "data/Sound.h"
+// #include "data/Sound.h"
 #include "experimental/augmentation/AdditiveNoise.h"
-#include "experimental/augmentation/AdditiveNoise.h"
-#include "experimental/augmentation/NoiseDatabase.h"
-#include "libraries/common/Utils.h"
+// #include "experimental/augmentation/AudioLoader.h"
+// #include "libraries/common/Utils.h"
 
 using namespace w2l;
 
@@ -22,8 +21,9 @@ std::string loadPath = "";
 
 const std::string kNoiseInputDirectory =
     "/checkpoint/avidov/experiments/noise/audio/noise";
-const std::string kSignalInputDirectory =
-    "/checkpoint/antares/datasets/librispeech/audio/LibriSpeech/train-clean-100/911/130578";
+// const std::string kSignalInputDirectory =
+//     "/checkpoint/antares/datasets/librispeech/audio/LibriSpeech/train-clean-100/911/130578";
+const std::string kSignalInputDirectory = "/private/home/avidov/signal";
 
 const std::vector<std::string> signals = {
     "/checkpoint/antares/datasets/librispeech/audio/LibriSpeech/train-clean-100/911/130578/911-130578-0016.flac",
@@ -37,36 +37,45 @@ const std::vector<std::string> noises = {
     "/private/home/avidov/noise/noise_fileid_7775.wav",
 };
 
-TEST(AudioAugmenterTest, NoiseDatabase) {
-  w2l::augmentation::NoiseDatabase noiseDb(kNoiseInputDirectory);
-  const size_t numTracks = 3;
-  std::vector<std::vector<float>> noiseVec =
-      noiseDb.getRandomNoiseTracks(numTracks);
-  EXPECT_EQ(noiseVec.size(), numTracks);
+TEST(AdditiveNoise, AudioLoader) {
+  augmentation::AudioLoader noiseDb(kNoiseInputDirectory);
+  augmentation::AudioLoader::Audio noise = noiseDb.loadRandom();
+  EXPECT_GT(noise.data_.size(), 0);
+  std::cout << noise.prettyString() << std::endl;
 }
 
-TEST(AudioAugmenterTest, AdditiveNoise) {
-  w2l::augmentation::NoiseDatabase signalDb(kSignalInputDirectory);
-  const size_t numTracks = 1;
-  std::vector<std::vector<float>> signals =
-      signalDb.getRandomNoiseTracks(numTracks);
+TEST(AdditiveNoise, LogAugmentedSamplesWithVariousfConfigs) {
+  augmentation::AudioLoader signalDb(kSignalInputDirectory);
+  const std::vector<augmentation::AudioLoader::Audio> signals = {
+      signalDb.loadRandom()};
 
-  w2l::augmentation::AdditiveNoise::Config config;
-  config.randomSeed_ = 0;
-  config.maxTimeRatio_ = 1;
-  config.minSnr_ = 1;
-  config.maxSnr_ = 1;
-  config.nClipsPerUtterance_ = 2;
-  config.noiseDir_ = kNoiseInputDirectory;
-  config.debugLevel_ =
-      3; // 0=none, 1=stats, 2=histogram, 3=saveq augmented files
+  for (const augmentation::AudioLoader::Audio& signal : signals) {
+    for (int nClipsPerUtterance_ = 1; nClipsPerUtterance_ <= 5;
+         ++nClipsPerUtterance_) {
+      for (double minSnr = 0.125; minSnr <= 40.0; minSnr *= 2.0) {
+        for (double maxTimeRatio_ = 0; maxTimeRatio_ <= 1;
+             maxTimeRatio_ += 0.25) {
+          augmentation::AdditiveNoise::Config config;
+          config.maxTimeRatio_ = maxTimeRatio_;
+          config.minSnr_ = minSnr;
+          config.maxSnr_ = minSnr * 2;
+          config.nClipsPerUtterance_ = nClipsPerUtterance_;
+          config.noiseDir_ = kNoiseInputDirectory;
+          config.debugLevel_ =
+              3; // 0=none, 1=stats, 2=histogram, 3=saveq augmented files
+          config.debugOutputPath_ = "/tmp";
+          config.debugOutputFilePrefix_ = "/additive-noise-";
 
-  w2l::augmentation::AdditiveNoise noiseAdder(config);
+          augmentation::AdditiveNoise noiseAdder(config);
+          std::vector<float> augmented = signal.data_;
+          noiseAdder.augment(&augmented);
 
-  const std::vector<float> augmented =
-      noiseAdder.ApplyAdditiveNoise(signals[0]);
-
-  EXPECT_NE(augmented, signal);
+          EXPECT_EQ(augmented.size(), signal.data_.size());
+          std::cout << "minSnr=" << minSnr << std::endl;
+        }
+      }
+    }
+  }
 }
 
 int main(int argc, char** argv) {

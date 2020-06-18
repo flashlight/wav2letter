@@ -11,6 +11,7 @@ target_sources(
   ${CMAKE_CURRENT_SOURCE_DIR}/AudioAugmenter.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/AudioLoader.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/AdditiveNoise.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/AudioStats.cpp
   )
 
 target_link_libraries(

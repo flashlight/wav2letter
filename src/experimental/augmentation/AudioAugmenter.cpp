@@ -49,47 +49,5 @@ namespace w2l {
 //   return output;
 // }
 
-namespace augmentation {
-
-AudioAndStats::AudioAndStats() : sqrMin_(0.0), sqrMax_(0.0), sqrAvg_(0.0) {}
-
-AudioAndStats::AudioAndStats(std::vector<float> data)
-    : sqrMin_(0.0), sqrMax_(0.0), sqrAvg_(0.0), data_(std::move(data)) {
-  for (float f : data_) {
-    float cur = f * f;
-    sqrMin_ = std::min(cur, sqrMin_);
-    sqrMax_ = std::min(cur, sqrMax_);
-    sqrSum_ += cur;
-  }
-  sqrAvg_ = sqrSum_ / static_cast<double>(data_.size());
-}
-
-std::string AudioAndStats::prettyString() const {
-  std::stringstream ss;
-  ss << "sqrMin_=" << sqrMin_ << " sqrMax=" << sqrMax_ << " sqrAvg_=" << sqrAvg_
-     << " sqrSum_=" << sqrSum_ << " data_.size()=" << data_.size();
-  return ss.str();
-}
-
-AudioAndStats sumAudiosAndCalcStats(
-    std::vector<AudioLoader::Audio> audios,
-    size_t len) {
-  if (audios.empty()) {
-    return {};
-  }
-  std::vector<float> audioSum = std::move(audios[0].data_);
-
-  // Combine all data into single vector.
-  // To maximise chache hits, add one continues memory vector at a time.
-  for (int i = 1; i < audios.size(); ++i) {
-    std::vector<float>& cur = audios[i].data_;
-    for (int j = 0; j < len; ++j) {
-      audioSum[j] += cur[j];
-    }
-  }
-
-  return AudioAndStats(std::move(audioSum));
-}
-
-} // namespace augmentation
+namespace augmentation {} // namespace augmentation
 } // namespace w2l

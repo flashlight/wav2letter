@@ -32,8 +32,7 @@ std::string GetFullPath(const std::string& path, const std::string& fileName) {
 }
 
 AudioLoader::AudioLoader(const std::string& audioDirectoryPath)
-    : audioDirectoryPath_(audioDirectoryPath)
-{
+    : audioDirectoryPath_(audioDirectoryPath) {
   std::stringstream ss;
   ss << "AudioLoader::AudioLoader(audioDirectoryPath=" << audioDirectoryPath
      << ")";
@@ -74,6 +73,13 @@ AudioLoader::Audio AudioLoader::loadRandom() {
   }
 
   return result;
+}
+
+std::string AudioLoader::Audio::prettyString() const {
+  std::stringstream ss;
+  ss << "data_.size()=" << data_.size() << " info_={}"
+     << " filename_=" << filename_ << " fullpath_=" << fullpath_;
+  return ss.str();
 }
 
 } // namespace augmentation

@@ -8,11 +8,11 @@ function(build_test SRCFILE)
   set(target "${src_name}")
   add_executable(${target} ${SRCFILE})
   add_dependencies(${target} gtest) # make sure gtest is built first
-  message("GTEST_LIBRARIES=${GTEST_LIBRARIES}")
   target_link_libraries(
     ${target}
     PRIVATE
     wav2letter++
+    augmentation
     ${GTEST_LIBRARIES}
     )
   target_include_directories(

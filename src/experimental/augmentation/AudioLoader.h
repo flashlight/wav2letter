@@ -17,6 +17,8 @@ class AudioLoader {
     w2l::SoundInfo info_;
     std::string filename_;
     std::string fullpath_;
+
+    std::string prettyString() const;
   };
 
   AudioLoader(const std::string& audioDirectoryPath);

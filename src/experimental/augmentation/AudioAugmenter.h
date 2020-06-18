@@ -29,26 +29,11 @@ speedAug(const std::vector<float>& input, double speed, int channels = 1);
 
 namespace augmentation {
 
-struct AudioAndStats {
-  AudioAndStats();
-  explicit AudioAndStats(std::vector<float> data);
-
-  std::string prettyString() const;
-
-  float sqrMin_;
-  float sqrMax_;
-  float sqrAvg_;
-  double sqrSum_;
-  std::vector<float> data_;
-};
-
-AudioAndStats sumAudiosAndCalcStats(std::vector<AudioLoader::Audio> audios, size_t len);
-
 class AudioAugmenter {
  public:
   virtual ~AudioAugmenter() = default;
 
-  virtual void augment(std::vector<float>& signal) = 0;
+  virtual void augment(std::vector<float>* signal) = 0;
 };
 
 } // namespace augmentation

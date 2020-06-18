@@ -16,6 +16,7 @@
 #include <ctime>
 #include <fstream>
 #include <functional>
+#include <sstream>
 
 static constexpr const char* kSpaceChars = "\t\n\v\f\r ";
 
@@ -144,13 +145,15 @@ void dirCreate(const std::string& path) {
   nError = mkdir(path.c_str(), nMode);
 #endif
   if (nError != 0) {
-    throw std::runtime_error(
-        std::string() + "Unable to create directory - " + path);
+    std::stringstream ss;
+    ss << "Failed to create directory path=" << path << " with error=" << nError
+       << ' ' << strerror(nError);
+    throw std::runtime_error(ss.str());
   }
 }
 
 bool fileExists(const std::string& path) {
-  std::ifstream fs(path, std::ifstream::in);
+  std::ifstream fs(path, std::ifstream::in);+ 
   return fs.good();
 }
 

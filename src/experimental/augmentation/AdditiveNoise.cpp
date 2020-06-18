@@ -5,11 +5,13 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <utility>
 
+#include "experimental/augmentation/AudioStats.h"
 #include "flashlight/common/Histogram.h"
 
 namespace w2l {
@@ -43,23 +45,50 @@ AudioLoader::Audio randomlyShiftAndSumNoise(
     const std::vector<AudioLoader::Audio>& noises,
     int len,
     std::mt19937* randomEngine) {
-  std::uniform_int_distribution<> uniformDistribution(0, len);
+  std::uniform_int_distribution<> uniformDistribution(0, len - 1);
 
   AudioLoader::Audio result;
-  result.data_.resize(len);
+  result.data_.resize(len, 0.0);
   for (const AudioLoader::Audio& noise : noises) {
     const int cenerFrame = uniformDistribution(*randomEngine);
     const int halfNoiseLen = noise.data_.size() / 2;
     const int srcStartIndex = std::max(halfNoiseLen - cenerFrame, 0);
-    const int dstStartIndex = std::min(cenerFrame - halfNoiseLen, 0);
+    const int dstStartIndex = std::max(cenerFrame - halfNoiseLen, 0);
     const int dstEndIndex = std::min(cenerFrame + halfNoiseLen, len);
 
     int srcIndex = srcStartIndex;
-    for (int dstIndex = dstStartIndex; dstIndex < dstEndIndex; ++dstIndex) {
-      result.data_[dstIndex] += noise.data_[srcIndex];
+    for (int dstIndex = dstStartIndex; dstIndex < dstEndIndex;
+         ++dstIndex, ++srcIndex) {
+      result.data_.at(dstIndex) += noise.data_.at(srcIndex);
     }
   }
   return result;
+}
+
+void maskBeyondMaxTimeRatioRandomStart(
+    double maxTimeRatio,
+    std::vector<float>* data,
+    std::mt19937* randomEngine) {
+  const int size = data->size();
+  std::uniform_int_distribution<> uniformDistribution(0, size - 1);
+
+  const int startFrame = uniformDistribution(*randomEngine);
+  const int numFrames = static_cast<double>(size) * (1.0 - maxTimeRatio);
+  for (int i = startFrame; i < startFrame + numFrames; ++i) {
+    data->at(i % size) = 0;
+  }
+}
+
+void maskBeyondMaxTimeRatioRandomFrames(
+    double maxTimeRatio,
+    std::vector<float>* data,
+    std::mt19937* randomEngine) {
+  std::bernoulli_distribution randomChoiceToMaskFrame(1.0 - maxTimeRatio);
+  for (float& f : *data) {
+    if (randomChoiceToMaskFrame(*randomEngine)) {
+      f = 0;
+    }
+  }
 }
 
 float clampAudioFrameValue(float frameVal) {
@@ -67,45 +96,40 @@ float clampAudioFrameValue(float frameVal) {
 }
 
 void augmentNoiseToSignal(
-    const std::vector<float> noise,
+    const std::vector<float>& noise,
     double minSnr,
     double maxSnr,
-    int debugLevel,
-    std::vector<float>* signal) {
+    std::vector<float>* signal,
+    std::stringstream* debug) {
   assert(noise.size() == signal->size());
   assert(minSnr <= maxSnr);
   assert(minSnr > 0);
 
-  AudioAndStats noiseAndStats(std::move(noise));
-  AudioAndStats signalAndStats(std::move(*signal));
+  AudioStats noiseStats = calcAudioStats(noise);
+  AudioStats signalStats = calcAudioStats(*signal);
 
-  double snr = signalAndStats.sqrAvg_ / noiseAndStats.sqrAvg_;
+  double snr = signalStats.sqrAvg_ / noiseStats.sqrAvg_;
   float noiseMultiplier = 1.0;
   if (snr < minSnr) {
-    noiseMultiplier = signalAndStats.sqrAvg_ / (minSnr * noiseAndStats.sqrAvg_);
+    noiseMultiplier = signalStats.sqrAvg_ / (minSnr * noiseStats.sqrAvg_);
   } else if (snr > maxSnr) {
-    noiseMultiplier = signalAndStats.sqrAvg_ / (maxSnr * noiseAndStats.sqrAvg_);
+    noiseMultiplier = signalStats.sqrAvg_ / (maxSnr * noiseStats.sqrAvg_);
   }
 
-  for (int i = 0; i < signalAndStats.data_.size(); ++i) {
-    if (noiseAndStats.data_[i] != 0) {
-      signalAndStats.data_[i] = clampAudioFrameValue(
-          signalAndStats.data_[i] + noiseAndStats.data_[i] * noiseMultiplier);
+  for (int i = 0; i < signal->size(); ++i) {
+    if (noise[i] != 0) {
+      (*signal)[i] =
+          clampAudioFrameValue((*signal)[i] + noise[i] * noiseMultiplier);
     }
   }
 
-  if (debugLevel > 1) {
-    std::stringstream debug;
-    debug << "augmentNoiseToSignal(noise={" << noiseAndStats.prettyString()
-          << " minSnr=" << minSnr << " maxSnr=" << maxSnr
-          << " debugLevel=" << debugLevel << " signal={"
-          << signalAndStats.prettyString() << "}) signalAndStats={"
-          << signalAndStats.prettyString() << "})  snr=" << snr
-          << " noiseMultiplier=" << noiseMultiplier;
-    std::cout << debug.str() << std::endl;
+  if (debug) {
+    (*debug) << "augmentNoiseToSignal(noise={" << noiseStats.prettyString()
+             << " minSnr=" << minSnr << " maxSnr=" << maxSnr
+             << " signal->size()={" << signal->size() << "}) signalStats={"
+             << signalStats.prettyString() << "})  snr=" << snr
+             << " noiseMultiplier=" << noiseMultiplier;
   }
-
-  signal->swap(signalAndStats.data_);
 }
 
 } // namespace
@@ -118,47 +142,59 @@ AdditiveNoise::AdditiveNoise(AdditiveNoise::Config config)
 const size_t kHistogramBucketCount = 15;
 const size_t kHistogramBucketMaxLen = 100;
 
-void AdditiveNoise::augment(std::vector<float>& signal) {
-  double noiseAvg = 0.0;
-
+void AdditiveNoise::augment(std::vector<float>* signal) {
   fl::HistogramStats<float> signalHist;
   std::stringstream debug;
   if (config_.debugLevel_ > 1) {
     signalHist = fl::FixedBucketSizeHistogram<float>(
-        signal.begin(), signal.end(), kHistogramBucketCount);
+        signal->begin(), signal->end(), kHistogramBucketCount);
 
-    debug << "AdditiveNoise::augment(signal.size()=" << signal.size()
+    debug << "AdditiveNoise::augment(signal->size()=" << signal->size()
           << ") config={" << config_.prettyString() << "}";
   }
 
-  std::vector<AudioLoader::Audio> noises =
+  const std::vector<AudioLoader::Audio> noises =
       loadNoises(config_.nClipsPerUtterance_, &audioLoader_);
 
   AudioLoader::Audio randomlyShiftedNoiseSum =
-      randomlyShiftAndSumNoise(noises, signal.size(), &randomEngine_);
+      randomlyShiftAndSumNoise(noises, signal->size(), &randomEngine_);
 
+  maskBeyondMaxTimeRatioRandomStart(
+      config_.maxTimeRatio_, &randomlyShiftedNoiseSum.data_, &randomEngine_);
+
+  std::stringstream augmentNoiseToSignalDebugMsg;
   augmentNoiseToSignal(
       randomlyShiftedNoiseSum.data_,
       config_.minSnr_,
       config_.maxSnr_,
-      config_.debugLevel_,
-      &signal);
+      signal,
+      (config_.debugLevel_ ? &augmentNoiseToSignalDebugMsg : nullptr));
 
   if (config_.debugLevel_ > 0) {
-    std::stringstream filename;
-    if (config_.debugLevel_ > 2) {
-      static size_t idx = 0;
-      ++idx;
+    debug << augmentNoiseToSignalDebugMsg.str() << std::endl;
 
-      filename << "/tmp/augmented-with-";
-      for (const AudioLoader::Audio& noise : noises) {
-        filename << noise.filename_ << '-';
-      }
-      filename << "-idx-" << std::setfill('0') << std::setw(4) << idx
-               << ".flac";
-      debug << " saving augmented file=" << filename.str();
+    std::stringstream filename;
+    static size_t idx = 0;
+    ++idx;
+    filename << config_.debugOutputPath_ << config_.debugOutputFilePrefix_
+             << "-augmenting-" << noises.size() << "-noises-snr-"
+             << std::setw(6) << std::setprecision(4) << std::setfill('0')
+             << config_.minSnr_ << "-" << std::setw(6) << std::setprecision(4)
+             << std::setfill('0') << config_.maxSnr_ << "-ratio-"
+             << std::setw(4) << std::setprecision(2) << std::setfill('0')
+             << config_.maxTimeRatio_ << "-idx-" << std::setfill('0')
+             << std::setw(4) << idx;
+    std::string metaDataFilename = filename.str() + ".txt";
+    std::string audioFilename = filename.str() + ".flac";
+
+    for (const AudioLoader::Audio& noise : noises) {
+      debug << "augmenting noise file=" << noise.filename_ << std::endl;
+    }
+    if (config_.debugLevel_ > 2) {
+      debug << "saving augmented file=" << audioFilename;
     }
 
+    // Add histograms
     if (config_.debugLevel_ > 1) {
       fl::HistogramStats<float> noiseHist = fl::FixedBucketSizeHistogram<float>(
           randomlyShiftedNoiseSum.data_.begin(),
@@ -167,7 +203,7 @@ void AdditiveNoise::augment(std::vector<float>& signal) {
 
       fl::HistogramStats<float> augmentedHist =
           fl::FixedBucketSizeHistogram<float>(
-              signal.begin(), signal.end(), kHistogramBucketCount);
+              signal->begin(), signal->end(), kHistogramBucketCount);
 
       debug << std::endl
             << "signal-Hist="
@@ -192,9 +228,14 @@ void AdditiveNoise::augment(std::vector<float>& signal) {
     std::cout << debug.str() << std::endl;
 
     if (config_.debugLevel_ > 2) {
+      std::ofstream infoFile(metaDataFilename);
+      if (infoFile.is_open()) {
+        infoFile << debug.str() << std::endl;
+      }
+
       saveSound(
-          filename.str(),
-          signal,
+          audioFilename,
+          *signal,
           noises.at(0).info_.samplerate,
           noises.at(0).info_.channels,
           w2l::SoundFormat::FLAC,

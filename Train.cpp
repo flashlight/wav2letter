@@ -553,7 +553,7 @@ int main(int argc, char** argv) {
     while (curBatch < nbatches) {
       ++curEpoch; // counts partial epochs too!
       int epochsAfterDecay = curEpoch - FLAGS_lr_decay;
-      double lrScale =
+      double lrDecayScale =
           std::pow(0.5, std::max(epochsAfterDecay, 0) / FLAGS_lr_decay_step);
       ntwrk->train();
       crit->train();
@@ -571,18 +571,20 @@ int main(int argc, char** argv) {
       LOG_MASTER(INFO) << "Epoch " << curEpoch << " started!";
       for (auto& batch : *trainset) {
         ++curBatch;
+        double lrScheduleScale;
         if (FLAGS_lrcosine) {
           const double pi = std::acos(-1);
-          lrScale = lrScale *
+          lrScheduleScale =
               std::cos(((double)curBatch) / ((double)nbatches) * pi / 2.0);
         } else {
-          lrScale = lrScale *
+          lrScheduleScale =
               std::pow(FLAGS_gamma, (double)curBatch / (double)FLAGS_stepsize);
         }
         netopt->setLr(
-            lrScale * initlr * std::min(curBatch / double(FLAGS_warmup), 1.0));
+            initlr * lrDecayScale * lrScheduleScale *
+            std::min(curBatch / double(FLAGS_warmup), 1.0));
         critopt->setLr(
-            lrScale * initcritlr *
+            initcritlr * lrDecayScale * lrScheduleScale *
             std::min(curBatch / double(FLAGS_warmup), 1.0));
         af::sync();
         meters.timer.incUnit();

@@ -13,7 +13,7 @@ namespace augmentation {
 class AudioLoader {
  public:
   struct Audio {
-    std::vector<float>  data_;
+    std::vector<float> data_;
     w2l::SoundInfo info_;
     std::string filename_;
     std::string fullpath_;

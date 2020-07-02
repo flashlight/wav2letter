@@ -153,7 +153,7 @@ void dirCreate(const std::string& path) {
 }
 
 bool fileExists(const std::string& path) {
-  std::ifstream fs(path, std::ifstream::in);+ 
+  std::ifstream fs(path, std::ifstream::in);
   return fs.good();
 }
 

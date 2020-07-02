@@ -24,6 +24,7 @@
 #include "criterion/criterion.h"
 #include "data/Featurize.h"
 #include "experimental/augmentation/AdditiveNoise.h"
+#include "experimental/augmentation/Reverberation.h"
 #include "libraries/common/Dictionary.h"
 #include "module/module.h"
 #include "runtime/runtime.h"
@@ -413,10 +414,29 @@ int main(int argc, char** argv) {
     config.maxSnr_ = FLAGS_addnoise_max_snr;
     config.maxTimeRatio_ = FLAGS_addnoise_max_time_ratio;
     config.nClipsPerUtterance_ = FLAGS_addnoise_n_clips;
-    std::cout << "addnoise_config={" << config.prettyString() << "}"
+    std::cout << "augmentation::AdditiveNoise::Config={" << config.prettyString() << "}"
               << std::endl;
     additiveNoise = std::make_shared<w2l::augmentation::AdditiveNoise>(config);
+    additiveNoise->enable(FLAGS_addnoise_start_update == 0);
     trainds->augment(additiveNoise);
+  }
+
+  std::shared_ptr<w2l::augmentation::Reverberation> reverberation;
+  if (FLAGS_reverb_start_update > -1) {
+    w2l::augmentation::Reverberation::Config config;
+    config.absorptionCoefficientMin_ = FLAGS_reverb_absorption_coefficient_min;
+    config.absorptionCoefficientMax_ = FLAGS_reverb_absorption_coefficient_max;
+    config.distanceToObjectInMetersMin_ = FLAGS_reverb_distance_to_object_in_meters_min;
+    config.distanceToObjectInMetersMax_ = FLAGS_reverb_distance_to_object_in_meters_max;
+    config.echoCount_ = FLAGS_reverb_echo_count;
+    config.jitter_ = FLAGS_reverb_jitter;
+    config.sampleRate_ = FLAGS_samplerate;
+    config.debugLevel_ = FLAGS_reverb_debug_level;
+    std::cout << "augmentation::Reverberation::Config={" << config.prettyString() << "}"
+              << std::endl;
+    reverberation = std::make_shared<w2l::augmentation::Reverberation>(config);
+    reverberation->enable(FLAGS_reverb_start_update == 0);
+    trainds->augment(reverberation);
   }
 
   /* ===================== Hooks ===================== */
@@ -487,7 +507,9 @@ int main(int argc, char** argv) {
                 &trainEvalIds,
                 &curEpoch,
                 &startUpdate,
-                reducer](
+                reducer,
+                additiveNoise,
+                reverberation](
                    std::shared_ptr<fl::Module> ntwrk,
                    std::shared_ptr<SequenceCriterion> crit,
                    std::shared_ptr<W2lDataset> trainset,
@@ -618,6 +640,16 @@ int main(int argc, char** argv) {
         if (FLAGS_saug_start_update >= 0 &&
             curBatch >= FLAGS_saug_start_update) {
           input = saug->forward(input);
+        }
+        if (FLAGS_addnoise_start_update >= 0 && 
+        curBatch >= (FLAGS_addnoise_start_update - 1) ) {
+          // Enable additive noise for the next iteration since curBatch
+          // will match FLAGS_addnoise_start_update. 
+          additiveNoise->enable(true);
+        }
+        if (FLAGS_addnoise_start_update >= 0 && 
+        curBatch >= (FLAGS_reverb_start_update - 1) ) {
+          reverberation->enable(true);
         }
         auto output = ntwrk->forward({input}).front();
         af::sync();

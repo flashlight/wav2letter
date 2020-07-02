@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <random>
 #include <string>
@@ -29,15 +30,32 @@ class AdditiveNoise : public AudioAugmenter {
     std::string prettyString() const;
   };
 
+  class Random {
+   public:
+    explicit Random(unsigned int randomSeed);
+
+    int index(int size);
+
+   private:
+    std::mt19937 randomEngine_;
+    std::uniform_int_distribution<> uniformDistribution_;
+  };
+
   AdditiveNoise(AdditiveNoise::Config config);
 
-  void augment(std::vector<float>* signal) override;
+  void augmentImpl(std::vector<float>* signal) override;
+
+  std::string prettyString() const override {
+    return "AdditiveNoise{config=" + config_.prettyString() + "}";
+  };
 
  private:
+  int randomIndexGenerator(int size);
+
   AudioLoader audioLoader_;
   const AdditiveNoise::Config config_;
   std::vector<std::string> noiseFilePathVec_;
-  std::mt19937 randomEngine_;
+  Random random_;
 };
 
 } // namespace augmentation

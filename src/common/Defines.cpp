@@ -158,7 +158,43 @@ DEFINE_string(
     addnoise_noisedir,
     "",
     "directory of noise files (e.g. /checkpoint/defossez/denoising/datasets/dns/noise )");
-DEFINE_int64(addnoise_debug_level, 0, " print debug info when > 0");
+DEFINE_int64(
+    addnoise_start_update,
+    -1,
+    "use additive noise starting at the update number inputted. -1 means no additive noise");
+DEFINE_int64(
+    addnoise_debug_level,
+    0,
+    "print debug info when > 0. when level>2 also save input and output signals");
+
+// REVERBERATION OPTIONS
+
+DEFINE_double(
+    reverb_absorption_coefficient_min,
+    0.3,
+    "minimum value for random sound absorption coefficient");
+DEFINE_double(
+    reverb_absorption_coefficient_max,
+    0.3,
+    "maximum value for random sound absorption coefficient");
+DEFINE_double(
+    reverb_distance_to_object_in_meters_min,
+    3.43,
+    "minimum value for random distance in meters to sound relective object");
+DEFINE_double(
+    reverb_distance_to_object_in_meters_max,
+    10.29,
+    "minimum value for random distance in meters to sound relective object");
+DEFINE_int64(reverb_echo_count, 3, "number of echos");
+DEFINE_double(reverb_jitter, 0.1, "max value for random jitter");
+DEFINE_int64(
+    reverb_start_update,
+    -1,
+    "use reverbaration starting at the update number inputted. -1 means no additive noise");
+DEFINE_int64(
+    reverb_debug_level,
+    0,
+    "print debug info when > 0. when level>2 also save input and output signals");
 
 // RUN OPTIONS
 DEFINE_string(datadir, "", "speech data directory");

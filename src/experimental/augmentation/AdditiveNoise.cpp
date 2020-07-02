@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <sstream>
 #include <utility>
 
@@ -34,7 +35,7 @@ std::vector<AudioLoader::Audio> loadNoises(
     try {
       noises.push_back(audioLoader->loadRandom());
     } catch (const std::exception& ex) {
-      std::cerr << "AdditiveNoise::augment(signal) failed with error="
+      std::cerr << "AdditiveNoise::augmentImpl(signal) failed with error="
                 << ex.what();
     }
   }
@@ -44,13 +45,11 @@ std::vector<AudioLoader::Audio> loadNoises(
 AudioLoader::Audio randomlyShiftAndSumNoise(
     const std::vector<AudioLoader::Audio>& noises,
     int len,
-    std::mt19937* randomEngine) {
-  std::uniform_int_distribution<> uniformDistribution(0, len - 1);
-
+    AdditiveNoise::Random* random) {
   AudioLoader::Audio result;
   result.data_.resize(len, 0.0);
   for (const AudioLoader::Audio& noise : noises) {
-    const int cenerFrame = uniformDistribution(*randomEngine);
+    const int cenerFrame = random->index(len);
     const int halfNoiseLen = noise.data_.size() / 2;
     const int srcStartIndex = std::max(halfNoiseLen - cenerFrame, 0);
     const int dstStartIndex = std::max(cenerFrame - halfNoiseLen, 0);
@@ -68,26 +67,12 @@ AudioLoader::Audio randomlyShiftAndSumNoise(
 void maskBeyondMaxTimeRatioRandomStart(
     double maxTimeRatio,
     std::vector<float>* data,
-    std::mt19937* randomEngine) {
+    AdditiveNoise::Random* random) {
   const int size = data->size();
-  std::uniform_int_distribution<> uniformDistribution(0, size - 1);
-
-  const int startFrame = uniformDistribution(*randomEngine);
+  const int startFrame = random->index(size);
   const int numFrames = static_cast<double>(size) * (1.0 - maxTimeRatio);
   for (int i = startFrame; i < startFrame + numFrames; ++i) {
     data->at(i % size) = 0;
-  }
-}
-
-void maskBeyondMaxTimeRatioRandomFrames(
-    double maxTimeRatio,
-    std::vector<float>* data,
-    std::mt19937* randomEngine) {
-  std::bernoulli_distribution randomChoiceToMaskFrame(1.0 - maxTimeRatio);
-  for (float& f : *data) {
-    if (randomChoiceToMaskFrame(*randomEngine)) {
-      f = 0;
-    }
   }
 }
 
@@ -134,22 +119,33 @@ void augmentNoiseToSignal(
 
 } // namespace
 
+AdditiveNoise::Random::Random(unsigned int randomSeed)
+    : randomEngine_(randomSeed),
+      uniformDistribution_(0, std::numeric_limits<int>::max()) {
+  // std::srand(randomSeed);
+}
+
+int AdditiveNoise::Random::index(int size) {
+  // return std::rand() % size;
+  return uniformDistribution_(randomEngine_) % size;
+}
+
 AdditiveNoise::AdditiveNoise(AdditiveNoise::Config config)
     : audioLoader_(config.noiseDir_),
       config_(std::move(config)),
-      randomEngine_(config_.randomSeed_) {}
+      random_(config_.randomSeed_) {}
 
 const size_t kHistogramBucketCount = 15;
 const size_t kHistogramBucketMaxLen = 100;
 
-void AdditiveNoise::augment(std::vector<float>* signal) {
+void AdditiveNoise::augmentImpl(std::vector<float>* signal) {
   fl::HistogramStats<float> signalHist;
   std::stringstream debug;
   if (config_.debugLevel_ > 1) {
     signalHist = fl::FixedBucketSizeHistogram<float>(
         signal->begin(), signal->end(), kHistogramBucketCount);
 
-    debug << "AdditiveNoise::augment(signal->size()=" << signal->size()
+    debug << "AdditiveNoise::augmentImpl(signal->size()=" << signal->size()
           << ") config={" << config_.prettyString() << "}";
   }
 
@@ -157,10 +153,10 @@ void AdditiveNoise::augment(std::vector<float>* signal) {
       loadNoises(config_.nClipsPerUtterance_, &audioLoader_);
 
   AudioLoader::Audio randomlyShiftedNoiseSum =
-      randomlyShiftAndSumNoise(noises, signal->size(), &randomEngine_);
+      randomlyShiftAndSumNoise(noises, signal->size(), &random_);
 
   maskBeyondMaxTimeRatioRandomStart(
-      config_.maxTimeRatio_, &randomlyShiftedNoiseSum.data_, &randomEngine_);
+      config_.maxTimeRatio_, &randomlyShiftedNoiseSum.data_, &random_);
 
   std::stringstream augmentNoiseToSignalDebugMsg;
   augmentNoiseToSignal(

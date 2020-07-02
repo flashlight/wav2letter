@@ -62,7 +62,7 @@ TEST(AdditiveNoise, LogAugmentedSamplesWithVariousfConfigs) {
           config.nClipsPerUtterance_ = nClipsPerUtterance_;
           config.noiseDir_ = kNoiseInputDirectory;
           config.debugLevel_ =
-              3; // 0=none, 1=stats, 2=histogram, 3=saveq augmented files
+              0; // 3; // 0=none, 1=stats, 2=histogram, 3= saveq augmented files
           config.debugOutputPath_ = "/tmp";
           config.debugOutputFilePrefix_ = "/additive-noise-";
 

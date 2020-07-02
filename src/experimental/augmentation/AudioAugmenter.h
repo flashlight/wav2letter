@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <iostream>
 #include <memory>
 #include <vector>
 
@@ -33,7 +34,26 @@ class AudioAugmenter {
  public:
   virtual ~AudioAugmenter() = default;
 
-  virtual void augment(std::vector<float>* signal) = 0;
+  void augment(std::vector<float>* signal) {
+    if (isEnable_) {
+      augmentImpl(signal);
+    }
+  }
+
+  virtual void enable(bool isEnable) {
+    if (isEnable_ != isEnable) {
+      std::cout << "AudioAugmenter::enable(isEnable=" << isEnable << ")"
+                << std::endl;
+    }
+    isEnable_ = isEnable;
+  }
+
+  std::string virtual prettyString() const = 0;
+
+ protected:
+  virtual void augmentImpl(std::vector<float>* signal) = 0;
+
+  bool isEnable_ = false;
 };
 
 } // namespace augmentation

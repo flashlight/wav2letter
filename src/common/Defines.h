@@ -206,9 +206,10 @@ DECLARE_int64(addnoise_debug_level);
 
 DECLARE_double(reverb_absorption_coefficient_min);
 DECLARE_double(reverb_absorption_coefficient_max);
-DECLARE_double(reverb_distance_to_object_in_meters_min);
-DECLARE_double(reverb_distance_to_object_in_meters_max);
-DECLARE_int64(reverb_echo_count);
+DECLARE_double(reverb_distance_to_wall_in_meters_min);
+DECLARE_double(reverb_distance_to_wall_in_meters_max);
+DECLARE_int64(reverb_num_walls_min);
+DECLARE_int64(reverb_num_walls_max);
 DECLARE_double(reverb_jitter);
 DECLARE_int64(reverb_start_update);
 DECLARE_int64(reverb_debug_level);

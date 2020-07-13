@@ -178,14 +178,15 @@ DEFINE_double(
     0.3,
     "maximum value for random sound absorption coefficient");
 DEFINE_double(
-    reverb_distance_to_object_in_meters_min,
+    reverb_distance_to_wall_in_meters_min,
     3.43,
     "minimum value for random distance in meters to sound relective object");
 DEFINE_double(
-    reverb_distance_to_object_in_meters_max,
+    reverb_distance_to_wall_in_meters_max,
     10.29,
     "minimum value for random distance in meters to sound relective object");
-DEFINE_int64(reverb_echo_count, 3, "number of echos");
+DEFINE_int64(reverb_num_walls_min, 3, "min number of sound reflecting objects");
+DEFINE_int64(reverb_num_walls_max, 16, "max number of sound reflecting objects");
 DEFINE_double(reverb_jitter, 0.1, "max value for random jitter");
 DEFINE_int64(
     reverb_start_update,

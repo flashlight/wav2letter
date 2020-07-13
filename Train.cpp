@@ -426,9 +426,10 @@ int main(int argc, char** argv) {
     w2l::augmentation::Reverberation::Config config;
     config.absorptionCoefficientMin_ = FLAGS_reverb_absorption_coefficient_min;
     config.absorptionCoefficientMax_ = FLAGS_reverb_absorption_coefficient_max;
-    config.distanceToObjectInMetersMin_ = FLAGS_reverb_distance_to_object_in_meters_min;
-    config.distanceToObjectInMetersMax_ = FLAGS_reverb_distance_to_object_in_meters_max;
-    config.echoCount_ = FLAGS_reverb_echo_count;
+    config.distanceToWallInMetersMin_ = FLAGS_reverb_distance_to_wall_in_meters_min;
+    config.distanceToWallInMetersMax_ = FLAGS_reverb_distance_to_wall_in_meters_max;
+    config.numWallsMin_ = FLAGS_reverb_num_walls_min;
+    config.numWallsMax_ = FLAGS_reverb_num_walls_max;
     config.jitter_ = FLAGS_reverb_jitter;
     config.sampleRate_ = FLAGS_samplerate;
     config.debugLevel_ = FLAGS_reverb_debug_level;

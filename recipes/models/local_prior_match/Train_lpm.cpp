@@ -53,7 +53,6 @@ int main(int argc, char** argv) {
   std::string runStatus = config[kRunStatus];
 
   /* ================ Set up distributed environment ================ */
-  fl::afSetMemStepSize(FLAGS_memstepsize);
   af::setSeed(FLAGS_seed);
   af::setFFTPlanCacheSize(FLAGS_fftcachesize);
 

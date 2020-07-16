@@ -192,6 +192,13 @@ DECLARE_int64(saug_tmaskt);
 DECLARE_double(saug_tmaskp);
 DECLARE_int64(saug_tmaskn);
 
+/* ========== AUDIO WAVE AUGMENTION OPTIONS ========== */
+
+DECLARE_string(wavaug_debug_output_dir);
+DECLARE_int64(wavaug_debug_level);
+DECLARE_int64(wavaug_debug_output_once_every_n_samples);
+DECLARE_int64(wavaug_start_update);
+
 /* ========== ADDITIVE NOISE AUGMENTION OPTIONS ========== */
 
 DECLARE_double(addnoise_max_time_ratio);
@@ -213,6 +220,7 @@ DECLARE_int64(reverb_num_walls_max);
 DECLARE_double(reverb_jitter);
 DECLARE_int64(reverb_start_update);
 DECLARE_int64(reverb_debug_level);
+DECLARE_string(reverb_debug_output_dir);
 
 /* ========== RUN OPTIONS ========== */
 

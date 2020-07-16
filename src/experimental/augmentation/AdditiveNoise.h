@@ -14,7 +14,7 @@
 namespace w2l {
 namespace augmentation {
 
-class AdditiveNoise : public AudioAugmenter {
+class AdditiveNoise : public SoundEffect {
  public:
   struct Config {
     unsigned int randomSeed_ = std::mt19937::default_seed;
@@ -41,12 +41,17 @@ class AdditiveNoise : public AudioAugmenter {
     std::uniform_int_distribution<> uniformDistribution_;
   };
 
-  AdditiveNoise(AdditiveNoise::Config config);
+  explicit AdditiveNoise(AdditiveNoise::Config config);
+  ~AdditiveNoise() override = default;
 
-  void augmentImpl(std::vector<float>* signal) override;
+  void apply(std::vector<float>* signal, std::stringstream* debugSaveAugmentedFileName) override;
 
   std::string prettyString() const override {
     return "AdditiveNoise{config=" + config_.prettyString() + "}";
+  };
+
+  std::string name() const override {
+    return "AdditiveNoise";
   };
 
  private:

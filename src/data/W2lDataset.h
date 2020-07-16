@@ -49,6 +49,7 @@ class W2lDataset : public fl::Dataset {
   }
 
  protected:
+  mutable int64_t augmentCount_ = 0;
   DictionaryMap dicts_;
 
   int64_t sampleCount_; // Num individual samples in the dataset before batching

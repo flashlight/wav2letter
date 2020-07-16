@@ -68,7 +68,7 @@ TEST(AdditiveNoise, LogAugmentedSamplesWithVariousfConfigs) {
 
           augmentation::AdditiveNoise noiseAdder(config);
           std::vector<float> augmented = signal.data_;
-          noiseAdder.augment(&augmented);
+          noiseAdder.augment(&augmented, nullptr);
 
           EXPECT_EQ(augmented.size(), signal.data_.size());
           std::cout << "minSnr=" << minSnr << std::endl;

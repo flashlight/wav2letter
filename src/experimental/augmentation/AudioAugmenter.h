@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <vector>
 
 #include "data/Sound.h"
@@ -30,13 +31,85 @@ speedAug(const std::vector<float>& input, double speed, int channels = 1);
 
 namespace augmentation {
 
+class SoundEffect {
+ public:
+  virtual ~SoundEffect() = default;
+
+  void operator()(
+      std::vector<float>* signal,
+      std::stringstream* debugSaveAugmentedFileName = nullptr) {
+    return apply(signal, debugSaveAugmentedFileName);
+  }
+
+  virtual void apply(
+      std::vector<float>* signal,
+      std::stringstream* debugSaveAugmentedFileName = nullptr) = 0;
+
+  virtual void enable(bool isEnable) {
+    if (isEnable_ != isEnable) {
+      std::cout << name() << "::enable(isEnable=" << isEnable << ")"
+                << std::endl;
+    }
+    isEnable_ = isEnable;
+  }
+
+  virtual std::string prettyString() const = 0;
+  virtual std::string name() const = 0;
+
+ protected:
+  bool isEnable_ = false;
+};
+
+class SoundEffectChain : public SoundEffect {
+ public:
+  ~SoundEffectChain() override {}
+
+  void apply(
+      std::vector<float>* signal,
+      std::stringstream* debugSaveAugmentedFileName = nullptr) override {
+    for (std::shared_ptr<SoundEffect>& effect : soundEffects_) {
+      effect->apply(signal, debugSaveAugmentedFileName);
+    }
+  }
+
+  void add(std::shared_ptr<SoundEffect> SoundEffect) {
+    soundEffects_.push_back(SoundEffect);
+  }
+
+  void enable(bool isEnable) override {
+    for (std::shared_ptr<SoundEffect>& effect : soundEffects_) {
+      effect->enable(isEnable);
+    }
+    isEnable_ = isEnable;
+  }
+
+  std::string prettyString() const override {
+    std::stringstream ss;
+    ss << '{' << std::endl;
+    for (const std::shared_ptr<SoundEffect>& effect : soundEffects_) {
+      ss << effect->prettyString() << std::endl;
+    }
+    ss << '}';
+    return ss.str();
+  }
+
+  std::string name() const override {
+    return "SoundEffectChain";
+  }
+
+ private:
+  std::vector<std::shared_ptr<SoundEffect>> soundEffects_;
+};
+
 class AudioAugmenter {
  public:
   virtual ~AudioAugmenter() = default;
 
-  void augment(std::vector<float>* signal) {
+  void augment(
+      std::vector<float>* signal,
+      std::stringstream* debugSaveAugmentedFileName) {
     if (isEnable_) {
-      augmentImpl(signal);
+      augmentImpl(signal, debugSaveAugmentedFileName);
     }
   }
 
@@ -51,7 +124,9 @@ class AudioAugmenter {
   std::string virtual prettyString() const = 0;
 
  protected:
-  virtual void augmentImpl(std::vector<float>* signal) = 0;
+  virtual void augmentImpl(
+      std::vector<float>* signal,
+      std::stringstream* debugSaveAugmentedFileName) = 0;
 
   bool isEnable_ = false;
 };

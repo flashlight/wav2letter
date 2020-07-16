@@ -139,6 +139,27 @@ DEFINE_double(
     "Max proportion of the input sequence (1.0 is 100%) that can be masked in time");
 DEFINE_int64(saug_tmaskn, 2, "Number of time masks");
 
+/* ========== AUDIO WAVE AUGMENTION OPTIONS ========== */
+
+DEFINE_string(
+    wavaug_debug_output_dir,
+    "/tmp",
+    "directory to save augmented files fore debugging");
+DEFINE_int64(
+    wavaug_debug_level,
+    0,
+    "print debug info that matched level: 0=none, 1=stats, 2=histogram, 3=save \
+    augmented files, 4=save signal files");
+DEFINE_int64(
+    wavaug_debug_output_once_every_n_samples,
+    100,
+    "sample frequncy to save when debug level is set to save files");
+DEFINE_int64(
+    waveaug_start_update,
+    -1,
+    "use audio wave augmentation starting at the update number inputted. \
+    -1 means no audio wave augmentation");
+
 // ADDITIVE NOISE AUGMENTION OPTIONS
 
 DEFINE_double(
@@ -186,7 +207,10 @@ DEFINE_double(
     10.29,
     "minimum value for random distance in meters to sound relective object");
 DEFINE_int64(reverb_num_walls_min, 3, "min number of sound reflecting objects");
-DEFINE_int64(reverb_num_walls_max, 16, "max number of sound reflecting objects");
+DEFINE_int64(
+    reverb_num_walls_max,
+    16,
+    "max number of sound reflecting objects");
 DEFINE_double(reverb_jitter, 0.1, "max value for random jitter");
 DEFINE_int64(
     reverb_start_update,
@@ -196,6 +220,10 @@ DEFINE_int64(
     reverb_debug_level,
     0,
     "print debug info when > 0. when level>2 also save input and output signals");
+DEFINE_string(
+    reverb_debug_output_dir,
+    "/tmp",
+    "directory to save augmented files fore debugging");
 
 // RUN OPTIONS
 DEFINE_string(datadir, "", "speech data directory");
@@ -419,7 +447,7 @@ bool isFlagSet(const std::string& name) {
   gflags::CommandLineFlagInfo flagInfo;
   if (!gflags::GetCommandLineFlagInfo(name.c_str(), &flagInfo)) {
     std::stringstream ss;
-    ss << "Flag name " << name << " not found - check that it's declared.";
+    ss << "Flag name " << name << " not found - check that it's DEFINEd.";
     throw std::invalid_argument(ss.str());
   }
   return !flagInfo.is_default;

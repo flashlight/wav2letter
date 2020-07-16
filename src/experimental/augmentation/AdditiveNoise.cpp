@@ -138,7 +138,9 @@ AdditiveNoise::AdditiveNoise(AdditiveNoise::Config config)
 const size_t kHistogramBucketCount = 15;
 const size_t kHistogramBucketMaxLen = 100;
 
-void AdditiveNoise::augmentImpl(std::vector<float>* signal) {
+void AdditiveNoise::augmentImpl(
+    std::vector<float>* signal,
+    std::stringstream* debugSaveAugmentedFileName) {
   fl::HistogramStats<float> signalHist;
   std::stringstream debug;
   if (config_.debugLevel_ > 1) {

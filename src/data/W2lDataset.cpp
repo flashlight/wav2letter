@@ -10,12 +10,14 @@
 
 #include <functional>
 #include <numeric>
+#include <sstream>
 #include <utility>
 
 #include <glog/logging.h>
 
 #include "common/Defines.h"
 #include "common/FlashlightUtils.h"
+#include "data/Sound.h"
 
 namespace w2l {
 
@@ -73,8 +75,32 @@ int64_t W2lDataset::getGlobalBatchIdx(const int64_t idx) {
 W2lFeatureData W2lDataset::getFeatureData(const int64_t idx) const {
   auto ldData = getLoaderData(idx);
   if (audioAugmenter_) {
+    const bool debug = true;
+    const int saveOnceEvery = 100;
+
     for (W2lLoaderData& data : ldData) {
-      audioAugmenter_->augment(&data.input);
+      const bool saveAugmented = (((augmentCount_ - 1) % saveOnceEvery) == 0);
+      ++augmentCount_;
+
+      if (debug && saveAugmented) {
+        std::stringstream debugSaveAugmentedFileName;
+        audioAugmenter_->augment(&data.input, &debugSaveAugmentedFileName);
+
+        if (!debugSaveAugmentedFileName.str().empty()) {
+          debugSaveAugmentedFileName << ".flac";
+          std::cout << "debugSaveAugmentedFileName="
+                    << debugSaveAugmentedFileName.str() << std::endl;
+          saveSound(
+              debugSaveAugmentedFileName.str(),
+              data.input,
+              16000,
+              1,
+              w2l::SoundFormat::FLAC,
+              w2l::SoundSubFormat::PCM_16);
+        }
+      } else {
+        audioAugmenter_->augment(&data.input, nullptr);
+      }
     }
   }
   return featurize(ldData, dicts_);

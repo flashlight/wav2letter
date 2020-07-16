@@ -15,17 +15,18 @@ namespace augmentation {
 
 constexpr float kSpeedOfSoundMeterPerSec = 343.0;
 
-class Reverberation : public AudioAugmenter {
+class Reverberation : public SoundEffect {
  public:
   struct Config {
     unsigned int randomSeed_ = std::mt19937::default_seed;
     std::string impulseResponseDir_;
     int lengthMilliseconds_ = 0;
-    int debugLevel_; // 0=none, 1=stats, 2=histogram, 3=save augmented files, 4=save signal
+    int debugLevel_; // 0=none, 1=stats, 2=histogram, 3=save augmented files,
+                     // 4=save signal
     std::string debugOutputPath_ = "/tmp";
     std::string debugOutputFilePrefix_ = "reverb-";
 
-  // https://www.acoustic-supplies.com/absorption-coefficient-chart/
+    // https://www.acoustic-supplies.com/absorption-coefficient-chart/
     float absorptionCoefficientMin_ = 0.01; // painted brick
     float absorptionCoefficientMax_ = 0.99; // best absorptive wall materials
     float distanceToWallInMetersMin_ = 1.0;
@@ -39,11 +40,18 @@ class Reverberation : public AudioAugmenter {
   };
 
   explicit Reverberation(Reverberation::Config config);
+  ~Reverberation() override = default;
 
-  void augmentImpl(std::vector<float>* signal) override;
+  void augmentImpl(
+      std::vector<float>* signal,
+      std::stringstream* debugSaveAugmentedFileName) override;
 
   std::string prettyString() const override {
     return "Reverberation{config=" + config_.prettyString() + "}";
+  };
+
+  std::string name() const override {
+    return "Reverberation";
   };
 
  private:
@@ -51,17 +59,22 @@ class Reverberation : public AudioAugmenter {
       const std::vector<float>& input,
       std::vector<float>* output,
       std::stringstream* debug,
-      std::stringstream* debugFileName);
+      std::stringstream* debugSaveAugmentedFileName);
   void randomShift(
       const std::vector<float>& input,
       std::vector<float>* output,
       std::stringstream* debug,
-      std::stringstream* debugFileName);
+      std::stringstream* debugSaveAugmentedFileName);
   void randomShiftGab(
       const std::vector<float>& input,
       std::vector<float>* output,
       std::stringstream* debug,
-      std::stringstream* debugFileName);
+      std::stringstream* debugSaveAugmentedFileName);
+  void randomShiftGabCpu(
+      const std::vector<float>& input,
+      std::vector<float>* output,
+      std::stringstream* debug,
+      std::stringstream* debugSaveAugmentedFileName);
 
   // AudioLoader audioLoader_;
   const Reverberation::Config config_;

@@ -190,11 +190,6 @@ std::vector<std::string> tknTarget2Ltr(
     return std::vector<std::string>{};
   }
 
-  if (FLAGS_criterion == kSeq2SeqCriterion) {
-    if (tokens.back() == tokenDict.getIndex(kEosToken)) {
-      tokens.pop_back();
-    }
-  }
   remapLabels(tokens, tokenDict);
 
   return tknIdx2Ltr(tokens, tokenDict);

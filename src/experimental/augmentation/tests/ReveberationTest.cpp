@@ -84,6 +84,50 @@ TimeElapsedReporter::~TimeElapsedReporter() {
             << std::endl;
 }
 
+TEST(Reverberation, Impulse) {
+  const int sampleRate = 16000;
+  const float lenSecs = 0.01;
+  const size_t signalLen = sampleRate * lenSecs;
+  std::vector<float> signal(signalLen, 0);
+  signal[0] = 1.0;
+
+  augmentation::SoundEffect::Config sfxConfig;
+  // 0=none, 1=stats, 2=histogram, 3= saveq augmented files
+  sfxConfig.debug_.debugLevel_ = 3;
+  sfxConfig.debug_.outputPath_ = "/tmp";
+  sfxConfig.debug_.outputFilePrefix_ = "reverb-speech-matrix-samples";
+
+  augmentation::Reverberation::Config reverbConfig;
+  reverbConfig.numWallsMin_ = 1;
+  reverbConfig.numWallsMax_ = 1;
+  reverbConfig.jitter_ = 0;
+
+  float signalSampleDistance = augmentation::kSpeedOfSoundMeterPerSec/sampleRate;
+  std::vector<float> augmented;
+  for (float d = 1.0 ; d <= 100.0 ; d*=5) {
+    reverbConfig.distanceToWallInMetersMin_ = d * signalSampleDistance;
+    reverbConfig.distanceToWallInMetersMax_ = d * signalSampleDistance;
+
+    for (float a = 0.000001; a <= 1.0;
+         a += 0.5) {
+      reverbConfig.absorptionCoefficientMin_ = a;
+      reverbConfig.absorptionCoefficientMax_ = a;
+
+      augmentation::Reverberation reveberation(sfxConfig, reverbConfig);
+      reveberation.enable(true);
+
+      augmented = signal;
+      reveberation(&augmented);
+      std::cout << "augmented:" << std::endl;
+      for (int i = 0; i < augmented.size(); ++i) {
+        std::cout << augmented[i] << ", ";
+      }
+      std::cout << std::endl;
+      EXPECT_EQ(augmented.size(), signal.size());
+    }
+  }
+}
+
 // TEST(Reverberation, SinWavePulses) {
 //   const int sampleRate = 16000;
 //   const float lenSecs = 4;
@@ -99,31 +143,34 @@ TimeElapsedReporter::~TimeElapsedReporter() {
 //     const int start = j * (signalLen / pulseCount);
 //     const int frames = (signalLen * fillRatio) / (pulseCount);
 //     for (int i = start; i < start + frames; ++i) {
-//       signal[i] = sin(static_cast<float>(i) * ratio) * sinWaveAmplitude;
+//       signal[i] = sin(static_cast<float>(i) * ratio) *
+//       sinWaveAmplitude;
 //     }
 //   }
 
-//   augmentation::Reverberation::Config config;
+//   augmentation::Reverberation::Config reverbConfig;
 //   // 0=none, 1=stats, 2=histogram, 3= saveq augmented files
-//   config.debugLevel_ = 3;
-//   config.debugOutputPath_ = "/tmp";
-//   config.debugOutputFilePrefix_ = "reverb-pulses";
-//   config.lengthMilliseconds_ = 1;
+//   reverbConfig.debugLevel_ = 3;
+//   reverbConfig.debugOutputPath_ = "/tmp";
+//   reverbConfig.debugOutputFilePrefix_ = "reverb-pulses";
+//   reverbConfig.lengthMilliseconds_ = 1;
 
 //   std::vector<float> augmented;
-//   for (float d = distanceToWallInMetersMin; d < distanceToWallInMetersMax;
+//   for (float d = distanceToWallInMetersMin; d <
+//   distanceToWallInMetersMax;
 //        d *= 4) {
-//     config.distanceToWallInMetersMin_ = d;
-//     config.distanceToWallInMetersMax_ = d;
+//     reverbConfig.distanceToWallInMetersMin_ = d;
+//     reverbConfig.distanceToWallInMetersMax_ = d;
 //     for (int e = numWallsMin; e <= numWallsMax; e *= 4) {
-//       config.numWallsMin_ = e;
-//       config.numWallsMax_ = e;
-//       for (float a = absorptionCoefficientMin; a <= absorptionCoefficientMax;
+//       reverbConfig.numWallsMin_ = e;
+//       reverbConfig.numWallsMax_ = e;
+//       for (float a = absorptionCoefficientMin; a <=
+//       absorptionCoefficientMax;
 //            a *= 4) {
-//         config.absorptionCoefficientMin_ = a;
-//         config.absorptionCoefficientMax_ = a;
+//         reverbConfig.absorptionCoefficientMin_ = a;
+//         reverbConfig.absorptionCoefficientMax_ = a;
 
-//         augmentation::Reverberation reveberation(config);
+//         augmentation::Reverberation reveberation(reverbConfig);
 //         reveberation.enable(true);
 
 //         augmented = signal;
@@ -134,97 +181,88 @@ TimeElapsedReporter::~TimeElapsedReporter() {
 //   }
 // }
 
-// TEST(Reverberation, libriSpeecIterateOverConfigs) {
-//   std::vector<float> signal = w2l::loadSound<float>(signalFile);
+TEST(Reverberation, libriSpeecIterateOverConfigs) {
+  std::vector<float> signal = w2l::loadSound<float>(signalFile);
 
-//   augmentation::Reverberation::Config config;
-//   // 0=none, 1=stats, 2=histogram, 3= saveq augmented files
-//   config.debugLevel_ = 3;
-//   config.debugOutputPath_ = "/tmp";
-//   config.debugOutputFilePrefix_ = "reverb-speech-matrix-samples";
-//   config.lengthMilliseconds_ = 1;
+  augmentation::SoundEffect::Config sfxConfig;
+  // 0=none, 1=stats, 2=histogram, 3= saveq augmented files
+  sfxConfig.debug_.debugLevel_ = 3;
+  sfxConfig.debug_.outputPath_ = "/tmp";
+  sfxConfig.debug_.outputFilePrefix_ = "reverb-speech-matrix-samples";
 
-//   std::vector<float> augmented;
-//   for (float d = distanceToWallInMetersMin; d < distanceToWallInMetersMax;
-//        d *= 4) {
-//     config.distanceToWallInMetersMin_ = d;
-//     config.distanceToWallInMetersMax_ = d;
+  augmentation::Reverberation::Config reverbConfig;
 
-//     for (int e = numWallsMin; e <= numWallsMax; e *= 4) {
-//       config.numWallsMin_ = e;
-//       config.numWallsMax_ = e;
-//       for (float a = absorptionCoefficientMin; a <= absorptionCoefficientMax;
-//            a *= 4) {
-//         config.absorptionCoefficientMin_ = a;
-//         config.absorptionCoefficientMax_ = a;
+  std::vector<float> augmented;
+  for (float d = distanceToWallInMetersMin; d < distanceToWallInMetersMax;
+       d *= 4) {
+    reverbConfig.distanceToWallInMetersMin_ = d;
+    reverbConfig.distanceToWallInMetersMax_ = d;
 
-//         augmentation::Reverberation reveberation(config);
-//         reveberation.enable(true);
+    for (int e = numWallsMin; e <= numWallsMax; e *= 4) {
+      reverbConfig.numWallsMin_ = e;
+      reverbConfig.numWallsMax_ = e;
+      for (float a = absorptionCoefficientMin; a <= absorptionCoefficientMax;
+           a *= 4) {
+        reverbConfig.absorptionCoefficientMin_ = a;
+        reverbConfig.absorptionCoefficientMax_ = a;
 
-//         augmented = signal;
-//         reveberation.augment(&augmented, nullptr);
-//         EXPECT_EQ(augmented.size(), signal.size());
-//       }
-//     }
-//   }
-// }
+        augmentation::Reverberation reveberation(sfxConfig, reverbConfig);
+        reveberation.enable(true);
 
+        augmented = signal;
+        reveberation(&augmented);
+        EXPECT_EQ(augmented.size(), signal.size());
+      }
+    }
+  }
+}
 
 TEST(Reverberation, libriSpeechRandom) {
   std::vector<float> signal = w2l::loadSound<float>(signalFile);
 
-  augmentation::Reverberation::Config config;
+  augmentation::SoundEffect::Config sfxConfig;
   // 0=none, 1=stats, 2=histogram, 3= saveq augmented files
-  config.debugLevel_ = 3;
-  config.debugOutputPath_ = "/tmp";
-  config.debugOutputFilePrefix_ = "reverb-speech-random-samples";
-  config.lengthMilliseconds_ = 1;
+  sfxConfig.debug_.debugLevel_ = 3;
+  sfxConfig.debug_.outputPath_ = "/tmp";
+  sfxConfig.debug_.outputFilePrefix_ = "reverb-speech-matrix-samples";
 
-  config.distanceToWallInMetersMin_ = distanceToWallInMetersMin;
-  config.distanceToWallInMetersMax_ = distanceToWallInMetersMax;
-  config.numWallsMin_ = numWallsMin;
-  config.numWallsMax_ = numWallsMax;
-  config.absorptionCoefficientMin_ = absorptionCoefficientMin;
-  config.absorptionCoefficientMax_ = absorptionCoefficientMax;
+  augmentation::Reverberation::Config reverbConfig;
+  reverbConfig.distanceToWallInMetersMin_ = distanceToWallInMetersMin;
+  reverbConfig.distanceToWallInMetersMax_ = distanceToWallInMetersMax;
+  reverbConfig.numWallsMin_ = numWallsMin;
+  reverbConfig.numWallsMax_ = numWallsMax;
+  reverbConfig.absorptionCoefficientMin_ = absorptionCoefficientMin;
+  reverbConfig.absorptionCoefficientMax_ = absorptionCoefficientMax;
 
-  augmentation::Reverberation reveberation(config);
+  augmentation::Reverberation reveberation(sfxConfig, reverbConfig);
   reveberation.enable(true);
 
   std::vector<float> augmented;
   for (int j = 0; j < 100; ++j) {
-    std::stringstream debugSaveAugmentedFileName;
-
     augmented = signal;
     {
       TimeElapsedReporter elapsed("reverb-augmentation");
-      reveberation.augment(&augmented, &debugSaveAugmentedFileName);
+      reveberation(&augmented);
     }
     EXPECT_EQ(augmented.size(), signal.size());
-
-    debugSaveAugmentedFileName << ".flac";
-    saveSound(
-        debugSaveAugmentedFileName.str(),
-        augmented,
-        16000,
-        1,
-        w2l::SoundFormat::FLAC,
-        w2l::SoundSubFormat::PCM_16);
   }
 }
 
 // TEST(Reverberation, LogAugmentedSamplesWithVariousfConfigs) {
 //   augmentation::AudioLoader signalDb(kSignalInputDirectory);
 //   const std::vector<augmentation::AudioLoader::Audio> signals = {
-//       signalDb.loadRandom(), signalDb.loadRandom(), signalDb.loadRandom()};
+//       signalDb.loadRandom(), signalDb.loadRandom(),
+//       signalDb.loadRandom()};
 
-//   augmentation::Reverberation::Config config;
-//   config.debugLevel_ =
-//       3; // 0=none, 1=stats, 2=histogram, 3= saveq augmented files
-//   config.debugOutputPath_ = "/tmp";
-//   config.debugOutputFilePrefix_ = "/reverb-";
-//   config.lengthMilliseconds_ = 1;
+// augmentation::AdditiveNoise::Config sfxConfig;
+// // 0=none, 1=stats, 2=histogram, 3= saveq augmented files
+// sfxConfig.debug_.debugLevel_ = 3;
+// sfxConfig.debug_.debugOutputPath_ = "/tmp";
+// sfxConfig.debug_.debugOutputFilePrefix_ =
+// "reverb-speech-matrix-samples";
 
-//   augmentation::Reverberation reveberation(config);
+//   augmentation::Reverberation::Config reverbConfig;
+//   augmentation::Reverberation reveberation(reverbConfig);
 //   reveberation.enable(true);
 //   for (const augmentation::AudioLoader::Audio& signal : signals) {
 //     std::vector<float> augmented = signal.data_;

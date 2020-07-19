@@ -36,6 +36,7 @@ AudioLoader::AudioLoader(const std::string& audioDirectoryPath)
   std::stringstream ss;
   ss << "AudioLoader::AudioLoader(audioDirectoryPath=" << audioDirectoryPath
      << ")";
+  std::cout << ss.str() << std::endl;
   DIR* dir = opendir(audioDirectoryPath.c_str());
   if (!dir) {
     std::stringstream ss;
@@ -73,6 +74,13 @@ AudioLoader::Audio AudioLoader::loadRandom() {
   }
 
   return result;
+}
+
+std::string AudioLoader::prettyString() const {
+  std::stringstream ss;
+  ss << "audioFilePathVec_.size()=" << audioFilePathVec_.size()
+     << " audioDirectoryPath_=" << audioDirectoryPath_;
+  return ss.str();
 }
 
 std::string AudioLoader::Audio::prettyString() const {

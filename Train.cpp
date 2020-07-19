@@ -25,6 +25,7 @@
 #include "data/Featurize.h"
 #include "experimental/augmentation/AdditiveNoise.h"
 #include "experimental/augmentation/Reverberation.h"
+#include "experimental/augmentation/SoundEffect.h"
 #include "libraries/common/Dictionary.h"
 #include "module/module.h"
 #include "runtime/runtime.h"
@@ -390,9 +391,66 @@ int main(int argc, char** argv) {
     }
   };
 
+  std::shared_ptr<w2l::augmentation::SoundEffectChain> soundEffect;
+  if (FLAGS_sfx_start_update >= 0) {
+    w2l::augmentation::SoundEffect::Config sfxConfig;
+    sfxConfig.debug_.debugLevel_ = FLAGS_sfx_debug_level;
+    sfxConfig.debug_.debugOnceEvery_ =
+        FLAGS_sfx_debug_output_once_every_n_samples;
+    sfxConfig.debug_.outputPath_ = FLAGS_sfx_debug_output_dir;
+    sfxConfig.debug_.outputFilePrefix_ = FLAGS_sfx_debug_file_prefix;
+    auto soundEffectChain =
+        std::make_shared<w2l::augmentation::SoundEffectChain>(sfxConfig);
+
+    // Reverberation is before noise so we only add make the reverberation
+    // effect to the
+    // speech signal.
+    if (FLAGS_sfx_add_reverb > -1) {
+      w2l::augmentation::Reverberation::Config reverbConf;
+      reverbConf.absorptionCoefficientMin_ =
+          FLAGS_sfx_reverb_absorption_coefficient_min;
+      reverbConf.absorptionCoefficientMax_ =
+          FLAGS_sfx_reverb_absorption_coefficient_max;
+      reverbConf.distanceToWallInMetersMin_ =
+          FLAGS_sfx_reverb_distance_to_wall_in_meters_min;
+      reverbConf.distanceToWallInMetersMax_ =
+          FLAGS_sfx_reverb_distance_to_wall_in_meters_max;
+      reverbConf.numWallsMin_ = FLAGS_sfx_reverb_num_walls_min;
+      reverbConf.numWallsMax_ = FLAGS_sfx_reverb_num_walls_max;
+      reverbConf.jitter_ = FLAGS_sfx_reverb_jitter;
+      soundEffectChain->add(std::make_shared<w2l::augmentation::Reverberation>(
+          sfxConfig, reverbConf));
+    }
+
+    // Noise augmentation
+    if (FLAGS_sfx_add_noise && !FLAGS_sfx_addnoise_noisedir.empty()) {
+      w2l::augmentation::AdditiveNoise::Config noiseConf;
+      noiseConf.noiseDir_ = FLAGS_sfx_addnoise_noisedir;
+      noiseConf.minSnr_ = FLAGS_sfx_addnoise_min_snr;
+      noiseConf.maxSnr_ = FLAGS_sfx_addnoise_max_snr;
+      noiseConf.maxTimeRatio_ = FLAGS_sfx_addnoise_max_time_ratio;
+      noiseConf.nClipsPerUtterance_ = FLAGS_sfx_addnoise_n_clips;
+      soundEffectChain->add(std::make_shared<w2l::augmentation::AdditiveNoise>(
+          sfxConfig, noiseConf));
+    }
+
+    // Clamp is last to ensure that after all efects the sound values are
+    // within valid range.
+    if (FLAGS_sfx_amp_clamp) {
+      soundEffectChain->add(
+          std::make_shared<w2l::augmentation::ClampAmplitude>(sfxConfig));
+    }
+
+    soundEffectChain->enable(FLAGS_sfx_start_update == 0);
+    soundEffect = soundEffectChain;
+    std::cout << "soundEffect={" << soundEffect->prettyString() << "}"
+              << std::endl;
+  }
+
   /* ===================== Create Dataset ===================== */
   auto trainds = createDataset(
       FLAGS_train, dicts, lexicon, FLAGS_batchsize, worldRank, worldSize);
+  trainds->augment(soundEffect);
 
   if (FLAGS_noresample) {
     LOG_MASTER(INFO) << "Shuffling trainset";
@@ -403,49 +461,10 @@ int main(int argc, char** argv) {
   for (const auto& s : validTagSets) {
     validds[s.first] = createDataset(
         s.second, dicts, lexicon, FLAGS_batchsize, worldRank, worldSize);
+    if (FLAGS_sfx_valid_dataset) {
+      validds[s.first]->augment(soundEffect);
+    }
   }
-
-  auto soundEffectChain =
-      std::make_shared<w2l::augmentation::SoundEffectChain>();
-
-  if (!FLAGS_addnoise_noisedir.empty()) {
-    w2l::augmentation::AdditiveNoise::Config config;
-    config.noiseDir_ = FLAGS_addnoise_noisedir;
-    config.debugLevel_ = FLAGS_addnoise_debug_level;
-    config.minSnr_ = FLAGS_addnoise_min_snr;
-    config.maxSnr_ = FLAGS_addnoise_max_snr;
-    config.maxTimeRatio_ = FLAGS_addnoise_max_time_ratio;
-    config.nClipsPerUtterance_ = FLAGS_addnoise_n_clips;
-    std::cout << "augmentation::AdditiveNoise::Config={"
-              << config.prettyString() << "}" << std::endl;
-    auto additiveNoise =
-        std::make_shared<w2l::augmentation::AdditiveNoise>(config);
-    soundEffectChain.add(additiveNoise);
-    trainds->augment(soundEffectChain);
-  }
-
-  if (FLAGS_reverb_start_update > -1) {
-    w2l::augmentation::Reverberation::Config config;
-    config.absorptionCoefficientMin_ = FLAGS_reverb_absorption_coefficient_min;
-    config.absorptionCoefficientMax_ = FLAGS_reverb_absorption_coefficient_max;
-    config.distanceToWallInMetersMin_ =
-        FLAGS_reverb_distance_to_wall_in_meters_min;
-    config.distanceToWallInMetersMax_ =
-        FLAGS_reverb_distance_to_wall_in_meters_max;
-    config.numWallsMin_ = FLAGS_reverb_num_walls_min;
-    config.numWallsMax_ = FLAGS_reverb_num_walls_max;
-    config.jitter_ = FLAGS_reverb_jitter;
-    config.sampleRate_ = FLAGS_samplerate;
-    config.debugLevel_ = FLAGS_reverb_debug_level;
-    config.debugOutputPath_ = FLAGS_reverb_debug_output_dir;
-    std::cout << "augmentation::Reverberation::Config={"
-              << config.prettyString() << "}" << std::endl;
-    auto reverberation =
-        std::make_shared<w2l::augmentation::Reverberation>(config);
-    soundEffectChain.add(reverberation);
-    trainds->augment(soundEffectChain);
-  }
-  soundEffectChain->enable(FLAGS_wavaug_start_update == 0);
 
   /* ===================== Hooks ===================== */
   auto evalOutput = [&dicts, &criterion](
@@ -515,7 +534,7 @@ int main(int argc, char** argv) {
        &curEpoch,
        &startUpdate,
        reducer,
-       soundEffectChain](
+       soundEffect](
           std::shared_ptr<fl::Module> ntwrk,
           std::shared_ptr<SequenceCriterion> crit,
           std::shared_ptr<W2lDataset> trainset,
@@ -648,9 +667,9 @@ int main(int argc, char** argv) {
                 curBatch >= FLAGS_saug_start_update) {
               input = saug->forward(input);
             }
-            if (FLAGS_wavaug_start_update >= 0 &&
-                curBatch >= (FLAGS_wavaug_start_update - 1)) {
-              soundEffectChain->enable(true);
+            if (FLAGS_sfx_start_update >= 0 &&
+                curBatch >= (FLAGS_sfx_start_update - 1)) {
+              soundEffect->enable(true);
             }
             auto output = ntwrk->forward({input}).front();
             af::sync();

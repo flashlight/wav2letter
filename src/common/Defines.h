@@ -192,35 +192,35 @@ DECLARE_int64(saug_tmaskt);
 DECLARE_double(saug_tmaskp);
 DECLARE_int64(saug_tmaskn);
 
-/* ========== AUDIO WAVE AUGMENTION OPTIONS ========== */
+/* ========== SOUND EFFECTS OPTIONS ========== */
 
-DECLARE_string(wavaug_debug_output_dir);
-DECLARE_int64(wavaug_debug_level);
-DECLARE_int64(wavaug_debug_output_once_every_n_samples);
-DECLARE_int64(wavaug_start_update);
+DECLARE_string(sfx_debug_output_dir);
+DECLARE_string(sfx_debug_file_prefix);
+DECLARE_int64(sfx_debug_level);
+DECLARE_int64(sfx_debug_output_once_every_n_samples);
+DECLARE_int64(sfx_start_update);
+DECLARE_bool(sfx_valid_dataset);
+DECLARE_bool(sfx_add_reverb);
+DECLARE_bool(sfx_add_noise);
+DECLARE_bool(sfx_amp_clamp);
 
 /* ========== ADDITIVE NOISE AUGMENTION OPTIONS ========== */
 
-DECLARE_double(addnoise_max_time_ratio);
-DECLARE_int64(addnoise_n_clips);
-DECLARE_double(addnoise_min_snr);
-DECLARE_double(addnoise_max_snr);
-DECLARE_string(addnoise_noisedir);
-DECLARE_int64(addnoise_start_update);
-DECLARE_int64(addnoise_debug_level);
+DECLARE_double(sfx_addnoise_max_time_ratio);
+DECLARE_int64(sfx_addnoise_n_clips);
+DECLARE_double(sfx_addnoise_min_snr);
+DECLARE_double(sfx_addnoise_max_snr);
+DECLARE_string(sfx_addnoise_noisedir);
 
 /* ========== REVERBERATION OPTIONS ========== */
 
-DECLARE_double(reverb_absorption_coefficient_min);
-DECLARE_double(reverb_absorption_coefficient_max);
-DECLARE_double(reverb_distance_to_wall_in_meters_min);
-DECLARE_double(reverb_distance_to_wall_in_meters_max);
-DECLARE_int64(reverb_num_walls_min);
-DECLARE_int64(reverb_num_walls_max);
-DECLARE_double(reverb_jitter);
-DECLARE_int64(reverb_start_update);
-DECLARE_int64(reverb_debug_level);
-DECLARE_string(reverb_debug_output_dir);
+DECLARE_double(sfx_reverb_absorption_coefficient_min);
+DECLARE_double(sfx_reverb_absorption_coefficient_max);
+DECLARE_double(sfx_reverb_distance_to_wall_in_meters_min);
+DECLARE_double(sfx_reverb_distance_to_wall_in_meters_max);
+DECLARE_int64(sfx_reverb_num_walls_min);
+DECLARE_int64(sfx_reverb_num_walls_max);
+DECLARE_double(sfx_reverb_jitter);
 
 /* ========== RUN OPTIONS ========== */
 

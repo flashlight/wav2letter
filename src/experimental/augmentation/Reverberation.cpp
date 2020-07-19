@@ -47,33 +47,36 @@ float absorptionCoefficient(float distanceMeters, float rt60) {
   return (kSabineConstant * distanceMeters) / (rt60 * kDistToAreasRatio);
 }
 
-Reverberation::Reverberation(Reverberation::Config config)
-    : config_(std::move(config)),
-      randomEngine_(config_.randomSeed_),
+Reverberation::Reverberation(
+    const SoundEffect::Config& sfxConfig,
+    const Reverberation::Config& reverbConfig)
+    : SoundEffect(sfxConfig),
+      reverbConfig_(reverbConfig),
+      randomEngine_(sfxConfig_.randomSeed_),
       randomZeroToOne_(0.0, 1.0),
       randomUnit_(-1.0, 1.0),
       randomDecay_(
           calcRt60(
-              config_.distanceToWallInMetersMax_,
-              config_.absorptionCoefficientMin_),
+              reverbConfig_.distanceToWallInMetersMax_,
+              reverbConfig_.absorptionCoefficientMin_),
           calcRt60(
-              config_.distanceToWallInMetersMin_,
-              config_.absorptionCoefficientMax_)),
+              reverbConfig_.distanceToWallInMetersMin_,
+              reverbConfig_.absorptionCoefficientMax_)),
       randomDelay_(
-          config_.distanceToWallInMetersMin_ / kSpeedOfSoundMeterPerSec,
-          config_.distanceToWallInMetersMax_ / kSpeedOfSoundMeterPerSec),
+          reverbConfig_.distanceToWallInMetersMin_ / kSpeedOfSoundMeterPerSec,
+          reverbConfig_.distanceToWallInMetersMax_ / kSpeedOfSoundMeterPerSec),
       randomAbsorptionCoefficient_(
-          config_.absorptionCoefficientMin_,
-          config_.absorptionCoefficientMax_),
+          reverbConfig_.absorptionCoefficientMin_,
+          reverbConfig_.absorptionCoefficientMax_),
       randomDistanceToWallInMeters_(
-          config_.distanceToWallInMetersMax_,
-          config_.distanceToWallInMetersMin_),
+          reverbConfig_.distanceToWallInMetersMax_,
+          reverbConfig_.distanceToWallInMetersMin_),
       randomNumWalls_(
-          static_cast<int>(config_.numWallsMin_),
-          static_cast<int>(config_.numWallsMax_)) {
-  assert(config_.numWallsMin_ <= config_.numWallsMax_);
-  std::cout << "Reverberation::Reverberation(config={" << config_.prettyString()
-            << "})" << std::endl;
+          static_cast<int>(reverbConfig_.numWallsMin_),
+          static_cast<int>(reverbConfig_.numWallsMax_)) {
+  assert(reverbConfig_.numWallsMin_ <= reverbConfig_.numWallsMax_);
+  std::cout << "Reverberation::Reverberation(config={"
+            << reverbConfig_.prettyString() << "})" << std::endl;
 }
 
 std::string Reverberation::Config::prettyString() const {
@@ -85,11 +88,7 @@ std::string Reverberation::Config::prettyString() const {
      << " numWallsMin_=" << numWallsMin_ << " numWallsMax_=" << numWallsMax_
      << " jitter_=" << jitter_ << " sampleRate_=" << sampleRate_
      << " impulseResponseDir_=" << impulseResponseDir_
-     << " lengthMilliseconds_=" << lengthMilliseconds_
-     << " debugLevel_=" << debugLevel_
-     << " debugOutputPath_=" << debugOutputPath_
-     << " debugOutputFilePrefix_=" << debugOutputFilePrefix_
-     << " randomSeed_=" << randomSeed_;
+     << " lengthMilliseconds_=" << lengthMilliseconds_;
   return ss.str();
 }
 
@@ -103,7 +102,7 @@ fl::Variable randomShiftGabEchos(
     int numWalls,
     std::mt19937* randomEngine,
     std::uniform_real_distribution<float>* randomUnit,
-    std::stringstream* debug) {
+    std::stringstream* debugMsg) {
   fl::Variable reverb(source.array().copy(), false);
   for (int i = 0; i < numWalls; ++i) {
     float frac = 1.0;
@@ -145,21 +144,21 @@ fl::Variable randomShiftGabEchos(
 void Reverberation::randomShiftGab(
     const std::vector<float>& input,
     std::vector<float>* output,
-    std::stringstream* debug,
-    std::stringstream* debugSaveAugmentedFileName) {
+    std::stringstream* debugMsg,
+    std::stringstream* debugFilename) {
   const float firstDelay = randomDelay_(randomEngine_);
   const float rt60 = randomDecay_(randomEngine_);
   const int numWalls = randomNumWalls_(randomEngine_);
-  if (debug) {
-    *debug << "firstDelay=" << firstDelay << "("
-           << (firstDelay * kSpeedOfSoundMeterPerSec) << "m)"
-           << " rt60=" << rt60 << std::endl;
-    if (debugSaveAugmentedFileName) {
+  if (debugMsg) {
+    *debugMsg << "firstDelay=" << firstDelay << "("
+              << (firstDelay * kSpeedOfSoundMeterPerSec) << "m)"
+              << " rt60=" << rt60 << std::endl;
+    if (debugFilename) {
       const float dist = (firstDelay * kSpeedOfSoundMeterPerSec);
-      *debugSaveAugmentedFileName
-          << "-dist-" << std::setprecision(2) << dist << "-absrb-"
-          << std::setprecision(3) << absorptionCoefficient(dist, rt60)
-          << "-echos-" << numWalls << "-jitter-" << config_.jitter_;
+      *debugFilename << "-dist-" << std::setprecision(2) << dist << "-absrb-"
+                     << std::setprecision(3)
+                     << absorptionCoefficient(dist, rt60) << "-echos-"
+                     << numWalls << "-jitter-" << reverbConfig_.jitter_;
     }
   }
 
@@ -167,13 +166,13 @@ void Reverberation::randomShiftGab(
   fl::Variable inputAsVariable(inputAsAfArray, false);
   fl::Variable augmented = randomShiftGabEchos(
       inputAsVariable,
-      config_,
+      reverbConfig_,
       firstDelay,
       rt60,
       numWalls,
       &randomEngine_,
       &randomUnit_,
-      debug);
+      debugMsg);
 
   augmented.host(output->data());
 }
@@ -181,21 +180,21 @@ void Reverberation::randomShiftGab(
 void Reverberation::randomShiftGabCpu(
     const std::vector<float>& input,
     std::vector<float>* output,
-    std::stringstream* debug,
-    std::stringstream* debugSaveAugmentedFileName) {
+    std::stringstream* debugMsg,
+    std::stringstream* debugFilename) {
   const float firstDelay = randomDelay_(randomEngine_);
   const float rt60 = randomDecay_(randomEngine_);
   const int numWalls = randomNumWalls_(randomEngine_);
-  if (debug) {
-    *debug << "firstDelay=" << firstDelay << "("
-           << (firstDelay * kSpeedOfSoundMeterPerSec) << "m)"
-           << " rt60=" << rt60 << std::endl;
-    if (debugSaveAugmentedFileName) {
+  if (debugMsg) {
+    *debugMsg << "firstDelay=" << firstDelay << "("
+              << (firstDelay * kSpeedOfSoundMeterPerSec) << "m)"
+              << " rt60=" << rt60 << std::endl;
+    if (debugFilename) {
       const float dist = (firstDelay * kSpeedOfSoundMeterPerSec);
-      *debugSaveAugmentedFileName
-          << "-dist-" << std::setprecision(2) << dist << "-absrb-"
-          << std::setprecision(3) << absorptionCoefficient(dist, rt60)
-          << "-echos-" << numWalls << "-jitter-" << config_.jitter_;
+      *debugFilename << "-dist-" << std::setprecision(2) << dist << "-absrb-"
+                     << std::setprecision(3)
+                     << absorptionCoefficient(dist, rt60) << "-echos-"
+                     << numWalls << "-jitter-" << reverbConfig_.jitter_;
     }
   }
 
@@ -210,13 +209,14 @@ void Reverberation::randomShiftGabCpu(
     size_t sumDelay = 0;
 
     while (true) {
-      const float jitter = 1 + config_.jitter_ * (randomUnit_)(randomEngine_);
-      size_t delay =
-          1UL + static_cast<size_t>(jitter * firstDelay * config_.sampleRate_);
+      const float jitter =
+          1 + reverbConfig_.jitter_ * (randomUnit_)(randomEngine_);
+      size_t delay = 1UL +
+          static_cast<size_t>(jitter * firstDelay * reverbConfig_.sampleRate_);
       sumDelay += delay;
 
       const float attenuationRandomness =
-          1.0f + config_.jitter_ * (randomUnit_)(randomEngine_);
+          1.0f + reverbConfig_.jitter_ * (randomUnit_)(randomEngine_);
       const float attenuation =
           pow(10, -3 * attenuationRandomness * firstDelay / rt60);
       frac *= attenuation;
@@ -246,8 +246,8 @@ constexpr int kMaxDebugElementsInFileName = 6;
 void Reverberation::randomShift(
     const std::vector<float>& input,
     std::vector<float>* output,
-    std::stringstream* debug,
-    std::stringstream* debugSaveAugmentedFileName) {
+    std::stringstream* debugMsg,
+    std::stringstream* debugFilename) {
   const af::array inputAsAfArray(input.size(), input.data());
   fl::Variable reverb(inputAsAfArray.copy(), false);
 
@@ -271,12 +271,13 @@ void Reverberation::randomShift(
     const float delay = distanceToWallInMeters / kSpeedOfSoundMeterPerSec;
     const float rt60 = calcRt60(distanceToWallInMeters, absorptionCoefficient);
     const float attenuation = pow(10, -3 * delay / rt60);
-    const size_t padFrames = delay * config_.sampleRate_;
+    const size_t padFrames = delay * reverbConfig_.sampleRate_;
     size_t zeroPadding = 0;
 
-    if (debug) {
-      *debug << "distanceToWallInMeters=" << distanceToWallInMeters
-             << " absorptionCoefficient=" << absorptionCoefficient << std::endl;
+    if (debugMsg) {
+      *debugMsg << "distanceToWallInMeters=" << distanceToWallInMeters
+                << " absorptionCoefficient=" << absorptionCoefficient
+                << std::endl;
       debugDist.push_back(distanceToWallInMeters);
       debugAbsorb.push_back(absorptionCoefficient);
     }
@@ -303,7 +304,7 @@ void Reverberation::randomShift(
     }
   }
 
-  if (debugSaveAugmentedFileName) {
+  if (debugFilename) {
     std::vector<size_t> idx(debugDist.size());
     iota(idx.begin(), idx.end(), 0);
 
@@ -313,17 +314,15 @@ void Reverberation::randomShift(
           return debugDist[lhs] >= debugDist[rhs];
         });
 
-    *debugSaveAugmentedFileName << "-walls-" << numWalls;
+    *debugFilename << "-walls-" << numWalls;
     idx.resize(kMaxDebugElementsInFileName);
-    *debugSaveAugmentedFileName << "-dist";
+    *debugFilename << "-dist";
     for (int i : idx) {
-      *debugSaveAugmentedFileName << '-' << std::setprecision(2)
-                                  << debugDist[i];
+      *debugFilename << '-' << std::setprecision(2) << debugDist[i];
     }
-    *debugSaveAugmentedFileName << "-absrb";
+    *debugFilename << "-absrb";
     for (int j : idx) {
-      *debugSaveAugmentedFileName << '-' << std::setprecision(2)
-                                  << debugAbsorb[j];
+      *debugFilename << '-' << std::setprecision(2) << debugAbsorb[j];
     }
   }
 
@@ -351,7 +350,7 @@ fl::Variable generateImpulseResponseKernel(
     std::mt19937* randomEngine,
     std::uniform_real_distribution<float>* random_impulse,
     int debugLevel,
-    std::stringstream* debug) {
+    std::stringstream* debugMsg) {
   const size_t kernelsize = len * 2;
   std::vector<float> kernelVector(kernelsize, 0);
   // Add inpulse response to the first half of the kernel.
@@ -367,17 +366,17 @@ fl::Variable generateImpulseResponseKernel(
 void Reverberation::conv1d(
     const std::vector<float>& input,
     std::vector<float>* output,
-    std::stringstream* debug,
-    std::stringstream* debugSaveAugmentedFileName) {
+    std::stringstream* debugMsg,
+    std::stringstream* debugFilename) {
   fl::Variable kernel = generateImpulseResponseKernel(
-      config_.lengthMilliseconds_ * (config_.sampleRate_ / 1000),
+      reverbConfig_.lengthMilliseconds_ * (reverbConfig_.sampleRate_ / 1000),
       &randomEngine_,
       &randomUnit_,
-      config_.debugLevel_,
-      debug);
+      sfxConfig_.debug_.debugLevel_,
+      debugMsg);
 
   fl::Conv2D reverbConv(kernel, 1, 1, kernel.elements() / 2);
-  *debug << "reverbConv=" << reverbConv.prettyString() << std::endl;
+  *debugMsg << "reverbConv=" << reverbConv.prettyString() << std::endl;
 
   af::array signalArray(input.size(), input.data());
   fl::Variable signalVariable(signalArray, false);
@@ -386,75 +385,21 @@ void Reverberation::conv1d(
   augmentedVariable.host(output->data());
 }
 
-void Reverberation::augmentImpl(
+void Reverberation::apply(
     std::vector<float>* signal,
-    std::stringstream* debugSaveAugmentedFileName) {
-  std::stringstream debug;
-
-  float absorptionCoefficientMin_ = 3.3;
-  float absorptionCoefficientMax_ = 0.77;
-  float distanceToWallInMetersMin_ = 2.0;
-  float distanceToWallInMetersMax_ = 10.0;
-  size_t numWallsMin_ = 3;
-  float jitter_ = 0.1;
-
-  if (config_.debugLevel_ > 1) {
-    debug << "Reverberation::augmentImpl(signal->size()=" << signal->size()
-          << ") config={" << config_.prettyString() << "}" << std::endl;
-    if (config_.debugLevel_ > 2 && debugSaveAugmentedFileName) {
-      *debugSaveAugmentedFileName << config_.debugOutputPath_ << '/'
-                                  << config_.debugOutputFilePrefix_;
-    }
+    std::stringstream* debugMsg,
+    std::stringstream* debugFilename) {
+  if (debugMsg) {
+    *debugMsg << "Reverberation::apply(signal->size()=" << signal->size()
+              << ")";
   }
 
   std::vector<float> augmented(signal->size(), 0);
-  // conv1d(*signal, &augmented, &debug);
-  // randomShift(*signal, &augmented, &debug, &debugSaveAugmentedFileName);
-  // randomShiftGab(*signal, &augmented, &debug, debugSaveAugmentedFileName);
-  randomShiftGabCpu(*signal, &augmented, &debug, debugSaveAugmentedFileName);
+  // conv1d(*signal, &augmented, &debugMsg);
+  // randomShift(*signal, &augmented, &debugMsg, &debugFilename);
+  // randomShiftGab(*signal, &augmented, &debugMsg, debugFilename);
+  randomShiftGabCpu(*signal, &augmented, debugMsg, debugFilename);
 
-  if (config_.debugLevel_ > 1) {
-    std::cout << debug.str() << std::endl;
-    if (config_.debugLevel_ > 2 && debugSaveAugmentedFileName) {
-      static size_t idx = 0;
-      ++idx;
-      *debugSaveAugmentedFileName << "-idx-" << std::setfill('0')
-                                  << std::setw(4) << idx;
-      const std::string metaDataFilename =
-          debugSaveAugmentedFileName->str() + ".txt";
-      const std::string audioFilename =
-          debugSaveAugmentedFileName->str() + ".flac";
-      const std::string dryAudioFilename =
-          debugSaveAugmentedFileName->str() + "-dry.flac";
-
-      debug << "saving augmented file=" << audioFilename << std::endl;
-      if (config_.debugLevel_ > 3) {
-        debug << "saving dry file=" << dryAudioFilename << std::endl;
-
-        std::ofstream infoFile(metaDataFilename);
-        if (infoFile.is_open()) {
-          infoFile << debug.str() << std::endl;
-        }
-
-        saveSound(
-            dryAudioFilename,
-            *signal,
-            16000,
-            1,
-            w2l::SoundFormat::FLAC,
-            w2l::SoundSubFormat::PCM_16);
-      }
-
-      // saveSound(
-      //     audioFilename,
-      //     augmented,
-      //     16000,
-      //     1,
-      //     w2l::SoundFormat::FLAC,
-      //     w2l::SoundSubFormat::PCM_16);
-    }
-    std::cout << debug.str() << std::endl;
-  }
   signal->swap(augmented);
 }
 

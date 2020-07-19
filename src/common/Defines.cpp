@@ -139,91 +139,89 @@ DEFINE_double(
     "Max proportion of the input sequence (1.0 is 100%) that can be masked in time");
 DEFINE_int64(saug_tmaskn, 2, "Number of time masks");
 
-/* ========== AUDIO WAVE AUGMENTION OPTIONS ========== */
+/* ========== SOUND EFFECTS AUGMENTION OPTIONS ========== */
 
 DEFINE_string(
-    wavaug_debug_output_dir,
+    sfx_debug_output_dir,
     "/tmp",
     "directory to save augmented files fore debugging");
+DEFINE_string(
+    sfx_debug_file_prefix,
+    "sfx-",
+    "prefix name for debug files saved by sound effects.");
+
 DEFINE_int64(
-    wavaug_debug_level,
+    sfx_debug_level,
     0,
     "print debug info that matched level: 0=none, 1=stats, 2=histogram, 3=save \
     augmented files, 4=save signal files");
 DEFINE_int64(
-    wavaug_debug_output_once_every_n_samples,
+    sfx_debug_output_once_every_n_samples,
     100,
     "sample frequncy to save when debug level is set to save files");
 DEFINE_int64(
-    waveaug_start_update,
+    sfx_start_update,
     -1,
     "use audio wave augmentation starting at the update number inputted. \
     -1 means no audio wave augmentation");
 
+DEFINE_bool(
+    sfx_valid_dataset,
+    false,
+    "apply sound effect augmentation also to the validation dataset");
+
+DEFINE_bool(sfx_add_reverb, false, "apply reveberation when true");
+DEFINE_bool(sfx_add_noise, false, "apply additive noise when true");
+DEFINE_bool(
+    sfx_amp_clamp,
+    false,
+    "clamp amplitude to valid range (-1,1) when true. \
+    This is needed when other sound effects add the amplitude up beyond valid range.");
+
 // ADDITIVE NOISE AUGMENTION OPTIONS
 
 DEFINE_double(
-    addnoise_max_time_ratio,
+    sfx_addnoise_max_time_ratio,
     1.0,
     "maximum time in the clean utterance that will have noise added to it");
-DEFINE_int64(addnoise_n_clips, 1, "number of noise clips to use per utterance");
+DEFINE_int64(sfx_addnoise_n_clips, 1, "number of noise clips to use per utterance");
 DEFINE_double(
-    addnoise_min_snr,
+    sfx_addnoise_min_snr,
     0.01,
     "minimum signal noise ratio that we want");
 DEFINE_double(
-    addnoise_max_snr,
+    sfx_addnoise_max_snr,
     0.5,
     "maximum signal noise ratio that we want ");
 DEFINE_string(
-    addnoise_noisedir,
+    sfx_addnoise_noisedir,
     "",
     "directory of noise files (e.g. /checkpoint/defossez/denoising/datasets/dns/noise )");
-DEFINE_int64(
-    addnoise_start_update,
-    -1,
-    "use additive noise starting at the update number inputted. -1 means no additive noise");
-DEFINE_int64(
-    addnoise_debug_level,
-    0,
-    "print debug info when > 0. when level>2 also save input and output signals");
 
 // REVERBERATION OPTIONS
 
 DEFINE_double(
-    reverb_absorption_coefficient_min,
+    sfx_reverb_absorption_coefficient_min,
     0.3,
     "minimum value for random sound absorption coefficient");
 DEFINE_double(
-    reverb_absorption_coefficient_max,
+    sfx_reverb_absorption_coefficient_max,
     0.3,
     "maximum value for random sound absorption coefficient");
 DEFINE_double(
-    reverb_distance_to_wall_in_meters_min,
+    sfx_reverb_distance_to_wall_in_meters_min,
     3.43,
     "minimum value for random distance in meters to sound relective object");
 DEFINE_double(
-    reverb_distance_to_wall_in_meters_max,
+    sfx_reverb_distance_to_wall_in_meters_max,
     10.29,
     "minimum value for random distance in meters to sound relective object");
-DEFINE_int64(reverb_num_walls_min, 3, "min number of sound reflecting objects");
+DEFINE_int64(sfx_reverb_num_walls_min, 3, "min number of sound reflecting objects");
 DEFINE_int64(
-    reverb_num_walls_max,
+    sfx_reverb_num_walls_max,
     16,
     "max number of sound reflecting objects");
-DEFINE_double(reverb_jitter, 0.1, "max value for random jitter");
-DEFINE_int64(
-    reverb_start_update,
-    -1,
-    "use reverbaration starting at the update number inputted. -1 means no additive noise");
-DEFINE_int64(
-    reverb_debug_level,
-    0,
-    "print debug info when > 0. when level>2 also save input and output signals");
-DEFINE_string(
-    reverb_debug_output_dir,
-    "/tmp",
-    "directory to save augmented files fore debugging");
+DEFINE_double(sfx_reverb_jitter, 0.1, "max value for random jitter");
 
 // RUN OPTIONS
 DEFINE_string(datadir, "", "speech data directory");
@@ -421,7 +419,7 @@ DEFINE_bool(use_memcache, false, "use Memcache for reading data");
 
 namespace detail {
 
-/***************************** Deprecated Flags  *****************************/
+/***************************** Deprecated Flags *****************************/
 namespace {
 
 void registerDeprecatedFlags() {

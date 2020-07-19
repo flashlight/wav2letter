@@ -8,8 +8,8 @@
 #include <string>
 #include <vector>
 
-#include "experimental/augmentation/AudioAugmenter.h"
 #include "experimental/augmentation/AudioLoader.h"
+#include "experimental/augmentation/SoundEffect.h"
 
 namespace w2l {
 namespace augmentation {
@@ -17,15 +17,11 @@ namespace augmentation {
 class AdditiveNoise : public SoundEffect {
  public:
   struct Config {
-    unsigned int randomSeed_ = std::mt19937::default_seed;
     double maxTimeRatio_;
     double minSnr_;
     double maxSnr_;
     int nClipsPerUtterance_;
     std::string noiseDir_;
-    int debugLevel_; // 0=none, 1=stats, 2=histogram, 3=save augmented files
-    std::string debugOutputPath_ = "/tmp";
-    std::string debugOutputFilePrefix_ = "/additive-noise-";
 
     std::string prettyString() const;
   };
@@ -41,24 +37,30 @@ class AdditiveNoise : public SoundEffect {
     std::uniform_int_distribution<> uniformDistribution_;
   };
 
-  explicit AdditiveNoise(AdditiveNoise::Config config);
+  AdditiveNoise(
+      const SoundEffect::Config& sfxConfig,
+      const AdditiveNoise::Config& noiseConfig);
   ~AdditiveNoise() override = default;
 
-  void apply(std::vector<float>* signal, std::stringstream* debugSaveAugmentedFileName) override;
-
-  std::string prettyString() const override {
-    return "AdditiveNoise{config=" + config_.prettyString() + "}";
-  };
+  std::string prettyString() const override;
 
   std::string name() const override {
     return "AdditiveNoise";
   };
 
+ protected:
+  void apply(
+      std::vector<float>* signal,
+      std::stringstream* debugMsg = nullptr,
+      std::stringstream* debugFilename = nullptr) override;
+
  private:
   int randomIndexGenerator(int size);
 
+  std::mt19937 randomEngine_;
+  std::uniform_int_distribution<> uniformDistribution_;
   AudioLoader audioLoader_;
-  const AdditiveNoise::Config config_;
+  AdditiveNoise::Config noiseConfig_;
   std::vector<std::string> noiseFilePathVec_;
   Random random_;
 };

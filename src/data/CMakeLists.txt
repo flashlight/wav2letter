@@ -54,6 +54,7 @@ target_link_libraries(
   common
   feature-library
   flashlight::flashlight
+  augmentation
   ${GLOG_LIBRARIES}
   ${MKL_LIBRARIES}
   ${SNDFILE_LIBRARIES}

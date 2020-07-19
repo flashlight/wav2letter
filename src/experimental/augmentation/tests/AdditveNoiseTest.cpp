@@ -45,6 +45,12 @@ TEST(AdditiveNoise, AudioLoader) {
 }
 
 TEST(AdditiveNoise, LogAugmentedSamplesWithVariousfConfigs) {
+  augmentation::SoundEffect::Config sfxConfig;
+  sfxConfig.debug_.debugLevel_ =
+      0; // 3; // 0=none, 1=stats, 2=histogram, 3= saveq augmented files
+  sfxConfig.debug_.outputPath_ = "/tmp";
+  sfxConfig.debug_.outputFilePrefix_ = "additive-noise-";
+
   augmentation::AudioLoader signalDb(kSignalInputDirectory);
   const std::vector<augmentation::AudioLoader::Audio> signals = {
       signalDb.loadRandom()};
@@ -55,20 +61,16 @@ TEST(AdditiveNoise, LogAugmentedSamplesWithVariousfConfigs) {
       for (double minSnr = 0.125; minSnr <= 40.0; minSnr *= 2.0) {
         for (double maxTimeRatio_ = 0; maxTimeRatio_ <= 1;
              maxTimeRatio_ += 0.25) {
-          augmentation::AdditiveNoise::Config config;
-          config.maxTimeRatio_ = maxTimeRatio_;
-          config.minSnr_ = minSnr;
-          config.maxSnr_ = minSnr * 2;
-          config.nClipsPerUtterance_ = nClipsPerUtterance_;
-          config.noiseDir_ = kNoiseInputDirectory;
-          config.debugLevel_ =
-              0; // 3; // 0=none, 1=stats, 2=histogram, 3= saveq augmented files
-          config.debugOutputPath_ = "/tmp";
-          config.debugOutputFilePrefix_ = "/additive-noise-";
+          augmentation::AdditiveNoise::Config noiseConfig;
+          noiseConfig.maxTimeRatio_ = maxTimeRatio_;
+          noiseConfig.minSnr_ = minSnr;
+          noiseConfig.maxSnr_ = minSnr * 2;
+          noiseConfig.nClipsPerUtterance_ = nClipsPerUtterance_;
+          noiseConfig.noiseDir_ = kNoiseInputDirectory;
 
-          augmentation::AdditiveNoise noiseAdder(config);
+          augmentation::AdditiveNoise noiseAdder(sfxConfig, noiseConfig);
           std::vector<float> augmented = signal.data_;
-          noiseAdder.augment(&augmented, nullptr);
+          noiseAdder(&augmented);
 
           EXPECT_EQ(augmented.size(), signal.data_.size());
           std::cout << "minSnr=" << minSnr << std::endl;

@@ -35,7 +35,7 @@ endfunction(build_test)
 if (W2L_BUILD_TESTS)
   # Augmentation
   build_test(${PROJECT_SOURCE_DIR}/src/experimental/augmentation/tests/AdditveNoiseTest.cpp)
-  build_test(${PROJECT_SOURCE_DIR}/src/experimental/augmentation/tests/AudioAugmenterTest.cpp)
+  # build_test(${PROJECT_SOURCE_DIR}/src/experimental/augmentation/tests/AudioAugmenterTest.cpp)
   build_test(${PROJECT_SOURCE_DIR}/src/experimental/augmentation/tests/ReveberationTest.cpp)
-
+  build_test(${PROJECT_SOURCE_DIR}/src/experimental/augmentation/tests/SoundEffectTest.cpp)
 endif ()

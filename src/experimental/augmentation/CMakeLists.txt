@@ -8,7 +8,7 @@ add_library(
 target_sources(
   augmentation
   INTERFACE
-  ${CMAKE_CURRENT_SOURCE_DIR}/AudioAugmenter.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/SoundEffect.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/AudioLoader.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/AdditiveNoise.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/AudioStats.cpp

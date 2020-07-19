@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+#include "data/Sound.h"
+
 namespace w2l {
 namespace augmentation {
 
@@ -24,6 +26,8 @@ class AudioLoader {
   AudioLoader(const std::string& audioDirectoryPath);
 
   Audio loadRandom();
+
+  std::string prettyString() const;
 
  private:
   const std::string audioDirectoryPath_;

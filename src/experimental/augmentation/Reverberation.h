@@ -7,52 +7,49 @@
 #include <string>
 #include <vector>
 
-#include "experimental/augmentation/AudioAugmenter.h"
 #include "experimental/augmentation/AudioLoader.h"
+#include "experimental/augmentation/SoundEffect.h"
 
 namespace w2l {
 namespace augmentation {
 
-constexpr float kSpeedOfSoundMeterPerSec = 343.0;
-
 class Reverberation : public SoundEffect {
  public:
   struct Config {
-    unsigned int randomSeed_ = std::mt19937::default_seed;
     std::string impulseResponseDir_;
     int lengthMilliseconds_ = 0;
-    int debugLevel_; // 0=none, 1=stats, 2=histogram, 3=save augmented files,
-                     // 4=save signal
-    std::string debugOutputPath_ = "/tmp";
-    std::string debugOutputFilePrefix_ = "reverb-";
 
     // https://www.acoustic-supplies.com/absorption-coefficient-chart/
     float absorptionCoefficientMin_ = 0.01; // painted brick
     float absorptionCoefficientMax_ = 0.99; // best absorptive wall materials
     float distanceToWallInMetersMin_ = 1.0;
     float distanceToWallInMetersMax_ = 50.0;
-    size_t numWallsMin_ = 4;
-    size_t numWallsMax_ = 16;
+    size_t numWallsMin_ = 1; // number of pairs of refelctive objects
+    size_t numWallsMax_ = 4; // number of pairs of refelctive objects
     float jitter_ = 0.1;
     size_t sampleRate_ = 16000;
 
     std::string prettyString() const;
   };
 
-  explicit Reverberation(Reverberation::Config config);
+   Reverberation(
+      const SoundEffect::Config& sfxConfig,
+      const Reverberation::Config& reverbConfig);
   ~Reverberation() override = default;
 
-  void augmentImpl(
-      std::vector<float>* signal,
-      std::stringstream* debugSaveAugmentedFileName) override;
-
   std::string prettyString() const override {
-    return "Reverberation{config=" + config_.prettyString() + "}";
+    return "Reverberation{config=" + reverbConfig_.prettyString() + "}";
   };
 
   std::string name() const override {
     return "Reverberation";
   };
+
+ protected:
+  void apply(
+      std::vector<float>* signal,
+      std::stringstream* debugMsg = nullptr,
+      std::stringstream* debugFilename = nullptr) override;
 
  private:
   void conv1d(
@@ -77,7 +74,7 @@ class Reverberation : public SoundEffect {
       std::stringstream* debugSaveAugmentedFileName);
 
   // AudioLoader audioLoader_;
-  const Reverberation::Config config_;
+  const Reverberation::Config reverbConfig_;
   std::vector<std::string> impulseResponseFilePathVec_;
   std::mt19937 randomEngine_;
   std::uniform_real_distribution<float> randomZeroToOne_;

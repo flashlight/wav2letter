@@ -14,7 +14,7 @@
 #include <flashlight/flashlight.h>
 
 #include "data/Featurize.h"
-#include "experimental/augmentation/AudioAugmenter.h"
+#include "experimental/augmentation/SoundEffect.h"
 #include "libraries/common/Dictionary.h"
 
 namespace w2l {
@@ -44,12 +44,11 @@ class W2lDataset : public fl::Dataset {
 
   void shuffle(int seed);
 
-  void augment(std::shared_ptr<augmentation::AudioAugmenter> audioAugmenter) {
-    audioAugmenter_ = audioAugmenter;
+  void augment(std::shared_ptr<augmentation::SoundEffect> soundEffect) {
+    soundEffect_ = soundEffect;
   }
 
  protected:
-  mutable int64_t augmentCount_ = 0;
   DictionaryMap dicts_;
 
   int64_t sampleCount_; // Num individual samples in the dataset before batching
@@ -65,7 +64,7 @@ class W2lDataset : public fl::Dataset {
       prefetchCache_;
 
   std::vector<std::vector<int64_t>> sampleBatches_;
-  std::shared_ptr<augmentation::AudioAugmenter> audioAugmenter_;
+  std::shared_ptr<augmentation::SoundEffect> soundEffect_;
 };
 
 // Abstract class which defines an interface to pack samples

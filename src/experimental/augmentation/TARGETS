@@ -4,12 +4,12 @@ cpp_library(
     name = "augmentation",
     srcs = [
         "AdditiveNoise.cpp",
-        "AudioAugmenter.cpp",
+        "SoundEffect.cpp",
         "AudioLoader.cpp",
     ],
     headers = [
         "AdditiveNoise.h",
-        "AudioAugmenter.h",
+        "SoundEffect.h",
         "AudioLoader.h",
     ],
     deps = [

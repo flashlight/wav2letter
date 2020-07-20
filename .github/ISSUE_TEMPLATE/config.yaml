@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: wav2letter Gitter
+    url: https://gitter.im/wav2letter
+    about: Chat with the wav2letter community on Gitter.

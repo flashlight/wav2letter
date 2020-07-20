@@ -95,7 +95,6 @@ int Dictionary::getIndex(const std::string& entry) const {
       throw std::invalid_argument(
           "Unknown entry in dictionary: '" + entry + "'");
     } else {
-      std::cerr << "Skipping unknown entry: '" << entry << "'" << std::endl;
       return defaultIndex_;
     }
   }

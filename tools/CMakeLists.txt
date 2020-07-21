@@ -11,11 +11,12 @@ function(build_tool SRCFILE)
   target_include_directories(
     ${target}
     PRIVATE
-    ${PROJECT_SOURCE_DIR}/..
+    ${PROJECT_SOURCE_DIR}
     )
 endfunction(build_tool)
 
 build_tool(${PROJECT_SOURCE_DIR}/tools/VoiceActivityDetection-CTC.cpp)
+build_tool(${PROJECT_SOURCE_DIR}/tools/alignment/Align.cpp)
 
 # ---------------------- streaming_tds_model_converter ----------------------
 

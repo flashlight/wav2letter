@@ -196,7 +196,7 @@ if __name__ == "__main__":
                 break
             prediction.append(token_dict.get_entry(idx))
         prediction = " ".join(prediction)
-        print(f"score={results[i].score} prediction='{prediction}'")
+        print(f"score={results[i].score} amScore={results[i].amScore} lmScore={results[i].lmScore} prediction='{prediction}'")
 
     assert len(results) == 16
     hyp_score_target = [-284.0998, -284.108, -284.119, -284.127, -284.296]

@@ -399,8 +399,9 @@ int main(int argc, char** argv) {
 
   std::map<std::string, std::shared_ptr<W2lDataset>> validds;
   for (const auto& s : validTagSets) {
-    validds[s.first] = createDataset(
-        s.second, dicts, lexicon, FLAGS_batchsize, worldRank, worldSize);
+    // use batchsize 1 to prevent issues from padded inputs
+    validds[s.first] =
+        createDataset(s.second, dicts, lexicon, 1, worldRank, worldSize);
   }
 
   /* ===================== Hooks ===================== */

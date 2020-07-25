@@ -21,6 +21,10 @@ DEFINE_string(train, "", "comma-separated list of training data");
 DEFINE_string(valid, "", "comma-separated list of valid data");
 DEFINE_string(test, "", "comma-separated list of test data");
 DEFINE_int64(batchsize, 1, "batch size (per process in distributed training)");
+DEFINE_int64(
+    validbatchsize,
+    -1,
+    "batch size (per process in distributed training) for the valid data, if -1 then use train batchsize");
 DEFINE_string(input, "flac", "input feature");
 DEFINE_int64(samplerate, 16000, "sample rate (Hz)");
 DEFINE_int64(channels, 1, "number of input channels");

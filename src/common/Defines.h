@@ -112,6 +112,7 @@ DECLARE_string(train);
 DECLARE_string(valid);
 DECLARE_string(test);
 DECLARE_int64(batchsize);
+DECLARE_int64(validbatchsize);
 DECLARE_string(input);
 DECLARE_int64(samplerate);
 DECLARE_int64(channels);

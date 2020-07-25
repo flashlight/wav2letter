@@ -398,10 +398,11 @@ int main(int argc, char** argv) {
   }
 
   std::map<std::string, std::shared_ptr<W2lDataset>> validds;
+  int64_t validBatchSize =
+      FLAGS_validbatchsize == -1 ? FLAGS_batchsize : FLAGS_validbatchsize;
   for (const auto& s : validTagSets) {
-    // use batchsize 1 to prevent issues from padded inputs
-    validds[s.first] =
-        createDataset(s.second, dicts, lexicon, 1, worldRank, worldSize);
+    validds[s.first] = createDataset(
+        s.second, dicts, lexicon, validBatchSize, worldRank, worldSize);
   }
 
   /* ===================== Hooks ===================== */

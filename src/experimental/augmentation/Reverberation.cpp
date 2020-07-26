@@ -108,14 +108,14 @@ fl::Variable randomShiftGabEchos(
     float frac = 1.0;
     fl::Variable echo(source.array().copy(), false);
     echo = echo / numWalls;
-    size_t sumDelay = 0;
+    size_t totalDelay = 0;
 
-    while (frac > 1e-3 && sumDelay < source.elements()) {
+    while (frac > 1e-3 && totalDelay < source.elements()) {
       const float jitter = 1 + config.jitter_ * (*randomUnit)(*randomEngine);
       size_t delay = std::min(
           1UL + static_cast<size_t>(jitter * firstDelay * config.sampleRate_),
           static_cast<size_t>(source.elements()));
-      sumDelay += delay;
+      totalDelay += delay;
 
       const float attenuationRandomness =
           1.0f + config.jitter_ * (*randomUnit)(*randomEngine);
@@ -177,6 +177,72 @@ void Reverberation::randomShiftGab(
   augmented.host(output->data());
 }
 
+void Reverberation::randomShiftGabGpu(
+    const std::vector<float>& input,
+    std::vector<float>* output,
+    std::stringstream* debugMsg,
+    std::stringstream* debugFilename) {
+  const float firstDelay = randomDelay_(randomEngine_);
+  const float rt60 = randomDecay_(randomEngine_);
+  const int numWalls = randomNumWalls_(randomEngine_);
+  if (debugMsg) {
+    *debugMsg << "firstDelay=" << firstDelay << "("
+              << (firstDelay * kSpeedOfSoundMeterPerSec) << "m)"
+              << " rt60=" << rt60 << std::endl;
+  }
+  if (debugFilename) {
+    const float dist = (firstDelay * kSpeedOfSoundMeterPerSec);
+    *debugFilename << "-dist-" << std::setprecision(2) << dist << "-absrb-"
+                   << std::setprecision(3) << absorptionCoefficient(dist, rt60)
+                   << "-echos-" << numWalls << "-jitter-"
+                   << reverbConfig_.jitter_;
+  }
+
+  const int inputSize = input.size();
+  const af::array inputAsAfArray(input.size(), input.data());
+  fl::Variable inputAsVariable(inputAsAfArray, false);
+
+  fl::Variable reverb(inputAsVariable.array().copy(), false);
+  for (int i = 0; i < numWalls; ++i) {
+    float frac = 1.0;
+    size_t totalDelay = 0;
+
+    while (true) {
+      const float jitter =
+          1 + reverbConfig_.jitter_ * (randomUnit_)(randomEngine_);
+      size_t delay = 1UL +
+          static_cast<size_t>(jitter * firstDelay * reverbConfig_.sampleRate_);
+      totalDelay += delay;
+
+      const float attenuationRandomness =
+          1.0f + reverbConfig_.jitter_ * (randomUnit_)(randomEngine_);
+      const float attenuation =
+          pow(10, -3 * attenuationRandomness * firstDelay / rt60);
+      frac *= attenuation;
+
+      if ((frac < 1e-3) || (totalDelay >= inputSize)) {
+        break;
+      }
+
+      // echo = shit(input, totalDelay) * attenuation / numWalls;
+      // reverb += echo;
+      fl::Variable echo =
+          fl::padding(
+              inputAsVariable,
+              std::vector<std::pair<int, int>>({{totalDelay, 0}}),
+              /*val=*/0) *
+          (attenuation / numWalls);
+      // trim echo to length of reverb
+      af::array& echoArray = echo.array();
+      echoArray = echoArray(af::seq(1, reverb.elements()));
+
+      reverb = reverb + echo;
+    }
+  }
+
+  reverb.host(output->data());
+}
+
 void Reverberation::randomShiftGabCpu(
     const std::vector<float>& input,
     std::vector<float>* output,
@@ -189,31 +255,28 @@ void Reverberation::randomShiftGabCpu(
     *debugMsg << "firstDelay=" << firstDelay << "("
               << (firstDelay * kSpeedOfSoundMeterPerSec) << "m)"
               << " rt60=" << rt60 << std::endl;
-    if (debugFilename) {
-      const float dist = (firstDelay * kSpeedOfSoundMeterPerSec);
-      *debugFilename << "-dist-" << std::setprecision(2) << dist << "-absrb-"
-                     << std::setprecision(3)
-                     << absorptionCoefficient(dist, rt60) << "-echos-"
-                     << numWalls << "-jitter-" << reverbConfig_.jitter_;
-    }
+  }
+  if (debugFilename) {
+    const float dist = (firstDelay * kSpeedOfSoundMeterPerSec);
+    *debugFilename << "-dist-" << std::setprecision(2) << dist << "-absrb-"
+                   << std::setprecision(3) << absorptionCoefficient(dist, rt60)
+                   << "-echos-" << numWalls << "-jitter-"
+                   << reverbConfig_.jitter_;
   }
 
+  const int inputSize = input.size();
   std::vector<float> reverb = input;
   for (int i = 0; i < numWalls; ++i) {
     float frac = 1.0;
     std::vector<float> echo = input;
-    std::transform(
-        echo.begin(), echo.end(), echo.begin(), [numWalls](float f) -> float {
-          return f / numWalls;
-        });
-    size_t sumDelay = 0;
+    size_t totalDelay = 0;
 
     while (true) {
       const float jitter =
           1 + reverbConfig_.jitter_ * (randomUnit_)(randomEngine_);
       size_t delay = 1UL +
           static_cast<size_t>(jitter * firstDelay * reverbConfig_.sampleRate_);
-      sumDelay += delay;
+      totalDelay += delay;
 
       const float attenuationRandomness =
           1.0f + reverbConfig_.jitter_ * (randomUnit_)(randomEngine_);
@@ -221,20 +284,20 @@ void Reverberation::randomShiftGabCpu(
           pow(10, -3 * attenuationRandomness * firstDelay / rt60);
       frac *= attenuation;
 
-      if ((frac < 1e-3) || (sumDelay >= reverb.size())) {
+      if ((frac < 1e-3) || (totalDelay >= inputSize)) {
         break;
       }
 
       // echo *= attenuation
-      std::transform(
-          echo.begin(),
-          echo.end(),
-          echo.begin(),
-          [attenuation](float e) -> float { return e * attenuation; });
 
-      // reverb += shift(echo, sumDelay)
-      for (int i = sumDelay; i < reverb.size(); ++i) {
-        reverb[i] += echo[i - sumDelay];
+      const float multiplier = attenuation / numWalls;
+      const int overlapSize = inputSize - totalDelay;
+
+      // echo /= numWalls
+      // echo *= attenuation
+      // reverb += shift(echo, totalDelay)
+      for (int i = 0; i < overlapSize; ++i) {
+        reverb[i + totalDelay] += echo[i] * multiplier;
       }
     }
   }
@@ -398,7 +461,8 @@ void Reverberation::apply(
   // conv1d(*signal, &augmented, &debugMsg);
   // randomShift(*signal, &augmented, &debugMsg, &debugFilename);
   // randomShiftGab(*signal, &augmented, &debugMsg, debugFilename);
-  randomShiftGabCpu(*signal, &augmented, debugMsg, debugFilename);
+  // randomShiftGabCpu(*signal, &augmented, debugMsg, debugFilename);
+  randomShiftGabGpu(*signal, &augmented, debugMsg, debugFilename);
 
   signal->swap(augmented);
 }

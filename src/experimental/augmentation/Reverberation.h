@@ -32,7 +32,7 @@ class Reverberation : public SoundEffect {
     std::string prettyString() const;
   };
 
-   Reverberation(
+  Reverberation(
       const SoundEffect::Config& sfxConfig,
       const Reverberation::Config& reverbConfig);
   ~Reverberation() override = default;
@@ -62,12 +62,18 @@ class Reverberation : public SoundEffect {
       std::vector<float>* output,
       std::stringstream* debug,
       std::stringstream* debugSaveAugmentedFileName);
+  // Old GPU implementation
   void randomShiftGab(
       const std::vector<float>& input,
       std::vector<float>* output,
       std::stringstream* debug,
       std::stringstream* debugSaveAugmentedFileName);
   void randomShiftGabCpu(
+      const std::vector<float>& input,
+      std::vector<float>* output,
+      std::stringstream* debug,
+      std::stringstream* debugSaveAugmentedFileName);
+  void randomShiftGabGpu(
       const std::vector<float>& input,
       std::vector<float>* output,
       std::stringstream* debug,

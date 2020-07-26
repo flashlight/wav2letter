@@ -391,6 +391,8 @@ int main(int argc, char** argv) {
     }
   };
 
+  /* ===================== Sounde Effects Augmenation ===================== */
+
   std::shared_ptr<w2l::augmentation::SoundEffectChain> soundEffect;
   if (FLAGS_sfx_start_update >= 0) {
     w2l::augmentation::SoundEffect::Config sfxConfig;
@@ -403,8 +405,7 @@ int main(int argc, char** argv) {
         std::make_shared<w2l::augmentation::SoundEffectChain>(sfxConfig);
 
     // Reverberation is before noise so we only add make the reverberation
-    // effect to the
-    // speech signal.
+    // effect to the speech signal.
     if (FLAGS_sfx_add_reverb > -1) {
       w2l::augmentation::Reverberation::Config reverbConf;
       reverbConf.absorptionCoefficientMin_ =

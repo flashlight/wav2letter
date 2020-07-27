@@ -1,4 +1,5 @@
 import argparse
+import os
 import sys
 
 
@@ -27,5 +28,11 @@ if __name__ == "__main__":
     parser.add_argument("--separator", type=str, required=True)
 
     args = parser.parse_args()
+
+    if not os.path.exists(args.basefile):
+        raise ValueError("basefile not found")
+
+    if not os.path.exists(args.tablefile):
+        raise ValueError("tablefile not found")
 
     run(args.basefile, args.tablefile, args.separator)

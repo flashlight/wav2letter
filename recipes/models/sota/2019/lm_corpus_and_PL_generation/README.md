@@ -1,13 +1,6 @@
 # LM Corpus Reproduction
 
-This document describes normalization of "no overlap" language model corpus, which contains the LibriSpeech LM corpus excluding any books that are contained in LibriVox audio used in the paper, details on corpus creation see in ../raw_lm_corpus.
-
-After corpus normalization we train 4gram LM and use it to generate pseudo-labels on LibriVox.
-
-## Titles normalization
-```
-source normalize_title.sh [input file] [output file]
-```
+This document describes normalization of "no overlap" language model corpus, which contains the LibriSpeech LM corpus excluding any books that are contained in LibriVox audio used in the paper, details on corpus creation see in [`../raw_lm_corpus`](../raw_lm_corpus/README.md).
 
 ## Data Normalization (Librispeech LM data without Librivox)
 ```

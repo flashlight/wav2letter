@@ -1,5 +1,5 @@
 import argparse
-import math
+import os
 import sys
 
 
@@ -34,5 +34,8 @@ if __name__ == "__main__":
     parser.add_argument("--distance_ratio", type=float, required=True)
 
     args = parser.parse_args()
+
+    if not os.path.exists(args.infile):
+        raise ValueError("infile not found")
 
     run(args.infile, args.score, args.distance_ratio)

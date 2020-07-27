@@ -3,11 +3,10 @@ import os
 import xml.etree.ElementTree as ET
 from multiprocessing.pool import ThreadPool
 
-from gutenberg.cleanup import strip_headers
 from gutenberg.query import get_metadata
 
 
-CACHE_PATH = "[path to downloaded cache]"
+CACHE_PATH = ""
 
 
 def get_one_title_from_cache(book_id):
@@ -37,11 +36,17 @@ def main():
     )
     parser.add_argument("--infile", type=str, required=True)
     parser.add_argument("--outfile", type=str, required=True)
+    parser.add_argument("--cachepath", type=str, required=True)
 
     args = parser.parse_args()
 
     if not os.path.exists(args.infile):
-        raise RuntimeError("indir not found")
+        raise ValueError("indir not found")
+
+    if not os.path.exists(args.cachepath):
+        raise ValueError("cachepath not found")
+
+    CACHE_PATH = args.cachepath
 
     book_ids = []
     with open(args.infile, "r") as f:

@@ -79,14 +79,16 @@ Compute WER for each shuffled list `tts-audio-*/data.lst` (and then compute mean
 
 ### Prepare lists
 - Force alignment for dev-other set
+
+The alignment ASG model and lexicon can be found in the [`lexicon_free recipe`](https://github.com/facebookresearch/wav2letter/tree/master/recipes/models/lexicon_free/librispeech#acoustic-model).
 ```
 [...]/wav2letter/build/tools/Align \
     dev-other.lst.align  \
-    --am=[PATH_TO_ASG_MODEL] \
+    --am=[PATH_TO_ALIGN_ASG_MODEL] \
     --test=dev-other.lst \
     --batchsize=1 \
     --datadir=[DATA_DST]/lists/ \
-    --lexicon=[PATH_TO_MODEL_LEXICON]
+    --lexicon=[PATH_TO_ALIGN_MODEL_LEXICON]
 ```
 - Filter the list
 ```

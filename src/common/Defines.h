@@ -197,7 +197,7 @@ DECLARE_int64(saug_tmaskn);
 DECLARE_string(sfx_debug_output_dir);
 DECLARE_string(sfx_debug_file_prefix);
 DECLARE_int64(sfx_debug_level);
-DECLARE_int64(sfx_debug_output_once_every_n_samples);
+DECLARE_int64(sfx_debug_once_every_n_samples);
 DECLARE_int64(sfx_start_update);
 DECLARE_bool(sfx_valid_dataset);
 DECLARE_bool(sfx_add_reverb);

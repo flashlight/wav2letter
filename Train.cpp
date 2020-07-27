@@ -398,7 +398,7 @@ int main(int argc, char** argv) {
     w2l::augmentation::SoundEffect::Config sfxConfig;
     sfxConfig.debug_.debugLevel_ = FLAGS_sfx_debug_level;
     sfxConfig.debug_.debugOnceEvery_ =
-        FLAGS_sfx_debug_output_once_every_n_samples;
+        FLAGS_sfx_debug_once_every_n_samples;
     sfxConfig.debug_.outputPath_ = FLAGS_sfx_debug_output_dir;
     sfxConfig.debug_.outputFilePrefix_ = FLAGS_sfx_debug_file_prefix;
     auto soundEffectChain =

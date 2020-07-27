@@ -156,7 +156,7 @@ DEFINE_int64(
     "print debug info that matched level: 0=none, 1=stats, 2=histogram, 3=save \
     augmented files, 4=save signal files");
 DEFINE_int64(
-    sfx_debug_output_once_every_n_samples,
+    sfx_debug_once_every_n_samples,
     100,
     "sample frequncy to save when debug level is set to save files");
 DEFINE_int64(

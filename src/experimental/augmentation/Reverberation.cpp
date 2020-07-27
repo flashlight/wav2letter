@@ -203,11 +203,12 @@ void Reverberation::randomShiftGabGpu(
   fl::Variable inputAsVariable(inputAsAfArray, false);
 
   fl::Variable reverb(inputAsVariable.array().copy(), false);
+  int memUsedForOne = 0;
   for (int i = 0; i < numWalls; ++i) {
     float frac = 1.0;
     size_t totalDelay = 0;
 
-    while (true) {
+    for (int echoCount = 1;; ++echoCount) {
       const float jitter =
           1 + reverbConfig_.jitter_ * (randomUnit_)(randomEngine_);
       size_t delay = 1UL +
@@ -224,6 +225,36 @@ void Reverberation::randomShiftGabGpu(
         break;
       }
 
+      const int memUsed =
+          (totalDelay + inputAsVariable.elements()) * sizeof(float);
+      memUsedForOne += memUsed;
+      {
+        std::stringstream ss;
+        mtx_.lock();
+        memUsed_ += memUsed;
+        if (memUsed_ > maxMemUsed_) {
+          maxMemUsed_ = memUsed_;
+          ss << "maxMemUsed_=" << (maxMemUsed_ >> 10)
+             << "KB memUsed_=" << (memUsed_ >> 10) << "KB"
+             << " input.size()=" << input.size() << "("
+             << (input.size() >> 10) * sizeof(float) << "KB)"
+             << " totalDelay=" << totalDelay << "("
+             << (totalDelay >> 10) * sizeof(float) << "KB)"
+             << " applyCount_=" << applyCount_ << " echoCount=" << echoCount
+             << " memUsedForOne=" << (memUsedForOne >> 10)
+             << "KB=" << (memUsedForOne >> 20) << "MB"
+             << " maxMemUsedForOne_=" << (maxMemUsedForOne_ >> 10)
+             << "KB=" << (maxMemUsedForOne_ >> 20) << "MB" << std::endl;
+        }
+        mtx_.unlock();
+        if (!ss.str().empty()) {
+          std::cout << ss.str() << std::endl;
+        }
+        if (debugMsg) {
+          // *debugMsg << ss.str();
+        }
+      }
+
       // echo = shit(input, totalDelay) * attenuation / numWalls;
       // reverb += echo;
       fl::Variable echo =
@@ -237,9 +268,31 @@ void Reverberation::randomShiftGabGpu(
       echoArray = echoArray(af::seq(1, reverb.elements()));
 
       reverb = reverb + echo;
+      {
+        mtx_.lock();
+        memUsed_ -= memUsed;
+        mtx_.unlock();
+      }
     }
   }
 
+  {
+    mtx_.lock();
+    if (memUsedForOne > maxMemUsedForOne_) {
+      std::stringstream ss;
+      ss << " memUsedForOne=" << (memUsedForOne >> 10)
+         << "KB=" << (memUsedForOne >> 20) << "MB"
+         << " maxMemUsedForOne_=" << (maxMemUsedForOne_ >> 10)
+         << "KB=" << (maxMemUsedForOne_ >> 20) << "MB" << std::endl;
+      std::cout << ss.str() << std::endl;
+
+      maxMemUsedForOne_ = memUsedForOne;
+      if (debugMsg) {
+        // *debugMsg << ss.str();
+      }
+    }
+    mtx_.unlock();
+  }
   reverb.host(output->data());
 }
 
@@ -445,6 +498,7 @@ void Reverberation::conv1d(
   fl::Variable signalVariable(signalArray, false);
 
   fl::Variable augmentedVariable = reverbConv.forward(signalVariable);
+  augmentedVariable.eval();
   augmentedVariable.host(output->data());
 }
 

@@ -6,6 +6,7 @@
 #include <random>
 #include <string>
 #include <vector>
+#include <mutex> 
 
 #include "experimental/augmentation/AudioLoader.h"
 #include "experimental/augmentation/SoundEffect.h"
@@ -90,6 +91,11 @@ class Reverberation : public SoundEffect {
   std::uniform_real_distribution<float> randomAbsorptionCoefficient_;
   std::uniform_real_distribution<float> randomDistanceToWallInMeters_;
   std::uniform_int_distribution<int> randomNumWalls_;
+
+  std::mutex mtx_;
+  int memUsed_ = 0;
+  int maxMemUsed_ = 0;
+  int maxMemUsedForOne_ = 0;
 };
 
 } // namespace augmentation

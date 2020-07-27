@@ -143,7 +143,6 @@ void LexiconFreeSeq2SeqDecoder::decodeStep(
         opt_.logAdd,
         true);
     updateLMCache(lm_, hyp_[t + 1]);
-
   } // End of decoding
 
   while (t > 0 && hyp_[t].empty()) {

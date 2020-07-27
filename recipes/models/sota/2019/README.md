@@ -10,7 +10,7 @@ In the paper we are considering:
   - CTC
 - different settings:
   - supervised LibriSpeech 1k hours
-  - supervised LibriSpeech 1k hours + [unsupervised LibriVox 57k hours](https://github.com/facebookresearch/libri-light) (for LibriVox we generate pseudo labels to use them as a target),
+  - supervised LibriSpeech 1k hours + [unsupervised LibriVox 57k hours](https://github.com/facebookresearch/libri-light) (for LibriVox we generate pseudo-labels to use them as a target),
 - and different language models:
   - word-piece (ngram, ConvLM)
   - word-based (ngram, ConvLM, transformer)
@@ -41,23 +41,18 @@ tree -L 2
 ```
 
 ## Instructions to reproduce training and decoding
-- Detailed language models recipes one can find in the `lm` directory.
-- To reproduce acoustic models training on Librispeech (1k hours) please go to the `librispeech` directory.
-- For models trained on Librispeech 1k hours and unsupervised Librilight data (with generated pseudo labels) we release for now models themselves, arch files and train config (full details are coming soon), check `librivox` directory.
-- Rescoring steps are also coming soon (with Transformer language model for rescoring).
-
-### Beam-search decoding
-- Fix the paths inside `decode*.cfg`
-- Run decoding with `decode*.cfg`
-```
-[...]/wav2letter/build/Decoder --flagsfile path/to/necessary/decode/config --minloglevel=0 --logtostderr=1
-```
+- To reproduce acoustic models training on Librispeech (1k hours) and beam-search decoding of these models check the `librispeech` directory.
+- Details on pseudolabels preparation is in the directory `lm_corpus_and_PL_generation` (raw LM corpus  which has no intersection with Librovox data is prepared in the `raw_lm_corpus`)
+- To reproduce acoustic models training on Librispeech 1k hours + unsupervised LibriVox data (with generated pseudo-labels) and beam-search decoding of these models, check `librivox` directory.
+- Details on language models training one can find in the `lm` directory.
+- Beam dump for the best models and beam rescoring can be found in the `rescoring` directory.
+- Disentangling of acoustic and linguistic representations analyis (TTS and Segmentation experiments) are in `lm_analysis`.
 
 ## Tokens and Lexicon sets
 
-| Lexicon | Tokens | Beam-search lexicon |
-|:-:|:-:|:-:|
-| [Lexicon](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/librispeech-train%2Bdev-unigram-10000-nbest10.lexicon) | [Tokens](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/librispeech-train-all-unigram-10000.tokens) | [Beam-search lexicon](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/decoder-unigram-10000-nbest10.lexicon) |
+| Lexicon | Tokens | Beam-search lexicon | WP tokenizer model |
+|:-:|:-:|:-:|:-:|
+| [Lexicon](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/librispeech-train%2Bdev-unigram-10000-nbest10.lexicon) | [Tokens](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/librispeech-train-all-unigram-10000.tokens) | [Beam-search lexicon](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/decoder-unigram-10000-nbest10.lexicon) | [WP tokenizer model](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/models/am/librispeech-train-all-unigram-10000.model) |
 
 Tokens and lexicon files generated in the `$MODEL_DST/am/` and `$MODEL_DST/decoder/` are the same as in the table.
 
@@ -65,20 +60,20 @@ Tokens and lexicon files generated in the `$MODEL_DST/am/` and `$MODEL_DST/decod
 
 Below there is info about pre-trained acoustic models, which one can use, for example, to reproduce a decoding step.
 
-| Dataset | Acoustic model dev-clean | Acoustic model dev-other | Architecture |
-|:-:|:-:|:-:|:-:|
-| LibriSpeech | [Resnet CTC](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/am_resnet_ctc_librispeech_dev_clean.bin) | [Resnet CTC](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/am_resnet_ctc_librispeech_dev_other.bin) | [Archfile](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/am/am_resnet_ctc.arch)|
-| LibriSpeech + LibriVox | [Resnet CTC](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librivox/models/am/am_resnet_ctc_librivox_dev_clean.bin) | [Resnet CTC](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librivox/models/am/am_resnet_ctc_librivox_dev_other.bin) | [Archfile](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/am/am_resnet_ctc.arch)|
-| LibriSpeech | [TDS CTC](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/am_tds_ctc_librispeech_dev_clean.bin) | [TDS CTC](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/am_tds_ctc_librispeech_dev_other.bin) | [Archfile](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/am/am_tds_ctc.arch)|
-| LibriSpeech + LibriVox | [TDS CTC](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/am_tds_ctc_librivox_dev_clean.bin) | [TDS CTC](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/am_tds_ctc_librivox_dev_other.bin) | [Archfile](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/am/am_tds_ctc_librivox.arch) |
-| LibriSpeech | [Transformer CTC](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/am_transformer_ctc_librispeech_dev_clean.bin) | [Transformer CTC](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/am_transformer_ctc_librispeech_dev_other.bin) | [Archfile](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/am/am_transformer_ctc.arch)|
-| LibriSpeech + LibriVox | - | [Transformer CTC](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librivox/models/am/am_transformer_ctc_librivox_dev_other.bin) | [Archfile](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/am/am_transformer_ctc_librivox.arch)|
-| LibriSpeech | [TDS Seq2Seq](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/am_tds_s2s_librispeech_dev_clean.bin) | [TDS Seq2Seq](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/am_tds_s2s_librispeech_dev_other.bin) | [Archfile](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/am/am_tds_s2s.arch) |
-| LibriSpeech + LibriVox | [TDS Seq2Seq](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librivox/models/am/am_tds_s2s_librivox_dev_clean.bin) | [TDS Seq2Seq](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librivox/models/am/am_tds_s2s_librivox_dev_other.bin) | [Archfile](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/am/am_tds_s2s_librivox.arch) |
-| LibriSpeech | [Transformer Seq2Seq](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/am_transformer_s2s_librispeech_dev_clean.bin) | [Transformer Seq2Seq](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/am_transformer_s2s_librispeech_dev_other.bin) | [Archfile](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/am/am_transformer_s2s.arch) |
-| LibriSpeech + LibriVox | - | [Transformer Seq2Seq](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librivox/models/am/am_transformer_s2s_librivox_dev_other.bin) | [Archfile](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/am/am_transformer_s2s_librivox.arch) |
-
-Here architecture files are the same as `*.arch`,
+| Dataset | Acoustic model dev-clean | Acoustic model dev-other |
+|:-:|:-:|:-:|
+| LibriSpeech | [Resnet CTC clean](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/am_resnet_ctc_librispeech_dev_clean.bin) | [Resnet CTC other](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/am_resnet_ctc_librispeech_dev_other.bin) |
+| LibriSpeech + LibriVox | [Resnet CTC clean](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librivox/models/am/am_resnet_ctc_librivox_dev_clean_icml.bin) | [Resnet CTC other](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librivox/models/am/am_resnet_ctc_librivox_dev_other_icml.bin) |
+| LibriSpeech | [TDS CTC clean](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/am_tds_ctc_librispeech_dev_clean.bin) | [TDS CTC other](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/am_tds_ctc_librispeech_dev_other.bin) |
+| LibriSpeech + LibriVox | [TDS CTC clean](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librivox/models/am/am_tds_ctc_librivox_dev_clean_icml.bin) | [TDS CTC other](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librivox/models/am/am_tds_ctc_librivox_dev_other_icml.bin) |
+| LibriSpeech | [Transformer CTC clean](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/am_transformer_ctc_librispeech_dev_clean.bin) | [Transformer CTC other](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/am_transformer_ctc_librispeech_dev_other.bin) |
+| LibriSpeech + LibriVox | [Transformer CTC clean](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librivox/models/am/am_transformer_ctc_librivox_dev_clean_icml.bin) | [Transformer CTC other](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librivox/models/am/am_transformer_ctc_librivox_dev_other_icml.bin)|
+| LibriSpeech | [Resnet S2S clean](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/am_resnet_s2s_librispeech_dev_clean_icml.bin) | [Resnet S2S other](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/am_resnet_s2s_librispeech_dev_other_icml.bin) |
+| LibriSpeech + LibriVox | [Resnet S2S clean](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librivox/models/am/am_resnet_s2s_librivox_dev_clean_icml.bin) | [Resnet S2S other](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librivox/models/am/am_resnet_s2s_librivox_dev_other_icml.bin) |
+| LibriSpeech | [TDS Seq2Seq clean](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/am_tds_s2s_librispeech_dev_clean.bin) | [TDS Seq2Seq other](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/am_tds_s2s_librispeech_dev_other.bin)|
+| LibriSpeech + LibriVox | [TDS Seq2Seq clean](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librivox/models/am/am_tds_s2s_librivox_dev_clean_icml.bin) | [TDS Seq2Seq other](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librivox/models/am/am_tds_s2s_librivox_dev_other_icml.bin)|
+| LibriSpeech | [Transformer Seq2Seq clean](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/am_transformer_s2s_librispeech_dev_clean.bin) | [Transformer Seq2Seq other](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librispeech/models/am/am_transformer_s2s_librispeech_dev_other.bin) |
+| LibriSpeech + LibriVox | [Transformer Seq2Seq clean](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librivox/models/am/am_transformer_s2s_librivox_dev_clean_icml.bin) | [Transformer Seq2Seq other](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/librivox/models/am/am_transformer_s2s_librivox_dev_other_icml.bin) |
 
 ## Pre-trained language models
 
@@ -93,40 +88,11 @@ Here architecture files are the same as `*.arch`,
 
 **To reproduce decoding step from the paper download these models into `$MODEL_DST/am/` and `$MODEL_DST/decoder/` appropriately.**
 
-## Results
+## Non-overlap LM corpus (Librispeech official LM corpus excluded the data from Librivox)
+One can use prepared corpus to train LM to generate PL on LibriVox data: [raw corpus](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/lm_corpus/librispeech_lm_corpus.minus_librivox.metadata_and_manual_and_missing.corpus.txt) and [normalized corpus](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/lm_corpus/librispeech_lm_corpus_raw_without_librivox.txt.norm.unique) and [4gram LM with 200k vocab](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/lm/lm_nooverlap_librispeech_unique_4gram_200kvocab.bin).
 
-| Data | Model | dev-clean WER % | test-clean WER % | dev-other WER % | test-other WER % | LM |
-|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| Librispeech | CTC resnet | 3.93 | 4.08 | 10.13 | 10.03 | - |
-| Librispeech | CTC resnet | 3.29 | 3.68 | 8.56 | 8.69 | word 4-gram |
-| Librispeech | CTC resnet | 3.00 | 3.29 | 7.50 | 7.53 | word GCNN |
-| Librispeech + LibriVox | CTC resnet | 3.08 | 3.37 | 7.80 | 8.19 | - |
-| Librispeech + LibriVox | CTC resnet | 2.89 | 3.27 | 6.97 | 7.52 | word 4-gram |
-| Librispeech | CTC TDS | 4.22 | 4.63 | 11.16 | 11.16 | - |
-| Librispeech | CTC TDS | 3.49 | 3.98 | 9.18 | 9.53 | word 4-gram |
-| Librispeech | CTC TDS | 2.92 | 3.40 | 7.52 | 8.05 | word GCNN |
-| Librispeech + LibriVox | CTC TDS | 3.01 | 3.37 | 7.92 | 8.23 | - |
-| Librispeech + LibriVox | CTC TDS | 2.87 | 3.38 | 7.22 | 7.63 | word 4-gram |
-| Librispeech | CTC Transformer | 2.99 | 3.09 | 7.31 | 7.40 | - |
-| Librispeech | CTC Transformer | 2.63 | 2.86 | 6.20 | 6.72 | word 4-gram |
-| Librispeech | CTC Transformer | 2.35 | 2.57 | 5.29 | 5.85 | word GCNN |
-| Librispeech + LibriVox | CTC Transformer | - | - | 6.10 | 6.51 | - |
-| Librispeech + LibriVox | CTC Transformer | - | - | 5.69 | 6.18 | word 4-gram |
-| Librispeech | Seq2Seq TDS | 3.20 | 3.43 | 8.20 | 8.30 | - |
-| Librispeech | Seq2Seq TDS | 2.76 | 3.18 | 7.01 | 7.16 | wp 6-gram |
-| Librispeech | Seq2Seq TDS | 2.54 | 2.93 | 6.30 | 6.43 | wp GCNN |
-| Librispeech + LibriVox | Seq2Seq TDS | 2.00 | 2.36 | 4.90 | 5.27 | - |
-| Librispeech + LibriVox | Seq2Seq TDS | 1.95 | 2.33 | 4.55 | 5.16 | wp 6-gram |
-| Librispeech + LibriVox | Seq2Seq TDS | 1.87 | 2.20 | 4.17 | 4.59 | wp GCNN |
-| Librispeech | Seq2Seq Transformer | 2.54 | 2.89 | 6.67 | 6.98 | - |
-| Librispeech | Seq2Seq Transformer | 2.29 | 2.72 | 5.81 | 6.23 | wp 6-gram |
-| Librispeech | Seq2Seq Transformer | 2.12 | 2.40 | 5.20 | 5.70 | wp GCNN |
-| Librispeech + LibriVox | Seq2Seq Transformer | - | - | 4.83 | 5.20 | - |
-| Librispeech + LibriVox | Seq2Seq Transformer | - | - | 4.45 | 4.97 | wp 6-gram |
-| Librispeech + LibriVox | Seq2Seq Transformer | - | - | 3.92 | 4.55 | wp GCNN |
-
-
-Rescoring is coming soon.
+## Generated pseudo-labels used in the paper
+We open-sourced also the generated pseudo-labels on which we trained our model: [pl](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/pl/librivox.lst) and [pl with overlap](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/pl/librivox-overlap.lst). **Make sure to fix the prefixes to the files names in the lists, right now it is set to be `/root/librivox`)
 
 ## Citation
 ```

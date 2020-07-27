@@ -60,6 +60,9 @@ python3 [FAIRSEQ]/train.py [MODEL_DST]/decoder/fairseq_wp_10k_data \
 --log-format=json --log-interval=100 \
 --save-interval-updates=10000 --keep-interval-update=10 \
 --ddp-backend="no_c10d" --distributed-world-size=8 > lm_librispeech_wp_10k_gcnn_14B/train.log
+
+# eval
+cd [FAIRSEQ] && python eval_lm.py [MODEL_DST]/decoder/fairseq_wp_10k_data --gen-subset valid --sample-break-mode eos --seed 42 --tokens-per-sample 1024 --max-tokens=1024 --path lm_librispeech_wp_10k_gcnn_14B/checkpoint_best.pt
 ```
 
 - word Transformer LM is trained on **128 GPUs** with the following learning rate policy: 48 epochs we train with `sqrt_inv` schedule with `lr=1` (16000 updates of warmup is done at the beginning)
@@ -84,6 +87,9 @@ python3 [FAIRSEQ]/train.py [MODEL_DST]/decoder/fairseq_word_data \
 --save-interval-updates=10000 --keep-interval-update=1 --update_freq=1 \
 --skip-invalid-size-inputs-valid-test
 --ddp-backend="no_c10d" > lm_librispeech_word_transformer/train.log
+
+# eval
+cd [FAIRSEQ] && python eval_lm.py [MODEL_DST]/decoder/fairseq_word_data --gen-subset valid --sample-break-mode eos --seed 42 --tokens-per-sample 1024 --max-tokens=1024 --path lm_librispeech_word_transformer/checkpoint_best.pt
 ```
 then we set `lr=0.05` and `max_epoch=100` and continue training with `inv_sqrt` policy.
 
@@ -96,4 +102,4 @@ then we set `lr=0.05` and `max_epoch=100` and continue training with `inv_sqrt` 
 | word-pieces 6-gram | - | 145.4 | 133.7 |
 | word-pieces GCNN | 188M | 61.7 | 61.9 |
 | word-based GCNN | 319M | 57 | 57.9 |
-| Transformer | 429M | 48.2 | 50.2 |
+| Transformer | 562M | 48.2 | 50.2 |

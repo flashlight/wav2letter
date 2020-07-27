@@ -127,10 +127,10 @@ Here `am.arch`, generated `$MODEL_DST/am/tokens.lst` and `$MODEL_DST/decoder/lex
 
 Convolutional language models (ConvLM) are trained with the [fairseq](https://github.com/pytorch/fairseq) toolkit. n-gram language models are trained with the [KenLM](https://github.com/kpu/kenlm) toolkit. The below language models are converted into a binary format compatible with the wav2letter++ decoder.
 
-| Name |	Dataset | Type | Vocab |
-| - | - | - | - |
-[lm_wsj_convlm_char_20B](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/models/lm/lm_wsj_convlm_char_20B.bin) | WSJ | ConvLM 20B | [LM Vocab](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/models/lm/lm_wsj_convlm_char_20B.vocab)
-[lm_wsj_convlm_word_14B](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/models/lm/lm_wsj_convlm_word_14B.bin) | WSJ | ConvLM 14B | [LM Vocab](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/models/lm/lm_wsj_convlm_word_14B.vocab)
-[lm_wsj_kenlm_char_15g_pruned](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/models/lm/lm_wsj_kenlm_char_15g_pruned.bin) | WSJ | 15-gram | -
-[lm_wsj_kenlm_char_20g_pruned](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/models/lm/lm_wsj_kenlm_char_20g_pruned.bin) | WSJ | 20-gram | -
-[lm_wsj_kenlm_word_4g](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/models/lm/lm_wsj_kenlm_word_4g.bin) | WSJ | 4-gram | -
+| Name |	Dataset | Type | Vocab | Fairseq model |
+| - | - | - | - | - |
+[lm_wsj_convlm_char_20B](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/models/lm/lm_wsj_convlm_char_20B.bin) | WSJ | ConvLM 20B | [LM Vocab](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/models/lm/lm_wsj_convlm_char_20B.vocab) | [Fairseq](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/models/lm/lm_wsj_convlm_char_20B.pt)
+[lm_wsj_convlm_word_14B](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/models/lm/lm_wsj_convlm_word_14B.bin) | WSJ | ConvLM 14B | [LM Vocab](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/models/lm/lm_wsj_convlm_word_14B.vocab) | [Fairseq](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/models/lm/lm_wsj_convlm_word_14B.pt)
+[lm_wsj_kenlm_char_15g_pruned](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/models/lm/lm_wsj_kenlm_char_15g_pruned.bin) | WSJ | 15-gram | - | -
+[lm_wsj_kenlm_char_20g_pruned](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/models/lm/lm_wsj_kenlm_char_20g_pruned.bin) | WSJ | 20-gram | - | -
+[lm_wsj_kenlm_word_4g](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/wsj/models/lm/lm_wsj_kenlm_word_4g.bin) | WSJ | 4-gram | - | -

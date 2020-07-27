@@ -136,10 +136,10 @@ Here `am.arch`, generated `$MODEL_DST/am/tokens.lst` and `$MODEL_DST/decoder/lex
 
 Convolutional language models (ConvLM) are trained with the [fairseq](https://github.com/pytorch/fairseq) toolkit. n-gram language models are trained with the [KenLM](https://github.com/kpu/kenlm) (for ngram language models training) toolkit. The below language models are converted into a binary format compatible with the wav2letter++ decoder.
 
-| Name |	Dataset | Type | Vocab |
-| - | - | - | - |
-[lm_librispeech_convlm_char_20B](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/lm/lm_librispeech_convlm_char_20B.bin) | LibriSpeech | ConvLM 20B | [LM Vocab](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/lm/lm_librispeech_convlm_char_20B.vocab)
-[lm_librispeech_convlm_word_14B](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/lm/lm_librispeech_convlm_word_14B.bin) | LibriSpeech | ConvLM 14B | [LM Vocab](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/lm/lm_librispeech_convlm_word_14B.vocab)
-[lm_librispeech_kenlm_char_15g_pruned](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/lm/lm_librispeech_kenlm_char_15g_pruned.bin) | LibriSpeech | 15-gram | -
-[lm_librispeech_kenlm_char_20g_pruned](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/lm/lm_librispeech_kenlm_char_20g_pruned.bin) | LibriSpeech | 20-gram | -
-[lm_librispeech_kenlm_word_4g_200kvocab](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/lm/lm_librispeech_kenlm_word_4g_200kvocab.bin) | LibriSpeech | 4-gram | -
+| Name |	Dataset | Type | Vocab | Fairseq model |
+| - | - | - | - | - |
+[lm_librispeech_convlm_char_20B](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/lm/lm_librispeech_convlm_char_20B.bin) | LibriSpeech | ConvLM 20B | [LM Vocab](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/lm/lm_librispeech_convlm_char_20B.vocab) | [Fairseq](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/lm/lm_librispeech_convlm_char_20B.pt)
+[lm_librispeech_convlm_word_14B](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/lm/lm_librispeech_convlm_word_14B.bin) | LibriSpeech | ConvLM 14B | [LM Vocab](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/lm/lm_librispeech_convlm_word_14B.vocab) | [Fairseq](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/lm/lm_librispeech_convlm_word_14B.pt)
+[lm_librispeech_kenlm_char_15g_pruned](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/lm/lm_librispeech_kenlm_char_15g_pruned.bin) | LibriSpeech | 15-gram | - | -
+[lm_librispeech_kenlm_char_20g_pruned](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/lm/lm_librispeech_kenlm_char_20g_pruned.bin) | LibriSpeech | 20-gram | - | -
+[lm_librispeech_kenlm_word_4g_200kvocab](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/lm/lm_librispeech_kenlm_word_4g_200kvocab.bin) | LibriSpeech | 4-gram | - | -

@@ -99,22 +99,3 @@ python "$FAIRSEQ/preprocess.py" --only-source \
 ```
 
 Run on the resulting `/checkpoint/jacobkahn/ssl-emergency-lm/lm-data/dict.txt`
-
-
-Put this in a `models/lm/readme
-https://github.com/facebookresearch/wav2letter/tree/gilad/recipes/models/sota/2019/lm
-
-
-## Citation
-```
-@INPROCEEDINGS{
-    9054295,
-    author={J. {Kahn} and A. {Lee} and A. {Hannun}},
-    booktitle={ICASSP 2020 - 2020 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)},
-    title={Self-Training for End-to-End Speech Recognition},
-    year={2020},
-    volume={},
-    number={},
-    pages={7084-7088},
-}
-```

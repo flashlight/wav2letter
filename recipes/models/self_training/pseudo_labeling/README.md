@@ -1,5 +1,7 @@
 # Generating, Analyzing, and Filtering Pseudo-Labels
 
+Tools used to analyize and generate pseudo-labels used in experiments can be found here. Refer to [the paper](https://arxiv.org/abs/1909.09116) for optimal parameters used to generate results from the paper.
+
 ## Generating Labels
 
 Using raw sclite logs from decoding, pseudo-labels can be generated and filtering applied by running:
@@ -29,7 +31,7 @@ To run basic analysis, including the Oracle word error rate, the number of sampl
 
 Run:
 ```
-./analyze_dataset \
+./analyze_pseudo_label_dataset \
      --infile [path to generated pseudo-label lst file] \
      --groundtruthfile [path to ground truth lst file]
 ```

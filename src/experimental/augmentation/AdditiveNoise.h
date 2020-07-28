@@ -48,7 +48,6 @@ class AdditiveNoise : public SoundEffect {
     return "AdditiveNoise";
   };
 
- protected:
   void apply(
       std::vector<float>* signal,
       std::stringstream* debugMsg = nullptr,

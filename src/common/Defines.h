@@ -221,6 +221,7 @@ DECLARE_double(sfx_reverb_distance_to_wall_in_meters_max);
 DECLARE_int64(sfx_reverb_num_walls_min);
 DECLARE_int64(sfx_reverb_num_walls_max);
 DECLARE_double(sfx_reverb_jitter);
+DECLARE_string(sfx_reverb_backend);
 
 /* ========== RUN OPTIONS ========== */
 

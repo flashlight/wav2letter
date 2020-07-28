@@ -158,7 +158,7 @@ DEFINE_int64(
 DEFINE_int64(
     sfx_debug_once_every_n_samples,
     100,
-    "sample frequncy to save when debug level is set to save files");
+    "sample frequency to save when debug level is set to save files");
 DEFINE_int64(
     sfx_start_update,
     -1,
@@ -222,6 +222,8 @@ DEFINE_int64(
     16,
     "max number of sound reflecting objects");
 DEFINE_double(sfx_reverb_jitter, 0.1, "max value for random jitter");
+DECLARE_string(sfx_reverb_backend);
+
 
 // RUN OPTIONS
 DEFINE_string(datadir, "", "speech data directory");

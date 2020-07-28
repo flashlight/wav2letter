@@ -3,10 +3,10 @@
 #pragma once
 
 #include <memory>
+#include <mutex>
 #include <random>
 #include <string>
 #include <vector>
-#include <mutex> 
 
 #include "experimental/augmentation/AudioLoader.h"
 #include "experimental/augmentation/SoundEffect.h"
@@ -18,7 +18,7 @@ class Reverberation : public SoundEffect {
  public:
   struct Config {
     std::string impulseResponseDir_;
-    int lengthMilliseconds_ = 0;
+    int lengthMilliseconds_ = 1000;
 
     // https://www.acoustic-supplies.com/absorption-coefficient-chart/
     float absorptionCoefficientMin_ = 0.01; // painted brick
@@ -29,6 +29,12 @@ class Reverberation : public SoundEffect {
     size_t numWallsMax_ = 4; // number of pairs of refelctive objects
     float jitter_ = 0.1;
     size_t sampleRate_ = 16000;
+    enum Backend {
+      GPU_GAB=0,
+      CPU_GAB=1,
+      GPU_COV=2,
+    };
+    Backend backend_ = GPU_GAB;
 
     std::string prettyString() const;
   };
@@ -46,7 +52,6 @@ class Reverberation : public SoundEffect {
     return "Reverberation";
   };
 
- protected:
   void apply(
       std::vector<float>* signal,
       std::stringstream* debugMsg = nullptr,
@@ -63,7 +68,6 @@ class Reverberation : public SoundEffect {
       std::vector<float>* output,
       std::stringstream* debug,
       std::stringstream* debugSaveAugmentedFileName);
-  // Old GPU implementation
   void randomShiftGab(
       const std::vector<float>& input,
       std::vector<float>* output,
@@ -72,13 +76,15 @@ class Reverberation : public SoundEffect {
   void randomShiftGabCpu(
       const std::vector<float>& input,
       std::vector<float>* output,
-      std::stringstream* debug,
-      std::stringstream* debugSaveAugmentedFileName);
+      float firstDelay,
+      float rt60,
+      int numWalls);
   void randomShiftGabGpu(
       const std::vector<float>& input,
       std::vector<float>* output,
-      std::stringstream* debug,
-      std::stringstream* debugSaveAugmentedFileName);
+      float firstDelay,
+      float rt60,
+      int numWalls);
 
   // AudioLoader audioLoader_;
   const Reverberation::Config reverbConfig_;

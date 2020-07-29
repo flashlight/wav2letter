@@ -397,8 +397,7 @@ int main(int argc, char** argv) {
   if (FLAGS_sfx_start_update >= 0) {
     w2l::augmentation::SoundEffect::Config sfxConfig;
     sfxConfig.debug_.debugLevel_ = FLAGS_sfx_debug_level;
-    sfxConfig.debug_.debugOnceEvery_ =
-        FLAGS_sfx_debug_once_every_n_samples;
+    sfxConfig.debug_.debugOnceEvery_ = FLAGS_sfx_debug_once_every_n_samples;
     sfxConfig.debug_.outputPath_ = FLAGS_sfx_debug_output_dir;
     sfxConfig.debug_.outputFilePrefix_ = FLAGS_sfx_debug_file_prefix;
     auto soundEffectChain =
@@ -419,6 +418,10 @@ int main(int argc, char** argv) {
       reverbConf.numWallsMin_ = FLAGS_sfx_reverb_num_walls_min;
       reverbConf.numWallsMax_ = FLAGS_sfx_reverb_num_walls_max;
       reverbConf.jitter_ = FLAGS_sfx_reverb_jitter;
+      reverbConf.backend_ =
+          w2l::augmentation::Reverberation::Config::backendFromString(
+              FLAGS_sfx_reverb_backend);
+
       soundEffectChain->add(std::make_shared<w2l::augmentation::Reverberation>(
           sfxConfig, reverbConf));
     }

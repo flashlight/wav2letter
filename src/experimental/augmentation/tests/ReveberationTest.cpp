@@ -12,13 +12,11 @@
 #include <sstream>
 #include <string>
 
+#include <arrayfire.h>
+
 #include "data/Sound.h"
 #include "experimental/augmentation/Reverberation.h"
-// #include "experimental/augmentation/AudioLoader.h"
-// #include "libraries/common/Utils.h"
-// #include "flashlight/nn/modules/Conv2D.h"
 #include "flashlight/autograd/Functions.h"
-// #include "flashlight/flashlight/autograd/Variable.h"
 #include "flashlight/flashlight/nn/Init.h"
 
 using namespace w2l;
@@ -84,6 +82,101 @@ TimeElapsedReporter::~TimeElapsedReporter() {
             << std::endl;
 }
 
+TEST(Variable, Copy) {
+  const int count = 10;
+  fl::Variable a(af::randu(count), false);
+  fl::Variable b(a.array().copy(), false);
+  std::vector<float> aV(a.elements() * 2);
+  std::vector<float> bV(b.elements() * 2);
+  a.host(aV.data());
+  b.host(bV.data());
+  EXPECT_EQ(aV, bV);
+
+  std::cout << "aV={";
+  for (int i1 = 0; i1 < a.elements(); ++i1) {
+    std::cout << aV[i1] << ", ";
+  }
+  std::cout << "}" << std::endl;
+  std::cout << "bV={";
+  for (int i2 = 0; i2 < b.elements(); ++i2) {
+    std::cout << bV[i2] << ", ";
+  }
+  std::cout << "}" << std::endl;
+
+  a = a * 2;
+
+  a.host(aV.data());
+  b.host(bV.data());
+  EXPECT_NE(aV, bV);
+
+  std::cout << "aV={";
+  for (int i1 = 0; i1 < a.elements(); ++i1) {
+    std::cout << aV[i1] << ", ";
+  }
+  std::cout << "}" << std::endl;
+  std::cout << "bV={";
+  for (int i2 = 0; i2 < b.elements(); ++i2) {
+    std::cout << bV[i2] << ", ";
+  }
+  std::cout << "}" << std::endl;
+
+  a = a * 0.5;
+
+  a.host(aV.data());
+  b.host(bV.data());
+  EXPECT_EQ(aV, bV);
+
+  std::cout << "aV={";
+  for (int i1 = 0; i1 < a.elements(); ++i1) {
+    std::cout << aV[i1] << ", ";
+  }
+  std::cout << "}" << std::endl;
+  std::cout << "bV={";
+  for (int i2 = 0; i2 < b.elements(); ++i2) {
+    std::cout << bV[i2] << ", ";
+  }
+  std::cout << "}" << std::endl;
+
+  a = fl::padding(
+      a,
+      std::vector<std::pair<int, int>>({{count, 0}}),
+      /*val=*/0);
+
+  a.host(aV.data());
+  b.host(bV.data());
+  EXPECT_NE(aV, bV);
+
+  std::cout << "aV={";
+  for (int i1 = 0; i1 < a.elements(); ++i1) {
+    std::cout << aV[i1] << ", ";
+  }
+  std::cout << "}" << std::endl;
+  std::cout << "bV={";
+  for (int i2 = 0; i2 < b.elements(); ++i2) {
+    std::cout << bV[i2] << ", ";
+  }
+  std::cout << "}" << std::endl;
+
+  // trim echo to length of reverb
+  af::array& aArray = a.array();
+  aArray = aArray(af::seq(count, a.elements() - 1));
+
+  a.host(aV.data());
+  b.host(bV.data());
+  EXPECT_EQ(aV, bV);
+
+  std::cout << "aV={";
+  for (int i1 = 0; i1 < a.elements(); ++i1) {
+    std::cout << aV[i1] << ", ";
+  }
+  std::cout << "}" << std::endl;
+  std::cout << "bV={";
+  for (int i2 = 0; i2 < b.elements(); ++i2) {
+    std::cout << bV[i2] << ", ";
+  }
+  std::cout << "}" << std::endl;
+}
+
 TEST(Reverberation, Impulse) {
   const int sampleRate = 16000;
   const float lenSecs = 0.01;
@@ -101,6 +194,7 @@ TEST(Reverberation, Impulse) {
   reverbConfig.numWallsMin_ = 1;
   reverbConfig.numWallsMax_ = 1;
   reverbConfig.jitter_ = 0;
+  reverbConfig.lengthMilliseconds_ = 1;
 
   float signalSampleDistance =
       augmentation::kSpeedOfSoundMeterPerSec / sampleRate;
@@ -109,7 +203,7 @@ TEST(Reverberation, Impulse) {
   for (int b = static_cast<int>(
            augmentation::Reverberation::Config::Backend::GPU_GAB);
        b <=
-       static_cast<int>(augmentation::Reverberation::Config::Backend::GPU_COV);
+       static_cast<int>(augmentation::Reverberation::Config::Backend::GPU_CONV);
        b++) {
     reverbConfig.backend_ =
         static_cast<augmentation::Reverberation::Config::Backend>(b);
@@ -202,25 +296,33 @@ TEST(Reverberation, libriSpeecIterateOverConfigs) {
   augmentation::Reverberation::Config reverbConfig;
 
   std::vector<float> augmented;
-  for (float d = distanceToWallInMetersMin; d < distanceToWallInMetersMax;
-       d *= 4) {
-    reverbConfig.distanceToWallInMetersMin_ = d;
-    reverbConfig.distanceToWallInMetersMax_ = d;
+  for (int b = static_cast<int>(
+           augmentation::Reverberation::Config::Backend::GPU_GAB);
+       b <=
+       static_cast<int>(augmentation::Reverberation::Config::Backend::GPU_CONV);
+       b++) {
+    reverbConfig.backend_ =
+        static_cast<augmentation::Reverberation::Config::Backend>(b);
+    for (float d = distanceToWallInMetersMin; d < distanceToWallInMetersMax;
+         d *= 4) {
+      reverbConfig.distanceToWallInMetersMin_ = d;
+      reverbConfig.distanceToWallInMetersMax_ = d;
 
-    for (int e = numWallsMin; e <= numWallsMax; e *= 4) {
-      reverbConfig.numWallsMin_ = e;
-      reverbConfig.numWallsMax_ = e;
-      for (float a = absorptionCoefficientMin; a <= absorptionCoefficientMax;
-           a *= 4) {
-        reverbConfig.absorptionCoefficientMin_ = a;
-        reverbConfig.absorptionCoefficientMax_ = a;
+      for (int e = numWallsMin; e <= numWallsMax; e *= 4) {
+        reverbConfig.numWallsMin_ = e;
+        reverbConfig.numWallsMax_ = e;
+        for (float a = absorptionCoefficientMin; a <= absorptionCoefficientMax;
+             a *= 4) {
+          reverbConfig.absorptionCoefficientMin_ = a;
+          reverbConfig.absorptionCoefficientMax_ = a;
 
-        augmentation::Reverberation reveberation(sfxConfig, reverbConfig);
-        reveberation.enable(true);
+          augmentation::Reverberation reveberation(sfxConfig, reverbConfig);
+          reveberation.enable(true);
 
-        augmented = signal;
-        reveberation(&augmented);
-        EXPECT_EQ(augmented.size(), signal.size());
+          augmented = signal;
+          reveberation(&augmented);
+          EXPECT_EQ(augmented.size(), signal.size());
+        }
       }
     }
   }

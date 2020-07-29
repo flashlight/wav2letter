@@ -30,9 +30,31 @@ class Reverberation : public SoundEffect {
     float jitter_ = 0.1;
     size_t sampleRate_ = 16000;
     enum Backend {
-      GPU_GAB=0,
-      CPU_GAB=1,
-      GPU_COV=2,
+      GPU_GAB = 0,
+      CPU_GAB = 1,
+      GPU_CONV = 2,
+    };
+    static Config::Backend backendFromString(const std::string& backend) {
+      if (backend == "gpu_gab") {
+        return Backend::GPU_GAB;
+      } else if (backend == "cpu_gab") {
+        return Backend::CPU_GAB;
+      } else {
+        return Backend::GPU_CONV;
+      }
+    }
+    static std::string backendPrettyString(Config::Backend backend) {
+      switch (backend) {
+        case Backend::GPU_GAB:
+          return "gpu_gab";
+        case Backend::CPU_GAB:
+          return "cpu_gab";
+        case Backend::GPU_CONV:
+          return "gpu_conv";
+        default:
+          return std::string("no_such_backend=") +
+              std::to_string(static_cast<int>(backend));
+      }
     };
     Backend backend_ = GPU_GAB;
 
@@ -61,8 +83,9 @@ class Reverberation : public SoundEffect {
   void conv1d(
       const std::vector<float>& input,
       std::vector<float>* output,
-      std::stringstream* debug,
-      std::stringstream* debugSaveAugmentedFileName);
+      float firstDelay,
+      float rt60,
+      int numWalls);
   void randomShift(
       const std::vector<float>& input,
       std::vector<float>* output,

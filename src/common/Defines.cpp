@@ -184,7 +184,10 @@ DEFINE_double(
     sfx_addnoise_max_time_ratio,
     1.0,
     "maximum time in the clean utterance that will have noise added to it");
-DEFINE_int64(sfx_addnoise_n_clips, 1, "number of noise clips to use per utterance");
+DEFINE_int64(
+    sfx_addnoise_n_clips,
+    1,
+    "number of noise clips to use per utterance");
 DEFINE_double(
     sfx_addnoise_min_snr,
     0.01,
@@ -216,14 +219,19 @@ DEFINE_double(
     sfx_reverb_distance_to_wall_in_meters_max,
     10.29,
     "minimum value for random distance in meters to sound relective object");
-DEFINE_int64(sfx_reverb_num_walls_min, 3, "min number of sound reflecting objects");
+DEFINE_int64(
+    sfx_reverb_num_walls_min,
+    3,
+    "min number of sound reflecting objects");
 DEFINE_int64(
     sfx_reverb_num_walls_max,
     16,
     "max number of sound reflecting objects");
 DEFINE_double(sfx_reverb_jitter, 0.1, "max value for random jitter");
-DECLARE_string(sfx_reverb_backend);
-
+DEFINE_string(
+    sfx_reverb_backend,
+    "gpu_gab",
+    "also supports gpu_gab, cpu_gab, gpu_conv");
 
 // RUN OPTIONS
 DEFINE_string(datadir, "", "speech data directory");

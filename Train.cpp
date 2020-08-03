@@ -391,70 +391,70 @@ int main(int argc, char** argv) {
     }
   };
 
-  /* ===================== Sounde Effects Augmenation ===================== */
+  /* ===================== Sound Effects Augmentation ===================== */
 
-  std::shared_ptr<w2l::augmentation::SoundEffectChain> soundEffect;
-  if (FLAGS_sfx_start_update >= 0) {
-    w2l::augmentation::SoundEffect::Config sfxConfig;
-    sfxConfig.debug_.debugLevel_ = FLAGS_sfx_debug_level;
-    sfxConfig.debug_.debugOnceEvery_ = FLAGS_sfx_debug_once_every_n_samples;
-    sfxConfig.debug_.outputPath_ = FLAGS_sfx_debug_output_dir;
-    sfxConfig.debug_.outputFilePrefix_ = FLAGS_sfx_debug_file_prefix;
-    auto soundEffectChain =
-        std::make_shared<w2l::augmentation::SoundEffectChain>(sfxConfig);
+  // std::shared_ptr<w2l::augmentation::SoundEffectChain> soundEffect;
+  // if (FLAGS_sfx_start_update >= 0) {
+  //   w2l::augmentation::SoundEffect::Config sfxConfig;
+  //   sfxConfig.debug_.debugLevel_ = FLAGS_sfx_debug_level;
+  //   sfxConfig.debug_.debugOnceEvery_ = FLAGS_sfx_debug_once_every_n_samples;
+  //   sfxConfig.debug_.outputPath_ = FLAGS_sfx_debug_output_dir;
+  //   sfxConfig.debug_.outputFilePrefix_ = FLAGS_sfx_debug_file_prefix;
+  //   auto soundEffectChain =
+  //       std::make_shared<w2l::augmentation::SoundEffectChain>(sfxConfig);
 
-    // Reverberation is before noise so we only add make the reverberation
-    // effect to the speech signal.
-    if (FLAGS_sfx_add_reverb > -1) {
-      w2l::augmentation::Reverberation::Config reverbConf;
-      reverbConf.absorptionCoefficientMin_ =
-          FLAGS_sfx_reverb_absorption_coefficient_min;
-      reverbConf.absorptionCoefficientMax_ =
-          FLAGS_sfx_reverb_absorption_coefficient_max;
-      reverbConf.distanceToWallInMetersMin_ =
-          FLAGS_sfx_reverb_distance_to_wall_in_meters_min;
-      reverbConf.distanceToWallInMetersMax_ =
-          FLAGS_sfx_reverb_distance_to_wall_in_meters_max;
-      reverbConf.numWallsMin_ = FLAGS_sfx_reverb_num_walls_min;
-      reverbConf.numWallsMax_ = FLAGS_sfx_reverb_num_walls_max;
-      reverbConf.jitter_ = FLAGS_sfx_reverb_jitter;
-      reverbConf.backend_ =
-          w2l::augmentation::Reverberation::Config::backendFromString(
-              FLAGS_sfx_reverb_backend);
+  //   // Reverberation is before noise so we only add make the reverberation
+  //   // effect to the speech signal.
+  //   if (FLAGS_sfx_add_reverb > -1) {
+  //     w2l::augmentation::Reverberation::Config reverbConf;
+  //     reverbConf.absorptionCoefficientMin_ =
+  //         FLAGS_sfx_reverb_absorption_coefficient_min;
+  //     reverbConf.absorptionCoefficientMax_ =
+  //         FLAGS_sfx_reverb_absorption_coefficient_max;
+  //     reverbConf.distanceToWallInMetersMin_ =
+  //         FLAGS_sfx_reverb_distance_to_wall_in_meters_min;
+  //     reverbConf.distanceToWallInMetersMax_ =
+  //         FLAGS_sfx_reverb_distance_to_wall_in_meters_max;
+  //     reverbConf.numWallsMin_ = FLAGS_sfx_reverb_num_walls_min;
+  //     reverbConf.numWallsMax_ = FLAGS_sfx_reverb_num_walls_max;
+  //     reverbConf.jitter_ = FLAGS_sfx_reverb_jitter;
+  //     reverbConf.backend_ =
+  //         w2l::augmentation::Reverberation::Config::backendFromString(
+  //             FLAGS_sfx_reverb_backend);
 
-      soundEffectChain->add(std::make_shared<w2l::augmentation::Reverberation>(
-          sfxConfig, reverbConf));
-    }
+  //     soundEffectChain->add(std::make_shared<w2l::augmentation::Reverberation>(
+  //         sfxConfig, reverbConf));
+  //   }
 
-    // Noise augmentation
-    if (FLAGS_sfx_add_noise && !FLAGS_sfx_addnoise_noisedir.empty()) {
-      w2l::augmentation::AdditiveNoise::Config noiseConf;
-      noiseConf.noiseDir_ = FLAGS_sfx_addnoise_noisedir;
-      noiseConf.minSnr_ = FLAGS_sfx_addnoise_min_snr;
-      noiseConf.maxSnr_ = FLAGS_sfx_addnoise_max_snr;
-      noiseConf.maxTimeRatio_ = FLAGS_sfx_addnoise_max_time_ratio;
-      noiseConf.nClipsPerUtterance_ = FLAGS_sfx_addnoise_n_clips;
-      soundEffectChain->add(std::make_shared<w2l::augmentation::AdditiveNoise>(
-          sfxConfig, noiseConf));
-    }
+  //   // Noise augmentation
+  //   if (FLAGS_sfx_add_noise && !FLAGS_sfx_addnoise_noisedir.empty()) {
+  //     w2l::augmentation::AdditiveNoise::Config noiseConf;
+  //     noiseConf.noiseDir_ = FLAGS_sfx_addnoise_noisedir;
+  //     noiseConf.minSnr_ = FLAGS_sfx_addnoise_min_snr;
+  //     noiseConf.maxSnr_ = FLAGS_sfx_addnoise_max_snr;
+  //     noiseConf.maxTimeRatio_ = FLAGS_sfx_addnoise_max_time_ratio;
+  //     noiseConf.nClipsPerUtterance_ = FLAGS_sfx_addnoise_n_clips;
+  //     soundEffectChain->add(std::make_shared<w2l::augmentation::AdditiveNoise>(
+  //         sfxConfig, noiseConf));
+  //   }
 
-    // Clamp is last to ensure that after all efects the sound values are
-    // within valid range.
-    if (FLAGS_sfx_amp_clamp) {
-      soundEffectChain->add(
-          std::make_shared<w2l::augmentation::ClampAmplitude>(sfxConfig));
-    }
+  //   // Clamp is last to ensure that after all efects the sound values are
+  //   // within valid range.
+  //   if (FLAGS_sfx_amp_clamp) {
+  //     soundEffectChain->add(
+  //         std::make_shared<w2l::augmentation::ClampAmplitude>(sfxConfig));
+  //   }
 
-    soundEffectChain->enable(FLAGS_sfx_start_update == 0);
-    soundEffect = soundEffectChain;
-    std::cout << "soundEffect={" << soundEffect->prettyString() << "}"
-              << std::endl;
-  }
+  //   soundEffectChain->enable(FLAGS_sfx_start_update == 0);
+  //   soundEffect = soundEffectChain;
+  //   std::cout << "soundEffect={" << soundEffect->prettyString() << "}"
+  //             << std::endl;
+  // }
 
   /* ===================== Create Dataset ===================== */
   auto trainds = createDataset(
       FLAGS_train, dicts, lexicon, FLAGS_batchsize, worldRank, worldSize);
-  trainds->augment(soundEffect);
+  // trainds->augment(soundEffect);
 
   if (FLAGS_noresample) {
     LOG_MASTER(INFO) << "Shuffling trainset";
@@ -465,9 +465,9 @@ int main(int argc, char** argv) {
   for (const auto& s : validTagSets) {
     validds[s.first] = createDataset(
         s.second, dicts, lexicon, FLAGS_batchsize, worldRank, worldSize);
-    if (FLAGS_sfx_valid_dataset) {
-      validds[s.first]->augment(soundEffect);
-    }
+    // if (FLAGS_sfx_valid_dataset) {
+    //   validds[s.first]->augment(soundEffect);
+    // }
   }
 
   /* ===================== Hooks ===================== */
@@ -538,7 +538,7 @@ int main(int argc, char** argv) {
        &curEpoch,
        &startUpdate,
        reducer,
-       soundEffect](
+       dicts, lexicon, worldRank, worldSize](
           std::shared_ptr<fl::Module> ntwrk,
           std::shared_ptr<SequenceCriterion> crit,
           std::shared_ptr<W2lDataset> trainset,
@@ -617,144 +617,217 @@ int main(int argc, char** argv) {
           meters.train.wrdEdit.reset();
         };
 
+        std::shared_ptr<w2l::augmentation::SoundEffectChain> soundEffect;
+        {
+          if (FLAGS_sfx_start_update >= 0) {
+            w2l::augmentation::SoundEffect::Config sfxConfig;
+            sfxConfig.debug_.debugLevel_ = FLAGS_sfx_debug_level;
+            sfxConfig.debug_.debugOnceEvery_ = FLAGS_sfx_debug_once_every_n_samples;
+            sfxConfig.debug_.outputPath_ = FLAGS_sfx_debug_output_dir;
+            sfxConfig.debug_.outputFilePrefix_ = FLAGS_sfx_debug_file_prefix;
+            auto soundEffectChain =
+                std::make_shared<w2l::augmentation::SoundEffectChain>(sfxConfig);
+
+            // Reverberation is before noise so we only add make the reverberation
+            // effect to the speech signal.
+            if (FLAGS_sfx_add_reverb > -1) {
+              w2l::augmentation::Reverberation::Config reverbConf;
+              reverbConf.absorptionCoefficientMin_ =
+                  FLAGS_sfx_reverb_absorption_coefficient_min;
+              reverbConf.absorptionCoefficientMax_ =
+                  FLAGS_sfx_reverb_absorption_coefficient_max;
+              reverbConf.distanceToWallInMetersMin_ =
+                  FLAGS_sfx_reverb_distance_to_wall_in_meters_min;
+              reverbConf.distanceToWallInMetersMax_ =
+                  FLAGS_sfx_reverb_distance_to_wall_in_meters_max;
+              reverbConf.numWallsMin_ = FLAGS_sfx_reverb_num_walls_min;
+              reverbConf.numWallsMax_ = FLAGS_sfx_reverb_num_walls_max;
+              reverbConf.jitter_ = FLAGS_sfx_reverb_jitter;
+              reverbConf.backend_ =
+                  w2l::augmentation::Reverberation::Config::backendFromString(
+                      FLAGS_sfx_reverb_backend);
+
+              soundEffectChain->add(std::make_shared<w2l::augmentation::Reverberation>(
+                  sfxConfig, reverbConf));
+            }
+
+            // Noise augmentation
+            if (FLAGS_sfx_add_noise && !FLAGS_sfx_addnoise_noisedir.empty()) {
+              w2l::augmentation::AdditiveNoise::Config noiseConf;
+              noiseConf.noiseDir_ = FLAGS_sfx_addnoise_noisedir;
+              noiseConf.minSnr_ = FLAGS_sfx_addnoise_min_snr;
+              noiseConf.maxSnr_ = FLAGS_sfx_addnoise_max_snr;
+              noiseConf.maxTimeRatio_ = FLAGS_sfx_addnoise_max_time_ratio;
+              noiseConf.nClipsPerUtterance_ = FLAGS_sfx_addnoise_n_clips;
+              soundEffectChain->add(std::make_shared<w2l::augmentation::AdditiveNoise>(
+                  sfxConfig, noiseConf));
+            }
+
+            // Clamp is last to ensure that after all efects the sound values are
+            // within valid range.
+            if (FLAGS_sfx_amp_clamp) {
+              soundEffectChain->add(
+                  std::make_shared<w2l::augmentation::ClampAmplitude>(sfxConfig));
+            }
+
+            soundEffectChain->enable(FLAGS_sfx_start_update == 0);
+            soundEffect = soundEffectChain;
+            std::cout << "soundEffect={" << soundEffect->prettyString() << "}"
+                      << std::endl;
+          }
+        }          
+        std::cout << "trainset=" << trainset.get() << std::endl;
+        trainset = createDataset(
+            FLAGS_train, dicts, lexicon, FLAGS_batchsize, worldRank, worldSize);
+
+        if (FLAGS_noresample) {
+          LOG_MASTER(INFO) << "Shuffling trainset";
+          trainset->shuffle(FLAGS_seed);
+        }
+
+        trainset->augment(soundEffect);
+        std::cout << "trainset=" << trainset.get() << std::endl;
+
         int64_t curBatch = startUpdate;
         while (curBatch < nbatches) {
           ++curEpoch; // counts partial epochs too!
           int epochsAfterDecay = curEpoch - FLAGS_lr_decay;
-          double lrDecayScale = std::pow(
-              0.5, std::max(epochsAfterDecay, 0) / FLAGS_lr_decay_step);
-          ntwrk->train();
-          crit->train();
-          if (FLAGS_reportiters == 0) {
-            resetTimeStatMeters();
-          }
-          if (!FLAGS_noresample) {
-            LOG_MASTER(INFO) << "Shuffling trainset";
-            trainset->shuffle(curEpoch /* seed */);
-          }
-          af::sync();
-          meters.sampletimer.resume();
-          meters.runtime.resume();
-          meters.timer.resume();
+          // double lrDecayScale = std::pow(
+          //     0.5, std::max(epochsAfterDecay, 0) / FLAGS_lr_decay_step);
+          // ntwrk->train();
+          // crit->train();
+          // if (FLAGS_reportiters == 0) {
+          //   resetTimeStatMeters();
+          // }
+          // if (!FLAGS_noresample) {
+          //   LOG_MASTER(INFO) << "Shuffling trainset";
+          //   trainset->shuffle(curEpoch /* seed */);
+          // }
+          // af::sync();
+          // meters.sampletimer.resume();
+          // meters.runtime.resume();
+          // meters.timer.resume();
           LOG_MASTER(INFO) << "Epoch " << curEpoch << " started!";
           for (auto& batch : *trainset) {
+            std::cerr << "read next batch complete!" << std::endl;
             ++curBatch;
-            double lrScheduleScale;
-            if (FLAGS_lrcosine) {
-              const double pi = std::acos(-1);
-              lrScheduleScale =
-                  std::cos(((double)curBatch) / ((double)nbatches) * pi / 2.0);
-            } else {
-              lrScheduleScale = std::pow(
-                  FLAGS_gamma, (double)curBatch / (double)FLAGS_stepsize);
-            }
-            netopt->setLr(
-                initlr * lrDecayScale * lrScheduleScale *
-                std::min(curBatch / double(FLAGS_warmup), 1.0));
-            critopt->setLr(
-                initcritlr * lrDecayScale * lrScheduleScale *
-                std::min(curBatch / double(FLAGS_warmup), 1.0));
-            af::sync();
-            meters.timer.incUnit();
-            meters.sampletimer.stopAndIncUnit();
-            meters.stats.add(batch[kInputIdx], batch[kTargetIdx]);
-            if (af::anyTrue<bool>(af::isNaN(batch[kInputIdx])) ||
-                af::anyTrue<bool>(af::isNaN(batch[kTargetIdx]))) {
-              LOG(FATAL) << "Sample has NaN values - "
-                         << join(",", readSampleIds(batch[kSampleIdx]));
-            }
+            // double lrScheduleScale;
+            // if (FLAGS_lrcosine) {
+            //   const double pi = std::acos(-1);
+            //   lrScheduleScale =
+            //       std::cos(((double)curBatch) / ((double)nbatches) * pi / 2.0);
+            // } else {
+            //   lrScheduleScale = std::pow(
+            //       FLAGS_gamma, (double)curBatch / (double)FLAGS_stepsize);
+            // }
+            // netopt->setLr(
+            //     initlr * lrDecayScale * lrScheduleScale *
+            //     std::min(curBatch / double(FLAGS_warmup), 1.0));
+            // critopt->setLr(
+            //     initcritlr * lrDecayScale * lrScheduleScale *
+            //     std::min(curBatch / double(FLAGS_warmup), 1.0));
+            // af::sync();
+            // meters.timer.incUnit();
+            // meters.sampletimer.stopAndIncUnit();
+            // meters.stats.add(batch[kInputIdx], batch[kTargetIdx]);
+            // if (af::anyTrue<bool>(af::isNaN(batch[kInputIdx])) ||
+            //     af::anyTrue<bool>(af::isNaN(batch[kTargetIdx]))) {
+            //   LOG(FATAL) << "Sample has NaN values - "
+            //              << join(",", readSampleIds(batch[kSampleIdx]));
+            // }
 
-            // forward
-            meters.fwdtimer.resume();
-            auto input = fl::input(batch[kInputIdx]);
-            if (FLAGS_saug_start_update >= 0 &&
-                curBatch >= FLAGS_saug_start_update) {
-              input = saug->forward(input);
-            }
-            if (FLAGS_sfx_start_update >= 0 &&
-                curBatch >= (FLAGS_sfx_start_update - 1)) {
-              soundEffect->enable(true);
-            }
-            auto output = ntwrk->forward({input}).front();
-            af::sync();
-            meters.critfwdtimer.resume();
-            auto loss =
-                crit->forward({output, fl::noGrad(batch[kTargetIdx])}).front();
-            af::sync();
-            meters.fwdtimer.stopAndIncUnit();
-            meters.critfwdtimer.stopAndIncUnit();
+            // // forward
+            // meters.fwdtimer.resume();
+            // auto input = fl::input(batch[kInputIdx]);
+            // if (FLAGS_saug_start_update >= 0 &&
+            //     curBatch >= FLAGS_saug_start_update) {
+            //   input = saug->forward(input);
+            // }
+            // if (FLAGS_sfx_start_update >= 0 &&
+            //     curBatch >= (FLAGS_sfx_start_update - 1)) {
+            //   soundEffect->enable(true);
+            // }
+            // auto output = ntwrk->forward({input}).front();
+            // af::sync();
+            // meters.critfwdtimer.resume();
+            // auto loss =
+            //     crit->forward({output, fl::noGrad(batch[kTargetIdx])}).front();
+            // af::sync();
+            // meters.fwdtimer.stopAndIncUnit();
+            // meters.critfwdtimer.stopAndIncUnit();
 
-            if (af::anyTrue<bool>(af::isNaN(loss.array()))) {
-              LOG(FATAL) << "Loss has NaN values. Samples - "
-                         << join(",", readSampleIds(batch[kSampleIdx]));
-            }
-            meters.train.loss.add(loss.array());
+            // if (af::anyTrue<bool>(af::isNaN(loss.array()))) {
+            //   LOG(FATAL) << "Loss has NaN values. Samples - "
+            //              << join(",", readSampleIds(batch[kSampleIdx]));
+            // }
+            // meters.train.loss.add(loss.array());
 
-            int64_t batchIdx = (curBatch - startUpdate - 1) % trainset->size();
-            int64_t globalBatchIdx = trainset->getGlobalBatchIdx(batchIdx);
-            if (trainEvalIds.find(globalBatchIdx) != trainEvalIds.end()) {
-              evalOutput(output.array(), batch[kTargetIdx], meters.train);
-            }
+            // int64_t batchIdx = (curBatch - startUpdate - 1) % trainset->size();
+            // int64_t globalBatchIdx = trainset->getGlobalBatchIdx(batchIdx);
+            // if (trainEvalIds.find(globalBatchIdx) != trainEvalIds.end()) {
+            //   evalOutput(output.array(), batch[kTargetIdx], meters.train);
+            // }
 
-            // backward
-            meters.bwdtimer.resume();
-            netopt->zeroGrad();
-            critopt->zeroGrad();
-            loss.backward();
-            if (reducer) {
-              reducer->finalize();
-            }
-            af::sync();
-            meters.bwdtimer.stopAndIncUnit();
+            // // backward
+            // meters.bwdtimer.resume();
+            // netopt->zeroGrad();
+            // critopt->zeroGrad();
+            // loss.backward();
+            // if (reducer) {
+            //   reducer->finalize();
+            // }
+            // af::sync();
+            // meters.bwdtimer.stopAndIncUnit();
 
-            // optimizer
-            meters.optimtimer.resume();
+            // // optimizer
+            // meters.optimtimer.resume();
 
-            // scale down gradients by batchsize
-            for (const auto& p : ntwrk->params()) {
-              if (!p.isGradAvailable()) {
-                continue;
-              }
-              p.grad() = p.grad() / FLAGS_batchsize;
-            }
-            for (const auto& p : crit->params()) {
-              if (!p.isGradAvailable()) {
-                continue;
-              }
-              p.grad() = p.grad() / FLAGS_batchsize;
-            }
+            // // scale down gradients by batchsize
+            // for (const auto& p : ntwrk->params()) {
+            //   if (!p.isGradAvailable()) {
+            //     continue;
+            //   }
+            //   p.grad() = p.grad() / FLAGS_batchsize;
+            // }
+            // for (const auto& p : crit->params()) {
+            //   if (!p.isGradAvailable()) {
+            //     continue;
+            //   }
+            //   p.grad() = p.grad() / FLAGS_batchsize;
+            // }
 
-            // clamp gradients
-            if (FLAGS_maxgradnorm > 0) {
-              auto params = ntwrk->params();
-              if (clampCrit) {
-                auto critparams = crit->params();
-                params.insert(
-                    params.end(), critparams.begin(), critparams.end());
-              }
-              fl::clipGradNorm(params, FLAGS_maxgradnorm);
-            }
+            // // clamp gradients
+            // if (FLAGS_maxgradnorm > 0) {
+            //   auto params = ntwrk->params();
+            //   if (clampCrit) {
+            //     auto critparams = crit->params();
+            //     params.insert(
+            //         params.end(), critparams.begin(), critparams.end());
+            //   }
+            //   fl::clipGradNorm(params, FLAGS_maxgradnorm);
+            // }
 
-            // update weights
-            critopt->step();
-            netopt->step();
-            af::sync();
-            meters.optimtimer.stopAndIncUnit();
-            meters.sampletimer.resume();
+            // // update weights
+            // critopt->step();
+            // netopt->step();
+            // af::sync();
+            // meters.optimtimer.stopAndIncUnit();
+            // meters.sampletimer.resume();
 
-            if (FLAGS_reportiters > 0 && curBatch % FLAGS_reportiters == 0) {
-              runValAndSaveModel(
-                  curEpoch, curBatch, netopt->getLr(), critopt->getLr());
-              resetTimeStatMeters();
-              ntwrk->train();
-              crit->train();
-              meters.sampletimer.resume();
-              meters.runtime.resume();
-              meters.timer.resume();
-            }
+            // if (FLAGS_reportiters > 0 && curBatch % FLAGS_reportiters == 0) {
+            //   runValAndSaveModel(
+            //       curEpoch, curBatch, netopt->getLr(), critopt->getLr());
+            //   resetTimeStatMeters();
+            //   ntwrk->train();
+            //   crit->train();
+            //   meters.sampletimer.resume();
+            //   meters.runtime.resume();
+            //   meters.timer.resume();
+            // }
             if (curBatch > nbatches) {
               break;
             }
+            std::cerr << "before read next batch" << std::endl;
           }
           af::sync();
           if (FLAGS_reportiters == 0) {

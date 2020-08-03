@@ -76,7 +76,7 @@ W2lFeatureData W2lDataset::getFeatureData(const int64_t idx) const {
   auto ldData = getLoaderData(idx);
   if (soundEffect_) {
     for (W2lLoaderData& data : ldData) {
-      (*soundEffect_)(&data.input);
+      soundEffect_->operator()(&data.input);
     }
   }
   return featurize(ldData, dicts_);

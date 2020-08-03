@@ -18,7 +18,7 @@ class Reverberation : public SoundEffect {
  public:
   struct Config {
     std::string impulseResponseDir_;
-    int lengthMilliseconds_ = 1000;
+    int lengthMilliseconds_ = 900;
 
     // https://www.acoustic-supplies.com/absorption-coefficient-chart/
     float absorptionCoefficientMin_ = 0.01; // painted brick

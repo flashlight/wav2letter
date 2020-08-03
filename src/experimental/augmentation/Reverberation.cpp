@@ -368,58 +368,70 @@ void Reverberation::conv1d(
     float firstDelay,
     float rt60,
     int numWalls) {
-  af::array signalArray(input.size(), input.data());
+  const size_t maxSize = 1 << 25;
+  const size_t allocatingSize = std::min(input.size(), maxSize);
+  std::cout << "Reverberation::conv1d(input.size()=" << input.size()
+            << ") allocatingSize=" << allocatingSize << std::endl;
+
+  af::array signalArray(allocatingSize, input.data());
   fl::Variable signalVariable(signalArray, false);
-  const float kAdjustDebugRatio = 1;
+  af::sync();
 
-  const size_t halfKernelSize =
-      (reverbConfig_.lengthMilliseconds_ / 1000.0) * reverbConfig_.sampleRate_;
-  const size_t kernelsize = (halfKernelSize * 2) + 1;
-  const size_t center = halfKernelSize + 1;
+  std::shared_ptr<fl::Conv2D> reverbConv;
+  if (!reverbConv) {
+    const size_t halfKernelSize = (reverbConfig_.lengthMilliseconds_ / 1000.0) *
+        reverbConfig_.sampleRate_;
+    // const size_t halfKernelSize = 1 << 10;
+    const size_t kernelsize = (halfKernelSize * 2) + 1;
+    const size_t center = halfKernelSize;
 
-  std::vector<float> kernelVector(kernelsize, 0);
+    std::vector<float> kernelVector(kernelsize, 0);
 
-  const int inputSize = input.size();
-  *output = input;
-  for (int i = 0; i < numWalls; ++i) {
-    float frac = 1.0;
-    std::vector<float> echo = input;
-    size_t totalDelay = 0;
+    const int inputSize = input.size();
+    // for (int i = 0; i < numWalls; ++i) {
+    //   float frac = 1.0;
+    //   std::vector<float> echo = input;
+    //   size_t totalDelay = 0;
 
-    while (true) {
-      const float jitter =
-          1 + reverbConfig_.jitter_ * (randomUnit_)(randomEngine_);
-      size_t delay = 1UL +
-          static_cast<size_t>(jitter * firstDelay * reverbConfig_.sampleRate_);
-      totalDelay += delay;
+    //   while (true) {
+    //     const float jitter =
+    //         1 + reverbConfig_.jitter_ * (randomUnit_)(randomEngine_);
+    //     size_t delay =
+    //         1UL + static_cast<size_t>(
+    //                   jitter * firstDelay * reverbConfig_.sampleRate_);
+    //     totalDelay += delay;
 
-      const float attenuationRandomness =
-          1.0f + reverbConfig_.jitter_ * (randomUnit_)(randomEngine_);
-      const float attenuation =
-          pow(10, -3 * attenuationRandomness * firstDelay / rt60);
-      frac *= attenuation;
+    //     const float attenuationRandomness =
+    //         1.0f + reverbConfig_.jitter_ * (randomUnit_)(randomEngine_);
+    //     const float attenuation =
+    //         pow(10, -3 * attenuationRandomness * firstDelay / rt60);
+    //     frac *= attenuation;
 
-      if ((frac < 1e-3) || (totalDelay >= halfKernelSize)) {
-        break;
-      }
+    //     if ((frac < 1e-3) || (totalDelay >= halfKernelSize)) {
+    //       break;
+    //     }
 
-      const float multiplier = (attenuation / numWalls) * kAdjustDebugRatio;
-      kernelVector[center - totalDelay] = multiplier;
-    }
+    //     const float multiplier = (attenuation / numWalls);
+    //     kernelVector[center - totalDelay] = multiplier;
+    //   }
+    // }
+    // kernelVector[center] = 1.0;
+
+    // af::array kernelArray(kernelVector.size(), kernelVector.data());
+    // fl::Variable kernel(kernelArray, false);
+    fl::Variable kernel(af::randu(kernelsize), false);
+    reverbConv = std::make_shared<fl::Conv2D>(
+        kernel,
+        /*sx=*/1,
+        /*sy*/ 1,
+        /*px=*/kernel.elements() / 2);
+    af::sync();
   }
-  kernelVector[center] = 1.0;
 
-  af::array kernelArray(kernelVector.size(), kernelVector.data());
-  fl::Variable kernel(kernelArray, false);
-  fl::Conv2D reverbConv(
-      kernel,
-      /*sx=*/1,
-      /*sy*/ 1,
-      /*px=*/kernel.elements() / 2);
-
-  fl::Variable augmentedVariable = reverbConv.forward(signalVariable);
-  augmentedVariable.eval();
+  fl::Variable augmentedVariable = reverbConv->forward(signalVariable);
+  // fl::Variable augmentedVariable = signalVariable * 0.7;
   augmentedVariable.host(output->data());
+  af::sync();
 }
 
 void Reverberation::apply(
@@ -459,7 +471,7 @@ void Reverberation::apply(
     conv1d(*signal, &augmented, firstDelay, rt60, numWalls);
   }
 
-  signal->swap(augmented);
+  // signal->swap(augmented);
 }
 
 } // namespace augmentation

@@ -44,6 +44,7 @@ class W2lDataset : public fl::Dataset {
 
   void shuffle(int seed);
 
+  // augment(nullptr) to remove augmentation
   void augment(std::shared_ptr<augmentation::SoundEffect> soundEffect) {
     soundEffect_ = soundEffect;
   }

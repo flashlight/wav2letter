@@ -108,7 +108,7 @@ def is_valid_dir(dir, args):
     return True
 
 def process_experiment(dir, args):
-    print("procesing directory={}".format(os.path.join(args.indir, dir)))
+    print("processing directory={}".format(os.path.join(args.indir, dir)))
 
     perfid = 1
     epoch = 1
@@ -144,7 +144,10 @@ def process_experiment(dir, args):
         # 18: 'dev-clean-WER', 19: 'dev-other-loss', 20: 'dev-other-LER', 21: 'dev-other-WER', 22: 'avg-isz', 
         # 23: 'avg-tsz', 24: 'max-tsz', 25: 'hrs', 26: 'thrpt(sec/sec)', -1: '#'}
 
-        stats = {'train-WER':100.0, 'dev-other-WER':100.0, "epocs":0, "run-name":dir, "min-snr":0 , "clips":0}
+        runningAvgWeight = 10.0;
+        stats = {'train-WER':100.0, 'train-WER-avg':100.0, \
+            'dev-other-WER':100.0,  'dev-other-WER-avg':100.0, \
+                "epocs":0, "run-name":dir, "min-snr":0 , "clips":0}
 
         noiseArgs = re.search(kNoiseFeildsRegEx, dir)
         if noiseArgs is not None:
@@ -157,8 +160,12 @@ def process_experiment(dir, args):
             vals = content[idx].split()
             if len(vals) < max([expected_vals, train_wer_index, other_wer_index, epoc_index]):
                 continue
-            stats['train-WER'] = min(stats['train-WER'], float(vals[train_wer_index]))
-            stats['dev-other-WER'] = min(stats['dev-other-WER'], float(vals[other_wer_index]))
+            stats['train-WER-avg'] = (stats['train-WER-avg'] * runningAvgWeight + float(vals[train_wer_index])) \
+                / (runningAvgWeight + 1.0)
+            stats['train-WER'] = min(stats['train-WER'], stats['train-WER-avg'])
+            stats['dev-other-WER-avg'] = (stats['dev-other-WER-avg'] * runningAvgWeight + float(vals[other_wer_index])) \
+                / (runningAvgWeight + 1.0)
+            stats['dev-other-WER'] = min(stats['dev-other-WER'], stats['dev-other-WER-avg'])
             stats["epocs"] = int(vals[epoc_index])
             epoch = epoch + 1
         perfid = perfid + 1

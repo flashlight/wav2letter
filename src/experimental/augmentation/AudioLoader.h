@@ -27,6 +27,12 @@ class AudioLoader {
 
   Audio loadRandom();
 
+  // Reset to initial state such that calling loadRandom() restarts the random
+  // sequence.
+  void reset() {
+    uniformDistribution_.reset();
+  };
+
   std::string prettyString() const;
 
  private:

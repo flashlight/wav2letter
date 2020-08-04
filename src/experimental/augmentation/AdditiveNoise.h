@@ -17,25 +17,25 @@ namespace augmentation {
 class AdditiveNoise : public SoundEffect {
  public:
   struct Config {
-    double maxTimeRatio_;
-    double minSnr_;
-    double maxSnr_;
-    int nClipsPerUtterance_;
+    double maxTimeRatio_ = 1.0;
+    double minSnr_ = 0.5;
+    double maxSnr_ = 2.0;
+    int nClipsPerUtterance_ = 1.0;
     std::string noiseDir_;
 
     std::string prettyString() const;
   };
 
-  class Random {
-   public:
-    explicit Random(unsigned int randomSeed);
+  // class Random {
+  //  public:
+  //   explicit Random(unsigned int randomSeed);
 
-    int index(int size);
+  //   int index(int size);
 
-   private:
-    std::mt19937 randomEngine_;
-    std::uniform_int_distribution<> uniformDistribution_;
-  };
+  //  private:
+  //   std::mt19937 randomEngine_;
+  //   std::uniform_int_distribution<> uniformDistribution_;
+  // };
 
   AdditiveNoise(
       const SoundEffect::Config& sfxConfig,
@@ -48,20 +48,20 @@ class AdditiveNoise : public SoundEffect {
     return "AdditiveNoise";
   };
 
+  void reset() override;
+
   void apply(
       std::vector<float>* signal,
       std::stringstream* debugMsg = nullptr,
       std::stringstream* debugFilename = nullptr) override;
 
  private:
-  int randomIndexGenerator(int size);
-
   std::mt19937 randomEngine_;
   std::uniform_int_distribution<> uniformDistribution_;
   AudioLoader audioLoader_;
   AdditiveNoise::Config noiseConfig_;
   std::vector<std::string> noiseFilePathVec_;
-  Random random_;
+  // Random random_;
 };
 
 } // namespace augmentation

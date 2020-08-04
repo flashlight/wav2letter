@@ -14,7 +14,6 @@
 
 #include <arrayfire.h>
 
-#include "experimental/augmentation/AudioStats.h"
 #include "flashlight/autograd/Functions.h"
 #include "flashlight/autograd/Variable.h"
 #include "flashlight/common/Histogram.h"
@@ -45,6 +44,16 @@ float calcRt60(float distanceMeters, float absorptionCoefficient) {
 
 float absorptionCoefficient(float distanceMeters, float rt60) {
   return (kSabineConstant * distanceMeters) / (rt60 * kDistToAreasRatio);
+}
+
+void Reverberation::reset() {
+  randomZeroToOne_.reset();
+  randomUnit_.reset();
+  randomDecay_.reset();
+  randomDelay_.reset();
+  randomAbsorptionCoefficient_.reset();
+  randomDistanceToWallInMeters_.reset();
+  randomNumWalls_.reset();
 }
 
 Reverberation::Reverberation(
@@ -165,33 +174,6 @@ void Reverberation::randomShiftGabGpu(
         break;
       }
 
-      // const int memUsed =
-      //     (totalDelay + inputAsVariable.elements()) * sizeof(float);
-      // memUsedForOne += memUsed;
-      // {
-      //   std::stringstream ss;
-      //   mtx_.lock();
-      //   memUsed_ += memUsed;
-      //   if (memUsed_ > maxMemUsed_) {
-      //     maxMemUsed_ = memUsed_;
-      //     ss << "maxMemUsed_=" << (maxMemUsed_ >> 10)
-      //        << "KB memUsed_=" << (memUsed_ >> 10) << "KB"
-      //        << " input.size()=" << input.size() << "("
-      //        << (input.size() >> 10) * sizeof(float) << "KB)"
-      //        << " totalDelay=" << totalDelay << "("
-      //        << (totalDelay >> 10) * sizeof(float) << "KB)"
-      //        << " applyCount_=" << applyCount_ << " echoCount=" << echoCount
-      //        << " memUsedForOne=" << (memUsedForOne >> 10)
-      //        << "KB=" << (memUsedForOne >> 20) << "MB"
-      //        << " maxMemUsedForOne_=" << (maxMemUsedForOne_ >> 10)
-      //        << "KB=" << (maxMemUsedForOne_ >> 20) << "MB" << std::endl;
-      //   }
-      //   mtx_.unlock();
-      //   if (!ss.str().empty()) {
-      //     std::cout << ss.str() << std::endl;
-      //   }
-      // }
-
       // echo = shit(input, totalDelay) * attenuation / numWalls;
       // reverb += echo;
       fl::Variable echo =
@@ -205,28 +187,9 @@ void Reverberation::randomShiftGabGpu(
       echoArray = echoArray(af::seq(1, reverb.elements()));
 
       reverb = reverb + echo;
-      // {
-      //   mtx_.lock();
-      //   memUsed_ -= memUsed;
-      //   mtx_.unlock();
-      // }
     }
   }
 
-  // {
-  //   mtx_.lock();
-  //   if (memUsedForOne > maxMemUsedForOne_) {
-  //     std::stringstream ss;
-  //     ss << " memUsedForOne=" << (memUsedForOne >> 10)
-  //        << "KB=" << (memUsedForOne >> 20) << "MB"
-  //        << " maxMemUsedForOne_=" << (maxMemUsedForOne_ >> 10)
-  //        << "KB=" << (maxMemUsedForOne_ >> 20) << "MB" << std::endl;
-  //     std::cout << ss.str() << std::endl;
-
-  //     maxMemUsedForOne_ = memUsedForOne;
-  //   }
-  //   mtx_.unlock();
-  // }
   reverb.host(output->data());
 }
 
@@ -368,7 +331,7 @@ void Reverberation::conv1d(
     float firstDelay,
     float rt60,
     int numWalls) {
-  const size_t maxSize = 1 << 25;
+  const size_t maxSize = 1 << 30;
   const size_t allocatingSize = std::min(input.size(), maxSize);
   std::cout << "Reverberation::conv1d(input.size()=" << input.size()
             << ") allocatingSize=" << allocatingSize << std::endl;
@@ -378,7 +341,7 @@ void Reverberation::conv1d(
   af::sync();
 
   std::shared_ptr<fl::Conv2D> reverbConv;
-  if (!reverbConv) {
+  if (false && !reverbConv) {
     const size_t halfKernelSize = (reverbConfig_.lengthMilliseconds_ / 1000.0) *
         reverbConfig_.sampleRate_;
     // const size_t halfKernelSize = 1 << 10;
@@ -420,7 +383,7 @@ void Reverberation::conv1d(
     // af::array kernelArray(kernelVector.size(), kernelVector.data());
     // fl::Variable kernel(kernelArray, false);
     fl::Variable kernel(af::randu(kernelsize), false);
-    reverbConv = std::make_shared<fl::Conv2D>(
+    auto reverbConv = std::make_shared<fl::Conv2D>(
         kernel,
         /*sx=*/1,
         /*sy*/ 1,
@@ -428,8 +391,8 @@ void Reverberation::conv1d(
     af::sync();
   }
 
-  fl::Variable augmentedVariable = reverbConv->forward(signalVariable);
-  // fl::Variable augmentedVariable = signalVariable * 0.7;
+  // fl::Variable augmentedVariable = reverbConv->forward(signalVariable);
+  fl::Variable augmentedVariable = signalVariable * 0.7;
   augmentedVariable.host(output->data());
   af::sync();
 }

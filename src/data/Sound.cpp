@@ -297,7 +297,7 @@ void saveSound(
                        sf_vio_wo_write,
                        sf_vio_wo_tell};
   SNDFILE* file;
-  SF_INFO info;
+  SF_INFO info = {};
 
   if (formats.find(format) == formats.end()) {
     throw std::invalid_argument("saveSound: invalid format");

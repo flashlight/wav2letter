@@ -144,7 +144,8 @@ def process_experiment(dir, args):
         # 18: 'dev-clean-WER', 19: 'dev-other-loss', 20: 'dev-other-LER', 21: 'dev-other-WER', 22: 'avg-isz', 
         # 23: 'avg-tsz', 24: 'max-tsz', 25: 'hrs', 26: 'thrpt(sec/sec)', -1: '#'}
 
-        runningAvgWeight = 10.0;
+        # 1 / smoothing factor 
+        runningAvgWeight = 9.0
         stats = {'train-WER':100.0, 'train-WER-avg':100.0, \
             'dev-other-WER':100.0,  'dev-other-WER-avg':100.0, \
                 "epocs":0, "run-name":dir, "min-snr":0 , "clips":0}

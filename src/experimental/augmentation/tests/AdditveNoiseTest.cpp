@@ -20,7 +20,7 @@ std::string loadPath = "";
 }
 
 const std::string kNoiseInputDirectory =
-    "/checkpoint/avidov/experiments/noise/audio/noise";
+    "/checkpoint/avidov/experiments/noise/audio/clips_10";
 // const std::string kSignalInputDirectory =
 //     "/checkpoint/antares/datasets/librispeech/audio/LibriSpeech/train-clean-100/911/130578";
 const std::string kSignalInputDirectory = "/private/home/avidov/signal";
@@ -44,10 +44,10 @@ TEST(AdditiveNoise, AudioLoader) {
   std::cout << noise.prettyString() << std::endl;
 }
 
-TEST(AdditiveNoise, LogAugmentedSamplesWithVariousfConfigs) {
+TEST(AdditiveNoise, LogAugmentedSamplesWithVariousConfigs) {
   augmentation::SoundEffect::Config sfxConfig;
   sfxConfig.debug_.debugLevel_ =
-      0; // 3; // 0=none, 1=stats, 2=histogram, 3= saveq augmented files
+      4; // 0=none, 1=stats, 2=histogram, 3= save augmented files
   sfxConfig.debug_.outputPath_ = "/tmp";
   sfxConfig.debug_.outputFilePrefix_ = "additive-noise-";
 
@@ -68,9 +68,16 @@ TEST(AdditiveNoise, LogAugmentedSamplesWithVariousfConfigs) {
           noiseConfig.nClipsPerUtterance_ = nClipsPerUtterance_;
           noiseConfig.noiseDir_ = kNoiseInputDirectory;
 
-          augmentation::AdditiveNoise noiseAdder(sfxConfig, noiseConfig);
+          auto soundEffectChain =
+              std::make_shared<w2l::augmentation::SoundEffectChain>(sfxConfig);
+          soundEffectChain->add(
+              std::make_shared<w2l::augmentation::AdditiveNoise>(
+                  sfxConfig, noiseConfig));
+          soundEffectChain->add(
+              std::make_shared<w2l::augmentation::ClampAmplitude>(sfxConfig));
+
           std::vector<float> augmented = signal.data_;
-          noiseAdder(&augmented);
+          soundEffectChain->operator()(&augmented);
 
           EXPECT_EQ(augmented.size(), signal.data_.size());
           std::cout << "minSnr=" << minSnr << std::endl;

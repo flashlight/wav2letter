@@ -74,6 +74,8 @@ class Reverberation : public SoundEffect {
     return "Reverberation";
   };
 
+  void reset() override;
+
   void apply(
       std::vector<float>* signal,
       std::stringstream* debugMsg = nullptr,

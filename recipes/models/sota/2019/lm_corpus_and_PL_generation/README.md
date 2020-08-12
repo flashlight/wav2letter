@@ -15,7 +15,7 @@ This document describes normalization of "no overlap" language model corpus, whi
 
 ### Data Normalization (Librispeech LM data without Librivox)
 ```
-git clone --recursive https://github.com/moses-smt/mosesdecoder.git
+git clone --recursive https://github.com/moses-smt/mosesdecoder.git && cd mosesdecoder && git checkout fd06cdf026dd9e0396db56a7d93c2f6b446a1e02 && cd ..
 pip install num2words roman
 source normalize.sh ../raw_lm_corpus/librispeech_lm_corpus.minus_librivox.metadata_and_manual_and_missing.corpus.txt
 python3 generate_uniq.py librispeech_lm_corpus_raw_without_librivox.txt.norm

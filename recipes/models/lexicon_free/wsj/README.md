@@ -53,7 +53,7 @@ python3 [FAIRSEQ]/train.py [MODEL_DST]/decoder/fairseq_word_data \
 --max-tokens=1024 --tokens-per-sample=1024 --sample-break-mode=none \
 --criterion=adaptive_loss --adaptive-softmax-cutoff='10000,50000,100000' --seed=42 \
 --log-format=json --log-interval=100 \
---save-interval-updates=10000 --keep-interval-update=10 \
+--save-interval-updates=10000 --keep-interval-updates=10 \
 --ddp-backend="no_c10d" --distributed-world-size=8 > [MODEL_DST]/decoder/convlm_models/word_14B/train.log
 ```
   - learning policy for char 14B model: fixed lr, first 30 epochs use `lr=0.5`, then take best snapshot and run continue training with `lr=0.05` during another 30 epochs.
@@ -69,7 +69,7 @@ python3 [FAIRSEQ]/train.py [MODEL_DST]/decoder/fairseq_char_data \
 --max-tokens=512 --tokens-per-sample=512 --sample-break-mode=complete \
 --criterion=cross_entropy --seed=42 \
 --log-format=json --log-interval=100 \
---save-interval-updates=10000 --keep-interval-update=10 \
+--save-interval-updates=10000 --keep-interval-updates=10 \
 --ddp-backend="no_c10d" --distributed-world-size=8 > [MODEL_DST]/decoder/convlm_models/char_14B/train.log
 ```
   - learning policy for char 20B model: for all epoch constant `lr=0.1` is used
@@ -84,7 +84,7 @@ python3 [FAIRSEQ]/train.py [MODEL_DST]/decoder/fairseq_char_data \
 --max-tokens=512 --tokens-per-sample=512 --sample-break-mode=complete \
 --criterion=cross_entropy --seed=42 \
 --log-format=json --log-interval=100 \
---save-interval-updates=10000 --keep-interval-update=10 \
+--save-interval-updates=10000 --keep-interval-updates=10 \
 --ddp-backend="no_c10d" --distributed-world-size=8 > [MODEL_DST]/decoder/convlm_models/char_20B/train.log
 ```
 - compute upper and lower limit on word perplexity for trained LMs

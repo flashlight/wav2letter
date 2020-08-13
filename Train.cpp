@@ -555,8 +555,10 @@ int main(int argc, char** argv) {
     while (curBatch < nbatches) {
       ++curEpoch; // counts partial epochs too!
       int epochsAfterDecay = curEpoch - FLAGS_lr_decay;
-      double lrDecayScale =
-          std::pow(0.5, std::max(epochsAfterDecay, 0) / FLAGS_lr_decay_step);
+      double lrDecayScale = std::pow(
+          0.5,
+          (epochsAfterDecay < 0 ? 0
+                                : 1 + epochsAfterDecay / FLAGS_lr_decay_step));
       ntwrk->train();
       crit->train();
       if (FLAGS_reportiters == 0) {

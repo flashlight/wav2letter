@@ -4,6 +4,8 @@
 [![](https://github.com/facebookresearch/wav2letter/workflows/Publish%20Docker%20images/badge.svg)](https://hub.docker.com/r/wav2letter/wav2letter/tags)
 [![Join the chat at https://gitter.im/wav2letter/community](https://badges.gitter.im/wav2letter/community.svg)](https://gitter.im/wav2letter/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
+**Please use for now stable version at https://github.com/facebookresearch/wav2letter/tree/v0.2. We are restucturing and moving things to the [flashlight](https://github.com/facebookresearch/flashlight)**
+
 wav2letter++ is a fast, open source speech processing toolkit from the Speech team at Facebook AI Research built to facilitate research in end-to-end models for speech recognition. It is written entirely in C++ and uses the [ArrayFire](https://github.com/arrayfire/arrayfire) tensor library and the [flashlight](https://github.com/facebookresearch/flashlight) machine learning library for maximum efficiency. Our approach is detailed in this [arXiv paper](https://arxiv.org/abs/1812.07625).
 
 This repository also contains **pre-trained** models and implementations for various ASR results including:

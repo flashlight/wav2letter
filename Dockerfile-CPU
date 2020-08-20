@@ -14,7 +14,7 @@ COPY . /root/wav2letter
 # ------------------------------------------------------------------
 RUN export MKLROOT=/opt/intel/mkl && \
     cd /root && git clone --recursive https://github.com/facebookresearch/flashlight.git && \
-    cd flashlight && mkdir -p build && cd build && \
+    cd flashlight && git checkout v0.2 && mkdir -p build && cd build && \
     cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CPU && \
     make -j$(nproc) && make install && \
 # ==================================================================

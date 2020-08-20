@@ -13,7 +13,7 @@ COPY . /root/wav2letter
 # flashlight https://github.com/facebookresearch/flashlight.git
 # ------------------------------------------------------------------
 RUN cd /root && git clone --recursive https://github.com/facebookresearch/flashlight.git && \
-    cd /root/flashlight && mkdir -p build && \
+    cd /root/flashlight && git checkout v0.2 && mkdir -p build && \
     cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CUDA && \
     make -j$(nproc) && make install && \
 # ==================================================================

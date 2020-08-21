@@ -1,0 +1,1 @@
+# date	time	epoch	nupdates	lr	lrcriterion	runtime	bch(ms)	smp(ms)	fwd(ms)	crit-fwd(ms)	bwd(ms)	optim(ms)	loss	train-LER	train-WER	hub05_callhome.lst-loss	hub05_callhome.lst-LER	hub05_callhome.lst-WER	hub05_switchboard.lst-loss	hub05_switchboard.lst-LER	hub05_switchboard.lst-WER	avg-isz	avg-tsz	max-tsz	hrs	thrpt(sec/sec)

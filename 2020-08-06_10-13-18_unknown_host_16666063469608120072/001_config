@@ -1,0 +1,36 @@
+{
+    "config": [
+        {
+            "key": "runIdx",
+            "value": "1"
+        },
+        {
+            "key": "timestamp",
+            "value": "2020-08-06, 2020-08-06"
+        },
+        {
+            "key": "hostname",
+            "value": ""
+        },
+        {
+            "key": "runPath",
+            "value": "2020-08-06_10-13-18_unknown_host_16666063469608120072"
+        },
+        {
+            "key": "username",
+            "value": "qiantong"
+        },
+        {
+            "key": "gflags",
+            "value": "--flagfile=\n--fromenv=\n--tryfromenv=\n--undefok=\n--tab_completion_columns=80\n--tab_completion_word=\n--help=false\n--helpfull=false\n--helpmatch=\n--helpon=\n--helppackage=false\n--helpshort=false\n--helpxml=false\n--version=false\n--adambeta1=0.90000000000000002\n--adambeta2=0.999\n--am=\n--am_decoder_tr_dropout=0\n--am_decoder_tr_layerdrop=0\n--am_decoder_tr_layers=1\n--arch=tds_master_sa_do0.1_l3.4.8_mid2.0.arch\n--archdir=/private/home/qiantong/wav2letter_experiments/swbd\n--attention=keyvalue\n--attentionthreshold=2147483647\n--attnWindow=softPretrain\n--attnconvchannel=0\n--attnconvkernel=0\n--attndim=0\n--batchsize=8\n--beamsize=2500\n--beamsizetoken=250000\n--beamthreshold=25\n--blobdata=false\n--channels=1\n--criterion=seq2seq\n--critoptim=sgd\n--datadir=/checkpoint/wav2letter/data/swbd_lists\n--dataorder=output_spiral\n--decoderattnround=1\n--decoderdropout=0\n--decoderrnnlayer=2\n--decodertype=wrd\n--devwin=0\n--emission_dir=\n--emission_queue_size=3000\n--enable_distributed=false\n--encoderdim=512\n--eosscore=0\n--eostoken=true\n--everstoredb=false\n--fftcachesize=1\n--filterbanks=80\n--flagsfile=/private/home/qiantong/wav2letter_experiments/swbd/5.cfg\n--framesizems=25\n--framestridems=10\n--gamma=0.5\n--gumbeltemperature=1\n--input=flac\n--inputbinsize=25\n--inputfeeding=false\n--isbeamdump=false\n--iter=300\n--itersave=false\n--labelsmooth=0.050000000000000003\n--leftWindowSize=50\n--lexicon=/checkpoint/wav2letter/data/swbd_lists/fisher+swbd-train-all-unigram-5000-nbest10.dict\n--linlr=-1\n--linlrcrit=-1\n--linseg=0\n--lm=\n--lm_memory=5000\n--lm_vocab=\n--lmtype=kenlm\n--lmweight=0\n--localnrmlleftctx=0\n--localnrmlrightctx=0\n--logadd=false\n--lr=0.050000000000000003\n--lr_decay=20\n--lr_decay_step=40\n--lrcosine=false\n--lrcrit=0.050000000000000003\n--max_devices_per_node=8\n--maxdecoderoutputlen=120\n--maxgradnorm=10\n--maxisz=9223372036854775807\n--maxload=-1\n--maxrate=10\n--maxsil=50\n--maxtsz=9223372036854775807\n--maxword=-1\n--melfloor=1\n--memstepsize=8338608\n--mfcc=false\n--mfcccoeffs=13\n--mfsc=true\n--minisz=0\n--minrate=3\n--minsil=0\n--mintsz=0\n--momentum=0\n--netoptim=sgd\n--noresample=false\n--nthread=6\n--nthread_decoder=1\n--nthread_decoder_am_forward=1\n--numattnhead=8\n--onorm=none\n--optimepsilon=1e-08\n--optimrho=0.90000000000000002\n--outputbinsize=5\n--pctteacherforcing=99\n--pcttraineval=1\n--pow=false\n--pretrainWindow=30000\n--replabel=0\n--reportiters=5000\n--rightWindowSize=50\n--rndv_filepath=\n--rundir=\n--runname=\n--samplerate=8000\n--sampletarget=0.01\n--samplingstrategy=rand\n--saug_fmaskf=27\n--saug_fmaskn=2\n--saug_start_update=30000\n--saug_tmaskn=2\n--saug_tmaskp=0.20000000000000001\n--saug_tmaskt=70\n--sclite=\n--seed=0\n--show=false\n--showletters=false\n--silscore=0\n--smearing=none\n--smoothingtemperature=1\n--softwoffset=10\n--softwrate=5\n--softwstd=4\n--sqnorm=false\n--stepsize=9223372036854775807\n--surround=\n--tag=\n--target=ltr\n--test=\n--tokens=fisher+swbd-train-all-unigram-5000.vocab-filtered\n--tokensdir=/checkpoint/wav2letter/data/swbd_lists\n--train=switchboard.lst,fisher.lst\n--trainWithWindow=true\n--transdiag=0\n--unkscore=-inf\n--use_memcache=false\n--uselexicon=true\n--usewordpiece=true\n--valid=hub05_callhome.lst,hub05_switchboard.lst\n--warmup=1\n--weightdecay=0\n--wordscore=0\n--wordseparator=_\n--world_rank=0\n--world_size=1\n--alsologtoemail=\n--alsologtostderr=false\n--colorlogtostderr=false\n--drop_log_memory=true\n--log_backtrace_at=\n--log_dir=\n--log_link=\n--log_prefix=true\n--logbuflevel=0\n--logbufsecs=30\n--logemaillevel=999\n--logfile_mode=436\n--logmailer=/bin/mail\n--logtostderr=true\n--max_log_size=1800\n--minloglevel=0\n--stderrthreshold=2\n--stop_logging_if_full_disk=false\n--symbolize_stacktrace=true\n--v=0\n--vmodule=\n"
+        },
+        {
+            "key": "commandline",
+            "value": "/private/home/qiantong/bci/wav2letter/build/Train train --flagsfile=/private/home/qiantong/wav2letter_experiments/swbd/5.cfg --logtostderr"
+        },
+        {
+            "key": "programname",
+            "value": "/private/home/qiantong/bci/wav2letter/build/Train"
+        }
+    ]
+}

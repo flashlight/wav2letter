@@ -108,6 +108,25 @@ void LexiconSeq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
             });
       }
 
+      // Force the first frame to look at silence, because of --surround in use
+      if (t == 0) {
+        double amScore = amScores[validHypo][0];
+        candidatesAdd(
+            candidates_,
+            candidatesBestScore_,
+            opt_.beamThreshold,
+            prevHyp.score + amScore,
+            prevHyp.lmState,
+            lexicon_->getRoot(),
+            &prevHyp,
+            0,
+            -1,
+            outState,
+            prevHyp.amScore + amScore,
+            prevHyp.lmScore);
+        continue;
+      }
+
       for (int r = 0;
            r < std::min(amScores[validHypo].size(), (size_t)opt_.beamSizeToken);
            r++) {

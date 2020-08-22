@@ -1,7 +1,5 @@
 # wav2letter++
 
-[![CircleCI](https://circleci.com/gh/facebookresearch/wav2letter.svg?style=svg)](https://circleci.com/gh/facebookresearch/wav2letter)
-[![](https://github.com/facebookresearch/wav2letter/workflows/Publish%20Docker%20images/badge.svg)](https://hub.docker.com/r/wav2letter/wav2letter/tags)
 [![Join the chat at https://gitter.im/wav2letter/community](https://badges.gitter.im/wav2letter/community.svg)](https://gitter.im/wav2letter/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 **Please use for now stable version at https://github.com/facebookresearch/wav2letter/tree/v0.2. We are restucturing and moving things to the [flashlight](https://github.com/facebookresearch/flashlight)**

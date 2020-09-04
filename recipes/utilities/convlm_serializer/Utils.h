@@ -7,7 +7,7 @@
  */
 #pragma once
 
-#include <flashlight/flashlight/flashlight.h>
+#include <flashlight/flashlight.h>
 #include <string>
 #include <vector>
 

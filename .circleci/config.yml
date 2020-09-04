@@ -1,4 +1,4 @@
- # Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Facebook, Inc. and its affiliates.
  # All rights reserved.
  #
  # This source code is licensed under the BSD-style license found in the
@@ -6,18 +6,67 @@
 
 version: 2.0
 
+gpu: &gpu
+  machine:
+    image: ubuntu-1604:201903-01
+  resource_class: gpu.small
+
 jobs:
-  build-cpu:
-    docker:
-      - image: wav2letter/wav2letter:cpu-base-latest
+  build-cuda:
+    <<: *gpu
     steps:
       - checkout
       - run:
-          name: nothing
+          name: Setup Docker and nvidia-docker
           command: |
-            echo "Hello world"
+            # Install CUDA 10.0
+            wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_10.0.130-1_amd64.deb
+            sudo dpkg -i cuda-repo-ubuntu1604_10.0.130-1_amd64.deb
+            sudo apt-get update || true
+            sudo apt-get --yes --force-yes install cuda
+            nvidia-smi
+            # Install Docker
+            sudo apt-get update
+            sudo apt-get install \
+            apt-transport-https \
+            ca-certificates \
+            curl \
+            software-properties-common
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+            sudo apt-key fingerprint 0EBFCD88
+            sudo add-apt-repository \
+            "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+            $(lsb_release -cs) \
+            stable"
+            sudo apt-get update
+            sudo apt-get install docker-ce
+            # Install nvidia-docker
+            curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | \
+            sudo apt-key add -
+            distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+            curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | \
+            sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+            sudo apt-get update
+            # Install nvidia-docker2 and reload the Docker daemon configuration
+            sudo apt-get install -y nvidia-docker2
+            sudo pkill -SIGHUP dockerd
+      - run:
+          name: Build flashlight with CUDA backend inside nvidia-docker
+          command: |
+            sudo docker run --runtime=nvidia --rm -itd --ipc=host --name wav2letter flml/flashlight:cuda-base-consolidation-latest
+            sudo docker exec -it wav2letter bash -c "mkdir /wav2letter"
+            sudo docker cp . wav2letter:/wav2letter
+            sudo docker exec -it wav2letter bash -c "\
+            apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5 && \
+            git clone https://github.com/facebookresearch/flashlight.git && \
+            cd flashlight && pwd && ls && mkdir -p build && cd build && \
+            export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5 && \
+            export MKLROOT=/opt/intel/mkl && export KENLM_ROOT_DIR=/root/kenlm && \
+            cmake .. -DFL_BACKEND=CUDA && \
+            make -j$(nproc) && make install && \
+            cd /wav2letter && mkdir build && cd build && cmake .. && make -j$(nproc)"
 workflows:
   version: 2
   build_and_install:
     jobs:
-      - build-cpu
+      - build-cuda

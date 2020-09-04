@@ -1,5 +1,6 @@
 # wav2letter++
 
+[![CircleCI](https://circleci.com/gh/facebookresearch/wav2letter.svg?style=svg)](https://circleci.com/gh/facebookresearch/wav2letter)
 [![Join the chat at https://gitter.im/wav2letter/community](https://badges.gitter.im/wav2letter/community.svg)](https://gitter.im/wav2letter/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 wav2letter++ is a [highly efficient](https://arxiv.org/abs/1812.07625) end-to-end automatic speech recognition (ASR) toolkit written entirely in C++, leveraging [ArrayFire](https://github.com/arrayfire/arrayfire) and [flashlight](https://github.com/facebookresearch/flashlight).
@@ -22,6 +23,13 @@ Data preparation for our training and evaluation can be found in [data](data) fo
 The previous iteration of wav2letter can be found in the:
 - (before merging codebases for wav2letter and flashlight) [wav2letter-v0.2](https://github.com/facebookresearch/wav2letter/tree/v0.2) branch.
 - (written in Lua) [`wav2letter-lua`](https://github.com/facebookresearch/wav2letter/tree/wav2letter-lua) branch.
+
+## Build recipes
+At first install flashlight with all its dependencies. Then
+```
+mkdir build && cd build && cmake .. && make -j8
+```
+To link arrayfire and flashlight from specific installed paths, use `cmake .. -Dflashlight_DIR=[PREFIX]/usr/share/flashlight/cmake/ -DArrayFire_DIR=[PREFIX]/usr/share/ArrayFire/cmake`
 
 ## Join the wav2letter community
 * Facebook page: https://www.facebook.com/groups/717232008481207/

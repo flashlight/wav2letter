@@ -1,6 +1,6 @@
 #include "recipes/utilities/convlm_serializer/Utils.h"
+#include <flashlight/contrib/modules/modules.h>
 #include <flashlight/ext/common/SequentialBuilder.h>
-#include <flashlight/flashlight/contrib/modules/modules.h>
 #include <flashlight/lib/common/String.h>
 #include <flashlight/lib/common/System.h>
 #include <glog/logging.h>

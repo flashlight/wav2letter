@@ -18,18 +18,16 @@ This repository includes recipes to reproduce the following research papers as w
 
 Data preparation for our training and evaluation can be found in [data](data) folder.
 
-**Please use for now stable version at https://github.com/facebookresearch/wav2letter/tree/v0.2. We are restucturing and moving things to the [flashlight](https://github.com/facebookresearch/flashlight)**
-
 The previous iteration of wav2letter can be found in the:
 - (before merging codebases for wav2letter and flashlight) [wav2letter-v0.2](https://github.com/facebookresearch/wav2letter/tree/v0.2) branch.
 - (written in Lua) [`wav2letter-lua`](https://github.com/facebookresearch/wav2letter/tree/wav2letter-lua) branch.
 
 ## Build recipes
-At first install flashlight with all its dependencies. Then
+First, isntall [flashlight](https://github.com/facebookresearch/flashlight) with all its dependencies. Then
 ```
 mkdir build && cd build && cmake .. && make -j8
 ```
-To link arrayfire and flashlight from specific installed paths, use `cmake .. -Dflashlight_DIR=[PREFIX]/usr/share/flashlight/cmake/ -DArrayFire_DIR=[PREFIX]/usr/share/ArrayFire/cmake`
+If flashlight or ArrayFire are installed in nonstandard paths via `CMAKE_INSTALL_PREFIX`, they can be found by passing `-Dflashlight_DIR=[PREFIX]/usr/share/flashlight/cmake/ -DArrayFire_DIR=[PREFIX]/usr/share/ArrayFire/cmake` when running `cmake`.
 
 ## Join the wav2letter community
 * Facebook page: https://www.facebook.com/groups/717232008481207/

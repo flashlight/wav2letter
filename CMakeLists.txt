@@ -22,7 +22,7 @@ endif()
 
 # ArrayFire
 # The correct ArrayFire backend target is transitively included by flashlight
-find_package(ArrayFire 3.6.1 REQUIRED)
+find_package(ArrayFire 3.7.1 REQUIRED)
 if (ArrayFire_FOUND)
   message(STATUS "ArrayFire found (include: ${ArrayFire_INCLUDE_DIRS}, library: ${ArrayFire_LIBRARIES})")
 else()

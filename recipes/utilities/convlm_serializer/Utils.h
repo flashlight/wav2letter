@@ -7,9 +7,10 @@
  */
 #pragma once
 
-#include <flashlight/flashlight.h>
 #include <string>
 #include <vector>
+
+#include <flashlight/flashlight/flashlight.h>
 
 struct ConvLMParamState {
   const std::string moduleName;

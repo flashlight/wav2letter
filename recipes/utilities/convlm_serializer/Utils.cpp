@@ -1,10 +1,12 @@
 #include "recipes/utilities/convlm_serializer/Utils.h"
-#include <flashlight/contrib/modules/modules.h>
+
+#include <fstream>
+
 #include <flashlight/ext/common/SequentialBuilder.h>
+#include <flashlight/flashlight/contrib/contrib.h>
 #include <flashlight/lib/common/String.h>
 #include <flashlight/lib/common/System.h>
 #include <glog/logging.h>
-#include <fstream>
 
 using fl::Variable;
 using std::dynamic_pointer_cast;

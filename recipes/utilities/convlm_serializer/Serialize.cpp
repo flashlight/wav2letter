@@ -5,9 +5,11 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
+
 #include <flashlight/app/asr/runtime/Serialization.h>
 #include <flashlight/lib/common/String.h>
 #include <glog/logging.h>
+
 #include "recipes/utilities/convlm_serializer/Utils.h"
 
 using std::shared_ptr;

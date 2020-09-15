@@ -8,12 +8,8 @@
 #include <flashlight/lib/common/System.h>
 #include <glog/logging.h>
 
-using fl::Variable;
-using std::dynamic_pointer_cast;
-using std::make_shared;
 using std::shared_ptr;
 using std::string;
-using std::vector;
 
 vector<ConvLMParamState> loadModelStates(const string& weightFile) {
   LOG(INFO) << "[ConvLMSerializer]: Reading pytorch model of the ConvLM";

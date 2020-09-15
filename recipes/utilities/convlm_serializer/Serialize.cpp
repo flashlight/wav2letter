@@ -12,9 +12,7 @@
 
 #include "recipes/utilities/convlm_serializer/Utils.h"
 
-using std::shared_ptr;
 using std::string;
-using std::vector;
 
 int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);

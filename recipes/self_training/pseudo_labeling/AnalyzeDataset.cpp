@@ -10,9 +10,9 @@
 #include <string>
 #include <vector>
 
-#include "Dataset.h"
+#include "recipes/self_training/pseudo_labeling/Dataset.h"
 
-#include <flashlight/flashlight.h>
+#include <flashlight/flashlight/meter/EditDistanceMeter.h>
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 

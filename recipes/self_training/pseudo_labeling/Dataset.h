@@ -15,7 +15,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "common/Utils.h"
+#include <flashlight/lib/common/String.h>
+#include <flashlight/lib/common/System.h>
 
 namespace filter {
 namespace dataset {
@@ -52,18 +53,18 @@ std::unordered_map<std::string, std::shared_ptr<Sample>>
 createTranscriptDictFromFile(const std::string& path) {
   std::unordered_map<std::string, std::shared_ptr<Sample>> output;
 
-  if (!w2l::fileExists(path)) {
+  if (!fl::lib::fileExists(path)) {
     throw std::invalid_argument(
         "Input file at path '" + path + "' doesn't exist.");
   }
   std::ifstream in(path);
 
   for (std::string lineraw; std::getline(in, lineraw);) {
-    auto line = w2l::trim(lineraw);
+    auto line = fl::lib::trim(lineraw);
     if (line.size() < 1) {
       continue;
     }
-    auto segments = w2l::splitOnWhitespace(line, /* ignoreempty= */ false);
+    auto segments = fl::lib::splitOnWhitespace(line, /* ignoreempty= */ false);
 
     // Vector of space-delimited words for transcript
     std::vector<std::string> transcriptWords;
@@ -72,7 +73,7 @@ createTranscriptDictFromFile(const std::string& path) {
         segments.end(),
         std::back_inserter(transcriptWords));
     // Raw transcript
-    auto transcript = w2l::join(" ", segments.begin() + 3, segments.end());
+    auto transcript = fl::lib::join(" ", segments.begin() + 3, segments.end());
     output.insert({/* sid */ segments[0],
                    std::make_shared<Sample>(/* sid */ segments[0], /*
 path */ segments[1], /* duration */ segments[2], transcript, transcriptWords)});
@@ -87,7 +88,7 @@ void writeTranscriptDictToFile(
   if (outpath.empty()) {
     throw std::invalid_argument("Outpath to write list file to is empty");
   }
-  if (w2l::fileExists(outpath)) {
+  if (fl::lib::fileExists(outpath)) {
     throw std::invalid_argument(
         "Output file at path '" + outpath + "' already exists.");
   }

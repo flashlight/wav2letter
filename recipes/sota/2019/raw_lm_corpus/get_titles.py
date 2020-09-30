@@ -46,6 +46,7 @@ def main():
     if not os.path.exists(args.cachepath):
         raise ValueError("cachepath not found")
 
+    global CACHE_PATH
     CACHE_PATH = args.cachepath
 
     book_ids = []

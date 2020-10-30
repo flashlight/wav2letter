@@ -3,7 +3,7 @@
 #include <fstream>
 
 #include <flashlight/ext/common/SequentialBuilder.h>
-#include <flashlight/flashlight/contrib/contrib.h>
+#include <flashlight/fl/contrib/contrib.h>
 #include <flashlight/lib/common/String.h>
 #include <flashlight/lib/common/System.h>
 #include <glog/logging.h>

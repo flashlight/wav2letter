@@ -12,7 +12,7 @@
 
 #include "recipes/self_training/pseudo_labeling/Dataset.h"
 
-#include <flashlight/flashlight/meter/EditDistanceMeter.h>
+#include <flashlight/fl/meter/EditDistanceMeter.h>
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 

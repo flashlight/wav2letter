@@ -53,6 +53,10 @@ jobs:
       - run:
           name: Build flashlight with CUDA backend inside nvidia-docker
           command: |
+            if [ ! -z "$DOCKER_USERNAME" ]
+            then
+                sudo docker login -u=$DOCKER_USERNAME -p=$DOCKER_PASSWORD
+            fi
             sudo docker run --runtime=nvidia --rm -itd --ipc=host --name wav2letter flml/flashlight:cuda-base-consolidation-latest
             sudo docker exec -it wav2letter bash -c "mkdir /wav2letter"
             sudo docker cp . wav2letter:/wav2letter

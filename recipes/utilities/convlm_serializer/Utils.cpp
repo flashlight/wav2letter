@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 #include "recipes/utilities/convlm_serializer/Utils.h"
 
 #include <fstream>
@@ -6,7 +13,6 @@
 #include <flashlight/fl/contrib/contrib.h>
 #include <flashlight/lib/common/String.h>
 #include <flashlight/lib/common/System.h>
-#include <glog/logging.h>
 
 using fl::Variable;
 using std::dynamic_pointer_cast;
@@ -16,8 +22,8 @@ using std::string;
 using std::vector;
 
 vector<ConvLMParamState> loadModelStates(const string& weightFile) {
-  LOG(INFO) << "[ConvLMSerializer]: Reading pytorch model of the ConvLM";
-  LOG_IF(FATAL, !fl::lib::fileExists(weightFile))
+  FL_LOG(fl::INFO) << "[ConvLMSerializer]: Reading pytorch model of the ConvLM";
+  FL_LOG_IF(fl::FATAL, !fl::lib::fileExists(weightFile))
       << "Path to weight file " << weightFile << " doesn't exist";
 
   vector<ConvLMParamState> states;
@@ -38,31 +44,31 @@ vector<ConvLMParamState> loadModelStates(const string& weightFile) {
       totalElements *= shapes[dim];
       shape_str += std::to_string(shapes[dim]) + " ";
     }
-    LOG(INFO) << "[LoadModelStates]: Reading state " << weightName
-              << " with dims " << nDims << " and shape " << shape_str;
+    FL_LOG(fl::INFO) << "[LoadModelStates]: Reading state " << weightName
+                     << " with dims " << nDims << " and shape " << shape_str;
     vector<float> data(totalElements);
     for (int index = 0; index < totalElements; index++) {
       ss >> data[index];
     }
 
     auto parts = fl::lib::splitOnAnyOf(".", weightName, true);
-    LOG_IF(FATAL, parts.size() < 2)
+    FL_LOG_IF(fl::FATAL, parts.size() < 2)
         << "Param name " << weightName
         << " should be in format {prefix.}layerName.paramName";
     vector<string> names = {fl::lib::join(".", parts.begin(), parts.end() - 2),
                             *(parts.end() - 2),
                             *(parts.end() - 1)};
 
-    LOG_IF(FATAL, names.size() != 3)
+    FL_LOG_IF(fl::FATAL, names.size() != 3)
         << "[LoadModelStates]: Error during parsing parameter name";
 
     af::dim4 dimensions(1, 1, 1, 1);
     // af has fortran-ordering (column-way)
     // revert axis before loading c-ordered matrices (row-way)
     vector<int> reordering = {0, 1, 2, 3};
-    LOG_IF(FATAL, nDims > 4) << "[loadModelStates]: Layer " << weightName
-                             << " has dimensions greater than 4. "
-                             << "This is not supported by ArrayFire";
+    FL_LOG_IF(fl::FATAL, nDims > 4) << "[loadModelStates]: Layer " << weightName
+                                    << " has dimensions greater than 4. "
+                                    << "This is not supported by ArrayFire";
     for (int idx = nDims - 1; idx >= 0; idx--) {
       dimensions[nDims - 1 - idx] = shapes[idx];
       reordering[nDims - 1 - idx] = idx;
@@ -94,10 +100,11 @@ void loadLayer(
   int nParams = layer->params().size();
   int setIdx = -1;
   for (auto idx : layerIndices) {
-    LOG_IF(FATAL, idx >= states.size())
+    FL_LOG_IF(fl::FATAL, idx >= states.size())
         << "[LoadLayer]: states index is out of range";
-    LOG(INFO) << "[LoadLayer]: load layer with param " << states[idx].paramName
-              << " " << states[idx].weights.dims();
+    FL_LOG(fl::INFO) << "[LoadLayer]: load layer with param "
+                     << states[idx].paramName << " "
+                     << states[idx].weights.dims();
     Variable weights;
     if (states[idx].paramName == "weight") {
       setIdx++;
@@ -130,17 +137,17 @@ void loadLayer(
         weights = Variable(states[idx].weights, useGrad);
       }
     } else {
-      LOG(FATAL) << "[LoadLayer]: Unknown weights param "
-                 << states[idx].paramName << " for file layer "
-                 << states[idx].layerName
-                 << " during loading weights into the model";
+      FL_LOG(fl::FATAL) << "[LoadLayer]: Unknown weights param "
+                        << states[idx].paramName << " for file layer "
+                        << states[idx].layerName
+                        << " during loading weights into the model";
     }
-    LOG_IF(FATAL, setIdx >= nParams)
+    FL_LOG_IF(fl::FATAL, setIdx >= nParams)
         << "[LoadLayer]: Incorrect index of parameter for the file layer "
         << states[idx].layerName << ". There are " << nParams
         << " parameters in the module "
         << " but you are trying to set parameter with index " << setIdx;
-    LOG_IF(FATAL, weights.dims() != layer->params()[setIdx].dims())
+    FL_LOG_IF(fl::FATAL, weights.dims() != layer->params()[setIdx].dims())
         << "[CheckSetParams]: The state provides incorrect dimensions for weight tensor."
         << " Loading (layer " << states[idx].paramName
         << ") param dim: " << weights.dims() << " Layer (" << layerName
@@ -159,13 +166,13 @@ void loadModule(
   string moduleName = subModule->prettyString();
   // if no parameters for layer then skip loading weights for it
   if (nParams == 0) {
-    LOG(INFO) << "[LoadModule]: Skip loading params for " << moduleName;
+    FL_LOG(fl::INFO) << "[LoadModule]: Skip loading params for " << moduleName;
     return;
   }
 
   if (dynamic_pointer_cast<fl::Sequential>(subModule) != nullptr) {
     // in the sequential block
-    LOG(INFO) << "[LoadModule]: Load sequential block " << moduleName;
+    FL_LOG(fl::INFO) << "[LoadModule]: Load sequential block " << moduleName;
     auto moduleCast = dynamic_pointer_cast<fl::Sequential>(subModule);
     auto submodules = moduleCast->modules();
     for (auto smd : submodules) {
@@ -174,7 +181,7 @@ void loadModule(
     }
   } else if (dynamic_pointer_cast<fl::Residual>(subModule) != nullptr) {
     // in the res block
-    LOG(INFO) << "[LoadModule]: Load residual block " << moduleName;
+    FL_LOG(fl::INFO) << "[LoadModule]: Load residual block " << moduleName;
     auto moduleCast = dynamic_pointer_cast<fl::Residual>(subModule);
     auto submodules = moduleCast->modules();
     auto projectionIndices = moduleCast->getProjectionsIndices();
@@ -205,7 +212,8 @@ void loadModule(
       }
     }
   } else if (dynamic_pointer_cast<fl::AdaptiveSoftMaxLoss>(subModule)) {
-    LOG(INFO) << "[LoadModule]: Load adaptive softmax loss " << moduleName;
+    FL_LOG(fl::INFO) << "[LoadModule]: Load adaptive softmax loss "
+                     << moduleName;
     vector<int> moduleStateIndices(subModule->params().size());
     std::iota(moduleStateIndices.begin(), moduleStateIndices.end(), loadIdx);
     loadIdx += subModule->params().size();
@@ -218,7 +226,7 @@ void loadModule(
         paramIdx);
   } else {
     // collect indices for all weights corresponding to the same layer name
-    LOG_IF(FATAL, loadIdx >= states.size())
+    FL_LOG_IF(fl::FATAL, loadIdx >= states.size())
         << "[LoadModule]: states index is out of range";
     string loadModuleName = states[loadIdx].layerName;
     vector<int> moduleStateIndices({loadIdx++});
@@ -227,8 +235,8 @@ void loadModule(
       moduleStateIndices.push_back(loadIdx);
       loadIdx++;
     }
-    LOG(INFO) << "[LoadModule]: Load module " << loadModuleName << " into "
-              << moduleName;
+    FL_LOG(fl::INFO) << "[LoadModule]: Load module " << loadModuleName
+                     << " into " << moduleName;
     loadLayer(
         states,
         moduleStateIndices,
@@ -243,7 +251,7 @@ void setParams(
     shared_ptr<fl::Module> network,
     shared_ptr<fl::BinaryModule> criterion,
     vector<ConvLMParamState>& states) {
-  LOG(INFO) << "[SetParams]: Load weights into the model";
+  FL_LOG(fl::INFO) << "[SetParams]: Load weights into the model";
 
   int loadIdx = 0, paramIdx = 0;
   auto networkCast = dynamic_pointer_cast<fl::Sequential>(network);
@@ -254,9 +262,9 @@ void setParams(
   if ((criterion != nullptr) && (criterion->params().size() > 0)) {
     loadModule(states, criterion, criterion, loadIdx, 0);
   }
-  LOG_IF(FATAL, loadIdx < states.size())
+  FL_LOG_IF(fl::FATAL, loadIdx < states.size())
       << "[SetParams]: Some weights are remain in the file during loading the model";
-  LOG(INFO)
+  FL_LOG(fl::INFO)
       << "[SetParams]: Finish loading weight from the file into the model";
 }
 
@@ -268,9 +276,9 @@ void loadConvLM(
     int outputTokensDim,
     const vector<int>& adaptiveTail /*  = std::vector<int>() */,
     int inputSizeAdaptiveSoftmax /* = 0 */) {
-  LOG_IF(FATAL, !fl::lib::fileExists(archFile))
+  FL_LOG_IF(fl::FATAL, !fl::lib::fileExists(archFile))
       << "Path to arch file " << archFile << " doesn't exist";
-  LOG_IF(FATAL, !fl::lib::fileExists(weightFile))
+  FL_LOG_IF(fl::FATAL, !fl::lib::fileExists(weightFile))
       << "Path to weight file " << weightFile << " doesn't exist";
   // create network and criterion
   network = fl::ext::buildSequentialModule(archFile, 1, outputTokensDim);
@@ -286,10 +294,10 @@ void loadConvLM(
   }
 
   // Loading weights from the binary file
-  LOG(INFO) << "[LoadConvLM]: Load states";
+  FL_LOG(fl::INFO) << "[LoadConvLM]: Load states";
   auto modelStates = loadModelStates(weightFile);
-  LOG_IF(
-      FATAL,
+  FL_LOG_IF(
+      fl::FATAL,
       modelStates.size() !=
           network->params().size() +
               (criterion ? criterion->params().size() : 0))
@@ -299,6 +307,6 @@ void loadConvLM(
       << " criterion params";
 
   // Load weight states into network and criterion
-  LOG(INFO) << "[LoadConvLM]: set params";
+  FL_LOG(fl::INFO) << "[LoadConvLM]: set params";
   setParams(network, criterion, modelStates);
 }

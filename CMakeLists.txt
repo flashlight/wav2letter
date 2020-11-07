@@ -5,6 +5,7 @@ project(wav2letter++)
 # C++ 11 is required
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 # Find and setup OpenMP
 find_package(OpenMP)
@@ -43,5 +44,8 @@ if (flashlight_FOUND)
   endif ()
 endif ()
 
+# Dependencies
+find_package(FFTW3 REQUIRED)
+find_package(SndFile REQUIRED)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/recipes)

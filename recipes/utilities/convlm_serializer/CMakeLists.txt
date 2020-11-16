@@ -15,6 +15,5 @@ target_include_directories(
 target_link_libraries(
   SerializeConvLM
   PUBLIC
-  flashlight::flashlight
   flashlight::flashlight-app-asr
   )

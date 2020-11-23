@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.10)
 
 add_executable(
     SerializeConvLM
@@ -8,12 +8,12 @@ add_executable(
 
 target_include_directories(
     SerializeConvLM
-    PUBLIC
+    PRIVATE
     ${PROJECT_SOURCE_DIR}
   )
 
 target_link_libraries(
   SerializeConvLM
-  PUBLIC
+  PRIVATE
   flashlight::flashlight-app-asr
   )

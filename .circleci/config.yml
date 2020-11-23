@@ -65,7 +65,7 @@ jobs:
             git clone https://github.com/facebookresearch/flashlight.git && \
             cd flashlight && pwd && ls && mkdir -p build && cd build && \
             export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5 && \
-            export MKLROOT=/opt/intel/mkl && export KENLM_ROOT_DIR=/root/kenlm && \
+            export MKLROOT=/opt/intel/mkl && export KENLM_ROOT=/root/kenlm && \
             cmake .. -DFL_BACKEND=CUDA -DFL_BUILD_TESTS=OFF -DFL_BUILD_EXAMPLES=OFF && \
             make -j$(nproc) && make install && \
             cd /wav2letter && mkdir build && cd build && cmake .. && make -j$(nproc)"

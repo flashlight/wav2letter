@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.10)
 
 project(wav2letter++-recipes-models-local_prior_match)
 
@@ -15,7 +15,7 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/src/runtime) # for target runtime_lpm_oss
 
 target_link_libraries(
   wav2letter++_lpm_oss
-  PUBLIC
+  PRIVATE
   wav2letter++
   runtime_lpm_oss
   module_lpm_oss
@@ -29,7 +29,7 @@ add_executable(
 
 target_include_directories(
   Train_lpm_oss
-  PUBLIC
+  PRIVATE
   ${PROJECT_SOURCE_DIR}/../../..
   )
 
@@ -46,6 +46,6 @@ add_executable(
 
 target_link_libraries(
   decode_len_lpm
-  PUBLIC
+  PRIVATE
   wav2letter++
   )

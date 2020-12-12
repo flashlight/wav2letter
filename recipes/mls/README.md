@@ -1,8 +1,8 @@
 # Multilingual LibriSpeech (MLS)
 
-Multilingual LibriSpeech (MLS) dataset is a large multilingual corpus suitable for speech research. The dataset is derived from read audiobooks from LibriVox and consists of 8 languages - English, German, Dutch, Spanish, French, Italian, Portuguese, Polish. It is released on [OpenSLR](http://openslr.org/).
+Multilingual LibriSpeech (MLS) dataset is a large multilingual corpus suitable for speech research. The dataset is derived from read audiobooks from LibriVox and consists of 8 languages - English, German, Dutch, Spanish, French, Italian, Portuguese, Polish. It is available on [OpenSLR](http://openslr.org/).
 
-This directory contains pretrained monolingual model releasing and steps for results reproduction.
+This directory contains pretrained monolingual models and also steps to reproduce the results. All the models are trained using 32GB Nvidia V100 GPUs. We have used a total of 64 GPUs for training English, German, Dutch, Spanish, French models and 16 GPUs for training models on Italian, Portuguese and Polish.
 
 
 ## Dependencies
@@ -14,56 +14,67 @@ This directory contains pretrained monolingual model releasing and steps for res
 
 |  Language  |                                 Token Set                                 |                                    Train Lexicon                                   |                             Joint Lexicon (Train + GB)                             |
 |:----------:|:-------------------------------------------------------------------------:|:----------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------:|
-|   English  |   [TOKEN](s3://dl.fbaipublicfiles.com/wav2letter/mls/english/tokens.txt)  |   [Lexicon](s3://dl.fbaipublicfiles.com/wav2letter/mls/english/train_lexicon.txt)  |   [Lexicon](s3://dl.fbaipublicfiles.com/wav2letter/mls/english/joint_lexicon.txt)  |
-|   German   |   [TOKEN](s3://dl.fbaipublicfiles.com/wav2letter/mls/german/tokens.txt)   |   [Lexicon](s3://dl.fbaipublicfiles.com/wav2letter/mls/german/train_lexicon.txt)   |   [Lexicon](s3://dl.fbaipublicfiles.com/wav2letter/mls/german/joint_lexicon.txt)   |
-|    Dutch   |    [TOKEN](s3://dl.fbaipublicfiles.com/wav2letter/mls/dutch/tokens.txt)   |    [Lexicon](s3://dl.fbaipublicfiles.com/wav2letter/mls/dutch/train_lexicon.txt)   |    [Lexicon](s3://dl.fbaipublicfiles.com/wav2letter/mls/dutch/joint_lexicon.txt)   |
-|   French   |   [TOKEN](s3://dl.fbaipublicfiles.com/wav2letter/mls/french/tokens.txt)   |   [Lexicon](s3://dl.fbaipublicfiles.com/wav2letter/mls/french/train_lexicon.txt)   |   [Lexicon](s3://dl.fbaipublicfiles.com/wav2letter/mls/french/joint_lexicon.txt)   |
-|   Spanish  |   [TOKEN](s3://dl.fbaipublicfiles.com/wav2letter/mls/spanish/tokens.txt)  |   [Lexicon](s3://dl.fbaipublicfiles.com/wav2letter/mls/spanish/train_lexicon.txt)  |   [Lexicon](s3://dl.fbaipublicfiles.com/wav2letter/mls/spanish/joint_lexicon.txt)  |
-|   Italian  |   [TOKEN](s3://dl.fbaipublicfiles.com/wav2letter/mls/italian/tokens.txt)  |   [Lexicon](s3://dl.fbaipublicfiles.com/wav2letter/mls/italian/train_lexicon.txt)  |   [Lexicon](s3://dl.fbaipublicfiles.com/wav2letter/mls/italian/joint_lexicon.txt)  |
-| Portuguese | [TOKEN](s3://dl.fbaipublicfiles.com/wav2letter/mls/portuguese/tokens.txt) | [Lexicon](s3://dl.fbaipublicfiles.com/wav2letter/mls/portuguese/train_lexicon.txt) | [Lexicon](s3://dl.fbaipublicfiles.com/wav2letter/mls/portuguese/joint_lexicon.txt) |
-|   Polish   |   [TOKEN](s3://dl.fbaipublicfiles.com/wav2letter/mls/polish/tokens.txt)   |   [Lexicon](s3://dl.fbaipublicfiles.com/wav2letter/mls/polish/train_lexicon.txt)   |   [Lexicon](s3://dl.fbaipublicfiles.com/wav2letter/mls/polish/joint_lexicon.txt)   |
+|   English  |   [tokens.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/english/tokens.txt)  |   [train_lexicon.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/english/train_lexicon.txt)  |   [joint_lexicon.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/english/joint_lexicon.txt)  |
+|   German   |   [tokens.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/german/tokens.txt)   |   [train_lexicon.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/german/train_lexicon.txt)   |   [joint_lexicon.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/german/joint_lexicon.txt)   |
+|    Dutch   |    [tokens.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/dutch/tokens.txt)   |    [train_lexicon.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/dutch/train_lexicon.txt)   |    [joint_lexicon.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/dutch/joint_lexicon.txt)   |
+|   French   |   [tokens.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/french/tokens.txt)   |   [train_lexicon.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/french/train_lexicon.txt)   |   [joint_lexicon.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/french/joint_lexicon.txt)   |
+|   Spanish  |   [tokens.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/spanish/tokens.txt)  |   [train_lexicon.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/spanish/train_lexicon.txt)  |   [joint_lexicon.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/spanish/joint_lexicon.txt)  |
+|   Italian  |   [tokens.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/italian/tokens.txt)  |   [train_lexicon.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/italian/train_lexicon.txt)  |   [joint_lexicon.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/italian/joint_lexicon.txt)  |
+| Portuguese | [tokens.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/portuguese/tokens.txt) | [train_lexicon.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/portuguese/train_lexicon.txt) | [joint_lexicon.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/portuguese/joint_lexicon.txt) |
+|   Polish   |   [tokens.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/polish/tokens.txt)   |   [train_lexicon.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/polish/train_lexicon.txt)   |   [joint_lexicon.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/polish/joint_lexicon.txt)   |
 
 
 ## Pre-trained acoustic models
 
 |  Language  |                              Architecture                              |                             Acoustic Model                            |
 |:----------:|:----------------------------------------------------------------------:|:---------------------------------------------------------------------:|
-|   English  |   [Arch](s3://dl.fbaipublicfiles.com/wav2letter/mls/english/arch.txt)  |   [Model](s3://dl.fbaipublicfiles.com/wav2letter/mls/english/am.bin)  |
-|   German   |   [Arch](s3://dl.fbaipublicfiles.com/wav2letter/mls/german/arch.txt)   |   [Model](s3://dl.fbaipublicfiles.com/wav2letter/mls/german/am.bin)   |
-|    Dutch   |    [Arch](s3://dl.fbaipublicfiles.com/wav2letter/mls/dutch/arch.txt)   |    [Model](s3://dl.fbaipublicfiles.com/wav2letter/mls/dutch/am.bin)   |
-|   French   |   [Arch](s3://dl.fbaipublicfiles.com/wav2letter/mls/french/arch.txt)   |   [Model](s3://dl.fbaipublicfiles.com/wav2letter/mls/french/am.bin)   |
-|   Spanish  |   [Arch](s3://dl.fbaipublicfiles.com/wav2letter/mls/spanish/arch.txt)  |   [Model](s3://dl.fbaipublicfiles.com/wav2letter/mls/spanish/am.bin)  |
-|   Italian  |   [Arch](s3://dl.fbaipublicfiles.com/wav2letter/mls/italian/arch.txt)  |   [Model](s3://dl.fbaipublicfiles.com/wav2letter/mls/italian/am.bin)  |
-| Portuguese | [Arch](s3://dl.fbaipublicfiles.com/wav2letter/mls/portuguese/arch.txt) | [Model](s3://dl.fbaipublicfiles.com/wav2letter/mls/portuguese/am.bin) |
-|   Polish   |   [Arch](s3://dl.fbaipublicfiles.com/wav2letter/mls/polish/arch.txt)   |   [Model](s3://dl.fbaipublicfiles.com/wav2letter/mls/polish/am.bin)   |
+|   English  |   [arch.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/english/arch.txt)  |   [am.bin](https://dl.fbaipublicfiles.com/wav2letter/mls/english/am.bin)  |
+|   German   |   [arch.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/german/arch.txt)   |   [am.bin](https://dl.fbaipublicfiles.com/wav2letter/mls/german/am.bin)   |
+|    Dutch   |    [arch.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/dutch/arch.txt)   |    [am.bin](https://dl.fbaipublicfiles.com/wav2letter/mls/dutch/am.bin)   |
+|   French   |   [arch.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/french/arch.txt)   |   [am.bin](https://dl.fbaipublicfiles.com/wav2letter/mls/french/am.bin)   |
+|   Spanish  |   [arch.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/spanish/arch.txt)  |   [am.bin](https://dl.fbaipublicfiles.com/wav2letter/mls/spanish/am.bin)  |
+|   Italian  |   [arch.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/italian/arch.txt)  |   [am.bin](https://dl.fbaipublicfiles.com/wav2letter/mls/italian/am.bin)  |
+| Portuguese | [arch.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/portuguese/arch.txt) | [am.bin](https://dl.fbaipublicfiles.com/wav2letter/mls/portuguese/am.bin) |
+|   Polish   |   [arch.txt](https://dl.fbaipublicfiles.com/wav2letter/mls/polish/arch.txt)   |   [am.bin](https://dl.fbaipublicfiles.com/wav2letter/mls/polish/am.bin)   |
 
 
 ## Pre-trained language models
 
-The `5-gram_lm.arpa` from the tar ball should be used to decode each acoustic model. For faster serialization, people may convert those arpa files into binaries following steps [here](https://kheafield.com/code/kenlm/estimation/).
+The `5-gram_lm.arpa` from the tar ball should be used to decode each acoustic model. For faster loading, people may convert those arpa files into binary format following the steps [here](https://kheafield.com/code/kenlm/estimation/).
 
 |  Language  |                            Language Model                            |
 |:----------:|:--------------------------------------------------------------------:|
-|   English  |   [Model](https://dl.fbaipublicfiles.com/mls/mls_lm_english.tar.gz)  |
-|   German   |   [Model](https://dl.fbaipublicfiles.com/mls/mls_lm_german.tar.gz)   |
-|    Dutch   |    [Model](https://dl.fbaipublicfiles.com/mls/mls_lm_dutch.tar.gz)   |
-|   French   |   [Model](https://dl.fbaipublicfiles.com/mls/mls_lm_french.tar.gz)   |
-|   Spanish  |   [Model](https://dl.fbaipublicfiles.com/mls/mls_lm_spanish.tar.gz)  |
-|   Italian  |   [Model](https://dl.fbaipublicfiles.com/mls/mls_lm_italian.tar.gz)  |
-| Portuguese | [Model](https://dl.fbaipublicfiles.com/mls/mls_lm_portuguese.tar.gz) |
-|   Polish   |   [Model](https://dl.fbaipublicfiles.com/mls/mls_lm_polish.tar.gz)   |
+|   English  |   [mls_lm_english.tar.gz](https://dl.fbaipublicfiles.com/mls/mls_lm_english.tar.gz)  |
+|   German   |   [mls_lm_german.tar.gz](https://dl.fbaipublicfiles.com/mls/mls_lm_german.tar.gz)   |
+|    Dutch   |    [mls_lm_dutch.tar.gz](https://dl.fbaipublicfiles.com/mls/mls_lm_dutch.tar.gz)   |
+|   French   |   [mls_lm_french.tar.gz](https://dl.fbaipublicfiles.com/mls/mls_lm_french.tar.gz)   |
+|   Spanish  |   [mls_lm_spanish.tar.gz](https://dl.fbaipublicfiles.com/mls/mls_lm_spanish.tar.gz)  |
+|   Italian  |   [mls_lm_italian.tar.gz](https://dl.fbaipublicfiles.com/mls/mls_lm_italian.tar.gz)  |
+| Portuguese | [mls_lm_portuguese.tar.gz](https://dl.fbaipublicfiles.com/mls/mls_lm_portuguese.tar.gz) |
+|   Polish   |   [mls_lm_polish.tar.gz](https://dl.fbaipublicfiles.com/mls/mls_lm_polish.tar.gz)   |
 
 
 ## Usage
 
+### Preparing the dataset
+
+Follow the steps [here](../../data/mls/) to download and prepare the datset for a given language.
+
 ### Training
 ```
-[...]/flashlight/build/bin/asr/fl_asr_train train --flagsfile=train/<lang>.cfg --minloglevel=0 --logtostderr=1
+[...]/flashlight/build/bin/asr/fl_asr_train train --flagsfile=train/[lang].cfg --minloglevel=0 --logtostderr=1
 ```
 
 ### Decoding
+
+#### Viterbi
 ```
-[...]/flashlight/build/bin/asr/fl_asr_decode --flagsfile=decode/<lang>.cfg
+[...]/flashlight/build/bin/asr/fl_asr_test --am=[...]/am.bin --lexicon=[...]/train_lexicon.txt --datadir=[...] --test=test.lst --tokensdir=[...] --tokens=[...]/tokens.txt --emission_dir='' --nouselexicon --show
+```
+
+#### Beam search with language model
+```
+[...]/flashlight/build/bin/asr/fl_asr_decode --flagsfile=decode/[lang].cfg
 ```
 
 ## Citation

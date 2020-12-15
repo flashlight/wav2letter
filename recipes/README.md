@@ -1,6 +1,7 @@
 # Published papers
 
 There are recipes to reproduce results from the following papers:
+- `mls` [MLS: A Large-Scale Multilingual Dataset for Speech Research, 2020](https://arxiv.org/abs/2012.03411)
 - `local_prior_match` [Semi-Supervised Speech Recognition via Local Prior Matching, 2020](https://arxiv.org/abs/2002.10336)
 - `streaming_convnets` [Scaling Up Online Speech Recognition Using ConvNets, 2020](https://research.fb.com/publications/scaling-up-online-speech-recognition-using-convnets/)
 - `sota/2019` [End-to-end ASR: from Supervised to Semi-Supervised Learning with Modern Architectures, 2020](https://arxiv.org/abs/1911.08460)

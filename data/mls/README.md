@@ -1,6 +1,6 @@
 # A Recipe for the MLS corpus.
 
-Multilingual LibriSpeech (MLS) dataset is a large multilingual corpus suitable for speech research. The dataset is derived from read audiobooks from LibriVox and consists of 8 languages - English, German, Dutch, Spanish, French, Italian, Portuguese, Polish. It is available on [OpenSLR](http://openslr.org/).
+Multilingual LibriSpeech (MLS) dataset is a large multilingual corpus suitable for speech research. The dataset is derived from read audiobooks from LibriVox and consists of 8 languages - English, German, Dutch, Spanish, French, Italian, Portuguese, Polish. It is available at [OpenSLR](http://openslr.org/94).
 
 ## Steps to download and prepare the audio and text data
 

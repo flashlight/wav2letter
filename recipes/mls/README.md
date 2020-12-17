@@ -69,7 +69,7 @@ Follow the steps [here](../../data/mls/) to download and prepare the datset for 
 
 #### Viterbi
 ```
-[...]/flashlight/build/bin/asr/fl_asr_test --am=[...]/am.bin --lexicon=[...]/train_lexicon.txt --datadir=[...] --test=test.lst --tokensdir=[...] --tokens=[...]/tokens.txt --emission_dir='' --nouselexicon --show
+[...]/flashlight/build/bin/asr/fl_asr_test --am=[...]/am.bin --lexicon=[...]/train_lexicon.txt --datadir=[...] --test=test.lst --tokens=[...]/tokens.txt --emission_dir='' --nouselexicon --show
 ```
 
 #### Beam search with language model

@@ -18,15 +18,20 @@ This repository includes recipes to reproduce the following research papers as w
 - [Likhomanenko et al. (2019): Who Needs Words? Lexicon-free Speech Recognition](recipes/lexicon_free/)
 - [Hannun et al. (2019): Sequence-to-Sequence Speech Recognition with Time-Depth Separable Convolutions](recipes/seq2seq_tds/)
 
-Data preparation for training and evaluation can be found in [data](data) folder.
+Data preparation for training and evaluation can be found in [data](data) directory.
 
 ### Building the Recipes
 
-First, install [flashlight](https://github.com/facebookresearch/flashlight) with the [ASR application](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr). Then, after cloning the project source:
+First, install [Flashlight](https://github.com/facebookresearch/flashlight) with the [ASR application](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr). Then, after cloning the project source:
+```shell
+mkdir build && cd build
+cmake .. && make -j8
 ```
-mkdir build && cd build && cmake .. && make -j8
+If Flashlight or ArrayFire are installed in nonstandard paths via a custom `CMAKE_INSTALL_PREFIX`, they can be found by passing
+```shell
+-Dflashlight_DIR=[PREFIX]/usr/share/flashlight/cmake/ -DArrayFire_DIR=[PREFIX]/usr/share/ArrayFire/cmake
 ```
-If flashlight or ArrayFire are installed in nonstandard paths via a custom `CMAKE_INSTALL_PREFIX`, they can be found by passing `-Dflashlight_DIR=[PREFIX]/usr/share/flashlight/cmake/ -DArrayFire_DIR=[PREFIX]/usr/share/ArrayFire/cmake` when running `cmake`.
+when running `cmake`.
 
 ## Join the wav2letter community
 * Facebook page: https://www.facebook.com/groups/717232008481207/

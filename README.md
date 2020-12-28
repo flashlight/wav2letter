@@ -3,8 +3,10 @@
 [![CircleCI](https://circleci.com/gh/facebookresearch/wav2letter.svg?style=svg)](https://circleci.com/gh/facebookresearch/wav2letter)
 [![Join the chat at https://gitter.im/wav2letter/community](https://badges.gitter.im/wav2letter/community.svg)](https://gitter.im/wav2letter/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-### Important Note:
-**wav2letter has been [moved and consolidated into Flashlight](https://github.com/facebookresearch/flashlight).** See the [Flashlight ASR application](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr) for the current wav2letter source. Future development on wav2letter will occur in Flashlight.
+## Important Note:
+### wav2letter has been moved and consolidated [into Flashlight](https://github.com/facebookresearch/flashlight) in the [Flashlight ASR application](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr).
+
+Future wav2letter development will occur in Flashlight.
 
 *To build the old, pre-consolidation version of wav2letter*, checkout the [wav2letter v0.2](https://github.com/facebookresearch/wav2letter/releases/tag/v0.2) release, which depends on the old [Flashlight v0.2](https://github.com/facebookresearch/flashlight/releases/tag/v0.2) release. The [`wav2letter-lua`](https://github.com/facebookresearch/wav2letter/tree/wav2letter-lua) project can be fonud on the `wav2letter-lua` branch, accordingly.
 

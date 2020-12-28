@@ -4,7 +4,7 @@
 [![Join the chat at https://gitter.im/wav2letter/community](https://badges.gitter.im/wav2letter/community.svg)](https://gitter.im/wav2letter/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 ## Important Note:
-### wav2letter has been moved and consolidated [into Flashlight](https://github.com/facebookresearch/flashlight) in the [Flashlight ASR application](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr).
+### wav2letter has been moved and consolidated [into Flashlight](https://github.com/facebookresearch/flashlight) in the [ASR application](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr).
 
 Future wav2letter development will occur in Flashlight.
 

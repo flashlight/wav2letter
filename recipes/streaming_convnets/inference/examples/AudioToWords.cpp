@@ -5,13 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "inference/examples/AudioToWords.h"
+#include "examples/AudioToWords.h"
 
 #include <fstream>
 #include <functional>
 
+#include "examples/Util.h"
 #include "inference/common/IOBuffer.h"
-#include "inference/examples/Util.h"
 
 namespace w2l {
 namespace streaming {

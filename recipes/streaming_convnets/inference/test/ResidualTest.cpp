@@ -14,13 +14,13 @@
 #include <sstream>
 #include <vector>
 
+#include "TestUtils.h"
 #include "inference/common/DataType.h"
 #include "inference/common/IOBuffer.h"
 #include "inference/module/ModuleParameter.h"
 #include "inference/module/ModuleProcessingState.h"
 #include "inference/module/nn/Conv1d.h"
 #include "inference/module/nn/Residual.h"
-#include "inference/module/test/TestUtils.h"
 
 namespace w2l {
 namespace streaming {

@@ -4,18 +4,16 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * Summary
- * --------
- * Interactive tiny shell for quickly transcribing audio files on the fly.
- *
+ */
+
+/**
  * User guide
  * ----------
  *
  * 1. Setup the input files:
  * Assuming that you have the acoustic model, language model, features
  * extraction serialized streaming inference DNN, tokens file, lexicon file and
- * input audio file in a directory called model.
- *
+ * input audio file in a directory called modules.
  *  $> ls ~/model
  *   acoustic_model.bin
  *   language.bin
@@ -25,41 +23,23 @@
  *
  * $> ls ~/audio
  *   input1.wav
+ *   input2.wav
  *
- * 2. Run
+ * 2. Run:
+ * multithreaded_wav2letter_example --input_files_base_path ~/model
+ *                                  --output_files_base_path /tmp/out
+ *      --input_audio_files=${HOME}/audio/input1.wav,${HOME}/audio/inputAudio1.wav
  *
- * .$> interactive_streaming_asr_example --input_files_base_path ~/model/
- * Started features model file loading ...
- * Completed features model file loading elapsed time=46557 microseconds
+ * For each input file X and output file is written to the
+ * output_files_base_path named as X.txt.
+ *   $> ls /tmp/out
+ *   input1.wav.txt
+ *   input2.wav.txt
  *
- * Started acoustic model file loading ...
- * Completed acoustic model file loading elapsed time=2058 milliseconds
- *
- * Started tokens file loading ...
- * Completed tokens file loading elapsed time=1318 microseconds
- *
- * Tokens loaded - 9998 tokens
- * Started decoder options file loading ...
- * Completed decoder options file loading elapsed time=388 microseconds
- *
- * Started create decoder ...
- * [Letters] 9998 tokens loaded.
- * [Words] 200001 words loaded.
- * Completed create decoder elapsed time=884 milliseconds
- *
- * Entering interactive command line shell. enter '?' for help.
- * ------------------------------------------------------------
- * $>input=/home/audio.wav
- * #start (msec), end(msec), transcription
- * 0,1000,
- * 1000,2000,i wish he
- * 2000,3000,had never been to school
- * 3000,4000,missus
- * 4000,4260,began again brusquely
- * Completed create decoder elapsed time=2760 milliseconds
  *
  */
 
+#include <atomic>
 #include <fstream>
 #include <istream>
 #include <ostream>
@@ -71,9 +51,10 @@
 #include <cereal/archives/json.hpp>
 #include <gflags/gflags.h>
 
+#include "examples/AudioToWords.h"
+#include "examples/Util.h"
+#include "examples/threadpool/ThreadPool.h"
 #include "inference/decoder/Decoder.h"
-#include "inference/examples/AudioToWords.h"
-#include "inference/examples/Util.h"
 #include "inference/module/feature/feature.h"
 #include "inference/module/module.h"
 #include "inference/module/nn/nn.h"
@@ -81,15 +62,20 @@
 using namespace w2l;
 using namespace w2l::streaming;
 
+DEFINE_int32(max_num_threads, 1, "maximum number of threads to use for ASR.");
 DEFINE_string(
     input_files_base_path,
     ".",
     "path is added as prefix to input files unless the input file"
     " is a full path.");
 DEFINE_string(
+    output_files_base_path,
+    ".",
+    "Output files are saved as [output_files_base_path][input file name].txt");
+DEFINE_string(
     feature_module_file,
     "feature_extractor.bin",
-    "serialized feature extraction module.");
+    "binary file containing feture module parameters.");
 DEFINE_string(
     acoustic_module_file,
     "acoustic_model.bin",
@@ -100,6 +86,16 @@ DEFINE_string(
     "binary file containing ASG criterion transition parameters.");
 DEFINE_string(tokens_file, "tokens.txt", "text file containing tokens.");
 DEFINE_string(lexicon_file, "lexicon.txt", "text file containing lexicon.");
+DEFINE_string(
+    input_audio_files,
+    "",
+    "commas separated list of 16KHz wav audio input file to be "
+    " traslated to words.");
+DEFINE_string(
+    input_audio_file_of_paths,
+    "",
+    "text file with input audio file names. Eavh line should have "
+    "an audio file name or a full path to an audio file.");
 DEFINE_string(silence_token, "_", "the token to use to denote silence");
 DEFINE_string(
     language_model_file,
@@ -117,8 +113,40 @@ std::string GetInputFileFullPath(const std::string& fileName) {
   return GetFullPath(fileName, FLAGS_input_files_base_path);
 }
 
+std::string GetOutputFileFullPath(const std::string& fileName) {
+  return GetFullPath(getFileName(fileName), FLAGS_output_files_base_path) +
+      ".txt";
+}
+
 int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
+
+  std::vector<std::string> inputFiles;
+
+  if (!FLAGS_input_audio_files.empty()) {
+    for (size_t start = 0, pos = 0; pos != std::string::npos; start = pos + 1) {
+      // Allow using comma or semicolon (in case user mistakenly used
+      // semicolon).
+      pos = FLAGS_input_audio_files.find_first_of(",;", start);
+      const std::string token =
+          FLAGS_input_audio_files.substr(start, pos - start);
+      // ignore empty tokens
+      if (token.length() > 0) {
+        inputFiles.push_back(token);
+      }
+    }
+  }
+
+  if (!FLAGS_input_audio_file_of_paths.empty()) {
+    std::ifstream file_of_paths(FLAGS_input_audio_file_of_paths);
+    std::string path;
+    while (std::getline(file_of_paths, path)) {
+      inputFiles.push_back(path);
+    }
+  }
+
+  const size_t inputFileCount = inputFiles.size();
+  std::cout << "Will process " << inputFileCount << " files." << std::endl;
 
   std::shared_ptr<streaming::Sequential> featureModule;
   std::shared_ptr<streaming::Sequential> acousticModule;
@@ -224,68 +252,48 @@ int main(int argc, char* argv[]) {
         0);
   }
 
-  const std::string inputFilecommand = "input=";
-  const std::string outputFilecommand = "output=";
-  const std::string setEndTokencommand = "endtoken=";
-  std::string inputFilename;
-  std::string outputFilename = "stdout";
-  std::ostream* outStream = &std::cout;
-  std::ofstream outputFileStream;
-  std::string endToken = "#finish transcribing";
-  std::cout << "Entering interactive command line shell. enter '?' for help.\n";
-  std::cout << "------------------------------------------------------------\n";
-  while (true) {
-    std::string cmdline;
-    std::cout << "$>";
-    std::getline(std::cin, cmdline);
-    if (cmdline == "?" || cmdline == "help") {
-      std::cout
-          << "Interactive streaming ASR shell:\n"
-          << "-----------------------------------------------------------\n"
-          << "? or help         to print this message.\n"
-          << "input=[filename]  transcribe the given audio file.\n"
-          << "output=[filename] write transcription to output file.\n"
-          << "output=stdout     write transcription to stdout.\n"
-          << "endtoken=[token]  set string that marks end of transciption.\n"
-          << "exit or q         exit this shell.\n";
-    } else if (cmdline == "exit" || cmdline == "q") {
-      break;
-    } else if (cmdline.rfind(setEndTokencommand, 0) == 0) {
-      endToken = cmdline.substr(setEndTokencommand.size());
-      std::cout << "End of trascription token=" << endToken << std::endl;
-    } else if (cmdline.rfind(outputFilecommand, 0) == 0) {
-      outputFilename = cmdline.substr(outputFilecommand.size());
-      if (outputFilename == "stdout") {
-        outStream = &std::cout;
-      } else {
-        outputFileStream.close();
-        outputFileStream.open(
-            outputFilename, std::ofstream::out | std::ofstream::app);
-        if (outputFileStream.good()) {
-          outStream = &outputFileStream;
-        } else {
-          std::cerr << "Failed to open file:" << outputFilename
-                    << " for writing. Defaulting to stdout.\n";
-          outStream = &std::cout;
-        }
-      }
-      std::cout << "Redirecting trascription output to:" << outputFilename
-                << std::endl;
-    } else if (cmdline.rfind(inputFilecommand, 0) == 0) {
-      inputFilename = cmdline.substr(inputFilecommand.size());
-      std::ifstream audioFile(inputFilename, std::ios::binary);
-      *outStream << "Transcribing file:" << inputFilename
-                 << " to:" << outputFilename << std::endl;
-      audioStreamToWordsStream(
-          audioFile,
-          *outStream,
-          dnnModule,
-          decoderFactory,
-          decoderOptions,
-          nTokens);
-      *outStream << endToken << std::endl;
-    } else {
-      std::cout << "unknown command:" << cmdline << std::endl;
+  {
+    TimeElapsedReporter feturesLoadingElapsed(
+        "converting audio input files to text");
+    std::cout << "Creating thread pool with " << FLAGS_max_num_threads
+              << " threads.\n";
+    w2l::streaming::example::ThreadPool pool(FLAGS_max_num_threads);
+
+    std::atomic<int> processedFilesCount = {};
+    processedFilesCount = 0;
+
+    for (const std::string& inputFile : inputFiles) {
+      const std::string inputFilePath = GetInputFileFullPath(inputFile);
+      const std::string outputFilePath = GetOutputFileFullPath(inputFile);
+
+      std::cout << "Enqueue input file=" << inputFile << " to thread pool.\n";
+      pool.enqueue(
+          [inputFilePath,
+           outputFilePath,
+           dnnModule,
+           decoderFactory,
+           &decoderOptions,
+           nTokens,
+           &processedFilesCount,
+           inputFileCount]() -> void {
+            const int prossesingFileNumber = ++processedFilesCount;
+
+            std::stringstream stringBuffer;
+            stringBuffer << "audioFileToWordsFile() processing "
+                         << prossesingFileNumber << "/" << inputFileCount
+                         << " input=" << inputFilePath
+                         << " output=" << outputFilePath << std::endl;
+            std::cout << stringBuffer.str();
+
+            audioFileToWordsFile(
+                inputFilePath,
+                outputFilePath,
+                dnnModule,
+                decoderFactory,
+                decoderOptions,
+                nTokens,
+                std::cerr);
+          });
     }
   }
 }

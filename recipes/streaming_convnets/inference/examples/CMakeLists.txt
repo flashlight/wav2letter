@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.10)
+
 project(StreamingInferenceExamples)
 add_library(StreamingInferenceExamples INTERFACE)
 
@@ -19,14 +20,14 @@ target_include_directories(
   PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}
     ${cereal_INCLUDE_DIRS}
-    ${wav2letter-inference_SOURCE_DIR}
-    ${wav2letter++_SOURCE_DIR}/src
+    ${streaming_inference_SOURCE_DIR}
 )
 
 target_link_libraries(
   util_example
   PUBLIC
     streaming_inference_common
+    flashlight::fl-libraries
 )
 
 # audio_to_words_example library is used by the example executables
@@ -38,7 +39,7 @@ target_include_directories(
   audio_to_words_example
   PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}
-    ${wav2letter-inference_SOURCE_DIR}
+    ${streaming_inference_SOURCE_DIR}
 )
 
 target_link_libraries(
@@ -47,7 +48,7 @@ target_link_libraries(
     util_example
     streaming_inference_modules_nn_backend
     streaming_inference_decoder
-    decoder-library
+    flashlight::fl-libraries
     Threads::Threads
 )
 

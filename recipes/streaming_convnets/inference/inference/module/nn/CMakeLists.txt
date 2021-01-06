@@ -1,20 +1,20 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.10)
 
-if (NOT W2L_INFERENCE_BACKEND IN_LIST AVAILABLE_INFERENCE_BACKENDS)
-  message(FATAL_ERROR "Passed value of W2L_INFERENCE_BACKEND is invalid."
+if (NOT STREAMING_INFERENCE_BACKEND IN_LIST AVAILABLE_INFERENCE_BACKENDS)
+  message(FATAL_ERROR "Passed value of STREAMING_INFERENCE_BACKEND is invalid."
     " supported values=${AVAILABLE_INFERENCE_BACKENDS}")
 endif()
 
 # Directory of build list for the specified backend
 set(BACKEND_LIST_PATH
-  ${CMAKE_CURRENT_LIST_DIR}/backend/${W2L_INFERENCE_BACKEND}/CMakeLists.txt)
+  ${CMAKE_CURRENT_LIST_DIR}/backend/${STREAMING_INFERENCE_BACKEND}/CMakeLists.txt)
 
 # Make sure a path to the valid list exists
 if (NOT EXISTS ${BACKEND_LIST_PATH})
   message(FATAL_ERROR "Inference backend path ${BACKEND_LIST_PATH} does not "
     "exist. This indicates a problem with the the value of "
-    "W2L_INFERENCE_BACKEND=${W2L_INFERENCE_BACKEND}. Please ensure "
-    "${W2L_INFERENCE_BACKEND} is a directory name under "
+    "STREAMING_INFERENCE_BACKEND=${STREAMING_INFERENCE_BACKEND}. Please ensure "
+    "${STREAMING_INFERENCE_BACKEND} is a directory name under "
     "${CMAKE_CURRENT_LIST_DIR}/backend and contains a valid CMakeLists file.")
 endif ()
 
@@ -25,7 +25,7 @@ include(${BACKEND_LIST_PATH})
 
 if (NOT ${BACKEND_FOUND})
   message(FATAL_ERROR
-  "W2L_INFERENCE_BACKEND:${W2L_INFERENCE_BACKEND} is not found.")
+  "STREAMING_INFERENCE_BACKEND:${STREAMING_INFERENCE_BACKEND} is not found.")
 endif()
 
 add_library(streaming_inference_modules_nn INTERFACE)
@@ -47,7 +47,7 @@ target_include_directories(
   PUBLIC
     ${cereal_INCLUDE_DIRS}
     # going up one directory to use #include "inference/*/*.h"
-    ${wav2letter-inference_SOURCE_DIR}/..
+    ${streaming_inference_SOURCE_DIR}/..
 )
 
 add_dependencies(streaming_inference_modules_nn_impl cereal)

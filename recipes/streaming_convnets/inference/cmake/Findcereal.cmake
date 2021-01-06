@@ -1,20 +1,43 @@
 # Try to find Cereal
 #
-# Sets the following variables:
-# CEREAL_FOUND
-# CEREAL_INCLUDE_DIRS - directories with Cereal headers
-# CEREAL_DEFINITIONS - Cereal compiler flags
+# Sets the following imported targets if cereal is found with a config:
+# cereal
+#
+# If cereal is not found with a CMake config, legacy variables are set:
+# cereal_FOUND
+# cereal_INCLUDE_DIRS - directories with Cereal headers
+# cereal_DEFINITIONS - Cereal compiler flags
 
-find_path(CEREAL_INCLUDE_DIR
-  cereal
-	HINTS
-    "$ENV{CEREAL_ROOT}/include"
-    "/usr/include"
-    "$ENV{PROGRAMFILES}/cereal/include"
-)
+find_package(cereal CONFIG)
 
-set(CEREAL_INCLUDE_DIRS ${CEREAL_INCLUDE_DIR})
+if (NOT TARGET cereal)
+  find_path(cereal_header_paths_tmp
+    NAMES
+    cereal.hpp
+    PATH_SUFFIXES
+    include
+    cereal/include
+	  PATHS
+    ${CEREAL_ROOT_DIR}
+    ${CEREAL_ROOT_DIR}/include
+    ${CEREAL_ROOT_DIR}/cereal/include
+    $ENV{CEREAL_ROOT_DIR}
+    $ENV{CEREAL_ROOT_DIR}/include
+    $ENV{CEREAL_ROOT_DIR}/cereal
+    )
 
-# sets cereal_FOUND value based on validity of CEREAL_INCLUDE_DIRS
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(cereal DEFAULT_MSG CEREAL_INCLUDE_DIRS)
+  get_filename_component(cereal_INCLUDE_DIRS ${cereal_header_paths_tmp} PATH)
+
+  include(FindPackageHandleStandardArgs)
+  find_package_handle_standard_args(cereal
+    REQUIRED_VARS cereal_INCLUDE_DIRS
+    )
+
+  message(STATUS "Found cereal (include: ${cereal_INCLUDE_DIRS})")
+  mark_as_advanced(cereal_FOUND)
+  if (cereal_FOUND)
+    add_library(cereal INTERFACE IMPORTED)
+    set_target_properties(cereal PROPERTIES
+      INTERFACE_INCLUDE_DIRECTORIES "${cereal_INCLUDE_DIRS}")
+  endif()
+endif()

@@ -1,73 +1,72 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.10)
 
-project(wav2letter-inference)
+# Creates build rules for streaming inference
 
-# Creates build rules for wav2letter inference processing graph.
+project(streaming_inference CXX C)
 
-include(GNUInstallDirs)
-
-option(W2L_INFERENCE_BUILD_TESTS
-  "Build tests for wav2letter-inference"    ON)
-option(W2L_INFERENCE_BUILD_EXAMPLES
-  "Build examples for wav2letter-inference" ON)
+option(STREAMING_INFERENCE_BUILD_TESTS
+  "Build tests for streaming_inference"    ON)
+option(STREAMING_INFERENCE_BUILD_EXAMPLES
+  "Build examples for streaming_inference" ON)
+option(STREAMING_INFERENCE_BUILD_TOOLS
+  "Build converter tools for streaming_inference" ON)
 set(KENLM_MAX_ORDER 6 CACHE
     STRING
     "Maximum ngram order for KenLM"
 )
 
+#--- Find flashlight ---
+find_package(flashlight CONFIG REQUIRED)
+if (NOT TARGET flashlight::fl-libraries)
+  message(FATAL_ERROR "flashlight::fl-libraries must be built for streaming inference")
+endif ()
+
 # Inference backend names MUST match paths along
 # inference/module/nn/backend/{backend_name}
 set(AVAILABLE_INFERENCE_BACKENDS fbgemm)
-set(W2L_INFERENCE_BACKEND fbgemm CACHE
+set(STREAMING_INFERENCE_BACKEND fbgemm CACHE
   STRING
   "Inference backend library"
 )
 set_property(
   CACHE
-  W2L_INFERENCE_BACKEND
+  STREAMING_INFERENCE_BACKEND
   PROPERTY STRINGS
   ${AVAILABLE_INFERENCE_BACKENDS}
 )
+
+# C++ 14 is required
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_library(wav2letter-inference "")
+add_library(streaming_inference "")
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
-#--- Find gflags ---
+#--- Find GFlags ---
 find_package(gflags REQUIRED)
-if (gflags_FOUND)
-  message(STATUS "gflags found")
-else()
-  message(FATAL_ERROR "gflags not found")
+
+#--- Find/build Cereal ---
+# If cereal is found in a user-defined location, use it rather than
+# downloading from source
+find_package(cereal)
+if (NOT TARGET cereal AND NOT cereal_FOUND)
+  message(STATUS "cereal NOT found. Will download from source")
+  set(CEREAL_INSTALL_PATH ${FL_INSTALL_INC_DIR}/cereal)
+  include(${CMAKE_MODULE_PATH}/BuildCereal.cmake)
+  # Move cereal headers at install time
+  install(DIRECTORY ${CEREAL_SOURCE_DIR}/include/cereal
+    DESTINATION ${CEREAL_INSTALL_PATH}
+    COMPONENT cereal
+    FILES_MATCHING
+    PATTERN "*.hpp"
+    PATTERN "*.h"
+    PATTERN ".git" EXCLUDE
+    )
+  install(FILES ${CEREAL_SOURCE_DIR}/LICENSE ${CEREAL_SOURCE_DIR}/README.md
+    DESTINATION ${CEREAL_INSTALL_PATH}
+    )
 endif()
-
-#--- Download and build Google test ---
-# Only if we're not building w2l tests elsewhere, else we'll
-# define the same custom target twice with ExternalProject_add
-include(BuildGoogleTest)
-
-#--- Download/build Cereal ---
-set(CEREAL_INSTALL_PATH ${CMAKE_CURRENT_LIST_DIR}/cereal)
-include(Buildcereal)
-# Move cereal headers
-install(DIRECTORY ${CEREAL_SOURCE_DIR}/include/cereal
-  DESTINATION ${CEREAL_INSTALL_PATH}
-  COMPONENT cereal
-  FILES_MATCHING
-  PATTERN "*.hpp"
-  PATTERN "*.h"
-  PATTERN ".git" EXCLUDE
-)
-
-install(
-  FILES
-    ${CEREAL_SOURCE_DIR}/LICENSE
-    ${CEREAL_SOURCE_DIR}/README.md
-  DESTINATION
-    ${CEREAL_INSTALL_PATH}
-)
 
 # ------------------ add subdirectories --------------------
 
@@ -81,95 +80,51 @@ add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/inference/decoder)
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/inference/module)
 
 # Creates executable targets foreach example.
-if (W2L_INFERENCE_BUILD_EXAMPLES)
-  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/inference/examples)
+if (STREAMING_INFERENCE_BUILD_EXAMPLES)
+  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/examples)
 endif()
 
 # ------------------------ Tests ------------------------
 
-add_custom_target(inference_tests)
-
-# Builds a single test source file.
-function(build_test SRCFILE)
-  get_filename_component(target ${SRCFILE} NAME_WE)
-  set(target inference_${target})
-  message(STATUS "Tests: add executable ${target}")
-  add_executable(${target} ${SRCFILE})
-  add_dependencies(wav2letter-inference ${target})
-  add_dependencies(${target} gtest) # make sure gtest is built first
-  add_dependencies(inference_tests ${target})
-  target_link_libraries(
-    ${target}
-    PRIVATE
-    ${GTEST_LIBRARIES}
-    streaming_inference_common
-    streaming_inference_decoder
-    streaming_inference_modules
-    Threads::Threads
-  )
-  target_include_directories(
-    ${target}
-    PRIVATE
-    ${CMAKE_SOURCE_DIR}
-    ${GTEST_INCLUDE_DIR}
-    # going up one directory to use #include "inference/*/*.h"
-    ${wav2letter-inference_SOURCE_DIR}
-    ${W2L_INFERENCE_TESTS_PATH}
-    ${cereal_INCLUDE_DIRS}
-  )
-  add_test(${target} ${target})
-endfunction(build_test)
-
-set(W2L_INFERENCE_TESTS_PATH
-  ${wav2letter-inference_SOURCE_DIR}/inference/module/test)
-
-set(W2L_INFERENCE_TESTS_SOURCES
-  ${W2L_INFERENCE_TESTS_PATH}/Conv1dTest.cpp
-  ${W2L_INFERENCE_TESTS_PATH}/IdentityTest.cpp
-  ${W2L_INFERENCE_TESTS_PATH}/LayerNormTest.cpp
-  ${W2L_INFERENCE_TESTS_PATH}/LinearTest.cpp
-  ${W2L_INFERENCE_TESTS_PATH}/LogMelFeatureTest.cpp
-  ${W2L_INFERENCE_TESTS_PATH}/MemoryManagerTest.cpp
-  ${W2L_INFERENCE_TESTS_PATH}/ReluTest.cpp
-  ${W2L_INFERENCE_TESTS_PATH}/ResidualTest.cpp
-  ${W2L_INFERENCE_TESTS_PATH}/TDSBlockTest.cpp
-)
-
-if (W2L_INFERENCE_BUILD_TESTS)
-  find_package(Threads REQUIRED)
+# Creates executable targets foreach example.
+if (STREAMING_INFERENCE_BUILD_TESTS)
   enable_testing()
-  foreach(SRC_FILE ${W2L_INFERENCE_TESTS_SOURCES})
-    build_test(${SRC_FILE})
-  endforeach()
+  include(TestUtils)
+  # add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test) // FIXME
 endif()
 
-# -------------- wav2letter-inference top level target -----------------
+# ------------------------ Tools ------------------------
+if (STREAMING_INFERENCE_BUILD_TOOLS)
+  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/tools)
+endif()
+
+# -------------- streaming_inference top level target -----------------
 
 set_target_properties(
-  wav2letter-inference
+  streaming_inference
   PROPERTIES
   LINKER_LANGUAGE CXX
-  CXX_STANDARD 11
+  CXX_STANDARD 14
 )
 
 target_include_directories(
-  wav2letter-inference
+  streaming_inference
   PUBLIC
-    ${wav2letter-inference_SOURCE_DIR}
+    ${streaming_inference_SOURCE_DIR}
 )
 
 target_link_libraries(
-  wav2letter-inference
+  streaming_inference
   PUBLIC
     streaming_inference_common
     streaming_inference_decoder
     streaming_inference_modules
 )
 
-install(TARGETS wav2letter-inference
-  EXPORT wav2letter-inference-export
+install(TARGETS streaming_inference
+  EXPORT streaming_inference-export
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin
-  INCLUDES DESTINATION include/wav2letter/inference
+  INCLUDES DESTINATION include/inference
 )

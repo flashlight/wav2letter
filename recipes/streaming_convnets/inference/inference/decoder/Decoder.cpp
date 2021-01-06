@@ -19,6 +19,22 @@
 #include "flashlight/lib/text/decoder/lm/ZeroLM.h"
 #include "inference/decoder/Decoder.h"
 
+namespace {
+constexpr const char* kBlankToken = "#";
+
+std::vector<int> tkn2Idx(
+    const std::vector<std::string>& spelling,
+    const fl::lib::text::Dictionary& tokenDict,
+    int maxReps) {
+  std::vector<int> ret;
+  ret.reserve(spelling.size());
+  for (const auto& token : spelling) {
+    ret.push_back(tokenDict.getIndex(token));
+  }
+  return fl::lib::text::packReplabels(ret, tokenDict, maxReps);
+}
+} // namespace
+
 namespace w2l {
 namespace streaming {
 
@@ -41,9 +57,8 @@ DecoderFactory::DecoderFactory(
   }
   std::cerr << "[Letters] " << alphabetSize_ << " tokens loaded.\n";
   silence_ = letterMap_.getIndex(silenceToken);
-  blank_ = letterMap_.contains(fl::app::asr::kBlankToken)
-      ? letterMap_.getIndex(fl::app::asr::kBlankToken)
-      : -1;
+  blank_ =
+      letterMap_.contains(kBlankToken) ? letterMap_.getIndex(kBlankToken) : -1;
 
   /* 2. Load word dictionary */
   fl::lib::text::LexiconMap lexicon;
@@ -83,8 +98,7 @@ DecoderFactory::DecoderFactory(
       std::tie(dummyState, score) = lm_->score(startState, usrIdx);
 
       for (const auto& tokens : it.second) {
-        auto tokensTensor =
-            fl::app::asr::tkn2Idx(tokens, letterMap_, repetitionLabel_);
+        auto tokensTensor = tkn2Idx(tokens, letterMap_, repetitionLabel_);
         trie_->insert(tokensTensor, usrIdx, score);
       }
     }

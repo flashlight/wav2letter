@@ -16,8 +16,8 @@
 #include <streambuf>
 #include <vector>
 
+#include "TestUtils.h"
 #include "inference/module/feature/LogMelFeature.h"
-#include "inference/module/test/TestUtils.h"
 
 namespace w2l {
 namespace streaming {

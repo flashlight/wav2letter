@@ -174,12 +174,7 @@ int main(int argc, char** argv) {
   LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   /* ===================== Create Dictionary ===================== */
-  auto dictPath = fl::lib::pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
-  if (dictPath.empty() || !fileExists(dictPath)) {
-    throw std::runtime_error(
-        "Invalid dictionary filepath specified " + dictPath);
-  }
-  text::Dictionary tokenDict(dictPath);
+  text::Dictionary tokenDict(FLAGS_tokens);
   for (int64_t r = 1; r <= FLAGS_replabel; ++r) {
     tokenDict.addEntry("<" + std::to_string(r) + ">");
   }
@@ -198,7 +193,7 @@ int main(int argc, char** argv) {
     LOG(FATAL) << "This script currently support only mfsc features";
   }
 
-  auto lines = getFileContent(fl::lib::pathsConcat(FLAGS_archdir, FLAGS_arch));
+  auto lines = getFileContent(FLAGS_arch);
 
   auto streamingModule = std::make_shared<streaming::Sequential>();
   auto params = network->params();

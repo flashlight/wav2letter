@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.10)
 
 add_library(streaming_inference_common
   ${CMAKE_CURRENT_LIST_DIR}/DataType.cpp
@@ -14,5 +14,5 @@ target_include_directories(
   PUBLIC
     ${cereal_INCLUDE_DIRS}
     # going up one directory to use #include "inference/*/*.h"
-    ${wav2letter-inference_SOURCE_DIR}
+    ${streaming_inference_SOURCE_DIR}
 )

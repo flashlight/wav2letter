@@ -6,7 +6,7 @@
  *
  */
 
-#include "inference/examples/Util.h"
+#include "Util.h"
 
 #include <cassert>
 #include <chrono>

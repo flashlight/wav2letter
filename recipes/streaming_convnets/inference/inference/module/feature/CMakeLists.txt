@@ -9,6 +9,7 @@ target_link_libraries(
   PUBLIC
     ${cereal_LIBRARIES}
     streaming_inference_common
+    flashlight::fl-libraries
 )
 
 target_include_directories(
@@ -16,6 +17,5 @@ target_include_directories(
   PUBLIC
     ${cereal_INCLUDE_DIRS}
     # going up one directory to use #include "inference/*/*.h"
-    ${wav2letter-inference_SOURCE_DIR}
-    ${wav2letter++_SOURCE_DIR}/src
+    ${streaming_inference_SOURCE_DIR}
 )

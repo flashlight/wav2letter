@@ -18,6 +18,6 @@
 #include "inference/module/nn/TDSBlock.h"
 
 // We need to include the backend for the Cereal serirlization implementation.
-#if W2L_INFERENCE_BACKEND == fbgemm
+#if STREAMING_INFERENCE_BACKEND == fbgemm
 #include "inference/module/nn/backend/fbgemm/fbgemm.h"
 #endif

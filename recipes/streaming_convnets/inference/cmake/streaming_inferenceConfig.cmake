@@ -1,0 +1,10 @@
+# - Config file for the streaming_inference package
+find_dependency(OpenMP)
+find_dependency(kenlm)
+find_dependency(Threads)
+find_dependency(FFTW3)
+if (@FL_LIBRARIES_USE_MKL@)
+  find_dependency(MKL)
+else()
+  find_dependency(CBLAS)
+endif()

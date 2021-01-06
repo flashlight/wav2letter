@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.5.1)
-
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
 include(BuildFbGemm)
@@ -14,7 +12,7 @@ set_target_properties(
   streaming_inference_modules_nn_backend
   PROPERTIES
     LINKER_LANGUAGE CXX
-    CXX_STANDARD 11
+    CXX_STANDARD 14
 )
 
 add_dependencies(streaming_inference_modules_nn_backend fbgemm)
@@ -30,7 +28,7 @@ target_include_directories(streaming_inference_modules_nn_backend
   PUBLIC
     ${fbgemm_INCLUDE_DIRS}
     ${cereal_INCLUDE_DIRS}
-    ${wav2letter-inference_SOURCE_DIR}/..
+    ${streaming_inference_SOURCE_DIR}/..
 )
 
 set(BACKEND_FOUND true)

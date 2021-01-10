@@ -55,9 +55,10 @@ vector<ConvLMParamState> loadModelStates(const string& weightFile) {
     FL_LOG_IF(fl::FATAL, parts.size() < 2)
         << "Param name " << weightName
         << " should be in format {prefix.}layerName.paramName";
-    vector<string> names = {fl::lib::join(".", parts.begin(), parts.end() - 2),
-                            *(parts.end() - 2),
-                            *(parts.end() - 1)};
+    vector<string> names = {
+        fl::lib::join(".", parts.begin(), parts.end() - 2),
+        *(parts.end() - 2),
+        *(parts.end() - 1)};
 
     FL_LOG_IF(fl::FATAL, names.size() != 3)
         << "[LoadModelStates]: Error during parsing parameter name";

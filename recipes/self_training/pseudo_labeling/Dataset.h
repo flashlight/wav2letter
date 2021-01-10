@@ -74,8 +74,9 @@ createTranscriptDictFromFile(const std::string& path) {
         std::back_inserter(transcriptWords));
     // Raw transcript
     auto transcript = fl::lib::join(" ", segments.begin() + 3, segments.end());
-    output.insert({/* sid */ segments[0],
-                   std::make_shared<Sample>(/* sid */ segments[0], /*
+    output.insert(
+        {/* sid */ segments[0],
+         std::make_shared<Sample>(/* sid */ segments[0], /*
 path */ segments[1], /* duration */ segments[2], transcript, transcriptWords)});
   }
 

@@ -8,7 +8,7 @@
 
 Future wav2letter development will occur in Flashlight.
 
-*To build the old, pre-consolidation version of wav2letter*, checkout the [wav2letter v0.2](https://github.com/facebookresearch/wav2letter/releases/tag/v0.2) release, which depends on the old [Flashlight v0.2](https://github.com/facebookresearch/flashlight/releases/tag/v0.2) release. The [`wav2letter-lua`](https://github.com/facebookresearch/wav2letter/tree/wav2letter-lua) project can be fonud on the `wav2letter-lua` branch, accordingly.
+*To build the old, pre-consolidation version of wav2letter*, checkout the [wav2letter v0.2](https://github.com/facebookresearch/wav2letter/releases/tag/v0.2) release, which depends on the old [Flashlight v0.2](https://github.com/facebookresearch/flashlight/releases/tag/v0.2) release. The [`wav2letter-lua`](https://github.com/facebookresearch/wav2letter/tree/wav2letter-lua) project can be found on the [`wav2letter-lua` branch](https://github.com/facebookresearch/wav2letter/tree/wav2letter-lua), accordingly.
 
 For more information on wav2letter++, see or cite [this arXiv paper](https://arxiv.org/abs/1812.07625).
 

@@ -1,9 +1,9 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.10)
 
-project(wav2letter++-experimental-cpc)
+#project(wav2letter++-experimental-cpc)
 
 
-find_package(flashlight REQUIRED)
+#find_package(flashlight REQUIRED)
 
 # ------------------------- Dedicated SSL Train executable --------------------------
 add_executable(

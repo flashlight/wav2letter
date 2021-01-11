@@ -208,6 +208,7 @@ using namespace fl::lib::audio;
 using namespace w2l;
 
 int main(int argc, char** argv) {
+  fl::init();
   std::string exec(argv[0]);
   std::vector<std::string> argvs;
   for (int i = 0; i < argc; i++) {

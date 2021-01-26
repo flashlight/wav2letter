@@ -854,7 +854,7 @@ int main(int argc, char** argv) {
       if (pretrain) {
         crit_input = {enc_out, context_mask};
       } else {
-        auto output = ntwrk->module(idx)->forward({context_mask}).front();
+        auto output = ntwrk->module(idx)->forward({context_mask}).front().as(f32);
         crit_input = {output, fl::Variable(batch[kTargetIdx], false)};
         evalOutput(output.array(), batch[kTargetIdx], mtrs);
       }

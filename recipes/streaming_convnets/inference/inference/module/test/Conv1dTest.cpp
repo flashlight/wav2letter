@@ -113,18 +113,19 @@ TEST(Conv1d, SingleLayerSerialization) {
     const int leftPadding = 1;
 
     // kernelSize x 1 x channels x channels
-    std::vector<float> weightsValues = {0.4792,
-                                        0.8523,
-                                        0.6265,
-                                        0.5827,
-                                        0.7387,
-                                        0.3657,
-                                        0.973,
-                                        0.3688,
-                                        0.2184,
-                                        0.2578,
-                                        0.6659,
-                                        0.3815};
+    std::vector<float> weightsValues = {
+        0.4792,
+        0.8523,
+        0.6265,
+        0.5827,
+        0.7387,
+        0.3657,
+        0.973,
+        0.3688,
+        0.2184,
+        0.2578,
+        0.6659,
+        0.3815};
     const std::vector<float> biasValues = {0.1266, 0.6511};
     // clang-format on
 

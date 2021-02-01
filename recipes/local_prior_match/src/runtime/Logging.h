@@ -25,8 +25,9 @@ struct SSLDatasetMeters {
   std::map<std::string, fl::AverageValueMeter> values;
 
   SSLDatasetMeters()
-      : edits({{kTarget, fl::EditDistanceMeter()},
-               {kWord, fl::EditDistanceMeter()}}),
+      : edits(
+            {{kTarget, fl::EditDistanceMeter()},
+             {kWord, fl::EditDistanceMeter()}}),
         values({{kASRLoss, fl::AverageValueMeter()}}) {}
 };
 
@@ -38,22 +39,24 @@ struct SSLTrainMeters {
   SpeechStatMeter stats;
 
   SSLTrainMeters()
-      : timer({{kRuntime, fl::TimeMeter(false)},
-               {kTimer, fl::TimeMeter(true)},
-               {kSampleTimer, fl::TimeMeter(true)},
-               {kFwdTimer, fl::TimeMeter(true)},
-               {kCritFwdTimer, fl::TimeMeter(true)},
-               {kBeamTimer, fl::TimeMeter(true)},
-               {kBeamFwdTimer, fl::TimeMeter(true)},
-               {kLMFwdTimer, fl::TimeMeter(true)},
-               {kBwdTimer, fl::TimeMeter(true)},
-               {kOptimTimer, fl::TimeMeter(true)}}),
-        values({{kLPMLoss, fl::AverageValueMeter()},
-                {kFullLoss, fl::AverageValueMeter()},
-                {kNumHypos, fl::AverageValueMeter()},
-                {kLMEnt, fl::AverageValueMeter()},
-                {kLMScore, fl::AverageValueMeter()},
-                {kLen, fl::AverageValueMeter()}}) {}
+      : timer(
+            {{kRuntime, fl::TimeMeter(false)},
+             {kTimer, fl::TimeMeter(true)},
+             {kSampleTimer, fl::TimeMeter(true)},
+             {kFwdTimer, fl::TimeMeter(true)},
+             {kCritFwdTimer, fl::TimeMeter(true)},
+             {kBeamTimer, fl::TimeMeter(true)},
+             {kBeamFwdTimer, fl::TimeMeter(true)},
+             {kLMFwdTimer, fl::TimeMeter(true)},
+             {kBwdTimer, fl::TimeMeter(true)},
+             {kOptimTimer, fl::TimeMeter(true)}}),
+        values(
+            {{kLPMLoss, fl::AverageValueMeter()},
+             {kFullLoss, fl::AverageValueMeter()},
+             {kNumHypos, fl::AverageValueMeter()},
+             {kLMEnt, fl::AverageValueMeter()},
+             {kLMScore, fl::AverageValueMeter()},
+             {kLen, fl::AverageValueMeter()}}) {}
 };
 
 class LogHelper {

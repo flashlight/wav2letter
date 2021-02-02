@@ -202,7 +202,9 @@ std::vector<Variable> CPCCriterion::forward(
   return {reorder(concatenate(loss, 2), 2, 0, 1, 3)};
 }
 
-af::array CPCCriterion::viterbiPath(const af::array& input) {
+af::array CPCCriterion::viterbiPath(
+    const af::array& input,
+    const af::array& inputSizes) {
   std::cout << "Should not be here" << std::endl;
   exit(1);
   return input * 0;

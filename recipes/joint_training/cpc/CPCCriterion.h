@@ -35,7 +35,8 @@ class CPCCriterion : public fl::app::asr::SequenceCriterion {
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs) override;
 
-  af::array viterbiPath(const af::array& input) override;
+  af::array viterbiPath(const af::array& input, const af::array& inputSizes)
+      override;
   std::string prettyString() const override;
 
   fl::Variable

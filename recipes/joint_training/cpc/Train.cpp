@@ -1110,8 +1110,9 @@ int main(int argc, char** argv) {
         int idx = 0;
         enc_out = ntwrk->module(idx++)->forward({enc_out}).front();
         auto dtype = enc_out.type();
-        l2_enc_out =
-            reorder(mean((enc_out * enc_out).as(f32), {0, 1}), 2, 0, 1, 3);
+        l2_enc_out = enc_out.as(f32);
+        l2_enc_out = 
+            reorder(mean((l2_enc_out * l2_enc_out), {0, 1}), 2, 0, 1, 3);
         enc_out = ntwrk->module(idx++)->forward({enc_out}).front().as(dtype);
         fl::Variable enc_out_mask;
         if (pretrain) {
@@ -1157,22 +1158,13 @@ int main(int argc, char** argv) {
           loss = loss * scaleFactor;
         }
 
-        if (af::anyTrue<bool>(af::isNaN(loss.array())) ||
-            af::anyTrue<bool>(af::isInf(loss.array()))) {
-          if (FLAGS_fl_amp_use_mixed_precision &&
-              scaleFactor >= kMinScaleFactor) {
-            scaleFactor = scaleFactor / 2.0f;
-            if (isMaster) {
-              FL_VLOG(2) << "AMP: Scale factor decreased. New value:\t"
-                         << scaleFactor;
-            }
-            scaleCounter = 1;
-            retrySample = true;
-            continue;
-          } else {
-            FL_LOG(fl::FATAL) << "Loss has NaN values. Samples - "
-                              << join(",", readSampleIds(batch[kSampleIdx]));
-          }
+        if (af::anyTrue<bool>(af::isNaN(loss.array()))) {
+          FL_LOG(fl::FATAL) << "Loss has NaN ovalues. Samples - "
+                            << join(",", readSampleIds(batch[kSampleIdx]));
+        }
+        if (af::anyTrue<bool>(af::isInf(loss.array()))) {
+          FL_LOG(fl::FATAL) << "Loss has Inf ovalues. Samples - "
+                            << join(",", readSampleIds(batch[kSampleIdx]));
         }
 
         std::hash<std::string> hasher;

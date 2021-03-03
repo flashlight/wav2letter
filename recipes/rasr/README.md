@@ -23,17 +23,17 @@ Here, we are releasing models with different architecture and different sizes. N
 |Conformer |300 mil |[am_conformer_ctc_stride3_letters_300Mparams.arch](https://dl.fbaipublicfiles.com/wav2letter/rasr/tutorial/am_conformer_ctc_stride3_letters_300Mparams.arch) |[am_conformer_ctc_stride3_letters_300Mparams.bin](https://dl.fbaipublicfiles.com/wav2letter/rasr/tutorial/am_conformer_ctc_stride3_letters_300Mparams.bin) |
 |Conformer |87 mil |[am_conformer_ctc_stride3_letters_87Mparams.arch](https://dl.fbaipublicfiles.com/wav2letter/rasr/tutorial/am_conformer_ctc_stride3_letters_87Mparams.arch) |[am_conformer_ctc_stride3_letters_87Mparams.bin](https://dl.fbaipublicfiles.com/wav2letter/rasr/tutorial/am_conformer_ctc_stride3_letters_87Mparams.bin) |
 |Conformer |28 mil |[am_conformer_ctc_stride3_letters_25Mparams.arch](https://dl.fbaipublicfiles.com/wav2letter/rasr/tutorial/am_conformer_ctc_stride3_letters_25Mparams.arch) |[am_conformer_ctc_stride3_letters_25Mparams.bin](https://dl.fbaipublicfiles.com/wav2letter/rasr/tutorial/am_conformer_ctc_stride3_letters_25Mparams.bin) |
-
+|Conformer (distillation) |28 mil |[am_conformer_ctc_stride3_letters_25Mparams_distill.arch](https://dl.fbaipublicfiles.com/wav2letter/rasr/tutorial/am_conformer_ctc_stride3_letters_25Mparams_distill.arch) |[am_conformer_ctc_stride3_letters_25Mparams_distill.bin](https://dl.fbaipublicfiles.com/wav2letter/rasr/tutorial/am_conformer_ctc_stride3_letters_25Mparams_distill.bin) |
 
 
 ### Language Model
 
 Language models are trained on Common Crawl corpus as mentioned in paper. We are providing 4-gram LMs with different pruning here with [200k-top words](https://dl.fbaipublicfiles.com/wav2letter/rasr/tutorial/lm_common_crawl_200kvocab.txt). All the LMs are trained with [KenLM toolkit](https://kheafield.com/code/kenlm/).
 
-| Pruning Param |Size (GB) |Path |
-| :---: | :---: | :---: |
-|0 0 5 5 |8.4 |[large](https://dl.fbaipublicfiles.com/wav2letter/rasr/tutorial/lm_common_crawl_large_4gram_prun0-0-5_200kvocab.bin) |
-|0 6 15 15 |2.5 |[small](https://dl.fbaipublicfiles.com/wav2letter/rasr/tutorial/lm_common_crawl_small_4gram_prun0-6-15_200kvocab.bin)  |
+| Pruning Param |Size (GB) |Path | Arpa Path |
+| :---: | :---: | :---: | :---: |
+|0 0 5 5 |8.4 |[large](https://dl.fbaipublicfiles.com/wav2letter/rasr/tutorial/lm_common_crawl_large_4gram_prun0-0-5_200kvocab.bin) | - |
+|0 6 15 15 |2.5 |[small](https://dl.fbaipublicfiles.com/wav2letter/rasr/tutorial/lm_common_crawl_small_4gram_prun0-6-15_200kvocab.bin)  | [small](https://dl.fbaipublicfiles.com/wav2letter/rasr/tutorial/lm_common_crawl_small_4gram_prun0-6-15_200kvocab.arpa) |
 
 The perplexities of the LMs on different development sets are listed below.
 
@@ -54,6 +54,7 @@ Here we summarize the decoding WER for all releasing models. All the numbers in 
 |Conformer |300 mil |3.5 → 3.3/3.3 |8.4 → 6.2/6.0 |17 → 12.7/12.0 |3.2 → 3.4/3.4 |8 → 7/6.8 |7 → 6.4/6.5 |11.9 → 10.7/10.5 |
 |Conformer |87 mil |4.3 → 3.3/3.3 |8.7 → 6.1/5.9 |18.2 →13.1/12.4 |3.7 → 3.5/3.5 |8.6 → 7.4/7.2 |7.3 → 6.7/6.7 |12.2 → 11.7/11.5 |
 |Conformer |28 mil |5 → 3.9/3.8 |10.5 → 6.9/6.6 |22.2 → 15.4/14.4 |4.7 → 4/3.9 |11.1 → 8.9/8.6 |8.8 → 7.8/7.7 |13.7 → 12.4/12.2 |
+|Conformer (distillation) |28 mil |4.7 → 3.9/3.8 |9.4 → 6.5/6.4 |19.6 → 14.6/13.8 |4.1 → 3.8/3.8 |9.9 → 8.4/8.2 |7.6 → 6.9/6.8 |13.0 → 12.2/12.0 |
 
 Decoding is done with lexicon-based beam-search decoder using 200k common crawl lexicon and small common crawl lm.
 * [tokens](https://[dl.fbaipublicfiles.com/wav2letter/rasr/tutorial/tokens.txt](http://dl.fbaipublicfiles.com/wav2letter/rasr/tutorial/tokens.txt))
@@ -67,6 +68,7 @@ Decoding is done with lexicon-based beam-search decoder using 200k common crawl 
 |Conformer |300 mil |1.8 |2 |50/500 |
 |Conformer |87 mil |2 |0 |50/500 |
 |Conformer |28 mil |2 |0 |50/500 |
+|Conformer (distilllation) |28 mil |1.4 |0.4 |50/500 |
 
 ## Tutorial
 

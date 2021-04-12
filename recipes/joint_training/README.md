@@ -7,6 +7,10 @@ The VoxPopuli dataset can be directly downloaded from the [VoxPopuli repository]
 The code included in this folder is a patched version of the original code developped by 
 [Chaitanya Talnikar](https://scholar.google.com/citations?user=aHLUKlQAAAAJ) from the [wav2letter team](https://github.com/facebookresearch/wav2letter/tree/masked_cpc/recipes/joint_training) in order to include the pre-training.
 
+## Flashlight version
+
+You can always refer to this flahslight commit for the stable release https://github.com/facebookresearch/flashlight/commit/eac650b7836a4a2d44234fa3e7e3d72a1d5322a8 
+
 ## Loading the checkpoint
 
 Wav2letter small wav2vec model : https://dl.fbaipublicfiles.com/voxpopuli/wav2letter_100k_small.tar.gz

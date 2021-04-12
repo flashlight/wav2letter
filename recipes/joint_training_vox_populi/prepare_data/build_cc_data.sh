@@ -4,9 +4,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-LANG=$2
-DIR_COMMON_VOICE=$1
-DIR_CV_LANG="${DIR_COMMON_VOICE}/${LANG}"
+LANG=$1
+DIR_CV_LANG="${COMMON_VOICE_DIR}/${LANG}"
 PATH_TOKENS="${DIR_CV_LANG}/${LANG}_grapheme.tokens"
 PATH_CLIPS_MP3="${DIR_CV_LANG}/clips"
 PATH_CLIPS_FLAC="${DIR_CV_LANG}/validated_flac"

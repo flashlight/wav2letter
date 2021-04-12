@@ -4,7 +4,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import argparse
 LANG=$2
 DIR_COMMON_VOICE=$1
 DIR_CV_LANG="${DIR_COMMON_VOICE}/${LANG}"

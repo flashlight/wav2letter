@@ -9,7 +9,7 @@ LANG=$2
 BINUSER=mriviere
 BINHOME=/private/home/$BINUSER
 
-PRETRAINEXE=$WAV2LETTERDIR/build/Train_cpc
+PRETRAINEXE=$WAV2LETTERDIR/build/recipes/joint_training_vox_populi/cpc/Train_cpc
 ARCHDIR=$MODEL_DIR/arch
 PRETRAINRUN="003"
 

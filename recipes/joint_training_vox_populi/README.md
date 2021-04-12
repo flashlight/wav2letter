@@ -65,8 +65,9 @@ Uncompress the data and copy them into $COMMON_VOICE_DIR/$LANG. You should get t
 
 Then run the following command:
 ```
+export COMMON_VOICE_DIR= path to the common voice directory described above
 cd prepare_data
-bash build_cc_data.sh $COMMON_VOICE_DIR $LANG
+bash build_cc_data.sh $LANG
 ```
 The script will produce the manifest files associated with the validated, train, dev and test sets. As well as the lexicon and the token files.
 
@@ -75,11 +76,20 @@ The script will produce the manifest files associated with the validated, train,
 A training script is available is the scripts folder. To use it run:
 ```
 export COMMON_VOICE_DIR= path to the common voice directory described above
-export WAV2LETTERDIR= path to the directory where this README is
+export WAV2LETTERDIR= path to wav2letter root directory
 bash train_lang.sh $DIR_CHECKPOINT $LANG
 ```
 
 Where DIR_CHECKPOINT is the directory where you have uncomprssed the checkpoint and $LANG is the language you want to train your model on.
+
+## Decoder
+
+A decoding script is also available. It will run the decoding on the dev subset.
+```
+export COMMON_VOICE_DIR= path to the common voice directory described above
+export WAV2LETTERDIR= path to wav2letter root directory
+bash decode_lang.sh $DIR_CHECKPOINT $LANG
+```
 
 ## Results 
 

@@ -12,12 +12,15 @@
 //#include "flashlight/common/FlashlightUtils.h"
 #include "flashlight/app/asr/criterion/Defines.h"
 #include "flashlight/app/asr/criterion/SequenceCriterion.h"
+#include "flashlight/fl/contrib/modules/modules.h"
 
 namespace w2l {
 
 constexpr const char* kCPCCriterion = "cpc";
 
 namespace detail {}
+
+void PartialLoading(int n_layers, std::shared_ptr<fl::Sequential>  net0, std::shared_ptr<fl::Sequential> net);
 
 class CPCCriterion : public fl::app::asr::SequenceCriterion {
  public:
@@ -35,8 +38,7 @@ class CPCCriterion : public fl::app::asr::SequenceCriterion {
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs) override;
 
-  af::array viterbiPath(const af::array& input, const af::array& inputSizes)
-      override;
+  af::array viterbiPath(const af::array& input) override;
   std::string prettyString() const override;
 
   fl::Variable
@@ -81,9 +83,11 @@ class CPCCriterion : public fl::app::asr::SequenceCriterion {
       temperature_)
 
   CPCCriterion() = default;
+
 };
 
 } // namespace w2l
+
 
 CEREAL_REGISTER_TYPE(w2l::CPCCriterion)
 CEREAL_CLASS_VERSION(w2l::CPCCriterion, 3)

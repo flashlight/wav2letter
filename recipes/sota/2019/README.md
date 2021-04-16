@@ -16,8 +16,8 @@ In the paper we are considering:
   - word-based (ngram, ConvLM, transformer)
 
 ## Dependencies
-- [flashlight](https://github.com/facebookresearch/flashlight/tree/v0.2) branch v0.2
-- [wav2letter] (https://github.com/facebookresearch/wav2letter/tree/v0.2) branch v0.2
+- [flashlight](https://github.com/flashlight/flashlight/tree/v0.2) branch v0.2
+- [wav2letter] (https://github.com/flashlight/wav2letter/tree/v0.2) branch v0.2
 
 ## Data preparation
 

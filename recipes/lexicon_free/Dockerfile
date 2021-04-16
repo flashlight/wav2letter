@@ -9,9 +9,9 @@
 FROM wav2letter/wav2letter:cuda-base-26c69be
 
 # ==================================================================
-# flashlight https://github.com/facebookresearch/flashlight.git
+# flashlight https://github.com/flashlight/flashlight.git
 # ------------------------------------------------------------------
-RUN cd /root && git clone --recursive https://github.com/facebookresearch/flashlight.git && \
+RUN cd /root && git clone --recursive https://github.com/flashlight/flashlight.git && \
     cd /root/flashlight && git checkout da99018f393c9301c9bb50908dabde954b290256 && \
     git submodule update --init --recursive && mkdir -p build && \
     cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CUDA && \
@@ -27,7 +27,7 @@ RUN cd /root && git clone --recursive https://github.com/facebookresearch/flashl
 # ==================================================================
 # wav2letter with GPU backend
 # ------------------------------------------------------------------
-    cd /root && git clone --recursive https://github.com/facebookresearch/wav2letter.git && \
+    cd /root && git clone --recursive https://github.com/flashlight/wav2letter.git && \
     export MKLROOT=/opt/intel/mkl && export KENLM_ROOT_DIR=/root/kenlm && \
     cd /root/wav2letter && git checkout tags/recipes-lexfree-paper && mkdir -p build && cd build && \
     cmake .. -DCMAKE_BUILD_TYPE=Release -DW2L_LIBRARIES_USE_CUDA=ON -DKENLM_MAX_ORDER=20 && \

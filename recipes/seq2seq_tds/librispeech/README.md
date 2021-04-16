@@ -2,8 +2,8 @@
 
 ## Dependencies
 Check out the following commits:
-* wav2letter++: https://github.com/facebookresearch/wav2letter/releases/tag/recipes-seq2seq-tds-paper
-* flashlight: https://github.com/facebookresearch/flashlight/commit/37266c8a9f270c0fc42546553fd3d150046b2d3b
+* wav2letter++: https://github.com/flashlight/wav2letter/releases/tag/recipes-seq2seq-tds-paper
+* flashlight: https://github.com/flashlight/flashlight/commit/37266c8a9f270c0fc42546553fd3d150046b2d3b
 
 ## Instructions
 

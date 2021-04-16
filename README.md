@@ -1,14 +1,14 @@
 # wav2letter++
 
-[![CircleCI](https://circleci.com/gh/facebookresearch/wav2letter.svg?style=svg)](https://circleci.com/gh/facebookresearch/wav2letter)
+[![CircleCI](https://circleci.com/gh/flashlight/wav2letter.svg?style=svg)](https://circleci.com/gh/flashlight/wav2letter)
 [![Join the chat at https://gitter.im/wav2letter/community](https://badges.gitter.im/wav2letter/community.svg)](https://gitter.im/wav2letter/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 ## Important Note:
-### wav2letter has been moved and consolidated [into Flashlight](https://github.com/facebookresearch/flashlight) in the [ASR application](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr).
+### wav2letter has been moved and consolidated [into Flashlight](https://github.com/flashlight/flashlight) in the [ASR application](https://github.com/flashlight/flashlight/tree/master/flashlight/app/asr).
 
 Future wav2letter development will occur in Flashlight.
 
-*To build the old, pre-consolidation version of wav2letter*, checkout the [wav2letter v0.2](https://github.com/facebookresearch/wav2letter/releases/tag/v0.2) release, which depends on the old [Flashlight v0.2](https://github.com/facebookresearch/flashlight/releases/tag/v0.2) release. The [`wav2letter-lua`](https://github.com/facebookresearch/wav2letter/tree/wav2letter-lua) project can be found on the [`wav2letter-lua` branch](https://github.com/facebookresearch/wav2letter/tree/wav2letter-lua), accordingly.
+*To build the old, pre-consolidation version of wav2letter*, checkout the [wav2letter v0.2](https://github.com/flashlight/wav2letter/releases/tag/v0.2) release, which depends on the old [Flashlight v0.2](https://github.com/flashlight/flashlight/releases/tag/v0.2) release. The [`wav2letter-lua`](https://github.com/flashlight/wav2letter/tree/wav2letter-lua) project can be found on the [`wav2letter-lua` branch](https://github.com/flashlight/wav2letter/tree/wav2letter-lua), accordingly.
 
 For more information on wav2letter++, see or cite [this arXiv paper](https://arxiv.org/abs/1812.07625).
 
@@ -24,7 +24,7 @@ Data preparation for training and evaluation can be found in [data](data) direct
 
 ### Building the Recipes
 
-First, install [Flashlight](https://github.com/facebookresearch/flashlight) with the [ASR application](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr). Then, after cloning the project source:
+First, install [Flashlight](https://github.com/flashlight/flashlight) with the [ASR application](https://github.com/flashlight/flashlight/tree/master/flashlight/app/asr). Then, after cloning the project source:
 ```shell
 mkdir build && cd build
 cmake .. && make -j8

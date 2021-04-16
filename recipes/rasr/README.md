@@ -5,14 +5,14 @@ This is a repository sharing pre-trained acoustic models and language models for
 
 ## Dependencies
 
-* [`Flashlight`](https://github.com/facebookresearch/flashlight)
-* [`Flashlight` ASR app](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr)
+* [`Flashlight`](https://github.com/flashlight/flashlight)
+* [`Flashlight` ASR app](https://github.com/flashlight/flashlight/tree/master/flashlight/app/asr)
 
 ## Models
 
 ### Acoustic Model
 
-All the acoustic models are retrained using `Flashlight` with [wav2letter++](https://github.com/facebookresearch/wav2letter) consolidated. `Tedlium` is not used as training data here due to license issue. All the training data has more standardized sample rate 16kHz rather than 8kHz used in the paper.
+All the acoustic models are retrained using `Flashlight` with [wav2letter++](https://github.com/flashlight/wav2letter) consolidated. `Tedlium` is not used as training data here due to license issue. All the training data has more standardized sample rate 16kHz rather than 8kHz used in the paper.
 
 Here, we are releasing models with different architecture and different sizes. Note that the models may not fully reproduce results in the paper because of both data and toolkit implementation discrepancies.
 
@@ -72,7 +72,7 @@ Decoding is done with lexicon-based beam-search decoder using 200k common crawl 
 
 ## Tutorial
 
-To simply serialize all the models and interact with them, please refer to the [`Flashlight` ASR app tutorials](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr/tutorial).
+To simply serialize all the models and interact with them, please refer to the [`Flashlight` ASR app tutorials](https://github.com/flashlight/flashlight/tree/master/flashlight/app/asr/tutorial).
 
 
 

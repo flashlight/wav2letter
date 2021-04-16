@@ -5,8 +5,8 @@ Considered benchmarks:
 - LibriSpeech
 
 ## Reproduction
-- [flashlight](https://github.com/facebookresearch/flashlight) commit 16d0bf0
-- [wav2letter] (https://github.com/facebookresearch/wav2letter) commit 9e2c69f
+- [flashlight](https://github.com/flashlight/flashlight) commit 16d0bf0
+- [wav2letter] (https://github.com/flashlight/wav2letter) commit 9e2c69f
 
 ## Citation
 ```

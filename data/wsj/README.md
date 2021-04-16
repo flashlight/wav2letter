@@ -13,7 +13,7 @@ In these experiments, we use three subsets following the [Kaldi WSJ recipe](http
 ## Wav2Letter models
 | NOV93DEV WER % / LER % | NOV92 WER % / LER % | MODEL                                                                                                      | PAPER                                                                                                     |
 |-------------------------|-------------------------|------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
-| 9.8 / 7.2 | 5.6 / - | [conv_glu](https://github.com/facebookresearch/wav2letter/tree/master/recipes/conv_glu/wsj) | [Wav2Letter: an End-to-End ConvNet-based Speech Recognition System](https://arxiv.org/pdf/1609.03193.pdf), [Letter-Based Speech Recognition with Gated ConvNets](https://arxiv.org/pdf/1712.09444.pdf) |
+| 9.8 / 7.2 | 5.6 / - | [conv_glu](https://github.com/flashlight/wav2letter/tree/master/recipes/conv_glu/wsj) | [Wav2Letter: an End-to-End ConvNet-based Speech Recognition System](https://arxiv.org/pdf/1609.03193.pdf), [Letter-Based Speech Recognition with Gated ConvNets](https://arxiv.org/pdf/1712.09444.pdf) |
 
 ## Prerequisites
 Here and later we assume that complete version of data is downloaded, but the same steps can be used for `B`-version of WSJ.

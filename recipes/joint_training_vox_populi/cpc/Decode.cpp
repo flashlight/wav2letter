@@ -72,7 +72,6 @@ int main(int argc, char** argv) {
   LOG(INFO) << "Parsing command line flags";
   gflags::ParseCommandLineFlags(&argc, &argv, false);
   auto flagsfile = FLAGS_flagsfile;
-  std::cout << FLAGS_am << std::endl;
   if (!flagsfile.empty()) {
     LOG(INFO) << "Reading flags from file " << flagsfile;
     gflags::ReadFromFlagsFile(flagsfile, argv[0], true);
@@ -702,7 +701,6 @@ int main(int argc, char** argv) {
                        << "\%, decoded samples (thread " << tid
                        << "): " << sliceNumSamples[tid] + 1 << "]" << std::endl;
 
-                std::cout << buffer.str();
                 if (!FLAGS_sclite.empty()) {
                   writeLog(buffer.str());
                 }

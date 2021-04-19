@@ -21,13 +21,10 @@ namespace w2l {
 void PartialLoading(int n_layers, std::shared_ptr<fl::Sequential>  net0, std::shared_ptr<fl::Sequential> net){
 
     auto modules_0 = net0->modules();
-    std::cout << modules_0.size() << " " << n_layers << " "<< -int(modules_0.size()) << std::endl; // 5 -1 ?
 
     if (n_layers < 0){
         n_layers=modules_0.size() + n_layers;
     }
-
-    std::cout << modules_0.size() << " " << n_layers << " "<< -int(modules_0.size()) << std::endl; 
 
     for (int i =0; i< n_layers; i++){
         net->add(modules_0[i]);

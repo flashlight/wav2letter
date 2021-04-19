@@ -16,14 +16,14 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/fl/contrib/contrib.h"
 #include "flashlight/fl/flashlight.h"
+#include "flashlight/app/asr/runtime/runtime.h"
+#include "flashlight/fl/contrib/contrib.h"
 
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/data/FeatureTransforms.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
-#include "flashlight/app/asr/runtime/runtime.h"
 
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
@@ -33,6 +33,7 @@
 #include "flashlight/lib/text/dictionary/Utils.h"
 
 #include "CPCCriterion.h"
+#include "CPCSpecAugment.h"
 
 // extra optimization hyperparameters
 DECLARE_string(train2);
@@ -441,7 +442,7 @@ int main(int argc, char** argv) {
 
 
   FL_LOG(fl::INFO) << "SAUG";
-  auto saug = std::make_shared<fl::CPCSpecAugment>(
+  auto saug = std::make_shared<w2l::CPCSpecAugment>(
       FLAGS_contextdim, // default 80
       64,
       6,
@@ -860,7 +861,7 @@ int main(int argc, char** argv) {
         enc_out_mask = enc_out;
       }
       enc_out_mask = ntwrk->module(idx++)->forward({enc_out_mask}).front();
-      auto context_mask = fl::ext::forwardSequentialModuleWithPadMaskForCPC(
+      auto context_mask = w2l::forwardSequentialModuleWithPadMaskForCPC(
           enc_out_mask, ntwrk->module(idx++), batch[kDurationIdx]);
       // target is not used in unsupervised loss
       if (pretrain) {

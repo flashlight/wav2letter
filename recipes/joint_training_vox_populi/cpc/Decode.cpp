@@ -40,6 +40,8 @@
 #include "flashlight/lib/text/decoder/lm/KenLM.h"
 #include "flashlight/lib/text/decoder/lm/ZeroLM.h"
 
+#include "CPCCriterion.h"
+
 DECLARE_string(criterion2);
 DEFINE_string(criterion2, "ctc", "Criterion for supervised task");
 
@@ -431,7 +433,7 @@ int main(int argc, char** argv) {
                                .front();
             enc_out = localNetwork->module(idx++)->forward({enc_out}).front();
             enc_out = localNetwork->module(idx++)->forward({enc_out}).front();
-            enc_out = fl::ext::forwardSequentialModuleWithPadMaskForCPC(
+            enc_out = w2l::forwardSequentialModuleWithPadMaskForCPC(
                 enc_out, localNetwork->module(idx++), sample[kDurationIdx]);
             auto rawEmission =
                 localNetwork->module(idx)->forward({enc_out}).front();

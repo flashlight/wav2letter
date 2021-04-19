@@ -4,11 +4,15 @@ cmake_minimum_required(VERSION 3.10)
 
 
 #find_package(flashlight REQUIRED)
+set(common
+   CPCCriterion.cpp
+   Utils.cpp
+   CPCSpecAugment.cpp)
 
 # ------------------------- Dedicated SSL Train executable --------------------------
 add_executable(
   Train_cpc
-  CPCCriterion.cpp
+  ${common}
   Train.cpp
   )
 
@@ -19,22 +23,22 @@ target_link_libraries(
 
 add_executable(
   Decode_cpc
-  CPCCriterion.cpp
+  ${common}
   Decode.cpp
-  )
+)
 
 target_link_libraries(
   Decode_cpc
   flashlight::flashlight-app-asr
 )
 
-add_executable(
-  Test_cpc
-  CPCCriterion.cpp
-  Test.cpp
-  )
+#add_executable(
+#  Test_cpc
+#  ${common}
+#  Test.cpp
+#  )
 
-target_link_libraries(
-  Test_cpc
-  flashlight::flashlight-app-asr
-)
+#target_link_libraries(
+#  Test_cpc
+#  flashlight::flashlight-app-asr
+#)

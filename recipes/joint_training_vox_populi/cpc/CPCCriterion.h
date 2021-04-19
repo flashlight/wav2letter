@@ -22,6 +22,12 @@ namespace detail {}
 
 void PartialLoading(int n_layers, std::shared_ptr<fl::Sequential>  net0, std::shared_ptr<fl::Sequential> net);
 
+fl::Variable forwardSequentialModuleWithPadMaskForCPC(
+    const fl::Variable& input,
+    std::shared_ptr<fl::Module> ntwrk,
+    const af::array& inputSizes);
+
+
 class CPCCriterion : public fl::app::asr::SequenceCriterion {
  public:
   CPCCriterion(

@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 #include "flashlight/fl/flashlight.h"
@@ -298,7 +299,7 @@ int main(int argc, char** argv) {
                              .front();
           enc_out = localNetwork->module(idx++)->forward({enc_out}).front();
           enc_out = localNetwork->module(idx++)->forward({enc_out}).front();
-          enc_out = fl::ext::forwardSequentialModuleWithPadMaskForCPC(
+          enc_out = w2l::forwardSequentialModuleWithPadMaskForCPC(
               enc_out, localNetwork->module(idx++), sample[kDurationIdx]);
           auto rawEmission =
               localNetwork->module(idx)->forward({enc_out}).front();

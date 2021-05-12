@@ -149,7 +149,6 @@ set_target_properties(
   wav2letter-inference
   PROPERTIES
   LINKER_LANGUAGE CXX
-  CXX_STANDARD 11
 )
 
 target_include_directories(

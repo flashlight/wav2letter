@@ -28,7 +28,7 @@ set_property(
   PROPERTY STRINGS
   ${AVAILABLE_INFERENCE_BACKENDS}
 )
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_library(wav2letter-inference "")

@@ -35,4 +35,5 @@ $DECODE_BIN --am="${RUNDIR}/${NAME_MODEL}" \
             --uselexicon=true \
             --beamthreshold=40 \
             --logtostderr=1 \
+	    --features_type=raw \
             --sclite=$PATH_LOGS 

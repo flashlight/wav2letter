@@ -53,9 +53,10 @@ commands:
             sudo docker exec -it wav2letter bash -c "\
             echo 'deb http://archive.ubuntu.com/ubuntu xenial main' | tee /etc/apt/sources.list.d/xenial.list && \
             apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends software-properties-common && \
-            apt-add-repository -r universe && apt-get update && \
-            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5 && \
-            export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5 && \
+            apt-add-repository -r universe && apt-add-repository 'deb http://dk.archive.ubuntu.com/ubuntu/ bionic main' && apt-add-repository 'deb http://dk.archive.ubuntu.com/ubuntu/ bionic universe' && apt-get update && \
+            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-7 g++-7 && \
+            update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 7 &&\
+            update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 7 && \
             wget https://cmake.org/files/v<< parameters.version >>/cmake-<< parameters.version >>.<< parameters.version_build >>-Linux-x86_64.sh && \
             mkdir /opt/cmake && \
             sh cmake-<< parameters.version >>.<< parameters.version_build >>-Linux-x86_64.sh --prefix=/opt/cmake --skip-license && \

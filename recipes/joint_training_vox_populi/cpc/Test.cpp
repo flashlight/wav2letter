@@ -12,7 +12,6 @@
 #include <string>
 #include <vector>
 
-
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 #include "flashlight/fl/flashlight.h"
@@ -136,8 +135,8 @@ int main(int argc, char** argv) {
     LOG(INFO) << "Number of words: " << wordDict.indexSize();
   }
 
-  fl::lib::text::DictionaryMap dicts = {{kTargetIdx, tokenDict},
-                                        {kWordIdx, wordDict}};
+  fl::lib::text::DictionaryMap dicts = {
+      {kTargetIdx, tokenDict}, {kWordIdx, wordDict}};
 
   /* ===================== Create Dataset ===================== */
   fl::lib::audio::FeatureParams featParams(
@@ -244,151 +243,148 @@ int main(int argc, char** argv) {
   };
 
   // Run test
-  auto run =
-      [&network,
-       &criterion,
-       &nSamples,
-       &ds,
-       &tokenDict,
-       &wordDict,
-       &writeHyp,
-       &writeRef,
-       &emissionDir,
-       &sliceWrdDst,
-       &sliceTknDst,
-       &sliceNumWords,
-       &sliceNumTokens,
-       &sliceNumSamples,
-       &sliceTime](int tid) {
-        // Initialize AM
-        af::setDevice(tid);
-        std::shared_ptr<fl::Sequential> localNetwork = network;
-        std::shared_ptr<SequenceCriterion> _localCriterion;
-        std::shared_ptr<SequenceCriterion> localCriterion = criterion;
-        if (tid != 0) {
-          std::unordered_map<std::string, std::string> dummyCfg;
-          std::string dummyVersion;
-          Serializer::load(
-              FLAGS_am,
-              dummyVersion,
-              dummyCfg,
-              localNetwork,
-              _localCriterion,
-              localCriterion);
-          localNetwork->eval();
-          localCriterion->eval();
-        }
+  auto run = [&network,
+              &criterion,
+              &nSamples,
+              &ds,
+              &tokenDict,
+              &wordDict,
+              &writeHyp,
+              &writeRef,
+              &emissionDir,
+              &sliceWrdDst,
+              &sliceTknDst,
+              &sliceNumWords,
+              &sliceNumTokens,
+              &sliceNumSamples,
+              &sliceTime](int tid) {
+    // Initialize AM
+    af::setDevice(tid);
+    std::shared_ptr<fl::Sequential> localNetwork = network;
+    std::shared_ptr<SequenceCriterion> _localCriterion;
+    std::shared_ptr<SequenceCriterion> localCriterion = criterion;
+    if (tid != 0) {
+      std::unordered_map<std::string, std::string> dummyCfg;
+      std::string dummyVersion;
+      Serializer::load(
+          FLAGS_am,
+          dummyVersion,
+          dummyCfg,
+          localNetwork,
+          _localCriterion,
+          localCriterion);
+      localNetwork->eval();
+      localCriterion->eval();
+    }
 
-        std::vector<int64_t> selectedIds;
-        for (int64_t i = tid; i < nSamples;
-             i += FLAGS_nthread_decoder_am_forward) {
-          selectedIds.emplace_back(i);
-        }
-        std::shared_ptr<fl::Dataset> localDs =
-            std::make_shared<fl::ResampleDataset>(ds, selectedIds);
-        localDs = std::make_shared<fl::PrefetchDataset>(
-            localDs, FLAGS_nthread, FLAGS_nthread);
+    std::vector<int64_t> selectedIds;
+    for (int64_t i = tid; i < nSamples; i += FLAGS_nthread_decoder_am_forward) {
+      selectedIds.emplace_back(i);
+    }
+    std::shared_ptr<fl::Dataset> localDs =
+        std::make_shared<fl::ResampleDataset>(ds, selectedIds);
+    localDs = std::make_shared<fl::PrefetchDataset>(
+        localDs, FLAGS_nthread, FLAGS_nthread);
 
-        TestMeters meters;
-        meters.timer.resume();
-        int cnt = 0;
-        for (auto& sample : *localDs) {
-          int idx = 0;
-          auto enc_out = localNetwork->module(idx++)
-                             ->forward({fl::input(sample[kInputIdx])})
-                             .front();
-          enc_out = localNetwork->module(idx++)->forward({enc_out}).front();
-          enc_out = localNetwork->module(idx++)->forward({enc_out}).front();
-          enc_out = w2l::forwardSequentialModuleWithPadMaskForCPC(
-              enc_out, localNetwork->module(idx++), sample[kDurationIdx]);
-          auto rawEmission =
-              localNetwork->module(idx)->forward({enc_out}).front();
-          auto emission = afToVector<float>(rawEmission);
-          auto tokenTarget = afToVector<int>(sample[kTargetIdx]);
-          auto wordTarget = afToVector<int>(sample[kWordIdx]);
-          auto sampleId = readSampleIds(sample[kSampleIdx]).front();
+    TestMeters meters;
+    meters.timer.resume();
+    int cnt = 0;
+    for (auto& sample : *localDs) {
+      int idx = 0;
+      auto enc_out = localNetwork->module(idx++)
+                         ->forward({fl::input(sample[kInputIdx])})
+                         .front();
+      enc_out = localNetwork->module(idx++)->forward({enc_out}).front();
+      enc_out = localNetwork->module(idx++)->forward({enc_out}).front();
+      enc_out = w2l::forwardSequentialModuleWithPadMaskForCPC(
+          enc_out, localNetwork->module(idx++), sample[kDurationIdx]);
+      auto rawEmission = localNetwork->module(idx)->forward({enc_out}).front();
+      auto emission = afToVector<float>(rawEmission);
+      auto tokenTarget = afToVector<int>(sample[kTargetIdx]);
+      auto wordTarget = afToVector<int>(sample[kWordIdx]);
+      auto sampleId = readSampleIds(sample[kSampleIdx]).front();
 
-          auto letterTarget = tknTarget2Ltr(
-              tokenTarget,
-              tokenDict,
-              FLAGS_criterion2,
-              FLAGS_surround,
-              FLAGS_eostoken,
-              FLAGS_replabel,
-              FLAGS_usewordpiece,
-              FLAGS_wordseparator);
-          std::vector<std::string> wordTargetStr;
-          if (FLAGS_uselexicon) {
-            wordTargetStr = wrdIdx2Wrd(wordTarget, wordDict);
-          } else {
-            wordTargetStr = tkn2Wrd(letterTarget, FLAGS_wordseparator);
-          }
+      auto letterTarget = tknTarget2Ltr(
+          tokenTarget,
+          tokenDict,
+          FLAGS_criterion2,
+          FLAGS_surround,
+          FLAGS_eostoken,
+          FLAGS_replabel,
+          FLAGS_usewordpiece,
+          FLAGS_wordseparator);
+      std::vector<std::string> wordTargetStr;
+      if (FLAGS_uselexicon) {
+        wordTargetStr = wrdIdx2Wrd(wordTarget, wordDict);
+      } else {
+        wordTargetStr = tkn2Wrd(letterTarget, FLAGS_wordseparator);
+      }
 
-          // Tokens
-          auto tokenPrediction =
-              afToVector<int>(localCriterion->viterbiPath(rawEmission.array()));
-          auto letterPrediction = tknPrediction2Ltr(
-              tokenPrediction,
-              tokenDict,
-              FLAGS_criterion2,
-              FLAGS_surround,
-              FLAGS_eostoken,
-              FLAGS_replabel,
-              FLAGS_usewordpiece,
-              FLAGS_wordseparator);
+      // Tokens
+      auto tokenPrediction =
+          afToVector<int>(localCriterion->viterbiPath(rawEmission.array()));
+      auto letterPrediction = tknPrediction2Ltr(
+          tokenPrediction,
+          tokenDict,
+          FLAGS_criterion2,
+          FLAGS_surround,
+          FLAGS_eostoken,
+          FLAGS_replabel,
+          FLAGS_usewordpiece,
+          FLAGS_wordseparator);
 
-          meters.tknDstSlice.add(letterPrediction, letterTarget);
+      meters.tknDstSlice.add(letterPrediction, letterTarget);
 
-          // Words
-          std::vector<std::string> wrdPredictionStr =
-              tkn2Wrd(letterPrediction, FLAGS_wordseparator);
-          meters.wrdDstSlice.add(wrdPredictionStr, wordTargetStr);
+      // Words
+      std::vector<std::string> wrdPredictionStr =
+          tkn2Wrd(letterPrediction, FLAGS_wordseparator);
+      meters.wrdDstSlice.add(wrdPredictionStr, wordTargetStr);
 
-          if (!FLAGS_sclite.empty()) {
-            writeRef(join(" ", wordTargetStr) + " (" + sampleId + ")\n");
-            writeHyp(join(" ", wrdPredictionStr) + " (" + sampleId + ")\n");
-          }
+      if (!FLAGS_sclite.empty()) {
+        writeRef(join(" ", wordTargetStr) + " (" + sampleId + ")\n");
+        writeHyp(join(" ", wrdPredictionStr) + " (" + sampleId + ")\n");
+      }
 
-          if (FLAGS_show) {
-            meters.tknDst.reset();
-            meters.wrdDst.reset();
-            meters.tknDst.add(letterPrediction, letterTarget);
-            meters.wrdDst.add(wrdPredictionStr, wordTargetStr);
+      if (FLAGS_show) {
+        meters.tknDst.reset();
+        meters.wrdDst.reset();
+        meters.tknDst.add(letterPrediction, letterTarget);
+        meters.wrdDst.add(wrdPredictionStr, wordTargetStr);
 
-            std::cout << "|T|: " << join(" ", letterTarget) << std::endl;
-            std::cout << "|P|: " << join(" ", letterPrediction) << std::endl;
-            std::cout << "[sample: " << sampleId
-                      << ", WER: " << meters.wrdDst.errorRate()[0]
-                      << "\%, TER: " << meters.tknDst.errorRate()[0]
-                      << "\%, total WER: " << meters.wrdDstSlice.errorRate()[0]
-                      << "\%, total TER: " << meters.tknDstSlice.errorRate()[0]
-                      << "\%, progress (thread " << tid << "): "
-                      << static_cast<float>(++cnt) / selectedIds.size() * 100
-                      << "\%]" << std::endl;
-          }
+        std::cout << "|T|: " << join(" ", letterTarget) << std::endl;
+        std::cout << "|P|: " << join(" ", letterPrediction) << std::endl;
+        std::cout << "[sample: " << sampleId
+                  << ", WER: " << meters.wrdDst.errorRate()[0]
+                  << "\%, TER: " << meters.tknDst.errorRate()[0]
+                  << "\%, total WER: " << meters.wrdDstSlice.errorRate()[0]
+                  << "\%, total TER: " << meters.tknDstSlice.errorRate()[0]
+                  << "\%, progress (thread " << tid << "): "
+                  << static_cast<float>(++cnt) / selectedIds.size() * 100
+                  << "\%]" << std::endl;
+      }
 
-          /* Save emission and targets */
-          int nTokens = rawEmission.dims(0);
-          int nFrames = rawEmission.dims(1);
-          EmissionUnit emissionUnit(emission, sampleId, nFrames, nTokens);
+      /* Save emission and targets */
+      int nTokens = rawEmission.dims(0);
+      int nFrames = rawEmission.dims(1);
+      EmissionUnit emissionUnit(emission, sampleId, nFrames, nTokens);
 
-          // Update counters
-          sliceNumWords[tid] += wordTarget.size();
-          sliceNumTokens[tid] += letterTarget.size();
-          sliceNumSamples[tid]++;
+      // Update counters
+      sliceNumWords[tid] += wordTarget.size();
+      sliceNumTokens[tid] += letterTarget.size();
+      sliceNumSamples[tid]++;
 
-          if (!emissionDir.empty()) {
-            std::string savePath = pathsConcat(emissionDir, sampleId + ".bin");
-            Serializer::save(savePath, FL_APP_ASR_VERSION, emissionUnit);
-          }
-        }
+      if (!emissionDir.empty()) {
+        std::string savePath = pathsConcat(emissionDir, sampleId + ".bin");
+        Serializer::save(savePath, FL_APP_ASR_VERSION, emissionUnit);
+      }
+    }
 
-        meters.timer.stop();
+    meters.timer.stop();
 
-        sliceWrdDst[tid] = meters.wrdDstSlice.value()[0];
-        sliceTknDst[tid] = meters.tknDstSlice.value()[0];
-        sliceTime[tid] = meters.timer.value();
-      };
+    sliceWrdDst[tid] = meters.wrdDstSlice.value()[0];
+    sliceTknDst[tid] = meters.tknDstSlice.value()[0];
+    sliceTime[tid] = meters.timer.value();
+  };
 
   /* Spread threades */
   // TODO possibly try catch for futures to proper logging of all errors

@@ -20,13 +20,15 @@ constexpr const char* kCPCCriterion = "cpc";
 
 namespace detail {}
 
-void PartialLoading(int n_layers, std::shared_ptr<fl::Sequential>  net0, std::shared_ptr<fl::Sequential> net);
+void PartialLoading(
+    int n_layers,
+    std::shared_ptr<fl::Sequential> net0,
+    std::shared_ptr<fl::Sequential> net);
 
 fl::Variable forwardSequentialModuleWithPadMaskForCPC(
     const fl::Variable& input,
     std::shared_ptr<fl::Module> ntwrk,
     const af::array& inputSizes);
-
 
 class CPCCriterion : public fl::app::asr::SequenceCriterion {
  public:
@@ -44,7 +46,10 @@ class CPCCriterion : public fl::app::asr::SequenceCriterion {
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs) override;
 
-  af::array viterbiPath(const af::array& input) override;
+  af::array viterbiPath(
+      const af::array& input,
+      const af::array& inputSize = af::array()) override;
+
   std::string prettyString() const override;
 
   fl::Variable
@@ -89,11 +94,9 @@ class CPCCriterion : public fl::app::asr::SequenceCriterion {
       temperature_)
 
   CPCCriterion() = default;
-
 };
 
 } // namespace w2l
-
 
 CEREAL_REGISTER_TYPE(w2l::CPCCriterion)
 CEREAL_CLASS_VERSION(w2l::CPCCriterion, 3)

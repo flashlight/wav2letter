@@ -7,29 +7,29 @@
 
 #include "CPCCriterion.h"
 #include <algorithm>
+#include <iostream>
 #include <numeric>
 #include <queue>
-#include<vector>
-#include<iostream>
+#include <vector>
 #include "flashlight/app/asr/criterion/CriterionUtils.h"
-
 
 using namespace fl;
 
 namespace w2l {
 
-void PartialLoading(int n_layers, std::shared_ptr<fl::Sequential>  net0, std::shared_ptr<fl::Sequential> net){
+void PartialLoading(
+    int n_layers,
+    std::shared_ptr<fl::Sequential> net0,
+    std::shared_ptr<fl::Sequential> net) {
+  auto modules_0 = net0->modules();
 
-    auto modules_0 = net0->modules();
+  if (n_layers < 0) {
+    n_layers = modules_0.size() + n_layers;
+  }
 
-    if (n_layers < 0){
-        n_layers=modules_0.size() + n_layers;
-    }
-
-    for (int i =0; i< n_layers; i++){
-        net->add(modules_0[i]);
-    }
-
+  for (int i = 0; i < n_layers; i++) {
+    net->add(modules_0[i]);
+  }
 }
 
 fl::Variable forwardSequentialModuleWithPadMaskForCPC(
@@ -55,7 +55,6 @@ fl::Variable forwardSequentialModuleWithPadMaskForCPC(
   }
   return output.as(input.type());
 }
-
 
 CPCCriterion::CPCCriterion(
     int nEncoder,
@@ -245,11 +244,12 @@ std::vector<Variable> CPCCriterion::forward(
 }
 
 af::array CPCCriterion::viterbiPath(
-    const af::array& input) {
+    const af::array& input,
+    const af::array& inputSize) {
   std::cout << "Should not be here" << std::endl;
   exit(1);
   return input * 0;
-}
+} // namespace w2l
 
 std::string CPCCriterion::prettyString() const {
   return "CPCCriterion";

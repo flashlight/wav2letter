@@ -14,7 +14,6 @@ set_target_properties(
   streaming_inference_modules_nn_backend
   PROPERTIES
     LINKER_LANGUAGE CXX
-    CXX_STANDARD 11
 )
 
 add_dependencies(streaming_inference_modules_nn_backend fbgemm)

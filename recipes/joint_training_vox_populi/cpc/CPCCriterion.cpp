@@ -32,30 +32,6 @@ void PartialLoading(
   }
 }
 
-fl::Variable forwardSequentialModuleWithPadMaskForCPC(
-    const fl::Variable& input,
-    std::shared_ptr<fl::Module> ntwrk,
-    const af::array& inputSizes) {
-  // expected input dims T x C x 1 x B
-  int T = input.dims(1), B = input.dims(2);
-  auto inputMaxSize = af::tile(af::max(inputSizes), 1, B);
-  af::array inputNotPaddedSize = af::ceil(inputSizes * T / inputMaxSize);
-  auto padMask = af::iota(af::dim4(T, 1), af::dim4(1, B)) <
-      af::tile(inputNotPaddedSize, T, 1);
-  auto ntwrkSeq = std::dynamic_pointer_cast<fl::Sequential>(ntwrk);
-  auto output = input;
-  for (auto& module : ntwrkSeq->modules()) {
-    auto tr = std::dynamic_pointer_cast<fl::Transformer>(module);
-    auto cfr = std::dynamic_pointer_cast<fl::Conformer>(module);
-    if (tr != nullptr || cfr != nullptr) {
-      output = module->forward({output, fl::noGrad(padMask)}).front();
-    } else {
-      output = module->forward({output}).front();
-    }
-  }
-  return output.as(input.type());
-}
-
 CPCCriterion::CPCCriterion(
     int nEncoder,
     int nContext,

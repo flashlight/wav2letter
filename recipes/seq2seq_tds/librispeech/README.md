@@ -2,8 +2,8 @@
 
 ## Dependencies
 Check out the following commits:
-* wav2letter++: https://github.com/facebookresearch/wav2letter/releases/tag/recipes-seq2seq-tds-paper
-* flashlight: https://github.com/facebookresearch/flashlight/commit/37266c8a9f270c0fc42546553fd3d150046b2d3b
+* wav2letter++: https://github.com/flashlight/wav2letter/releases/tag/recipes-seq2seq-tds-paper
+* flashlight: https://github.com/flashlight/flashlight/commit/37266c8a9f270c0fc42546553fd3d150046b2d3b
 
 ## Instructions
 
@@ -45,7 +45,7 @@ Here architecture files are the same as `network.arch`, tokens and lexicon files
 
 Convolutional language models (ConvLM) are trained with the [fairseq](https://github.com/pytorch/fairseq) toolkit. n-gram language models are trained with the [KenLM](https://github.com/kpu/kenlm) toolkit. The below language models are converted into a binary format compatible with the wav2letter++ decoder.
 
-| Name |	Dataset | Type | Vocab |
+| Name | Dataset | Type | Vocab |
 | - | - | - | - |
 | [lm_librispeech_convlm_14B](https://dl.fbaipublicfiles.com/wav2letter/tds/librispeech/models/lm/lm_librispeech_convlm_14B.bin) | LibriSpeech | ConvLM 14B | [LM Vocab](https://dl.fbaipublicfiles.com/wav2letter/tds/librispeech/models/lm/lm_librispeech_convlm_14B.vocab) |
 | [lm_librispeech_kenlm_4g](https://dl.fbaipublicfiles.com/wav2letter/tds/librispeech/models/lm/lm_librispeech_kenlm_4g.bin) | LibriSpeech | 4-gram | - |

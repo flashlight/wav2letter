@@ -7,7 +7,7 @@ This directory contains pretrained monolingual models and also steps to reproduc
 
 ## Dependencies
 
-- [flashlight](https://github.com/facebookresearch/flashlight)
+- [flashlight](https://github.com/flashlight/flashlight)
 
 
 ## Tokens and Lexicons

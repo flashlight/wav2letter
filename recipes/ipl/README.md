@@ -8,7 +8,7 @@ We release a new LM training corpus including abandunt books from [Gutenberg Pro
 
 | LM | Description | Corpus | Vocabulary | Model
 |:-:|:-:|:-:|:-:|:-:|
-| LS \ LV | Librispeech LM corpus without LV transcriptions | [corpus](https://github.com/facebookresearch/wav2letter/tree/master/recipes/sota/2019#non-overlap-lm-corpus-librispeech-official-lm-corpus-excluded-the-data-from-librivox) | 200K vocab | [lm](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/lm/lm_nooverlap_librispeech_unique_4gram_200kvocab.bin) |
+| LS \ LV | Librispeech LM corpus without LV transcriptions | [corpus](https://github.com/flashlight/wav2letter/tree/master/recipes/sota/2019#non-overlap-lm-corpus-librispeech-official-lm-corpus-excluded-the-data-from-librivox) | 200K vocab | [lm](https://dl.fbaipublicfiles.com/wav2letter/sota/2019/lm/lm_nooverlap_librispeech_unique_4gram_200kvocab.bin) |
 | GB \ LS \ LV | Gutenberg books without LS transcriptions, LV transcriptions | [raw](https://dl.fbaipublicfiles.com/wav2letter/ipl/gutenberg_corpus/gutenberg_intersect_librivox.ids_and_manual.and.librispeech_train-dev-test.ids_and_manual.gutenberg.corpus), [normalized](https://dl.fbaipublicfiles.com/wav2letter/ipl/gutenberg_corpus/gutenberg_intersect_librivox.ids_and_manual.and.librispeech_train-dev-test.ids_and_manual.gutenberg.corpus.normalized) | [200K vocab](https://dl.fbaipublicfiles.com/wav2letter/ipl/gutenberg_lm/gutenberg_intersect_librivox.ids_and_manual.and.librispeech_train-dev-test.ids_and_manual.gutenberg.corpus.normalized.freq.kenlm.200kvocab) | [lm](https://dl.fbaipublicfiles.com/wav2letter/ipl/gutenberg_lm/gutenberg_minus_librivox_minus_librispeech_train-dev-test_5gram_200kvocab.bin) |
 | GB \ LV | Gutenberg books without LV transcriptions | [raw](https://dl.fbaipublicfiles.com/wav2letter/ipl/gutenberg_corpus/gutenberg_minus_librivox.ids_and_manual.and.librispeech_dev-test.ids_and_manual.gutenberg.corpus), [normalized](https://dl.fbaipublicfiles.com/wav2letter/ipl/gutenberg_corpus/gutenberg_minus_librivox.ids_and_manual.and.librispeech_dev-test.ids_and_manual.gutenberg.corpus.normalized) | [200K vocab](https://dl.fbaipublicfiles.com/wav2letter/ipl/gutenberg_lm/gutenberg_minus_librivox.ids_and_manual.and.librispeech_dev-test.ids_and_manual.gutenberg.corpus.normalized.freq.kenlm.200kvocab) | [lm](https://dl.fbaipublicfiles.com/wav2letter/ipl/gutenberg_lm/gutenberg_minus_librivox_minus_librispeech_dev-test_5gram_200kvocab.bin) |
 
@@ -16,10 +16,10 @@ We release a new LM training corpus including abandunt books from [Gutenberg Pro
 
 ## Acoustic Models
 We release our pretrained models from the paper. The results in the paper can be reproduced from the models with the following project commits:
-- [flashlight](https://github.com/facebookresearch/flashlight) - commit [`e62eb7ea4c9381411508c08226598ba11cbf9511`](https://github.com/facebookresearch/flashlight/commit/e62eb7ea4c9381411508c08226598ba11cbf9511)
-- [wav2letter](https://github.com/facebookresearch/wav2letter/) - commit [`d02f08749ce3cf0eeefa4406f61ad9dddb4a19b2`](https://github.com/facebookresearch/wav2letter/commit/d02f08749ce3cf0eeefa4406f61ad9dddb4a19b2)
+- [flashlight](https://github.com/flashlight/flashlight) - commit [`e62eb7ea4c9381411508c08226598ba11cbf9511`](https://github.com/flashlight/flashlight/commit/e62eb7ea4c9381411508c08226598ba11cbf9511)
+- [wav2letter](https://github.com/flashlight/wav2letter/) - commit [`d02f08749ce3cf0eeefa4406f61ad9dddb4a19b2`](https://github.com/flashlight/wav2letter/commit/d02f08749ce3cf0eeefa4406f61ad9dddb4a19b2)
 
-The architecture of the models can be found in [here](https://github.com/facebookresearch/wav2letter/blob/master/recipes/sota/2019/am_arch/am_transformer_ctc_librivox.arch), which is the best transformer CTC architecture we developed in [End-to-end ASR: from Supervised to Semi-Supervised Learning with Modern Architectures](https://arxiv.org/abs/1911.08460).
+The architecture of the models can be found in [here](https://github.com/flashlight/wav2letter/blob/master/recipes/sota/2019/am_arch/am_transformer_ctc_librivox.arch), which is the best transformer CTC architecture we developed in [End-to-end ASR: from Supervised to Semi-Supervised Learning with Modern Architectures](https://arxiv.org/abs/1911.08460).
 
 ### Tokens and Lexicons
 | Labeled Set | Lexicon | Tokens |

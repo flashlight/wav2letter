@@ -8,14 +8,14 @@ Acoustic model configuration files are provided for each dataset to reproduce re
 
 Pretrained convolutional language models used in the paper are also included, as well as steps to generate the language model corpus used to train the language models and steps to reproduce acoustic model training.
 
-**Training and decoding broadly follow the existing [TDS seq2seq recipes](https://github.com/facebookresearch/wav2letter/tree/master/recipes/seq2seq_tds/librispeech).**
+**Training and decoding broadly follow the existing [TDS seq2seq recipes](https://github.com/flashlight/wav2letter/tree/master/recipes/seq2seq_tds/librispeech).**
 
 
 ### Dependencies
 
 All results from the paper can be reproduced exactly with the following project commits:
-- [flashlight](https://github.com/facebookresearch/flashlight) - commit [`77ad2f79249c6833875f57865712de4666617d00`](https://git.io/JvxaN)
-- [wav2letter](https://github.com/facebookresearch/wav2letter/) - commit [`57b4904c8c4a808d393f047a9352c2d5be57ae8f`](https://git.io/JvxVa)
+- [flashlight](https://github.com/flashlight/flashlight) - commit [`77ad2f79249c6833875f57865712de4666617d00`](https://git.io/JvxaN)
+- [wav2letter](https://github.com/flashlight/wav2letter/) - commit [`57b4904c8c4a808d393f047a9352c2d5be57ae8f`](https://git.io/JvxVa)
 
 Each commit contains versioned documentation for building and installing requisite dependencies.
 

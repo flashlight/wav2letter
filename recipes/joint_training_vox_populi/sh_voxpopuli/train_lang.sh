@@ -122,6 +122,7 @@ TRAIN_FLAGS=" \
                --sqnorm \
                --nthread=0 \
                --batchsize=${BATCHSIZE} \
+	       --features_type=raw \
                --filterbanks=${FILTERBANKS} \
                --lexicon=$LEXICON\
                --tokens=$TOKENS \

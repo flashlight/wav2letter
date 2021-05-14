@@ -42,6 +42,7 @@
 #include "flashlight/lib/text/decoder/lm/ZeroLM.h"
 
 #include "CPCCriterion.h"
+#include "SequentialBuilder.h"
 
 DECLARE_string(criterion2);
 DEFINE_string(criterion2, "ctc", "Criterion for supervised task");
@@ -430,7 +431,7 @@ int main(int argc, char** argv) {
                            .front();
         enc_out = localNetwork->module(idx++)->forward({enc_out}).front();
         enc_out = localNetwork->module(idx++)->forward({enc_out}).front();
-        enc_out = w2l::forwardSequentialModuleWithPadMaskForCPC(
+        enc_out = w2l::cpc::forwardSequentialModuleWithPadMask(
             enc_out, localNetwork->module(idx++), sample[kDurationIdx]);
         auto rawEmission =
             localNetwork->module(idx)->forward({enc_out}).front();
@@ -673,7 +674,6 @@ int main(int argc, char** argv) {
         }
         auto wordTargetStr = join(" ", wordTarget);
         auto wordPredictionStr = join(" ", wordPrediction);
-
         // Normal decoding and computing WER
         if (!FLAGS_isbeamdump) {
           meters.wrdDstSlice.add(wordPrediction, wordTarget);
@@ -705,6 +705,8 @@ int main(int argc, char** argv) {
                    << "\%, slice TER: " << meters.tknDstSlice.errorRate()[0]
                    << "\%, decoded samples (thread " << tid
                    << "): " << sliceNumSamples[tid] + 1 << "]" << std::endl;
+
+            std::cout << buffer.str();
 
             if (!FLAGS_sclite.empty()) {
               writeLog(buffer.str());

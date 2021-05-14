@@ -28,7 +28,6 @@
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 
 #include "flashlight/ext/common/DistributedUtils.h"
-#include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/ext/common/Serializer.h"
 #include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
@@ -36,6 +35,7 @@
 
 #include "CPCCriterion.h"
 #include "CPCSpecAugment.h"
+#include "SequentialBuilder.h"
 
 // extra optimization hyperparameters
 DECLARE_string(train2);
@@ -495,8 +495,8 @@ int main(int argc, char** argv) {
       FL_LOG(fl::INFO) << "[Criterion] " << criterion->prettyString();
     } else {
       FL_LOG(fl::INFO) << "Loading architecture file from " << archfiles[0];
-      network->add(
-          buildSequentialModule(archfiles[0], numFeatures, FLAGS_codedim));
+      network->add(w2l::cpc::buildSequentialModule(
+          archfiles[0], numFeatures, FLAGS_codedim));
       // 2 extra layers between encoder and context in order to perform
       // operations on
       // intermediate activations
@@ -504,12 +504,12 @@ int main(int argc, char** argv) {
       network->add(
           std::make_shared<fl::Linear>(FLAGS_codedim, FLAGS_contextdim));
       FL_LOG(fl::INFO) << "Loading architecture file from " << archfiles[1];
-      network->add(buildSequentialModule(
+      network->add(w2l::cpc::buildSequentialModule(
           archfiles[1], FLAGS_contextdim, FLAGS_contextdim));
     }
     FL_LOG(fl::INFO) << "Loading architecture file from " << archfiles[2];
-    network->add(
-        buildSequentialModule(archfiles[2], FLAGS_contextdim, numClasses));
+    network->add(w2l::cpc::buildSequentialModule(
+        archfiles[2], FLAGS_contextdim, numClasses));
 
     if (FLAGS_criterion2 == kCtcCriterion) {
       criterion2 = std::make_shared<CTCLoss>(scalemode);
@@ -862,7 +862,7 @@ int main(int argc, char** argv) {
         enc_out_mask = enc_out;
       }
       enc_out_mask = ntwrk->module(idx++)->forward({enc_out_mask}).front();
-      auto context_mask = w2l::forwardSequentialModuleWithPadMaskForCPC(
+      auto context_mask = w2l::cpc::forwardSequentialModuleWithPadMask(
           enc_out_mask, ntwrk->module(idx++), batch[kDurationIdx]);
       // target is not used in unsupervised loss
       if (pretrain) {
@@ -1145,7 +1145,7 @@ int main(int argc, char** argv) {
 
         enc_out = fl::dropout(enc_out, FLAGS_dropout_feat);
         enc_out_mask = fl::dropout(enc_out_mask, FLAGS_dropout_feat);
-        auto context_mask = w2l::forwardSequentialModuleWithPadMaskForCPC(
+        auto context_mask = w2l::cpc::forwardSequentialModuleWithPadMask(
             enc_out_mask, ntwrk->module(idx++), batch[kDurationIdx]);
         if (pretrain) {
           crit_input = {enc_out, context_mask};

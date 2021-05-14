@@ -6,8 +6,9 @@ cmake_minimum_required(VERSION 3.10)
 #find_package(flashlight REQUIRED)
 set(common
    CPCCriterion.cpp
-   #   Utils.cpp
-   CPCSpecAugment.cpp)
+   CPCSpecAugment.cpp
+   SequentialBuilder.cpp
+   TransformerCPC.cpp)
 
 # ------------------------- Dedicated SSL Train executable --------------------------
 add_executable(

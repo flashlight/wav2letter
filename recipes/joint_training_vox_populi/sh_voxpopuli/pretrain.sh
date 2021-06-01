@@ -22,7 +22,7 @@ RUNNAME="pretrain_vp_100k"
 # and you must add the corresponding lst for the supervised data
 # as well as the lexicon and the token files
 # If twostage=true, put any valid lst, tokens and lexicon here,
-# it doesn't matter. 
+# it doesn't matter.
 SUPLIST="${SUPDIR}/data.lst"
 LEXICON="${SUPDIR}/lexicon.txt"
 TOKENS="${SUPDIR}/grapheme.tokens"
@@ -116,8 +116,8 @@ TRAIN_FLAGS=" \
                --lrcrit=$LRCRIT \
                --lr2=$LR2 \
                --lrcrit2=$LRCRIT2 \
-               --adambeta1="$BETA1" \
-               --adambeta2="$BETA2" \
+               --adambeta1=$BETA1 \
+               --adambeta2=$BETA2 \
                --warmup=$WARMUP \
                --saug_warmup=$WARMUP \
                --saug_maskprob=0.025 \
@@ -190,4 +190,3 @@ else
         gdb --args $TRAIN_CMD train $TRAIN_FLAGS $MPI_FLAGS
     fi
 fi
-

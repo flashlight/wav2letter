@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 from common_voice_to_wav2letter import get_base_data_from_csv, PUNCTUATION
 from typing import List, Set
-import string
 import argparse
 
 REPLACE_SET = {"–": "-", "`": "'", "’": "'"}

@@ -4,7 +4,7 @@ Wav2letter checkpoints from the [voxpopuli paper](https://arxiv.org/abs/2101.003
 
 The VoxPopuli dataset can be directly downloaded from the [VoxPopuli repository](https://github.com/facebookresearch/voxpopuli/).
 
-The code included in this folder is a patched version of the original code developped by 
+The code included in this folder is a patched version of the original code developped by
 [Chaitanya Talnikar](https://scholar.google.com/citations?user=aHLUKlQAAAAJ) from the [wav2letter team](https://github.com/facebookresearch/wav2letter/tree/masked_cpc/recipes/joint_training) in order to include the pre-training.
 
 ## Flashlight version
@@ -14,14 +14,14 @@ You can always refer to this flahslight commit for the stable release https://gi
 ## Loading the checkpoint
 
 Wav2letter small wav2vec model : https://dl.fbaipublicfiles.com/voxpopuli/vox_populi_100k_500iters.tar.gz
-[Depreciated checkpoint  https://dl.fbaipublicfiles.com/voxpopuli/wav2letter_100k_small.tar.gz]
+[Depreciated checkpoint https://dl.fbaipublicfiles.com/voxpopuli/wav2letter_100k_small.tar.gz]
 
 Our checkpoint is using fl::ext::Serializer. The items are saved in the following order:
 
 ```
-filename,     
+filename,
 FL_APP_ASR_VERSION, // std::string
-config,             // std::unordered_map<std::string, std::string> 
+config,             // std::unordered_map<std::string, std::string>
 network,            // fl::Sequential
 criterion,          // CPCCriterion (Subclass of fl::app::asr::SequenceCriterion) : unsupervised CPC criterion
 criterion2,         // fl::app::asr::SequenceCriterion : supervised CTC criterion
@@ -31,7 +31,7 @@ critoptim,          // fl::FirstOrderOptimizer
 critoptim2          // fl::FirstOrderOptimizer
 ```
 
-The network consists in a base feature network topped with a classifier. 
+The network consists in a base feature network topped with a classifier.
 To use it for fine-tuning, you need to load the network without its last layer:
 
 ```
@@ -92,7 +92,7 @@ export WAV2LETTERDIR= path to wav2letter root directory
 bash decode_lang.sh $DIR_CHECKPOINT $LANG
 ```
 
-## Results 
+## Results
 
 Performances on CommonVoices without language model (old version: checking the non-regression):
 
@@ -113,8 +113,8 @@ Performances on CommonVoices using a language model built out from CommonVoices 
 ## Pretrain a model
 
 To pretrain a model by yourself you can run ```sh_voxpopuli/pretrain.sh```.
-First, prepare an .lst files listing all of the audio sequences you intend to use for pretraining, let's call it ```unlabelled.lst```. 
-In this file, each sequence can be given an arbitrary transcription, it doesn't matter for unsupervised training. 
+First, prepare an .lst files listing all of the audio sequences you intend to use for pretraining, let's call it ```unlabelled.lst```.
+In this file, each sequence can be given an arbitrary transcription, it doesn't matter for unsupervised training.
 For example, ```unlabelled.lst``` could look like this:
 ```
 ID0 PATH_SEQUENCE0 SIZE_0_MS i love potatoes
@@ -137,7 +137,7 @@ See ```sh_voxpopuli/pretrain.sh``` for more details.
 
 ```
 @misc{wang2021voxpopuli,
-      title={VoxPopuli: A Large-Scale Multilingual Speech Corpus for Representation Learning, Semi-Supervised Learning and Interpretation}, 
+      title={VoxPopuli: A Large-Scale Multilingual Speech Corpus for Representation Learning, Semi-Supervised Learning and Interpretation},
       author={Changhan Wang and Morgane Rivière and Ann Lee and Anne Wu and Chaitanya Talnikar and Daniel Haziza and Mary Williamson and Juan Pino and Emmanuel Dupoux},
       year={2021},
       eprint={2101.00390},

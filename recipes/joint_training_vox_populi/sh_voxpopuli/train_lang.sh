@@ -102,8 +102,8 @@ TRAIN_FLAGS=" \
                --lrcrit=$LRCRIT \
                --lr2=$LR2 \
                --lrcrit2=$LRCRIT2 \
-               --adambeta1="$BETA1" \
-               --adambeta2="$BETA2" \
+               --adambeta1=$BETA1 \
+               --adambeta2=$BETA2 \
                --warmup=$WARMUP \
                --saug_warmup=$WARMUP \
                --saug_maskprob=0.025 \
@@ -122,7 +122,7 @@ TRAIN_FLAGS=" \
                --sqnorm \
                --nthread=0 \
                --batchsize=${BATCHSIZE} \
-	       --features_type=raw \
+               --features_type=raw \
                --filterbanks=${FILTERBANKS} \
                --lexicon=$LEXICON\
                --tokens=$TOKENS \
@@ -153,9 +153,9 @@ TRAIN_FLAGS=" \
                --batching_strategy=none \
                --batching_max_duration=$MAXTOKENS \
                --use_saug=true \
-               --twostage=true \    
+               --twostage=true \
                --supdates=$SUPDATES \
-               --supdelay=0"  
+               --supdelay=0"
 mkdir -p $RUNDIR
 
 

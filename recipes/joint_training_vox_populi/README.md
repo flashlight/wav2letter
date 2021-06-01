@@ -9,11 +9,12 @@ The code included in this folder is a patched version of the original code devel
 
 ## Flashlight version
 
-You can always refer to this flahslight commit for the stable release https://github.com/facebookresearch/flashlight/commit/eac650b7836a4a2d44234fa3e7e3d72a1d5322a8 
+You can always refer to this flahslight commit for the stable release https://github.com/flashlight/flashlight/commit/8f7af9ec1188bfd7050c47abfac528d21650890f
 
 ## Loading the checkpoint
 
-Wav2letter small wav2vec model : https://dl.fbaipublicfiles.com/voxpopuli/wav2letter_100k_small.tar.gz
+Wav2letter small wav2vec model : https://dl.fbaipublicfiles.com/voxpopuli/vox_populi_100k_500iters.tar.gz
+[Depreciated checkpoint  https://dl.fbaipublicfiles.com/voxpopuli/wav2letter_100k_small.tar.gz]
 
 Our checkpoint is using fl::ext::Serializer. The items are saved in the following order:
 
@@ -93,7 +94,7 @@ bash decode_lang.sh $DIR_CHECKPOINT $LANG
 
 ## Results 
 
-Performances on CommonVoices without language model:
+Performances on CommonVoices without language model (old version: checking the non-regression):
 
 | Language        | Fine-tuning size |                 Dev      |       Test        |
 | --------------- |:----------------:|:------------------------:|:-----------------:|
@@ -108,6 +109,29 @@ Performances on CommonVoices using a language model built out from CommonVoices 
 | De              | 314h             | CER 2.36 WER: 6.76       | CER 2.98 WER: 7.82|
 | Es              | 203h             | CER 3.11 WER: 8.93       | CER 3.60 WER: 10.0|
 | Fr              | 364h             | CER 2.73 WER: 8.31       | CER 3.57 WER: 9.56|
+
+## Pretrain a model
+
+To pretrain a model by yourself you can run ```sh_voxpopuli/pretrain.sh```.
+First, prepare an .lst files listing all of the audio sequences you intend to use for pretraining, let's call it ```unlabelled.lst```. 
+In this file, each sequence can be given an arbitrary transcription, it doesn't matter for unsupervised training. 
+For example, ```unlabelled.lst``` could look like this:
+```
+ID0 PATH_SEQUENCE0 SIZE_0_MS i love potatoes
+ID1 PATH_SEQUENCE1 SIZE_1_MS i love potatoes
+ID2 PATH_SEQUENCE2 SIZE_2_MS i love potatoes
+ID3 PATH_SEQUENCE3 SIZE_3_MS i love potatoes
+ID4 PATH_SEQUENCE4 SIZE_4_MS i love potatoes
+ID5 PATH_SEQUENCE5 SIZE_5_MS i love potatoes
+```
+
+You will also need to provdide the script with a validation set, and token file and a valid lexicon.
+If you are running the pre-training fully unsupervised (default option) the kind of tokens and the lexicon don't matter, you just need to provide valid files for wav2letter.
+
+You can also add some supervision to the pretraining procedure, as shown in  https://arxiv.org/abs/2011.00093.
+In this case you will need to build a different .lst file with labelled data and make sure that your lexicon and token files are appropriate.
+
+See ```sh_voxpopuli/pretrain.sh``` for more details.
 
 ## Citation
 

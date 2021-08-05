@@ -97,4 +97,3 @@ extern "C" fl::Module* createModule(int64_t nFeature, int64_t nLabel) {
 }
 
 CEREAL_REGISTER_TYPE(MyModel)
-

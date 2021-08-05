@@ -9,7 +9,7 @@ All models are trained on 16 gpus. To run training
 [w2l]/build/recipes/slimIPL/src/train_slimipl train \
    --flagsfile=[Put *.cfg file] \
    --rundir=[Path where artifacts of training to save] \
-   --enable_distributed=true 
+   --enable_distributed=true
 ```
 To compile `*.cpp` architectures into `*.so` use cmake/make command in flashlight and provide `-DFL_PLUGIN_MODULE_SRC_PATH=path/to/*.cpp` flag.
 
@@ -60,11 +60,11 @@ flashlight/build/bin/asr/fl_asr_decode \
 ```
 Best decoding params found on the validation data are following:
 
-| Sup. data |	Unsup. data | clean LM weight | clean word score | other LM weight | other word score |
+| Sup. data | Unsup. data | clean LM weight | clean word score | other LM weight | other word score |
 | - | - | - | - | - | - |
-10h | - | 3.799 | -1.050 | 3.689 | -1.826 
+10h | - | 3.799 | -1.050 | 3.689 | -1.826
 10h | 960h | 5.513 | 2.239 | 3.903 | -2.083
-100h | - | 2.708 | -2.312 | 3.183 | -0.721 
+100h | - | 2.708 | -2.312 | 3.183 | -0.721
 100h | 860h | 2.064 | -0.143 | 2.137 | -0.575
 
 Language model used for word-based 4-gram decoding is [here](https://dl.fbaipublicfiles.com/wav2letter/lexicon_free/librispeech/models/lm/lm_librispeech_kenlm_word_4g_200kvocab.bin).
@@ -76,14 +76,14 @@ Rescoring params found on the validation data are following:
 
 | Sup. data |	Unsup. data | clean LM weight | clean Length weight | other LM weight | other Length weight |
 | - | - | - | - | - | - |
-10h | - | 2.3 | 1.2 | 2.4 | 2.2 
-10h | 960h | 2.4 | 1.7 | 2.3 | 1.3 
-100h | - | 1.8 | 1.5 | 2.2 | 1.9 
-100h | 860h | 1.4 | 1.3 | 1.6 | 0.6 
+10h | - | 2.3 | 1.2 | 2.4 | 2.2
+10h | 960h | 2.4 | 1.7 | 2.3 | 1.3
+100h | - | 1.8 | 1.5 | 2.2 | 1.9
+100h | 860h | 1.4 | 1.3 | 1.6 | 0.6
 
 ## Ablations
 
-- To run ablations from the paper just change `slimIPL_*` flags to necessary values. 
+- To run ablations from the paper just change `slimIPL_*` flags to necessary values.
 - To run EMA ablation use flags `--slimIPL_ema=true --slimIPL_ema_decay=[0.999]`
 - To run "naive" approach (also EMA without dynamic cache) use `--slimIPL_type=naive`
 

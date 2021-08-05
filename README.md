@@ -41,4 +41,4 @@ when running `cmake`.
 * Contact: vineelkpratap@fb.com, awni@fb.com, qiantong@fb.com, jacobkahn@fb.com, antares@fb.com, avidov@fb.com, gab@fb.com, vitaliy888@fb.com, locronan@fb.com
 
 ## License
-wav2letter++ is BSD-licensed, as found in the [LICENSE](LICENSE) file.
+wav2letter++ is MIT-licensed, as found in the [LICENSE](LICENSE) file.

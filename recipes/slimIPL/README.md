@@ -74,7 +74,7 @@ Rescoring exactly follows https://github.com/flashlight/wav2letter/tree/master/r
 
 Rescoring params found on the validation data are following:
 
-| Sup. data |	Unsup. data | clean LM weight | clean Length weight | other LM weight | other Length weight |
+| Sup. data | Unsup. data | clean LM weight | clean Length weight | other LM weight | other Length weight |
 | - | - | - | - | - | - |
 10h | - | 2.3 | 1.2 | 2.4 | 2.2
 10h | 960h | 2.4 | 1.7 | 2.3 | 1.3

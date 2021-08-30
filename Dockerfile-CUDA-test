@@ -1,3 +1,0 @@
-FROM wav2letter/wav2letter:cuda-base-latest
-
-RUN echo "Hello world, GPU"

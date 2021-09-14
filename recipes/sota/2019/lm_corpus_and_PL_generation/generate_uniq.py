@@ -7,6 +7,6 @@ with open(sys.argv[1], "r") as f:
         pl_data.append(line.strip())
 pl_data = set(pl_data)
 
-with open(sys.argv[2] + ".unique", "w") as f:
+with open(sys.argv[1] + ".unique", "w") as f:
     for elem in pl_data:
         f.write(elem + "\n")

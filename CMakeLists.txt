@@ -11,7 +11,7 @@ if (FL_USE_CUDA)
   enable_language(CUDA)
 endif()
 
-if (NOT TARGET flashlight::flashlight-app-asr)
+if (NOT TARGET flashlight::fl_pkg_speech)
   message(FATAL_ERROR "flashlight must be build with app/asr for wav2letter++")
 endif ()
 

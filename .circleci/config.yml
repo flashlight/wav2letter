@@ -64,7 +64,7 @@ commands:
             git clone https://github.com/flashlight/flashlight.git && \
             cd /flashlight && pwd && ls && mkdir -p build && cd build && \
             export MKLROOT=/opt/intel/mkl && \
-            cmake .. -DFL_BACKEND=CUDA -DFL_BUILD_TESTS=OFF -DFL_BUILD_EXAMPLES=OFF -DFL_BUILD_APP_ASR=ON && \
+            cmake -DFL_BACKEND=CUDA -DFL_BUILD_TESTS=OFF -DFL_BUILD_EXAMPLES=OFF -DFL_BUILD_ALL_LIBS=ON -DFL_BUILD_CORE=ON -DFL_BUILD_ALL_PKGS=ON .. && \
             make -j$(nproc) && make install && \
             cd /wav2letter && mkdir build && cd build && cmake .. && make -j$(nproc)"
 

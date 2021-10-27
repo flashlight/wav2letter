@@ -8,9 +8,9 @@
 #pragma once
 
 #include <map>
-#include "flashlight/app/asr/runtime/Logger.h"
-#include "flashlight/app/asr/runtime/SpeechStatMeter.h"
 #include "flashlight/fl/flashlight.h"
+#include "flashlight/pkg/speech/runtime/Logger.h"
+#include "flashlight/pkg/speech/runtime/SpeechStatMeter.h"
 
 namespace slimIPL {
 
@@ -23,11 +23,11 @@ struct TrainMetersMy {
   fl::TimeMeter bwdtimer{true}; // includes network + criterion time
   fl::TimeMeter optimtimer{true};
 
-  fl::app::asr::DatasetMeters train;
-  fl::app::asr::DatasetMeters trainUnsup;
-  std::map<std::string, fl::app::asr::DatasetMeters> valid;
+  fl::pkg::speech::DatasetMeters train;
+  fl::pkg::speech::DatasetMeters trainUnsup;
+  std::map<std::string, fl::pkg::speech::DatasetMeters> valid;
 
-  fl::app::asr::SpeechStatMeter stats;
+  fl::pkg::speech::SpeechStatMeter stats;
 };
 
 /*

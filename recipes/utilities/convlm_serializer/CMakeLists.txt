@@ -15,5 +15,5 @@ target_include_directories(
 target_link_libraries(
   SerializeConvLM
   PRIVATE
-  flashlight::flashlight-app-asr
+  flashlight::fl_pkg_speech
   )

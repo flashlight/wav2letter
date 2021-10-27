@@ -20,18 +20,6 @@
 #include <glog/logging.h>
 #include "flashlight/fl/flashlight.h"
 
-#include "flashlight/app/asr/common/Defines.h"
-#include "flashlight/app/asr/common/Flags.h"
-#include "flashlight/app/asr/criterion/criterion.h"
-#include "flashlight/app/asr/data/FeatureTransforms.h"
-#include "flashlight/app/asr/data/Utils.h"
-#include "flashlight/app/asr/decoder/ConvLmModule.h"
-#include "flashlight/app/asr/decoder/DecodeUtils.h"
-#include "flashlight/app/asr/decoder/Defines.h"
-#include "flashlight/app/asr/decoder/TranscriptionUtils.h"
-#include "flashlight/app/asr/runtime/runtime.h"
-#include "flashlight/ext/common/SequentialBuilder.h"
-#include "flashlight/ext/common/Serializer.h"
 #include "flashlight/lib/common/ProducerConsumerQueue.h"
 #include "flashlight/lib/text/decoder/LexiconDecoder.h"
 #include "flashlight/lib/text/decoder/LexiconFreeDecoder.h"
@@ -40,6 +28,18 @@
 #include "flashlight/lib/text/decoder/lm/ConvLM.h"
 #include "flashlight/lib/text/decoder/lm/KenLM.h"
 #include "flashlight/lib/text/decoder/lm/ZeroLM.h"
+#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
+#include "flashlight/pkg/runtime/common/Serializer.h"
+#include "flashlight/pkg/speech/common/Defines.h"
+#include "flashlight/pkg/speech/common/Flags.h"
+#include "flashlight/pkg/speech/criterion/criterion.h"
+#include "flashlight/pkg/speech/data/FeatureTransforms.h"
+#include "flashlight/pkg/speech/data/Utils.h"
+#include "flashlight/pkg/speech/decoder/ConvLmModule.h"
+#include "flashlight/pkg/speech/decoder/DecodeUtils.h"
+#include "flashlight/pkg/speech/decoder/Defines.h"
+#include "flashlight/pkg/speech/decoder/TranscriptionUtils.h"
+#include "flashlight/pkg/speech/runtime/runtime.h"
 
 #include "CPCCriterion.h"
 #include "SequentialBuilder.h"
@@ -47,15 +47,15 @@
 DECLARE_string(criterion2);
 DEFINE_string(criterion2, "ctc", "Criterion for supervised task");
 
-using fl::ext::afToVector;
-using fl::ext::Serializer;
 using fl::lib::join;
 using fl::lib::pathsConcat;
 using fl::lib::text::CriterionType;
 using fl::lib::text::kUnkToken;
 using fl::lib::text::SmearingMode;
+using fl::pkg::runtime::afToVector;
+using fl::pkg::runtime::Serializer;
 
-using namespace fl::app::asr;
+using namespace fl::pkg::speech;
 
 int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
@@ -134,7 +134,8 @@ int main(int argc, char** argv) {
   // flags are present and corresponding new flags aren't
   handleDeprecatedFlags();
 
-  LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
+  LOG(INFO) << "Gflags after parsing \n"
+            << fl::pkg::speech::serializeGflags("; ");
 
   /* ===================== Create Dictionary ===================== */
   auto dictPath = FLAGS_tokens;
@@ -153,7 +154,7 @@ int main(int argc, char** argv) {
   bool isSeq2seqCrit = FLAGS_criterion == kSeq2SeqTransformerCriterion ||
       FLAGS_criterion == kSeq2SeqRNNCriterion;
   if (isSeq2seqCrit) {
-    tokenDict.addEntry(fl::app::asr::kEosToken);
+    tokenDict.addEntry(fl::pkg::speech::kEosToken);
     tokenDict.addEntry(fl::lib::text::kPadToken);
   }
 
@@ -543,7 +544,7 @@ int main(int argc, char** argv) {
                 FLAGS_beamsize,
                 FLAGS_attentionthreshold,
                 FLAGS_smoothingtemperature);
-      int eosIdx = tokenDict.getIndex(fl::app::asr::kEosToken);
+      int eosIdx = tokenDict.getIndex(fl::pkg::speech::kEosToken);
 
       if (FLAGS_decodertype == "wrd" || FLAGS_uselexicon) {
         decoder.reset(new fl::lib::text::LexiconSeq2SeqDecoder(

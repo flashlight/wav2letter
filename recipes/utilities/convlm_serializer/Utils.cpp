@@ -9,10 +9,10 @@
 
 #include <fstream>
 
-#include <flashlight/ext/common/SequentialBuilder.h>
 #include <flashlight/fl/contrib/contrib.h>
 #include <flashlight/lib/common/String.h>
 #include <flashlight/lib/common/System.h>
+#include <flashlight/pkg/runtime/common/SequentialBuilder.h>
 
 using fl::Variable;
 using std::dynamic_pointer_cast;
@@ -282,7 +282,8 @@ void loadConvLM(
   FL_LOG_IF(fl::FATAL, !fl::lib::fileExists(weightFile))
       << "Path to weight file " << weightFile << " doesn't exist";
   // create network and criterion
-  network = fl::ext::buildSequentialModule(archFile, 1, outputTokensDim);
+  network =
+      fl::pkg::runtime::buildSequentialModule(archFile, 1, outputTokensDim);
   network->eval();
 
   if (adaptiveTail.size() > 0) {

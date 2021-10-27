@@ -11,12 +11,12 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "flashlight/app/asr/common/Defines.h"
-#include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/lib/text/decoder/LexiconDecoder.h"
 #include "flashlight/lib/text/decoder/LexiconFreeDecoder.h"
 #include "flashlight/lib/text/decoder/lm/KenLM.h"
 #include "flashlight/lib/text/decoder/lm/ZeroLM.h"
+#include "flashlight/pkg/speech/common/Defines.h"
+#include "flashlight/pkg/speech/decoder/TranscriptionUtils.h"
 #include "inference/decoder/Decoder.h"
 
 namespace w2l {
@@ -41,8 +41,8 @@ DecoderFactory::DecoderFactory(
   }
   std::cerr << "[Letters] " << alphabetSize_ << " tokens loaded.\n";
   silence_ = letterMap_.getIndex(silenceToken);
-  blank_ = letterMap_.contains(fl::app::asr::kBlankToken)
-      ? letterMap_.getIndex(fl::app::asr::kBlankToken)
+  blank_ = letterMap_.contains(fl::pkg::speech::kBlankToken)
+      ? letterMap_.getIndex(fl::pkg::speech::kBlankToken)
       : -1;
 
   /* 2. Load word dictionary */
@@ -84,7 +84,7 @@ DecoderFactory::DecoderFactory(
 
       for (const auto& tokens : it.second) {
         auto tokensTensor =
-            fl::app::asr::tkn2Idx(tokens, letterMap_, repetitionLabel_);
+            fl::pkg::speech::tkn2Idx(tokens, letterMap_, repetitionLabel_);
         trie_->insert(tokensTensor, usrIdx, score);
       }
     }

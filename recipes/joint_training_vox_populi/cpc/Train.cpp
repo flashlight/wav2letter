@@ -16,22 +16,22 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/app/asr/runtime/runtime.h"
-#include "flashlight/app/common/Runtime.h"
 #include "flashlight/fl/contrib/contrib.h"
 #include "flashlight/fl/flashlight.h"
+#include "flashlight/pkg/runtime/Runtime.h"
+#include "flashlight/pkg/speech/runtime/runtime.h"
 
-#include "flashlight/app/asr/common/Defines.h"
-#include "flashlight/app/asr/criterion/criterion.h"
-#include "flashlight/app/asr/data/FeatureTransforms.h"
-#include "flashlight/app/asr/data/Utils.h"
-#include "flashlight/app/asr/decoder/TranscriptionUtils.h"
+#include "flashlight/pkg/speech/common/Defines.h"
+#include "flashlight/pkg/speech/criterion/criterion.h"
+#include "flashlight/pkg/speech/data/FeatureTransforms.h"
+#include "flashlight/pkg/speech/data/Utils.h"
+#include "flashlight/pkg/speech/decoder/TranscriptionUtils.h"
 
-#include "flashlight/ext/common/DistributedUtils.h"
-#include "flashlight/ext/common/Serializer.h"
 #include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
+#include "flashlight/pkg/runtime/common/Serializer.h"
 
 #include "CPCCriterion.h"
 #include "CPCSpecAugment.h"
@@ -195,17 +195,17 @@ DEFINE_double(
     0.,
     "Probability of same masked tokens in CPC");
 
-using fl::app::getRunFile;
-using fl::ext::afToVector;
-using fl::ext::Serializer;
 using fl::lib::fileExists;
 using fl::lib::format;
 using fl::lib::getCurrentDate;
 using fl::lib::join;
 using fl::lib::pathsConcat;
-using namespace fl::app::asr;
+using fl::pkg::runtime::afToVector;
+using fl::pkg::runtime::getRunFile;
+using fl::pkg::runtime::Serializer;
 
-using namespace fl::ext;
+using namespace fl::pkg::runtime;
+using namespace fl::pkg::speech;
 using namespace fl::lib;
 using namespace fl::lib::text;
 using namespace fl::lib::audio;
@@ -350,7 +350,8 @@ int main(int argc, char** argv) {
   int worldSize = fl::getWorldSize();
   bool isMaster = (worldRank == 0);
 
-  FL_LOG_MASTER(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
+  FL_LOG_MASTER(INFO) << "Gflags after parsing \n"
+                      << fl::pkg::speech::serializeGflags("; ");
   FL_LOG_MASTER(INFO) << "Experiment path: " << runPath;
   FL_LOG_MASTER(INFO) << "Experiment runidx: " << runIdx;
 
@@ -372,7 +373,7 @@ int main(int argc, char** argv) {
   std::unordered_map<std::string, std::string> config = {
       {kProgramName, exec},
       {kCommandLine, join(" ", argvs)},
-      {kGflags, serializeGflags()},
+      {kGflags, fl::pkg::speech::serializeGflags()},
       // extra goodies
       {kUserName, getEnvVar("USER")},
       {kHostName, getEnvVar("HOSTNAME")},
@@ -409,7 +410,7 @@ int main(int argc, char** argv) {
   bool isSeq2seqCrit = FLAGS_criterion == kSeq2SeqTransformerCriterion ||
       FLAGS_criterion == kSeq2SeqRNNCriterion;
   if (isSeq2seqCrit) {
-    tokenDict.addEntry(fl::app::asr::kEosToken);
+    tokenDict.addEntry(fl::pkg::speech::kEosToken);
     tokenDict.addEntry(fl::lib::text::kPadToken);
   }
   if (FLAGS_codedim == 0 || FLAGS_contextdim == 0) {

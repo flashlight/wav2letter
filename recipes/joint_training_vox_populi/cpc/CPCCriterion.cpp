@@ -11,7 +11,7 @@
 #include <numeric>
 #include <queue>
 #include <vector>
-#include "flashlight/app/asr/criterion/CriterionUtils.h"
+#include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
 using namespace fl;
 

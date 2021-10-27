@@ -7,8 +7,8 @@
 
 #include <gflags/gflags.h>
 
-#include <flashlight/ext/common/Serializer.h>
 #include <flashlight/lib/common/String.h>
+#include <flashlight/pkg/runtime/common/Serializer.h>
 
 #include "recipes/utilities/convlm_serializer/Utils.h"
 
@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
   }
 
   FL_LOG(fl::INFO) << "[ConvLMSerializer]: Saving into file " << savePath;
-  fl::ext::Serializer::save(savePath, "2.0", network, criterion);
+  fl::pkg::runtime::Serializer::save(savePath, "2.0", network, criterion);
 
   return 0;
 }

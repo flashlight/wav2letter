@@ -10,9 +10,9 @@
 #include <memory>
 
 //#include "flashlight/common/FlashlightUtils.h"
-#include "flashlight/app/asr/criterion/Defines.h"
-#include "flashlight/app/asr/criterion/SequenceCriterion.h"
 #include "flashlight/fl/contrib/modules/modules.h"
+#include "flashlight/pkg/speech/criterion/Defines.h"
+#include "flashlight/pkg/speech/criterion/SequenceCriterion.h"
 
 namespace w2l {
 
@@ -25,7 +25,7 @@ void PartialLoading(
     std::shared_ptr<fl::Sequential> net0,
     std::shared_ptr<fl::Sequential> net);
 
-class CPCCriterion : public fl::app::asr::SequenceCriterion {
+class CPCCriterion : public fl::pkg::speech::SequenceCriterion {
  public:
   CPCCriterion(
       int nEncoder,

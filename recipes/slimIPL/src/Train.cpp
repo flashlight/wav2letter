@@ -17,21 +17,6 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/app/asr/augmentation/SoundEffectConfig.h"
-#include "flashlight/app/asr/common/Defines.h"
-#include "flashlight/app/asr/common/Flags.h"
-#include "flashlight/app/asr/criterion/criterion.h"
-#include "flashlight/app/asr/data/FeatureTransforms.h"
-#include "flashlight/app/asr/data/Utils.h"
-#include "flashlight/app/asr/decoder/DecodeMaster.h"
-#include "flashlight/app/asr/decoder/DecodeUtils.h"
-#include "flashlight/app/asr/decoder/TranscriptionUtils.h"
-#include "flashlight/app/asr/runtime/runtime.h"
-#include "flashlight/app/common/Runtime.h"
-#include "flashlight/ext/common/DistributedUtils.h"
-#include "flashlight/ext/common/SequentialBuilder.h"
-#include "flashlight/ext/common/Serializer.h"
-#include "flashlight/ext/plugin/ModulePlugin.h"
 #include "flashlight/fl/contrib/contrib.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/System.h"
@@ -39,20 +24,35 @@
 #include "flashlight/lib/text/decoder/lm/KenLM.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
+#include "flashlight/pkg/runtime/Runtime.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
+#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
+#include "flashlight/pkg/runtime/common/Serializer.h"
+#include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
+#include "flashlight/pkg/speech/augmentation/SoundEffectConfig.h"
+#include "flashlight/pkg/speech/common/Defines.h"
+#include "flashlight/pkg/speech/common/Flags.h"
+#include "flashlight/pkg/speech/criterion/criterion.h"
+#include "flashlight/pkg/speech/data/FeatureTransforms.h"
+#include "flashlight/pkg/speech/data/Utils.h"
+#include "flashlight/pkg/speech/decoder/DecodeMaster.h"
+#include "flashlight/pkg/speech/decoder/DecodeUtils.h"
+#include "flashlight/pkg/speech/decoder/TranscriptionUtils.h"
+#include "flashlight/pkg/speech/runtime/runtime.h"
 
 #include "MyLogger.h"
 
-using fl::app::getRunFile;
-using fl::ext::afToVector;
-using fl::ext::Serializer;
 using fl::lib::fileExists;
 using fl::lib::format;
 using fl::lib::getCurrentDate;
 using fl::lib::join;
 using fl::lib::pathsConcat;
 using fl::lib::text::CriterionType;
+using fl::pkg::runtime::afToVector;
+using fl::pkg::runtime::getRunFile;
+using fl::pkg::runtime::Serializer;
 
-using namespace fl::app::asr;
+using namespace fl::pkg::speech;
 
 namespace {
 
@@ -187,7 +187,7 @@ int main(int argc, char** argv) {
 
   std::shared_ptr<fl::Reducer> reducer = nullptr;
   if (FLAGS_enable_distributed) {
-    fl::ext::initDistributed(
+    fl::pkg::runtime::initDistributed(
         FLAGS_world_rank,
         FLAGS_world_size,
         FLAGS_max_devices_per_node,
@@ -252,7 +252,7 @@ int main(int argc, char** argv) {
   bool isSeq2seqCrit = FLAGS_criterion == kSeq2SeqTransformerCriterion ||
       FLAGS_criterion == kSeq2SeqRNNCriterion;
   if (isSeq2seqCrit) {
-    tokenDict.addEntry(fl::app::asr::kEosToken);
+    tokenDict.addEntry(fl::pkg::speech::kEosToken);
     tokenDict.addEntry(fl::lib::text::kPadToken);
   }
 
@@ -387,15 +387,16 @@ int main(int argc, char** argv) {
   std::shared_ptr<WordDecodeMaster> dm;
 
   auto scalemode = getCriterionScaleMode(FLAGS_onorm, FLAGS_sqnorm);
-  (void)fl::ext::ModulePlugin(FLAGS_arch);
+  (void)fl::pkg::runtime::ModulePlugin(FLAGS_arch);
   if (runStatus == kTrainMode) {
     FL_LOG_MASTER(INFO) << "Loading architecture file from " << FLAGS_arch;
     // Encoder network, works on audio
-    network = fl::ext::ModulePlugin(FLAGS_arch).arch(numFeatures, numClasses);
+    network = fl::pkg::runtime::ModulePlugin(FLAGS_arch)
+                  .arch(numFeatures, numClasses);
     networkEMA = network;
     if (FLAGS_slimIPL_ema) {
-      networkEMA =
-          fl::ext::ModulePlugin(FLAGS_arch).arch(numFeatures, numClasses);
+      networkEMA = fl::pkg::runtime::ModulePlugin(FLAGS_arch)
+                       .arch(numFeatures, numClasses);
       for (size_t i = 0; i < networkEMA->params().size(); ++i) {
         auto param = network->param(i).array();
         param.eval();
@@ -415,7 +416,7 @@ int main(int argc, char** argv) {
       criterion = std::make_shared<Seq2SeqCriterion>(
           numClasses,
           FLAGS_encoderdim,
-          tokenDict.getIndex(fl::app::asr::kEosToken),
+          tokenDict.getIndex(fl::pkg::speech::kEosToken),
           tokenDict.getIndex(fl::lib::text::kPadToken),
           FLAGS_maxdecoderoutputlen,
           attentions,
@@ -433,7 +434,7 @@ int main(int argc, char** argv) {
       criterion = std::make_shared<TransformerCriterion>(
           numClasses,
           FLAGS_encoderdim,
-          tokenDict.getIndex(fl::app::asr::kEosToken),
+          tokenDict.getIndex(fl::pkg::speech::kEosToken),
           tokenDict.getIndex(fl::lib::text::kPadToken),
           FLAGS_maxdecoderoutputlen,
           FLAGS_am_decoder_tr_layers,
@@ -1391,7 +1392,7 @@ int main(int argc, char** argv) {
             unsupQuality.add(plArray, plTrueArray);
             plTextArray.push_back(plText);
           }
-          fl::ext::syncMeter(unsupQuality);
+          fl::pkg::runtime::syncMeter(unsupQuality);
           if (fl::getWorldRank() == 0) {
             std::cout << "PL Quality for Batch " << curBatch << " : "
                       << unsupQuality.errorRate()[0] << std::endl;

@@ -15,6 +15,6 @@ target_include_directories(
 target_link_libraries(
   train_slimipl
   PRIVATE
-  flashlight::flashlight-app-asr
-  flashlight::flashlight-app-common
+  flashlight::fl_pkg_speech
+  flashlight::fl_pkg_runtime
   )

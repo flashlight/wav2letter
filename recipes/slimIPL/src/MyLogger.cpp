@@ -9,18 +9,18 @@
 
 #include <thread>
 
-#include "flashlight/app/asr/common/Defines.h"
-#include "flashlight/app/asr/common/Flags.h"
-#include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
+#include "flashlight/pkg/speech/common/Defines.h"
+#include "flashlight/pkg/speech/common/Flags.h"
 
-using fl::ext::afToVector;
 using fl::lib::format;
 using fl::lib::getCurrentDate;
 using fl::lib::getCurrentTime;
 using fl::lib::retryWithBackoff;
-using namespace fl::app::asr;
+using fl::pkg::runtime::afToVector;
+using namespace fl::pkg::speech;
 
 namespace slimIPL {
 
@@ -77,7 +77,7 @@ std::string getLogString(
   auto tsztotal = stats[1];
   auto tszmax = stats[3];
   auto iszAvrFrames = isztotal / numsamples;
-  if (FLAGS_features_type != fl::app::asr::kFeaturesRaw) {
+  if (FLAGS_features_type != fl::pkg::speech::kFeaturesRaw) {
     iszAvrFrames = iszAvrFrames / FLAGS_framestridems;
   } else {
     iszAvrFrames = iszAvrFrames / 1000 * FLAGS_samplerate;
@@ -109,23 +109,23 @@ std::string getLogString(
 }
 
 void syncMeter(TrainMetersMy& mtrs) {
-  fl::ext::syncMeter(mtrs.stats);
-  fl::ext::syncMeter(mtrs.runtime);
-  fl::ext::syncMeter(mtrs.timer);
-  fl::ext::syncMeter(mtrs.fwdtimer);
-  fl::ext::syncMeter(mtrs.critfwdtimer);
-  fl::ext::syncMeter(mtrs.bwdtimer);
-  fl::ext::syncMeter(mtrs.optimtimer);
-  fl::ext::syncMeter(mtrs.train.tknEdit);
-  fl::ext::syncMeter(mtrs.train.wrdEdit);
-  fl::ext::syncMeter(mtrs.train.loss);
-  fl::ext::syncMeter(mtrs.trainUnsup.tknEdit);
-  fl::ext::syncMeter(mtrs.trainUnsup.wrdEdit);
-  fl::ext::syncMeter(mtrs.trainUnsup.loss);
+  fl::pkg::runtime::syncMeter(mtrs.stats);
+  fl::pkg::runtime::syncMeter(mtrs.runtime);
+  fl::pkg::runtime::syncMeter(mtrs.timer);
+  fl::pkg::runtime::syncMeter(mtrs.fwdtimer);
+  fl::pkg::runtime::syncMeter(mtrs.critfwdtimer);
+  fl::pkg::runtime::syncMeter(mtrs.bwdtimer);
+  fl::pkg::runtime::syncMeter(mtrs.optimtimer);
+  fl::pkg::runtime::syncMeter(mtrs.train.tknEdit);
+  fl::pkg::runtime::syncMeter(mtrs.train.wrdEdit);
+  fl::pkg::runtime::syncMeter(mtrs.train.loss);
+  fl::pkg::runtime::syncMeter(mtrs.trainUnsup.tknEdit);
+  fl::pkg::runtime::syncMeter(mtrs.trainUnsup.wrdEdit);
+  fl::pkg::runtime::syncMeter(mtrs.trainUnsup.loss);
   for (auto& v : mtrs.valid) {
-    fl::ext::syncMeter(v.second.tknEdit);
-    fl::ext::syncMeter(v.second.wrdEdit);
-    fl::ext::syncMeter(v.second.loss);
+    fl::pkg::runtime::syncMeter(v.second.tknEdit);
+    fl::pkg::runtime::syncMeter(v.second.wrdEdit);
+    fl::pkg::runtime::syncMeter(v.second.loss);
   }
 }
 

@@ -19,8 +19,8 @@ add_executable(
 
 target_link_libraries(
   Train_cpc
-  flashlight::flashlight-app-asr
-  flashlight::flashlight-app-common
+  flashlight::fl_pkg_speech
+  flashlight::fl_pkg_runtime
 )
 
 add_executable(
@@ -31,8 +31,8 @@ add_executable(
 
 target_link_libraries(
   Decode_cpc
-  flashlight::flashlight-app-asr
-  flashlight::flashlight-app-common
+  flashlight::fl_pkg_speech
+  flashlight::fl_pkg_runtime
 )
 
 #add_executable(

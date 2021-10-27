@@ -5,7 +5,7 @@ add_executable(analyze_pseudo_label_dataset AnalyzeDataset.cpp)
 target_link_libraries(
     analyze_pseudo_label_dataset
     PRIVATE
-    flashlight::flashlight-app-asr
+    flashlight::fl_pkg_speech
 )
 
 target_include_directories(

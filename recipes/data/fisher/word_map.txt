@@ -1,0 +1,18 @@
+# Word mappings that can be used while training the Acoustic Model
+401k four-o-one-k
+ak-47 ak-forty-seven
+ak47 ak-forty-seven
+u2 u-two
+v8 v-eight
+mp3 m-p-three
+m16 m-sixteen
+f16 f-sixteen
+dc3 dc-three
+y2k y-two-k
+3d three-d
+espn2 e-s-p-n-two
+vh1 vh-one
+s2b s-two-b
+90210 nine-o-two-one-o
+2 two
+& -and-

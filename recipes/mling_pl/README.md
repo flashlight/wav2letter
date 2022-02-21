@@ -36,7 +36,7 @@ bin/asr/fl_asr_test \
     --test=<audio_file_list> \
     --am=<path_to_model_checkpoint.bin> \
     --arch=<path_to_model_arch.so> \
-    --tokens <path_to_tokens_file/tokens-all.lst> \
+    --tokens=<path_to_tokens_file/tokens-all.lst> \
     --lexicon=lexicon.txt \
     --datadir=''  \
     --emission_dir=''  \
@@ -50,7 +50,6 @@ A lexicon file is required for inference, but because we use greedy decoding, th
 A Colab notebook with an example of using the model can be found [here](https://colab.research.google.com/drive/1xObuBVyZcPj8JXQm-gWa3e5WG0wgDreZ).
 
 ## Citation
-
 ```
 @article{lugosch2021pseudo,
   title={Pseudo-Labeling for Massively Multilingual Speech Recognition},

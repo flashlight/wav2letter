@@ -11,7 +11,7 @@ Download the pretrained model and tokens file:
 
 | Model | Arch | Link |
 | - | - | - |
-Large | mling_large.cpp | https://dl.fbaipublicfiles.com/wav2letter/mling_pl/checkpoint_large.bin
+Large | mling_large.cpp | https://dl.fbaipublicfiles.com/wav2letter/mling_pl/checkpoint_cv_finetune.bin
 
 Tokens file : https://dl.fbaipublicfiles.com/wav2letter/mling_pl/tokens-all.lst
 

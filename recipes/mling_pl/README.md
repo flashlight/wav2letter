@@ -47,7 +47,7 @@ To compile `*.cpp` architectures into `*.so` use cmake/make command in flashligh
 
 A lexicon file is required for inference, but because we use greedy decoding, the lexicon isn't actually used. You can create a dummy lexicon using this command: `echo 'a a |' > lexicon.txt`
 
-A Colab notebook with an example of using the model can be found [here](https://colab.research.google.com/drive/1xObuBVyZcPj8JXQm-gWa3e5WG0wgDreZ).
+A Colab notebook with an example of using the model can be found in this repo.
 
 ## Citation
 ```

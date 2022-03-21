@@ -7,6 +7,11 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(flashlight CONFIG REQUIRED)
+if (flashlight_VERSION VERSION_GREATER_EQUAL 0.4)
+  message(FATAL_ERROR "Cannot build wav2letter recipes with a Flashlight "
+    "version greater than v0.4. Use Flashlight's 0.3 branch to build.")
+endif()
+
 if (FL_USE_CUDA)
   enable_language(CUDA)
 endif()

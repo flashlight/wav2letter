@@ -13,7 +13,7 @@ Future wav2letter development will occur in Flashlight.
 For more information on wav2letter++, see or cite [this arXiv paper](https://arxiv.org/abs/1812.07625).
 
 ## Recipes
-This repository includes recipes to reproduce the following research papers as well as **pre-trained** models:
+This repository includes recipes to reproduce the following research papers as well as *pre-trained* models. **All results reproduction must use Flashlight <= 0.3.2** for exact reproducability. Papers contained here include:
 - [Pratap et al. (2020): Scaling Online Speech Recognition Using ConvNets](recipes/streaming_convnets/)
 - [Synnaeve et al. (2020): End-to-end ASR: from Supervised to Semi-Supervised Learning with Modern Architectures](recipes/sota/2019)
 - [Kahn et al. (2020): Self-Training for End-to-End Speech Recognition](recipes/self_training)
@@ -24,7 +24,7 @@ Data preparation for training and evaluation can be found in [data](data) direct
 
 ### Building the Recipes
 
-First, install [Flashlight](https://github.com/flashlight/flashlight) with the [ASR application](https://github.com/flashlight/flashlight/tree/master/flashlight/app/asr). Then, after cloning the project source:
+First, install [Flashlight](https://github.com/flashlight/flashlight/tree/0.3) **(using the [0.3 branch](https://github.com/flashlight/flashlight/tree/0.3) is required)** with the [ASR application](https://github.com/flashlight/flashlight/tree/master/flashlight/app/asr).
 ```shell
 mkdir build && cd build
 cmake .. && make -j8

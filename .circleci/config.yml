@@ -8,8 +8,8 @@ version: 2.1
 
 gpu: &gpu
   machine:
-    image: ubuntu-1604-cuda-11.1:202012-01
-  resource_class: gpu.small
+    image: ubuntu-2004-cuda-11.4:202110-01
+  resource_class: gpu.nvidia.medium
 
 commands:
   ############################### Docker Commands ###############################
@@ -61,10 +61,18 @@ commands:
             mkdir /opt/cmake && \
             sh cmake-<< parameters.version >>.<< parameters.version_build >>-Linux-x86_64.sh --prefix=/opt/cmake --skip-license && \
             ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake && \
-            git clone https://github.com/flashlight/flashlight.git && \
+            git clone https://github.com/flashlight/flashlight.git --branch 0.3 && \
             cd /flashlight && pwd && ls && mkdir -p build && cd build && \
             export MKLROOT=/opt/intel/mkl && \
-            cmake -DFL_BACKEND=CUDA -DFL_BUILD_TESTS=OFF -DFL_BUILD_EXAMPLES=OFF -DFL_BUILD_ALL_LIBS=ON -DFL_BUILD_CORE=ON -DFL_BUILD_ALL_PKGS=ON .. && \
+            cmake .. -DFL_ARRAYFIRE_USE_CUDA=ON \
+              -DFL_BUILD_TESTS=OFF \
+              -DFL_BUILD_EXAMPLES=OFF \
+              -DFL_BUILD_ALL_LIBS=ON \
+              -DFL_BUILD_CORE=ON \
+              -DFL_BUILD_ALL_PKGS=ON \
+              -DFL_BUILD_PKG_VISION=OFF \
+              -DFL_BUILD_PKG_TEXT=OFF \
+              -DFL_BUILD_PKG_HALIDE=OFF && \
             make -j$(nproc) && make install && \
             cd /wav2letter && mkdir build && cd build && cmake .. && make -j$(nproc)"
 

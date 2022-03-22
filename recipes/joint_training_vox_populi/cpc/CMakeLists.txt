@@ -1,21 +1,19 @@
 cmake_minimum_required(VERSION 3.10)
 
-#project(wav2letter++-experimental-cpc)
-
-
-#find_package(flashlight REQUIRED)
 set(common
-   CPCCriterion.cpp
-   CPCSpecAugment.cpp
-   SequentialBuilder.cpp
-   TransformerCPC.cpp)
+  CPCCriterion.cpp
+  CPCSpecAugment.cpp
+  SequentialBuilder.cpp
+  TransformerCPC.cpp
+  MTLLoss.cpp
+)
 
 # ------------------------- Dedicated SSL Train executable --------------------------
 add_executable(
   Train_cpc
   ${common}
   Train.cpp
-  )
+)
 
 target_link_libraries(
   Train_cpc

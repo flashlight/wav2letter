@@ -12,6 +12,8 @@
 #include "flashlight/fl/nn/Init.h"
 #include "flashlight/fl/nn/Utils.h"
 
+#include <cmath>
+
 namespace {
 fl::Variable
 transformerInitLinear(int32_t inDim, int32_t outDim, float gain = 1.0) {

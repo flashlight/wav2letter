@@ -7,6 +7,8 @@
 
 #include "TransformerCPC.h"
 
+#include <arrayfire.h>
+
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/contrib/modules/Transformer.h"
 #include "flashlight/fl/nn/Init.h"

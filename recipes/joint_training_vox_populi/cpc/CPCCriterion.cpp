@@ -6,6 +6,9 @@
  */
 
 #include "CPCCriterion.h"
+
+#include <arrayfire.h>
+
 #include <algorithm>
 #include <iostream>
 #include <numeric>

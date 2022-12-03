@@ -9,6 +9,8 @@
 
 #include <memory>
 
+#include <arrayfire.h>
+
 //#include "flashlight/common/FlashlightUtils.h"
 #include "flashlight/fl/contrib/modules/modules.h"
 #include "flashlight/pkg/speech/criterion/Defines.h"

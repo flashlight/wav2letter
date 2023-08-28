@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import itertools
 
 
-class LexiconEntry(object):
+class LexiconEntry:
     """
     A particular word in the Lexicon and its candidate spellings, sorted by
     """

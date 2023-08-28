@@ -72,7 +72,7 @@ def filter_transcripts(transcript_list, args):
     return filtered_transcripts
 
 
-class TranscriptPrediction(object):
+class TranscriptPrediction:
     def __init__(self, sid, prediction, transcript, warning=False):
         self.sid = sid
         self.prediction = prediction

@@ -91,4 +91,4 @@ fl::Variable mtl_step(
       predictions.as(f32), target_ids_, fl::ReduceMode::NONE);
   return fl::reorder(loss, 1, 0, 2);
 }
-}; // namespace asr4real
+} // namespace asr4real

@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <fmt/core.h>
 #include <cstdlib>
 #include <fstream>
 #include <random>
@@ -1432,7 +1433,7 @@ int main(int argc, char** argv) {
   // supStartBatch is number of updates of supervised loss
   // unsupStartBatch is number of updates of unsupervised loss
   startBatch = unsupStartBatch + supStartBatch;
-  printf("unsup: %ld, sup: %ld\n", unsupStartBatch, supStartBatch);
+  fmt::print("unsup: {}, sup: {}\n", unsupStartBatch, supStartBatch);
 
   resetTimeStatMeters(meters);
   resetTimeStatMeters(meters2);

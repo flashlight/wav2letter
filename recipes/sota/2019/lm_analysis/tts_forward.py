@@ -1,21 +1,15 @@
 # https://github.com/mozilla/TTS/blob/master/notebooks/Benchmark.ipynb - original code which we adapted
-import io
-import os
 import sys
 import time
-from collections import OrderedDict
 
 import numpy as np
 import torch
 from localimport import localimport
-from matplotlib import pylab as plt
 from TTS.layers import *
-from TTS.models.tacotron import Tacotron
 from TTS.utils.audio import AudioProcessor
 from TTS.utils.data import *
 from TTS.utils.generic_utils import load_config, setup_model
 from TTS.utils.synthesis import synthesis
-from TTS.utils.text import text_to_sequence
 from TTS.utils.text.symbols import phonemes, symbols
 
 

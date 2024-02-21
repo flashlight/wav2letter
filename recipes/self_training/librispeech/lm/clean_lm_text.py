@@ -1,9 +1,6 @@
 import re
 from multiprocessing import Pool
 
-import nltk
-import tqdm
-
 
 PUNCTUATION = set(list(",'\"?!#&(){}[]*+=;:.-"))
 PUNCTUATION.add("")

@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import os
 import sys
-from multiprocessing.pool import ThreadPool
 
 
 CONTRACTIONS = "contractions.txt"

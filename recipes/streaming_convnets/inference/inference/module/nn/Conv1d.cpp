@@ -34,11 +34,10 @@ Conv1d::Conv1d(
       // inChannels and outChannels must both be divisible by groups.
       (inChannels % groups) || (outChannels % groups)) {
     std::stringstream ss;
-    ss << "Invalid argument at Conv1d::Conv1d("
-       << "inChannels=" << inChannels << " outChannels=" << outChannels
-       << " kernelSize=" << kernelSize << " stride=" << stride
-       << " rightPadding=" << rightPadding << " leftPadding_=" << leftPadding
-       << " groups=" << groups << ")";
+    ss << "Invalid argument at Conv1d::Conv1d(" << "inChannels=" << inChannels
+       << " outChannels=" << outChannels << " kernelSize=" << kernelSize
+       << " stride=" << stride << " rightPadding=" << rightPadding
+       << " leftPadding_=" << leftPadding << " groups=" << groups << ")";
     throw std::invalid_argument(ss.str());
   }
 }

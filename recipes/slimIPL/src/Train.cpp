@@ -1301,8 +1301,8 @@ int main(int argc, char** argv) {
             cacheHits++;
           } else {
             if (unsupBatchIdx < 0) {
-              LOG(FATAL) << "index data is negative "
-                         << "unsupBatchIdx" << unsupBatchIdx;
+              LOG(FATAL) << "index data is negative " << "unsupBatchIdx"
+                         << unsupBatchIdx;
             }
             batch =
                 curUnsupTrainset->get(unsupBatchIdx % curUnsupTrainset->size());
@@ -1501,8 +1501,8 @@ int main(int argc, char** argv) {
                   fixedCacheRelabel) {
                 if (unsupBatchIdx < 0) {
                   LOG(FATAL)
-                      << "index data is negative "
-                      << "fixedCacheIndexToLabel" << fixedCacheIndexToLabel;
+                      << "index data is negative " << "fixedCacheIndexToLabel"
+                      << fixedCacheIndexToLabel;
                 }
                 auto nextBatch = curUnsupTrainsetNext->get(
                     fixedCacheIndexToLabel % curUnsupTrainsetNext->size());
@@ -1585,8 +1585,8 @@ int main(int argc, char** argv) {
                   fixedCacheRelabel) {
                 if (unsupBatchIdx < 0) {
                   LOG(FATAL)
-                      << "index data is negative "
-                      << "fixedCacheIndexToLabel" << fixedCacheIndexToLabel;
+                      << "index data is negative " << "fixedCacheIndexToLabel"
+                      << fixedCacheIndexToLabel;
                 }
                 auto nextBatch = curUnsupTrainsetNext->get(
                     fixedCacheIndexToLabel % curUnsupTrainsetNext->size());

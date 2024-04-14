@@ -1298,9 +1298,8 @@ int main(int argc, char** argv) {
               if (scaleFactor >= kMinScaleFactor) {
                 scaleFactor = scaleFactor / 2.0f;
                 FL_VLOG(2) << "AMP: Scale factor decreased. New value:\t"
-                           << "gradidx " << gradIdx << "\t"
-                           << "grad dims " << p.grad().dims() << "\t"
-                           << scaleFactor;
+                           << "gradidx " << gradIdx << "\t" << "grad dims "
+                           << p.grad().dims() << "\t" << scaleFactor;
                 retrySample = true;
                 scaleCounter = 1;
                 break;

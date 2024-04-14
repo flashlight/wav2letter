@@ -14,8 +14,7 @@ std::string debugString(
     const fbgemm::PackedGemmMatrixFP16& packedMatrix,
     bool dumpContent) {
   std::stringstream ss;
-  ss << "PackedGemmMatrixFP16:{"
-     << " num_rows:" << packedMatrix.numRows()
+  ss << "PackedGemmMatrixFP16:{" << " num_rows:" << packedMatrix.numRows()
      << " ncol:" << packedMatrix.numCols()
      << " block_row_size:" << packedMatrix.blockRowSize()
      << " last_brlock_ow:" << packedMatrix.lastBrow()

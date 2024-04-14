@@ -396,8 +396,8 @@ int main(int argc, char** argv) {
       meters.timer[kSampleTimer].resume();
 
       auto lengths = afToVector<int>(tgtLen);
-      LOG(INFO) << "[ Epoch " << curEpoch << " ]"
-                << " Iter=" << scheduleIter << " isPairedData=" << isPairedData
+      LOG(INFO) << "[ Epoch " << curEpoch << " ]" << " Iter=" << scheduleIter
+                << " isPairedData=" << isPairedData
                 << " AvgLoss=" << fl::mean(loss, {0}).scalar<float>()
                 << " MinLen="
                 << *std::min_element(lengths.begin(), lengths.end())
@@ -426,8 +426,8 @@ int main(int argc, char** argv) {
 
         // maybe update proposal network
         double newproperr = avgValidErr(meters);
-        LOG_MASTER(INFO) << "ProposalNetwork:"
-                         << " new=" << newproperr << " old=" << properr;
+        LOG_MASTER(INFO) << "ProposalNetwork:" << " new=" << newproperr
+                         << " old=" << properr;
         if ((FLAGS_propupdate == kAlways) ||
             (FLAGS_propupdate == kBetter && properr > newproperr)) {
           LOG_MASTER(INFO) << "Update proposal model to the current model";

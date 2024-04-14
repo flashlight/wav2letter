@@ -178,11 +178,9 @@ std::vector<Variable> TransformerCPC::forward(
 std::string TransformerCPC::prettyString() const {
   std::ostringstream ss;
   ss << "Transformer (nHeads: " << nHeads_ << "), "
-     << "(pDropout: " << pDropout_ << "), "
-     << "(pLayerdrop: " << pLayerdrop_ << "), "
-     << "(bptt: " << bptt_ << "), "
-     << "(useMask: " << useMask_ << "), "
-     << "(preLayerNorm: " << preLN_ << ")";
+     << "(pDropout: " << pDropout_ << "), " << "(pLayerdrop: " << pLayerdrop_
+     << "), " << "(bptt: " << bptt_ << "), " << "(useMask: " << useMask_
+     << "), " << "(preLayerNorm: " << preLN_ << ")";
   return ss.str();
 }
 

@@ -39,5 +39,5 @@ set(fbgemm_LIBRARIES
 set(fbgemm_INCLUDE_DIRS
   ${CMAKE_CURRENT_BINARY_DIR}/fbgemm/src/fbgemm/include
   ${FBGEMM_SOURCE_DIR}/include
-  ${FBGEMM_SOURCE_DIR}/third_party/cpuinfo/include
+  ${FBGEMM_SOURCE_DIR}/external/cpuinfo/include
 )

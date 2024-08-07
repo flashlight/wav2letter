@@ -58,19 +58,21 @@ if __name__ == "__main__":
                 for line in fdata:
                     file_tag, reflen = line.strip().split(" ", 1)
                     fout.write(
-                        "%s %s %s %s\n" % (
+                        "%s %s %s %s\n"
+                        % (
                             file_tag,
                             unpaired_data[file_tag][0],
                             unpaired_data[file_tag][1],
-                            reflen
+                            reflen,
                         )
                     )
                     reflen_dict.add(reflen)
 
     # append reflen* to the new lexicon
     orig_lexicon = "librispeech-paired-train+dev-unigram-5000-nbest10.lexicon"
-    lpm_lexicon = \
+    lpm_lexicon = (
         "librispeech-paired-train-unpaired-viterbi+dev-unigram-5000-nbest10.lexicon"
+    )
 
     with open(os.path.join(am_path, lpm_lexicon), "w") as fout:
         with open(os.path.join(am_path, orig_lexicon), "r") as fin:

@@ -296,12 +296,14 @@ if __name__ == "__main__":
                     # in the existed words set)
                     text_data = " ".join(
                         [
-                            word[:-1] + "\n"
-                            if len(word) > 2
-                            and word[-1] == "."
-                            and "." not in word[:-1]
-                            and word not in existed_words
-                            else word
+                            (
+                                word[:-1] + "\n"
+                                if len(word) > 2
+                                and word[-1] == "."
+                                and "." not in word[:-1]
+                                and word not in existed_words
+                                else word
+                            )
                             for word in text_data.split()
                         ]
                     )

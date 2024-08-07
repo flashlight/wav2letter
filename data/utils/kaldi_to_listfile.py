@@ -18,12 +18,7 @@ list file that is used by wav2letter++ pipelines to load data.
 
 """
 
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import argparse
 import os
@@ -38,9 +33,7 @@ def run_segment(item):
     uid, val = item
     infile, start_sec, end_sec, outfile = val
     sox_tfm = sox.Transformer()
-    sox_tfm.set_output_format(
-        file_type="flac", encoding="signed-integer", bits=16
-    )
+    sox_tfm.set_output_format(file_type="flac", encoding="signed-integer", bits=16)
     sox_tfm.trim(start_sec, end_sec)
     sox_tfm.build(infile, outfile)
 
@@ -55,7 +48,8 @@ if __name__ == "__main__":
         "'text', 'segments' and 'wav.scp' files",
     )
     parser.add_argument(
-        "--dst", help="destination directory where to store data",
+        "--dst",
+        help="destination directory where to store data",
     )
     parser.add_argument(
         "--name", help="name of the output list file", default="data.lst"
@@ -87,9 +81,7 @@ if __name__ == "__main__":
                 hsh = re.sub("[^0-9a-zA-Z]+", "", wav_handle)
                 wav_file = "/tmp/{}.wav".format(hsh)
                 cmds.append(
-                    wav_handle.replace(" - ", " " + wav_file + " ").replace(
-                        "|", ""
-                    )
+                    wav_handle.replace(" - ", " " + wav_file + " ").replace("|", "")
                 )
             else:
                 wav_file = wav_handle
@@ -102,7 +94,12 @@ if __name__ == "__main__":
         os.system(cmd)
 
     p = Pool(args.process)
-    list(tqdm(p.imap(run_command, cmds), total=len(cmds),))
+    list(
+        tqdm(
+            p.imap(run_command, cmds),
+            total=len(cmds),
+        )
+    )
 
     transcripts = {}
     with open(f"{args.src}/text") as f:
@@ -125,15 +122,18 @@ if __name__ == "__main__":
     os.makedirs(f"{args.dst}/audio", exist_ok=True)
 
     print("Creating segmented audio files ...")
-    list(tqdm(p.imap(run_segment, segments.items()), total=len(segments),))
+    list(
+        tqdm(
+            p.imap(run_segment, segments.items()),
+            total=len(segments),
+        )
+    )
 
     print("Writing to list file ...")
     with open(f"{args.dst}/{args.name}", "w") as fo:
         for uid, val in segments.items():
             _, start_sec, end_sec, outfile = val
             duration = "{:.2f}".format((end_sec - start_sec) * 1000)
-            fo.write(
-                "\t".join([uid, outfile, duration, transcripts[uid]]) + "\n"
-            )
+            fo.write("\t".join([uid, outfile, duration, transcripts[uid]]) + "\n")
 
     print("Done!")

@@ -2,15 +2,16 @@
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-import csv
 import argparse
-import torch
-import torchaudio
+import csv
 import string
-from tqdm import tqdm
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
-from lst_utils import FileInfo, save_lst, get_speakers_list
+
+import torch
+import torchaudio
+from lst_utils import FileInfo, get_speakers_list, save_lst
+from tqdm import tqdm
 
 
 PUNCTUATION = (string.punctuation + "¡¿").replace("'", "").replace("-", "")

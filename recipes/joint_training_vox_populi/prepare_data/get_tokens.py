@@ -2,9 +2,10 @@
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-from common_voice_to_wav2letter import get_base_data_from_csv, PUNCTUATION
-from typing import List, Set
 import argparse
+from typing import List, Set
+
+from common_voice_to_wav2letter import get_base_data_from_csv, PUNCTUATION
 
 REPLACE_SET = {"–": "-", "`": "'", "’": "'"}
 

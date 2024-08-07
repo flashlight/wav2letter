@@ -91,11 +91,12 @@ if __name__ == "__main__":
                 os.path.join(unpaired_lists_path, name + "-dummy.lst"), "w"
             ) as fout:
                 for line in flist:
-                    file_tag, audio_path, audio_length, _ = \
-                        line.strip().split(" ", 3)
+                    file_tag, audio_path, audio_length, _ = line.strip().split(" ", 3)
                     # use a random word from the lexicon as the transcription
-                    fout.write("%s %s %s %s\n" %
-                        (file_tag, audio_path, audio_length, lexicon_words[0]))
+                    fout.write(
+                        "%s %s %s %s\n"
+                        % (file_tag, audio_path, audio_length, lexicon_words[0])
+                    )
 
     # train
     print("Computing word pieces...\n", flush=True)

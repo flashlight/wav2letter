@@ -13,8 +13,8 @@ from fairseq import options
 from fairseq.models.fconv import FConvDecoder
 
 
-EOS = '</s>'
-UNK = '<unk>'
+EOS = "</s>"
+UNK = "<unk>"
 EOSIDX = 2
 UNKIDX = 3
 
@@ -23,9 +23,9 @@ def compute_new_state(model_state):
     new_state = dict()
     for key, val in model_state["model"].items():
         if "1.weight" in key and "adaptive" in key:
-            new_state[
-                ".".join(key.split(".")[1:]).replace("1.weight", "2.weight")
-            ] = val
+            new_state[".".join(key.split(".")[1:]).replace("1.weight", "2.weight")] = (
+                val
+            )
         else:
             new_state[".".join(key.split(".")[1:])] = val
     return new_state
@@ -128,9 +128,11 @@ def decodeInputText(sentences, token_indices_dict):
     for line in sentences:
         sentences_decoded.append(
             [
-                token_indices_dict[UNK]
-                if token not in token_indices_dict
-                else token_indices_dict[token]
+                (
+                    token_indices_dict[UNK]
+                    if token not in token_indices_dict
+                    else token_indices_dict[token]
+                )
                 for token in line.split(" ")
             ]
         )

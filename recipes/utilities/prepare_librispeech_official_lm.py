@@ -14,6 +14,7 @@ Command : python3 prepare_librispeech_official_lm.py --dst [...] --kenlm [...]/k
 
 Replace [...] with appropriate paths
 """
+
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import argparse
@@ -23,9 +24,7 @@ import re
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Librispeech official lm creation.")
-    parser.add_argument(
-        "--dst", help="data destination directory", default="./decoder"
-    )
+    parser.add_argument("--dst", help="data destination directory", default="./decoder")
     parser.add_argument("--kenlm", help="location to installed kenlm directory")
 
     args = parser.parse_args()

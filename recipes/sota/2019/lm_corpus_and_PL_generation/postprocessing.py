@@ -33,7 +33,7 @@ if __name__ == "__main__":
     for text in sys.stdin:
         # stay only ascii symbols
         nfkd_form = unicodedata.normalize("NFKD", text.strip())
-        nfkd_text = u"".join([c for c in nfkd_form if not unicodedata.combining(c)])
+        nfkd_text = "".join([c for c in nfkd_form if not unicodedata.combining(c)])
         # remove hyphen
         nfkd_text = nfkd_text.replace("-", " ")
         # change & -> and

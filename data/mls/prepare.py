@@ -53,13 +53,23 @@ if __name__ == "__main__":
                 duration_ms = (float(cols[3]) - float(cols[2])) * 1000
                 durations[cols[0]] = "{:.2f}".format(duration_ms)
 
-        with open(list_out_path, 'w') as fo:
+        with open(list_out_path, "w") as fo:
             with open(transcripts_path) as fi:
                 for line in fi:
                     handle, transcript = line.split("\t")
                     speaker, book, idx = handle.split("_")
-                    audio_file = os.path.join(audio_path, speaker, book, f"{handle}.flac")
+                    audio_file = os.path.join(
+                        audio_path, speaker, book, f"{handle}.flac"
+                    )
                     assert os.path.exists(audio_file)
-                    fo.write(handle + "\t" + audio_file + "\t" + durations[handle] + "\t" + transcript)
+                    fo.write(
+                        handle
+                        + "\t"
+                        + audio_file
+                        + "\t"
+                        + durations[handle]
+                        + "\t"
+                        + transcript
+                    )
 
     print("Done!", flush=True)

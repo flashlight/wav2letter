@@ -21,7 +21,7 @@ import os
 from multiprocessing import Pool
 
 from tqdm import tqdm
-from utils import split_audio, create_limited_sup
+from utils import create_limited_sup, split_audio
 
 
 LOG_STR = " To regenerate this file, please, remove it."

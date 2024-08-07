@@ -247,8 +247,9 @@ if __name__ == "__main__":
         os.path.join(decoder_path, "char_lm_data.nov93dev"),
     )
 
-    with open(os.path.join(args.data_dst, "text/nov93dev.txt"), "r") as f, \
-         open(os.path.join(decoder_path, "word_lm_data.nov93dev"), "w") as fout:
+    with open(os.path.join(args.data_dst, "text/nov93dev.txt"), "r") as f, open(
+        os.path.join(decoder_path, "word_lm_data.nov93dev"), "w"
+    ) as fout:
         for line in f:
             result = []
             for word in line.strip().split(" "):

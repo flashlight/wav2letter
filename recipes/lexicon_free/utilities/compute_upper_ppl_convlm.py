@@ -28,13 +28,13 @@ import argparse
 import numpy
 import torch
 from convlm_utils import (
-    EOSIDX,
-    UNKIDX,
     build_token_index_correspondence,
     decodeInputText,
+    EOSIDX,
     load_char_model_14B,
     load_char_model_20B,
     load_word_model,
+    UNKIDX,
 )
 from fairseq.data import Dictionary
 from utils import transform_asg

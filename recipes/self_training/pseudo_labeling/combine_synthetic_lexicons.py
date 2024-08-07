@@ -3,10 +3,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import argparse
 import os
 
-from synthetic_lexicon_utils import (
-    read_spellings_from_file,
-    write_spellings_to_file,
-)
+from synthetic_lexicon_utils import read_spellings_from_file, write_spellings_to_file
 
 
 def combine_lexicons(lexicon1, lexicon2):

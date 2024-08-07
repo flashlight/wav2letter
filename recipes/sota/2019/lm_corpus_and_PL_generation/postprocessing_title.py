@@ -12,7 +12,7 @@ if __name__ == "__main__":
     for text in sys.stdin:
         # stay only ascii symbols
         nfkd_form = unicodedata.normalize("NFKD", text.strip())
-        nfkd_text = u"".join([c for c in nfkd_form if not unicodedata.combining(c)])
+        nfkd_text = "".join([c for c in nfkd_form if not unicodedata.combining(c)])
         # lowercase text
         nfkd_text = nfkd_text.lower()
         # remove hyphen
@@ -34,7 +34,9 @@ if __name__ == "__main__":
                     cleaned_text.append(word)
                 else:
                     cleaned_text.append(
-                        "".join([letter for letter in word if letter in ACCEPTED_LETTERS])
+                        "".join(
+                            [letter for letter in word if letter in ACCEPTED_LETTERS]
+                        )
                     )
             # merge ' for the case ...s'
             elif word == "'":

@@ -23,14 +23,14 @@ import argparse
 import numpy
 import torch
 from convlm_utils import (
-    EOS,
-    EOSIDX,
-    UNKIDX,
     build_token_index_correspondence,
     decodeInputText,
+    EOS,
+    EOSIDX,
     load_char_model_14B,
     load_char_model_20B,
     load_word_model,
+    UNKIDX,
 )
 from fairseq.data import Dictionary
 from utils import prepare_vocabs_convlm, transform_asg, transform_asg_back

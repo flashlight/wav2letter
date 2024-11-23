@@ -19,7 +19,6 @@ def has_valid_tokens(word: str, tokens: Set[str]) -> bool:
 
 
 def read_token_file(path_token_file: Path, eow_char: str) -> Set[str]:
-
     with path_token_file.open("r") as file:
         data = [x.strip() for x in file.readlines()]
 
@@ -29,7 +28,6 @@ def read_token_file(path_token_file: Path, eow_char: str) -> Set[str]:
 def save_lexicon(
     lexicon: Set[str], path_out: Path, eow_char: str, tokens: Set[str]
 ) -> None:
-
     list_lexicon = list(lexicon)
     list_lexicon.sort()
 
@@ -98,7 +96,6 @@ def lexicon_from_lst(
     min_occ: int = 10,
     is_raw_text: bool = False,
 ) -> None:
-
     out_lexicon = set()
     tokens = read_token_file(path_tokens, eow_char)
     log.info("Token file loaded")

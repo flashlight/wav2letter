@@ -107,7 +107,7 @@ def get_fid2length(train_file):
 
 def full_records(speakers, fid2length, subset_name=None):
     all_records = []
-    speakers = {(speaker.id, speaker) for speaker in speakers}
+    speakers = {speaker.id: speaker for speaker in speakers}
 
     for fid, length in fid2length:
         speaker = fid.split("_")[2]

@@ -11,7 +11,7 @@ fuzzywuzzy==0.17.0
 Gutenberg==0.8.0
 idna==2.8
 isodate==0.6.0
-Mako==1.1.0
+Mako==1.2.2
 MarkupSafe==1.1.1
 mccabe==0.6.1
 nose2==0.9.1

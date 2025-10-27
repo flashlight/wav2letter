@@ -333,8 +333,9 @@ int main(int argc, char** argv) {
     featureModule->add(std::make_shared<streaming::LogMelFeature>(nFeat));
     LOG_IF(FATAL, FLAGS_localnrmlleftctx <= 0)
         << "Local Norm should be used for online inference";
-    featureModule->add(std::make_shared<streaming::LocalNorm>(
-        nFeat, FLAGS_localnrmlleftctx, FLAGS_localnrmlrightctx));
+    featureModule->add(
+        std::make_shared<streaming::LocalNorm>(
+            nFeat, FLAGS_localnrmlleftctx, FLAGS_localnrmlrightctx));
 
     if (!featFile.is_open()) {
       throw std::runtime_error("failed to open file for reading");

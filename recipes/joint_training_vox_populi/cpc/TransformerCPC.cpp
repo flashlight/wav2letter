@@ -72,9 +72,10 @@ TransformerCPC::TransformerCPC(
           transformerInitLinearBias(headDim * nHeads, modelDim, true))),
       norm1_(
           std::make_shared<LayerNorm>(std::vector<int>({0, 3}), layerNormEps_)),
-      norm2_(std::make_shared<LayerNorm>(
-          std::vector<int>({0, 3}),
-          layerNormEps_)) {
+      norm2_(
+          std::make_shared<LayerNorm>(
+              std::vector<int>({0, 3}),
+              layerNormEps_)) {
   if (bptt > 0) {
     params_.push_back(
         uniform(2 * bptt - 1, headDim, -0.1, 0.1, af::dtype::f32, true));

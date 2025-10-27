@@ -903,8 +903,14 @@ int main(int argc, char** argv) {
       std::vector<std::vector<int64_t>> wordEditDst(lmweights.size());
       std::vector<std::thread> threads;
       for (int i = 0; i < lmweights.size(); i++) {
-        threads.push_back(std::thread(
-            [&lmweights, &wordEditDst, &dm, &eds, &lexicon, i, worldRank]() {
+        threads.push_back(
+            std::thread([&lmweights,
+                         &wordEditDst,
+                         &dm,
+                         &eds,
+                         &lexicon,
+                         i,
+                         worldRank]() {
               af::setDevice(worldRank % 8);
               double lmweight = lmweights[i];
               DecodeMasterLexiconOptions opt = {
@@ -1457,8 +1463,9 @@ int main(int argc, char** argv) {
             std::vector<fl::Variable> fwdParams = {
                 input, fl::noGrad(batch[kDurationIdx])};
             if (FLAGS_slimIPL_dyn_dropout >= 0 && useUnsup) {
-              fwdParams.push_back(fl::noGrad(
-                  af::constant(FLAGS_slimIPL_dyn_dropout, af::dim4(1))));
+              fwdParams.push_back(
+                  fl::noGrad(
+                      af::constant(FLAGS_slimIPL_dyn_dropout, af::dim4(1))));
             }
             output = ntwrk->forward(fwdParams).front();
           }
@@ -1522,10 +1529,11 @@ int main(int argc, char** argv) {
                 std::vector<fl::Variable> newTargets;
                 for (int index = 0; index < useUnsupSamplesIndices.size();
                      index++) {
-                  newTargets.push_back(fl::Variable(
-                      plCacheSoft
-                          [samplesIndices[useUnsupSamplesIndices[index]]],
-                      false));
+                  newTargets.push_back(
+                      fl::Variable(
+                          plCacheSoft
+                              [samplesIndices[useUnsupSamplesIndices[index]]],
+                          false));
                 }
                 meters.stats.add(
                     batch[kDurationIdx](maskedSamples),
@@ -1536,8 +1544,9 @@ int main(int argc, char** argv) {
                 if (isSeq2seqCrit) {
                   critArgs.push_back(
                       fl::Variable(batch[kDurationIdx](maskedSamples), false));
-                  critArgs.push_back(fl::Variable(
-                      batch[kTargetSizeIdx](maskedSamples), false));
+                  critArgs.push_back(
+                      fl::Variable(
+                          batch[kTargetSizeIdx](maskedSamples), false));
                 }
               } else {
                 LOG(INFO)
@@ -1655,12 +1664,13 @@ int main(int argc, char** argv) {
             af::print("target", critArgs[1].array());
             af::print("pred", critArgs[0].array());
             loss = FLAGS_slimIPL_soft_scale *
-                fl::negate(fl::mean(
-                    fl::sum(
-                        fl::softmax(critArgs[1].as(f32), 0) *
-                            fl::logSoftmax(critArgs[0].as(f32), 0),
-                        {0}),
-                    {1, 2, 3}));
+                fl::negate(
+                       fl::mean(
+                           fl::sum(
+                               fl::softmax(critArgs[1].as(f32), 0) *
+                                   fl::logSoftmax(critArgs[0].as(f32), 0),
+                               {0}),
+                           {1, 2, 3}));
           } else {
             loss = crit->forward(critArgs).front();
           }

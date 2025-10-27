@@ -502,8 +502,9 @@ int main(int argc, char** argv) {
       FL_LOG(fl::INFO) << "[Criterion] " << criterion->prettyString();
     } else {
       FL_LOG(fl::INFO) << "Loading architecture file from " << archfiles[0];
-      network->add(w2l::cpc::buildSequentialModule(
-          archfiles[0], numFeatures, FLAGS_codedim));
+      network->add(
+          w2l::cpc::buildSequentialModule(
+              archfiles[0], numFeatures, FLAGS_codedim));
       // 2 extra layers between encoder and context in order to perform
       // operations on
       // intermediate activations
@@ -511,12 +512,14 @@ int main(int argc, char** argv) {
       network->add(
           std::make_shared<fl::Linear>(FLAGS_codedim, FLAGS_contextdim));
       FL_LOG(fl::INFO) << "Loading architecture file from " << archfiles[1];
-      network->add(w2l::cpc::buildSequentialModule(
-          archfiles[1], FLAGS_contextdim, FLAGS_contextdim));
+      network->add(
+          w2l::cpc::buildSequentialModule(
+              archfiles[1], FLAGS_contextdim, FLAGS_contextdim));
     }
     FL_LOG(fl::INFO) << "Loading architecture file from " << archfiles[2];
-    network->add(w2l::cpc::buildSequentialModule(
-        archfiles[2], FLAGS_contextdim, numClasses));
+    network->add(
+        w2l::cpc::buildSequentialModule(
+            archfiles[2], FLAGS_contextdim, numClasses));
 
     if (FLAGS_criterion2 == kCtcCriterion) {
       criterion2 = std::make_shared<CTCLoss>(scalemode);

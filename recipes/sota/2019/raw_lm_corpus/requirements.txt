@@ -25,7 +25,7 @@ python-editor==1.0.4
 python-Levenshtein==0.12.0
 rdflib==4.2.2
 rdflib-sqlalchemy==0.4.0
-requests==2.22.0
+requests==2.31.0
 responses==0.10.8
 roman==3.2
 six==1.13.0

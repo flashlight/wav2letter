@@ -5,9 +5,7 @@ import time
 import numpy as np
 import torch
 from localimport import localimport
-from TTS.layers import *
 from TTS.utils.audio import AudioProcessor
-from TTS.utils.data import *
 from TTS.utils.generic_utils import load_config, setup_model
 from TTS.utils.synthesis import synthesis
 from TTS.utils.text.symbols import phonemes, symbols

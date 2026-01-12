@@ -37,9 +37,12 @@ if __name__ == "__main__":
         ["librispeech-lm-norm.txt.lower.shuffle", "dev-clean.txt", "dev-other.txt"],
         ["train", "dev-clean", "dev-other"],
     ):
-        with open(os.path.join(args.data_src, "text", name), "r") as fin, open(
-            os.path.join(args.model_src, "decoder/lm_wp_10k." + suffix), "w"
-        ) as fout:
+        with (
+            open(os.path.join(args.data_src, "text", name), "r") as fin,
+            open(
+                os.path.join(args.model_src, "decoder/lm_wp_10k." + suffix), "w"
+            ) as fout,
+        ):
             for line in fin:
                 result = ""
                 for word in line.strip().split(" "):

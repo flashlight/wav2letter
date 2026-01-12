@@ -45,9 +45,9 @@ def copy_to_flac(info):
         os.system(
             "{sph} -f wav {i} {o}".format(sph=sph2pipe, i=original_path, o=tmp_file)
         )
-        assert (
-            sox.file_info.duration(tmp_file) > 0
-        ), "Audio file {} duration is zero.".format(original_path)
+        assert sox.file_info.duration(tmp_file) > 0, (
+            "Audio file {} duration is zero.".format(original_path)
+        )
 
         sox_tfm = sox.Transformer()
         sox_tfm.set_output_format(file_type="flac", encoding="signed-integer", bits=16)
@@ -112,9 +112,9 @@ if __name__ == "__main__":
     with open(in_phn_path, "r") as f_phones:
         phones = [[tkn.strip() for tkn in line.split()] for line in f_phones]
     phones = set(numpy.concatenate(phones))
-    assert (
-        len(phones) == 61
-    ), "Wrong number of phones, should be 61 instrad of {}".format(len(phones))
+    assert len(phones) == 61, (
+        "Wrong number of phones, should be 61 instrad of {}".format(len(phones))
+    )
 
     assert os.path.exists(os.path.join(args.src, "timit")) or os.path.exists(
         os.path.join(args.src, "TIMIT")
@@ -155,15 +155,12 @@ if __name__ == "__main__":
                     total=n_samples,
                 )
             )
-        with open(
-            os.path.join(lists_path, "{}.phn.lst".format(ds_type)), "w"
-        ) as flist, open(
-            os.path.join(lists_path, "{}.lst".format(ds_type)), "w"
-        ) as fwlist, open(
-            os.path.join(text_path, "{}.phn.txt".format(ds_type)), "w"
-        ) as ftlist, open(
-            os.path.join(text_path, "{}.txt".format(ds_type)), "w"
-        ) as ftwlist:
+        with (
+            open(os.path.join(lists_path, "{}.phn.lst".format(ds_type)), "w") as flist,
+            open(os.path.join(lists_path, "{}.lst".format(ds_type)), "w") as fwlist,
+            open(os.path.join(text_path, "{}.phn.txt".format(ds_type)), "w") as ftlist,
+            open(os.path.join(text_path, "{}.txt".format(ds_type)), "w") as ftwlist,
+        ):
             for sample in samples_info:
                 flist.write(
                     "{}\t{}\t{}\t{}\n".format(
@@ -175,9 +172,9 @@ if __name__ == "__main__":
                         sample[0], sample[1], sample[2], sample[3]
                     )
                 )
-                assert (
-                    len(set(sample[4].split(" ")) - phones) == 0
-                ), "Wrong phones in the transcription for sample {}".format(sample[0])
+                assert len(set(sample[4].split(" ")) - phones) == 0, (
+                    "Wrong phones in the transcription for sample {}".format(sample[0])
+                )
                 ftlist.write("{}\n".format(sample[4]))
                 ftwlist.write("{}\n".format(sample[3]))
 

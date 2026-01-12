@@ -82,9 +82,10 @@ if __name__ == "__main__":
     print(res)
     fnames = set([line.strip().split("\t")[0].split("/")[-1] for line in samples])
     # prepare original filtered file
-    with open(original_file, "r") as f, open(
-        "original.filtered_chunk_g1_ngrams_le6.lst", "w"
-    ) as fout:
+    with (
+        open(original_file, "r") as f,
+        open("original.filtered_chunk_g1_ngrams_le6.lst", "w") as fout,
+    ):
         for line in f:
             if line.split(" ")[1].split("/")[-1] in fnames:
                 fout.write(line)

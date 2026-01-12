@@ -149,9 +149,10 @@ if __name__ == "__main__":
     for pname in subpath_names:
         current_path = os.path.join(text_path, pname + ".txt")
         if not os.path.exists(current_path):
-            with open(os.path.join(lists_path, pname + ".lst"), "r") as flist, open(
-                os.path.join(text_path, pname + ".txt"), "w"
-            ) as fout:
+            with (
+                open(os.path.join(lists_path, pname + ".lst"), "r") as flist,
+                open(os.path.join(text_path, pname + ".txt"), "w") as fout,
+            ):
                 for line in flist:
                     fout.write(" ".join(line.strip().split(" ")[3:]) + "\n")
         else:

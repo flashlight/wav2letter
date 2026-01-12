@@ -171,9 +171,10 @@ if __name__ == "__main__":
     # do this substitution for the dev during
     # acoustic model training for WER computation
     remap_dict = remap_words_with_same_spelling(args.data_dst, decoder_path)
-    with open(os.path.join(lists_path, "si284.lst"), "r") as fin, open(
-        os.path.join(am_path, "si284.lst.remap"), "w"
-    ) as fout:
+    with (
+        open(os.path.join(lists_path, "si284.lst"), "r") as fin,
+        open(os.path.join(am_path, "si284.lst.remap"), "w") as fout,
+    ):
         for line in fin:
             line = line.strip().split(" ")
             for index in range(3, len(line)):
@@ -202,9 +203,9 @@ if __name__ == "__main__":
     with open(os.path.join(am_path, "lexicon_si284+nov93dev.txt"), "w") as f:
         for word in words_set:
             spelling = get_spelling(word)
-            assert re.match(
-                r"[a-z'.]+", spelling
-            ), "invalid spelling for word '{}'".format(word)
+            assert re.match(r"[a-z'.]+", spelling), (
+                "invalid spelling for word '{}'".format(word)
+            )
 
             f.write(
                 "{word}\t{tokens} |\n".format(
@@ -247,9 +248,10 @@ if __name__ == "__main__":
         os.path.join(decoder_path, "char_lm_data.nov93dev"),
     )
 
-    with open(os.path.join(args.data_dst, "text/nov93dev.txt"), "r") as f, open(
-        os.path.join(decoder_path, "word_lm_data.nov93dev"), "w"
-    ) as fout:
+    with (
+        open(os.path.join(args.data_dst, "text/nov93dev.txt"), "r") as f,
+        open(os.path.join(decoder_path, "word_lm_data.nov93dev"), "w") as fout,
+    ):
         for line in f:
             result = []
             for word in line.strip().split(" "):

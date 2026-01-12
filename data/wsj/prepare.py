@@ -106,10 +106,10 @@ if __name__ == "__main__":
         transcripts,
         lambda line: line + ".wv1",
     )
-    assert (
-        len(subsets["nov92"]) == 333
-    ), "Incorrect number of samples in si284 part: should be 333, but fould {}.".format(
-        len(subsets["nov92"])
+    assert len(subsets["nov92"]) == 333, (
+        "Incorrect number of samples in si284 part: should be 333, but fould {}.".format(
+            len(subsets["nov92"])
+        )
     )
 
     subsets["nov92_5k"] = ndx_to_samples(
@@ -118,10 +118,10 @@ if __name__ == "__main__":
         transcripts,
         lambda line: line + ".wv1",
     )
-    assert (
-        len(subsets["nov92_5k"]) == 330
-    ), "Incorrect number of samples in si284 part: should be 330, but fould {}.".format(
-        len(subsets["nov92_5k"])
+    assert len(subsets["nov92_5k"]) == 330, (
+        "Incorrect number of samples in si284 part: should be 330, but fould {}.".format(
+            len(subsets["nov92_5k"])
+        )
     )
 
     subsets["nov93"] = ndx_to_samples(
@@ -131,10 +131,10 @@ if __name__ == "__main__":
         lambda line: line.replace("13_32_1", "13_33_1"),
         wsj1_sep,
     )
-    assert (
-        len(subsets["nov93"]) == 213
-    ), "Incorrect number of samples in si284 part: should be 213, but fould {}.".format(
-        len(subsets["nov93"])
+    assert len(subsets["nov93"]) == 213, (
+        "Incorrect number of samples in si284 part: should be 213, but fould {}.".format(
+            len(subsets["nov93"])
+        )
     )
 
     subsets["nov93_5k"] = ndx_to_samples(
@@ -144,10 +144,10 @@ if __name__ == "__main__":
         lambda line: line.replace("13_32_1", "13_33_1"),
         wsj1_sep,
     )
-    assert (
-        len(subsets["nov93_5k"]) == 215
-    ), "Incorrect number of samples in si284 part: should be 215, but fould {}.".format(
-        len(subsets["nov93_5k"])
+    assert len(subsets["nov93_5k"]) == 215, (
+        "Incorrect number of samples in si284 part: should be 215, but fould {}.".format(
+            len(subsets["nov93_5k"])
+        )
     )
 
     subsets["nov93dev"] = ndx_to_samples(
@@ -157,10 +157,10 @@ if __name__ == "__main__":
         None,
         wsj1_sep,
     )
-    assert (
-        len(subsets["nov93dev"]) == 503
-    ), "Incorrect number of samples in si284 part: should be 503, but fould {}.".format(
-        len(subsets["nov93dev"])
+    assert len(subsets["nov93dev"]) == 503, (
+        "Incorrect number of samples in si284 part: should be 503, but fould {}.".format(
+            len(subsets["nov93dev"])
+        )
     )
 
     subsets["nov93dev_5k"] = ndx_to_samples(
@@ -170,10 +170,10 @@ if __name__ == "__main__":
         None,
         wsj1_sep,
     )
-    assert (
-        len(subsets["nov93dev_5k"]) == 513
-    ), "Incorrect number of samples in si284 part: should be 513, but fould {}.".format(
-        len(subsets["nov93dev_5k"])
+    assert len(subsets["nov93dev_5k"]) == 513, (
+        "Incorrect number of samples in si284 part: should be 513, but fould {}.".format(
+            len(subsets["nov93dev_5k"])
+        )
     )
 
     audio_path = os.path.join(args.dst, "audio")

@@ -61,10 +61,10 @@ def find_transcripts(dst_paths):
                             continue
 
                         if subset in transcripts and file_id in transcripts[subset]:
-                            assert (
-                                transcripts[subset][file_id] == transcript
-                            ), "different transcriptions available for {i}".format(
-                                i=file_id
+                            assert transcripts[subset][file_id] == transcript, (
+                                "different transcriptions available for {i}".format(
+                                    i=file_id
+                                )
                             )
                         transcripts[subset][file_id] = transcript
     return transcripts
@@ -89,13 +89,13 @@ def ndx_to_samples(prefix, filename, transcripts, transform=None, sep="-"):
             fname = os.path.join(prefix, "{}{}{}.{}".format(p1, sep, p2, p3), suf)
 
             assert os.path.exists(fname), "Audio file {} doesn't exist".format(fname)
-            assert (
-                subset in transcripts
-            ), "Subset {} is absent in the transcription".format(subset)
-            assert (
-                sample_id in transcripts[subset]
-            ), "Id {} is absent in the subset {} of transcription for file {}".format(
-                sample_id, subset, fname
+            assert subset in transcripts, (
+                "Subset {} is absent in the transcription".format(subset)
+            )
+            assert sample_id in transcripts[subset], (
+                "Id {} is absent in the subset {} of transcription for file {}".format(
+                    sample_id, subset, fname
+                )
             )
 
             samples_list.append(
@@ -120,9 +120,9 @@ def convert_to_flac(sample_data):
     if not os.path.exists(out_prefix + ".flac"):
         tmp_file = os.path.join(dst, "{pid}_tmp.wav".format(pid=os.getpid()))
         os.system("{sph} -f wav {i} {o}".format(sph=sph2pipe, i=filename, o=tmp_file))
-        assert (
-            sox.file_info.duration(tmp_file) > 0
-        ), "Audio file {} duration is zero.".format(filename)
+        assert sox.file_info.duration(tmp_file) > 0, (
+            "Audio file {} duration is zero.".format(filename)
+        )
 
         sox_tfm = sox.Transformer()
         sox_tfm.set_output_format(file_type="flac", encoding="signed-integer", bits=16)

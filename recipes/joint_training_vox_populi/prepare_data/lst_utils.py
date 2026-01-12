@@ -21,7 +21,9 @@ class FileInfo:
 def save_lst(lst_data: List[FileInfo], path_out: Path) -> None:
     with open(path_out, "w") as file:
         for data in lst_data:
-            file.write(f"{data.id_} {data.path_} {data.size*3600 * 1000} {data.text}\n")
+            file.write(
+                f"{data.id_} {data.path_} {data.size * 3600 * 1000} {data.text}\n"
+            )
 
 
 def load_lst(path_file: Path) -> List[FileInfo]:

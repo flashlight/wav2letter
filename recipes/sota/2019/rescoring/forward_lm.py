@@ -39,10 +39,10 @@ def predict_batch(sentences, model, fairseq_dict, max_len):
     nwords = 0
     for sentence in sentences:
         encoded_input.append([fairseq_dict.index(token) for token in sentence])
-        assert (
-            len(encoded_input[-1]) <= max_len
-        ), "Error in the input length, it should be less than max_len {}".format(
-            max_len
+        assert len(encoded_input[-1]) <= max_len, (
+            "Error in the input length, it should be less than max_len {}".format(
+                max_len
+            )
         )
         if len(encoded_input[-1]) < max_len:
             padded_input.append(

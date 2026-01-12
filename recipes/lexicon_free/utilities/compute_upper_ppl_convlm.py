@@ -102,7 +102,7 @@ def compute_ppl_upper_limit_char_convlm(
     print("Upper word perplexity for all words: {}".format(ppl_word))
     print("Upper word perplexity for unknown words: {}".format(ppl_word_unk))
     print(
-        "(Reported in the paper) " "Upper word perplexity for known words: {}".format(
+        "(Reported in the paper) Upper word perplexity for known words: {}".format(
             ppl_word_no_unk
         )
     )
@@ -143,7 +143,7 @@ def compute_ppl_upper_limit_word_convlm(model, input_wordlm):
     print("Word perplexity for all words: {}".format(ppl_word))
     print("Word perplexity for unknown words: {}".format(ppl_word_unk))
     print(
-        "(Reported in the paper) " "Word perplexity for known words: {}".format(
+        "(Reported in the paper) Word perplexity for known words: {}".format(
             ppl_word_no_unk
         )
     )

@@ -125,9 +125,9 @@ if __name__ == "__main__":
     with open(os.path.join(am_path, "lexicon_si284+nov93dev.txt"), "w") as f:
         for word in words_set:
             spelling = get_spelling(word)
-            assert re.match(
-                r"[a-z']+", spelling
-            ), "invalid spelling for word '{}'".format(word)
+            assert re.match(r"[a-z']+", spelling), (
+                "invalid spelling for word '{}'".format(word)
+            )
 
             f.write(
                 "{word}\t{tokens} |\n".format(

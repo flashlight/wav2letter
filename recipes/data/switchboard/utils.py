@@ -30,9 +30,9 @@ def process_hub5_data(sample_data):
             sph=sph2pipe, c=1 if parts[1] == "A" else 2, i=in_file, o=tmp_file
         )
     )
-    assert (
-        sox.file_info.duration(tmp_file) > 0
-    ), "Audio file {} duration is zero.".format(in_file)
+    assert sox.file_info.duration(tmp_file) > 0, (
+        "Audio file {} duration is zero.".format(in_file)
+    )
     sox_tfm = sox.Transformer()
     sox_tfm.set_output_format(file_type="flac", encoding="signed-integer", bits=16)
     sox_tfm.trim(start, end)
@@ -134,9 +134,9 @@ def process_swbd_data(sample_data):
                 sph=sph2pipe, c=1 if channel == "A" else 2, i=sphfile, o=tmp_file
             )
         )
-        assert (
-            sox.file_info.duration(tmp_file) > 0
-        ), "Audio file {} duration is zero.".format(sphfile)
+        assert sox.file_info.duration(tmp_file) > 0, (
+            "Audio file {} duration is zero.".format(sphfile)
+        )
         with open(chA if channel == "A" else chB, "r") as f:
             for line in f:
                 name = line[0:6].replace("sw", "sw0")

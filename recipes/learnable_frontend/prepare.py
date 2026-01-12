@@ -62,14 +62,17 @@ if __name__ == "__main__":
 
     am_path = os.path.join(args.model_dst, "am")
     os.makedirs(am_path, exist_ok=True)
-    with open(
-        os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "../../data/timit/phones.txt"
-        ),
-        "r",
-    ) as fin, open(os.path.join(am_path, "tokens.txt"), "w") as fout, open(
-        os.path.join(am_path, "lexicon.txt"), "w"
-    ) as fout_lexicon:
+    with (
+        open(
+            os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "../../data/timit/phones.txt",
+            ),
+            "r",
+        ) as fin,
+        open(os.path.join(am_path, "tokens.txt"), "w") as fout,
+        open(os.path.join(am_path, "lexicon.txt"), "w") as fout_lexicon,
+    ):
         for line in fin:
             if line.strip() == "":
                 continue

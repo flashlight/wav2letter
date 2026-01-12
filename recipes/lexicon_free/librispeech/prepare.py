@@ -255,9 +255,11 @@ if __name__ == "__main__":
     decoder_lexicon_words = set(decoder_lexicon_words)
 
     for list_name in ["test-clean.lst", "test-other.lst"]:
-        with open(os.path.join(lists_path, list_name), "r") as flist, open(
-            os.path.join(decoder_path, list_name + ".oov"), "w"
-        ) as foov, open(os.path.join(decoder_path, list_name + ".inv"), "w") as finv:
+        with (
+            open(os.path.join(lists_path, list_name), "r") as flist,
+            open(os.path.join(decoder_path, list_name + ".oov"), "w") as foov,
+            open(os.path.join(decoder_path, list_name + ".inv"), "w") as finv,
+        ):
             for line in flist:
                 sample_words = set(line.strip().split(" ")[3:])
                 if len(sample_words - decoder_lexicon_words) > 0:

@@ -148,9 +148,10 @@ if __name__ == "__main__":
         lexicon_name_train = "librispeech-train-unigram-{sz}-nbest{n}.lexicon".format(
             sz=num_wordpieces, n=nbest
         )
-        with open(os.path.join(am_path, lexicon_name), "w") as f_lexicon, open(
-            os.path.join(am_path, lexicon_name_train), "w"
-        ) as f_lexicon_train:
+        with (
+            open(os.path.join(am_path, lexicon_name), "w") as f_lexicon,
+            open(os.path.join(am_path, lexicon_name_train), "w") as f_lexicon_train,
+        ):
             for word in lexicon_words:
                 wps = sp.NBestEncodeAsPieces(word, nbest)
                 for wp in wps:  # the order matters for our training

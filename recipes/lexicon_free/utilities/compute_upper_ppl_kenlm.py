@@ -73,8 +73,9 @@ def compute_upper_limit_ppl_for_kenlm(known_words_file, kenlm_file):
         print("Upper word perplexity for all words: {}".format(ppl_word))
         print("Upper word perplexity for unknown words: {}".format(ppl_word_unk))
         print(
-            "(Reported in the paper) "
-            "Upper word perplexity for known words: {}".format(ppl_word_no_unk)
+            "(Reported in the paper) Upper word perplexity for known words: {}".format(
+                ppl_word_no_unk
+            )
         )
 
 

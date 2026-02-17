@@ -6,7 +6,7 @@ coverage==5.0
 docopt==0.6.2
 entrypoints==0.3
 flake8==3.7.9
-future==0.18.2
+future==0.18.3
 fuzzywuzzy==0.17.0
 Gutenberg==0.8.0
 idna==2.8

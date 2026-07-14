@@ -5,7 +5,7 @@ This is a repository sharing pre-trained acoustic models and language models for
 
 ## Dependencies
 
-* [`Flashlight`](https://github.com/flashlight/flashlight)
+* [`Flashlight`](https://github.com/flashlight/flashlight), models are tested/trained at commit d2e1924cb2a2b32b48cc326bb7e332ca3ea54f67 (conformer was changed after this commit and pre-trained conformer models cannot be used with later commits)
 * [`Flashlight` ASR app](https://github.com/flashlight/flashlight/tree/master/flashlight/app/asr)
 
 ## Models

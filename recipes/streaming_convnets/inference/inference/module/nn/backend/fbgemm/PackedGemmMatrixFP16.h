@@ -26,13 +26,16 @@ void save(
     Archive& ar,
     const std::shared_ptr<fbgemm::PackedGemmMatrixFP16>& packedMatrix) {
   const uint nElements = packedMatrix->matSize();
-  std::vector<fbgemm::float16> tempBuf(nElements);
+  // Keep the serialized buffer as raw uint16_t so cereal can serialize it; only
+  // reinterpret to fbgemm::float16 at the fbgemm API boundary.
+  std::vector<uint16_t> tempBuf(nElements);
   // PackedGemmMatrixFP16::unpack() does not change the state of the object's
   // state, however, it is not marked const. Thus casting off the const here.
   fbgemm::PackedGemmMatrixFP16* nonConstPackedMatrix =
       const_cast<fbgemm::PackedGemmMatrixFP16*>(packedMatrix.get());
   nonConstPackedMatrix->unpack(
-      tempBuf.data(), fbgemm::matrix_op_t::NoTranspose);
+      reinterpret_cast<fbgemm::float16*>(tempBuf.data()),
+      fbgemm::matrix_op_t::NoTranspose);
 
   ar(packedMatrix->numRows(),
      packedMatrix->numCols(),
@@ -69,12 +72,16 @@ void load(
      numBcol,
      matSize);
 
-  std::vector<fbgemm::float16> tempBufFp16;
+  // Keep the serialized buffer as raw uint16_t so cereal can deserialize it;
+  // only reinterpret to fbgemm::float16 at the fbgemm API boundary.
+  std::vector<uint16_t> tempBufFp16;
   ar(tempBufFp16);
 
+  const auto* tempBufFp16AsHalf =
+      reinterpret_cast<const fbgemm::float16*>(tempBufFp16.data());
   std::vector<float> tempBufFp32(numRows * numCols);
   for (int i = 0; i < numRows * numCols; ++i) {
-    tempBufFp32[i] = fbgemm::cpu_half2float(tempBufFp16[i]);
+    tempBufFp32[i] = fbgemm::cpu_half2float(tempBufFp16AsHalf[i]);
   }
 
   constexpr float alpha = 1.0;

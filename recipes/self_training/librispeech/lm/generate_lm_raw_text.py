@@ -12,7 +12,7 @@ def get_am_bookids():
         try:
             int(bid)
             clean_bookids.append(bid)
-        except:
+        except Exception:
             pass
     return clean_bookids
 
